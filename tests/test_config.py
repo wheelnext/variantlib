@@ -145,3 +145,21 @@ def test_key_config_repr():
     key_config = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
     expected_repr = "KeyConfig(key='attr_nameA', values=['7', '4', '8', '12'])"
     assert repr(key_config) == expected_repr
+
+
+def test_failing_regex_key():
+    with pytest.raises(ValueError, match="must match regex"):
+        _ = KeyConfig(key="", values=["7", "4", "8", "12"])
+
+    for c in "@#$%&*^()[]!-{}[]\\/ ":
+        with pytest.raises(ValueError, match="must match regex"):
+            _ = KeyConfig(key=f"key{c}value", values=["7", "4", "8", "12"])
+
+
+def test_failing_regex_value():
+    with pytest.raises(ValueError, match="does not follow the proper format"):
+        _ = KeyConfig(key="key", values=[""])
+
+    for c in "@#$%&*^()[]!-{}[]\\/ ":
+        with pytest.raises(ValueError, match="does not follow the proper format"):
+            _ = KeyConfig(key="key", values=[f"val{c}ue"])

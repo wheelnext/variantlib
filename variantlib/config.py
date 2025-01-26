@@ -1,10 +1,19 @@
+import re
+
 import attr
 from attr import validators
+
+from variantlib import _VALIDATION_REGEX
 
 
 @attr.s(frozen=True, repr=False)
 class KeyConfig:
-    key: str = attr.ib(validator=validators.instance_of(str))
+    key: str = attr.ib(
+        validator=[
+            validators.instance_of(str),
+            validators.matches_re(_VALIDATION_REGEX),
+        ]
+    )
     # Acceptable values in priority order
     values: list[str] = attr.ib(validator=validators.instance_of(list))
 
@@ -23,12 +32,23 @@ class KeyConfig:
         for value in self.values:
             if value in seen:
                 raise ValueError(f"Duplicate value found: '{value}' in `values`.")
+
+            if re.fullmatch(_VALIDATION_REGEX, value) is None:
+                raise ValueError(
+                    f"The value '{value}' does not follow the proper format."
+                )
+
             seen.add(value)
 
 
 @attr.s(frozen=True, repr=False)
 class ProviderConfig:
-    provider: str = attr.ib(validator=validators.instance_of(str))
+    provider: str = attr.ib(
+        validator=[
+            validators.instance_of(str),
+            validators.matches_re(_VALIDATION_REGEX),
+        ]
+    )
     # `KeyConfigs` in priority order
     configs: list[KeyConfig] = attr.ib(validator=validators.instance_of(list))
 

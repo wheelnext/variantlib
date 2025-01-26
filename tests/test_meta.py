@@ -3,7 +3,6 @@ import random
 import string
 
 import pytest
-
 from variantlib import VARIANT_HASH_LEN
 from variantlib.meta import VariantDescription
 from variantlib.meta import VariantMeta
@@ -15,7 +14,9 @@ from variantlib.meta import VariantMeta
 
 def test_variantmeta_initialization():
     # Valid initialization
-    valid_variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    valid_variant = VariantMeta(
+        provider="OmniCorp", key="access_key", value="secret_value"
+    )
     assert valid_variant.provider == "OmniCorp"
     assert valid_variant.key == "access_key"
     assert valid_variant.value == "secret_value"
@@ -56,7 +57,9 @@ def test_variantmeta_hash():
     assert hash(variant1) == hash(variant2)
 
     # Different value, same provider and key. Should also result in identical hash
-    variant3 = VariantMeta(provider="OmniCorp", key="access_key", value="different_value")
+    variant3 = VariantMeta(
+        provider="OmniCorp", key="access_key", value="different_value"
+    )
     assert hash(variant1) == hash(variant3)
 
 
@@ -65,6 +68,33 @@ def test_variantmeta_val_property():
     variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     expected_val = "OmniCorp :: access_key :: secret_value"
     assert variant.data == expected_val
+
+
+def test_failing_regex_provider():
+    with pytest.raises(ValueError, match="must match regex"):
+        _ = VariantMeta(provider="", key="key", value="value")
+
+    for c in "@#$%&*^()[]!-{}[]\\/ ":
+        with pytest.raises(ValueError, match="must match regex"):
+            _ = VariantMeta(provider=f"Omni{c}Corp", key="key", value="value")
+
+
+def test_failing_regex_key():
+    with pytest.raises(ValueError, match="must match regex"):
+        _ = VariantMeta(provider="provider", key="", value="value")
+
+    for c in "@#$%&*^()[]!-{}[]\\/ ":
+        with pytest.raises(ValueError, match="must match regex"):
+            _ = VariantMeta(provider="provider", key=f"access{c}key", value="value")
+
+
+def test_failing_regex_value():
+    with pytest.raises(ValueError, match="must match regex"):
+        _ = VariantMeta(provider="provider", key="key", value="")
+
+    for c in "@#$%&*^()[]!-{}[]\\/ ":
+        with pytest.raises(ValueError, match="must match regex"):
+            _ = VariantMeta(provider="provider", key="key", value=f"val{c}ue")
 
 
 # -----------------------------------------------
@@ -83,7 +113,9 @@ def test_variantdesc_repr():
 def test_variantdescription_initialization():
     # Valid input: List of VariantMeta instances
     meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    meta2 = VariantMeta(provider="TyrellCorporation", key="client_id", value="secret_key")
+    meta2 = VariantMeta(
+        provider="TyrellCorporation", key="client_id", value="secret_key"
+    )
     variant_description = VariantDescription([meta1, meta2])
 
     # Check that the _data property is a list
@@ -98,7 +130,11 @@ def test_variantdescription_invalid_data():
         VariantDescription("invalid_data")
 
     # Test data containing non-VariantMeta instances
-    invalid_meta = {"provider": "OmniCorp", "key": "access_key", "value": "secret_value"}
+    invalid_meta = {
+        "provider": "OmniCorp",
+        "key": "access_key",
+        "value": "secret_value",
+    }
     with pytest.raises(AssertionError):
         VariantDescription([invalid_meta])
 
@@ -121,7 +157,9 @@ def test_variantdescription_partial_duplicate_data():
 def test_variantdescription_sorted_data():
     # Ensure that the data is sorted by provider, key, value
     meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    meta2 = VariantMeta(provider="TyrellCorporation", key="client_id", value="secret_key")
+    meta2 = VariantMeta(
+        provider="TyrellCorporation", key="client_id", value="secret_key"
+    )
     meta3 = VariantMeta(provider="OmniCorp", key="secret_key", value="client_value")
     variant_description = VariantDescription([meta1, meta2, meta3])
 
@@ -135,7 +173,9 @@ def test_variantdescription_sorted_data():
 def test_variantdescription_hexdigest():
     # Ensure that the hexdigest property works correctly
     meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    meta2 = VariantMeta(provider="TyrellCorporation", key="client_id", value="secret_key")
+    meta2 = VariantMeta(
+        provider="TyrellCorporation", key="client_id", value="secret_key"
+    )
     variant_description = VariantDescription([meta1, meta2])
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
@@ -176,15 +216,25 @@ def test_fuzzy_variantmeta(provider, key, value):
         ([VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")]),
         (
             [
-                VariantMeta(provider="TyrellCorporation", key="client_id", value="secret_key"),
-                VariantMeta(provider="OmniCorp", key="access_key", value="secret_value"),
+                VariantMeta(
+                    provider="TyrellCorporation", key="client_id", value="secret_key"
+                ),
+                VariantMeta(
+                    provider="OmniCorp", key="access_key", value="secret_value"
+                ),
             ]
         ),
         (
             [
-                VariantMeta(provider="OmniCorp", key="access_key", value="secret_value"),
-                VariantMeta(provider="TyrellCorporation", key="client_id", value="secret_key"),
-                VariantMeta(provider="OmniCorp", key="secret_key", value="client_value"),
+                VariantMeta(
+                    provider="OmniCorp", key="access_key", value="secret_value"
+                ),
+                VariantMeta(
+                    provider="TyrellCorporation", key="client_id", value="secret_key"
+                ),
+                VariantMeta(
+                    provider="OmniCorp", key="secret_key", value="client_value"
+                ),
             ]
         ),
     ],

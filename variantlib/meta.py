@@ -3,14 +3,30 @@ import hashlib
 import attr
 from attr import validators
 
+from variantlib import _VALIDATION_REGEX
 from variantlib import VARIANT_HASH_LEN
 
 
 @attr.s(frozen=True, hash=False, repr=False)
 class VariantMeta:
-    provider: str = attr.ib(validator=validators.instance_of(str))
-    key: str = attr.ib(validator=validators.instance_of(str))
-    value: str = attr.ib(validator=validators.instance_of(str))
+    provider: str = attr.ib(
+        validator=[
+            validators.instance_of(str),
+            validators.matches_re(_VALIDATION_REGEX),
+        ]
+    )
+    key: str = attr.ib(
+        validator=[
+            validators.instance_of(str),
+            validators.matches_re(_VALIDATION_REGEX),
+        ]
+    )
+    value: str = attr.ib(
+        validator=[
+            validators.instance_of(str),
+            validators.matches_re(_VALIDATION_REGEX),
+        ]
+    )
 
     def __repr__(self):
         return f"<VariantMeta: `{self.data}`>"
