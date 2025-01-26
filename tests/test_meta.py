@@ -67,7 +67,7 @@ def test_failing_regex_provider():
     with pytest.raises(ValueError, match="must match regex"):
         _ = VariantMeta(provider="", key="key", value="value")
 
-    for c in "@#$%&*^()[]!-{}[]\\/ ":
+    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
             _ = VariantMeta(provider=f"Omni{c}Corp", key="key", value="value")
 
@@ -76,7 +76,7 @@ def test_failing_regex_key():
     with pytest.raises(ValueError, match="must match regex"):
         _ = VariantMeta(provider="provider", key="", value="value")
 
-    for c in "@#$%&*^()[]!-{}[]\\/ ":
+    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
             _ = VariantMeta(provider="provider", key=f"access{c}key", value="value")
 
@@ -85,7 +85,7 @@ def test_failing_regex_value():
     with pytest.raises(ValueError, match="must match regex"):
         _ = VariantMeta(provider="provider", key="key", value="")
 
-    for c in "@#$%&*^()[]!-{}[]\\/ ":
+    for c in "@#$%&*^()[]?!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
             _ = VariantMeta(provider="provider", key="key", value=f"val{c}ue")
 
@@ -233,8 +233,9 @@ def test_variantdescription_hexdigest():
         ("OmniCorp", "access_key", "secret_value"),
         ("TyrellCorporation", "client_id", "secret_key"),
         ("InGenTechnologies", "tenant_id", "secret_value123"),
-        ("CyberdyneSystems", "app_id", "app_secret"),
         ("SoylentCorporation", "token", "auth_value_123"),
+        ("CyberdyneSystems", "version", "10.1"),
+        ("CyberdyneSystems", "version", "10.1.4"),
     ],
 )
 def test_fuzzy_variantmeta(provider, key, value):

@@ -9,8 +9,9 @@ from attrs import field
 from attrs import frozen
 from attrs import validators
 
-from variantlib import _VALIDATION_REGEX
-from variantlib import VARIANT_HASH_LEN
+from variantlib.constants import VALIDATION_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VARIANT_HASH_LEN
 
 
 @frozen
@@ -18,19 +19,19 @@ class VariantMeta:
     provider: str = field(
         validator=[
             validators.instance_of(str),
-            validators.matches_re(_VALIDATION_REGEX),
+            validators.matches_re(VALIDATION_REGEX),
         ]
     )
     key: str = field(
         validator=[
             validators.instance_of(str),
-            validators.matches_re(_VALIDATION_REGEX),
+            validators.matches_re(VALIDATION_REGEX),
         ]
     )
     value: str = field(
         validator=[
             validators.instance_of(str),
-            validators.matches_re(_VALIDATION_REGEX),
+            validators.matches_re(VALIDATION_VALUE_REGEX),
         ]
     )
 
@@ -44,7 +45,7 @@ class VariantMeta:
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
-        subpattern = _VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
+        subpattern = VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
         pattern = rf"^(?P<provider>{subpattern}) :: (?P<key>{subpattern}) :: (?P<value>{subpattern})$"  # noqa: E501
 
         # Try matching the input string with the regex pattern

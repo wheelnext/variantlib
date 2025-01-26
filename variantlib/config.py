@@ -4,7 +4,8 @@ from attrs import field
 from attrs import frozen
 from attrs import validators
 
-from variantlib import _VALIDATION_REGEX
+from variantlib.constants import VALIDATION_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 
 
 @frozen
@@ -12,7 +13,7 @@ class KeyConfig:
     key: str = field(
         validator=[
             validators.instance_of(str),
-            validators.matches_re(_VALIDATION_REGEX),
+            validators.matches_re(VALIDATION_REGEX),
         ]
     )
 
@@ -24,7 +25,7 @@ class KeyConfig:
         """The field `values` must comply with the following
         - Being a non-empty list of string
         - Each value inside the list must be unique
-        - Each value inside the list must comply with `_VALIDATION_REGEX`
+        - Each value inside the list must comply with `VALIDATION_VALUE_REGEX`
         """
         assert len(data) > 0
         assert all(isinstance(config, str) for config in data)
@@ -34,7 +35,7 @@ class KeyConfig:
             if value in seen:
                 raise ValueError(f"Duplicate value found: '{value}' in `values`.")
 
-            if re.match(_VALIDATION_REGEX, value) is None:
+            if re.match(VALIDATION_VALUE_REGEX, value) is None:
                 raise ValueError(
                     f"The value '{value}' does not follow the proper format."
                 )
@@ -47,7 +48,7 @@ class ProviderConfig:
     provider: str = field(
         validator=[
             validators.instance_of(str),
-            validators.matches_re(_VALIDATION_REGEX),
+            validators.matches_re(VALIDATION_REGEX),
         ]
     )
 
