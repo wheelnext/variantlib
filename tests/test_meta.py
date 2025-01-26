@@ -38,9 +38,9 @@ def test_variantmeta_invalid_type():
 
 def test_variantmeta_data():
     # Test the repr method of VariantMeta
-    variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    vmeta = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     expected_data = "OmniCorp :: access_key :: secret_value"
-    assert variant.to_str() == expected_data
+    assert vmeta.to_str() == expected_data
 
 
 def test_variantmeta_hash():
@@ -58,9 +58,9 @@ def test_variantmeta_hash():
 
 def test_variantmeta_val_property():
     # Test the val property
-    variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    vmeta = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     expected_val = "OmniCorp :: access_key :: secret_value"
-    assert variant.to_str() == expected_val
+    assert vmeta.to_str() == expected_val
 
 
 def test_failing_regex_provider():
@@ -138,6 +138,29 @@ def test_from_str_invalid_format():
 
     with pytest.raises(ValueError, match="Invalid format"):
         VariantMeta.from_str(input_str)
+
+
+def test_variantmeta_serialization():
+    vmeta = VariantMeta(provider="provider", key="key", value="value")
+    assert vmeta.serialize() == {
+        "provider": "provider",
+        "key": "key",
+        "value": "value",
+    }
+
+
+def test_variantmeta_deserialization():
+    data = {
+        "provider": "provider",
+        "key": "key",
+        "value": "value",
+    }
+
+    vmeta = VariantMeta.deserialize(data)
+
+    assert vmeta.provider == data["provider"]
+    assert vmeta.key == data["key"]
+    assert vmeta.value == data["value"]
 
 
 # -----------------------------------------------
@@ -220,6 +243,37 @@ def test_variantdescription_hexdigest():
     expected_hexdigest = expected_hash.hexdigest(int(VARIANT_HASH_LEN / 2))
 
     assert variant_description.hexdigest == expected_hexdigest
+
+
+def test_variantdescription_serialization():
+    vmeta = VariantMeta(provider="provider", key="key", value="value")
+    vdesc = VariantDescription(data=[vmeta])
+
+    assert vdesc.serialize() == [
+        {
+            "provider": "provider",
+            "key": "key",
+            "value": "value",
+        }
+    ]
+
+
+def test_variantdescription_deserialization():
+    data = [
+        {
+            "provider": "provider",
+            "key": "key",
+            "value": "value",
+        }
+    ]
+
+    vdesc = VariantDescription.deserialize(data)
+
+    assert len(vdesc.data) == 1
+    assert vdesc.data[0].provider == "provider"
+    assert vdesc.data[0].key == "key"
+    assert vdesc.data[0].value == "value"
+    assert vdesc.hexdigest == "5b7306b3"
 
 
 # -----------------------------------------------

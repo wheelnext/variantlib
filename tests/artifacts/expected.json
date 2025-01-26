@@ -1,0 +1,785 @@
+[
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        },
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.3"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.2"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1.1"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "driver_version",
+            "value": "1"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3.4"
+        }
+    ],
+    [
+        {
+            "provider": "custom_hw",
+            "key": "hw_architecture",
+            "value": "3"
+        }
+    ],
+    [
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "10GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "1GBPS"
+        }
+    ],
+    [
+        {
+            "provider": "networking",
+            "key": "speed",
+            "value": "100MBPS"
+        }
+    ]
+]

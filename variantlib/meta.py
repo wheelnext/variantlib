@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from typing import Self
 
 from attrs import Converter
+from attrs import asdict
 from attrs import field
 from attrs import frozen
 from attrs import validators
@@ -64,6 +65,14 @@ class VariantMeta:
 
         # Return an instance of VariantMeta using the parsed values
         return cls(provider=provider, key=key, value=value)
+
+    def serialize(self) -> dict[str, str]:
+        return asdict(self)
+
+    @classmethod
+    def deserialize(cls, data: dict[str, str]) -> Self:
+        assert all(key in data for key in ["provider", "key", "value"])
+        return cls(**data)
 
 
 def _sort_variantmetas(value: list[VariantMeta]) -> list[VariantMeta]:
@@ -127,3 +136,10 @@ class VariantDescription:
             hash_object.update(vmeta.to_str().encode("utf-8"))
 
         return hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
+
+    @classmethod
+    def deserialize(cls, data: list[dict[str, str]]) -> Self:
+        return cls(data=[VariantMeta.deserialize(vdata) for vdata in data])
+
+    def serialize(self) -> list[dict[str, str]]:
+        return [vmeta.serialize() for vmeta in self.data]
