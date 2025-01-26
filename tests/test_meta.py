@@ -40,14 +40,7 @@ def test_variantmeta_data():
     # Test the repr method of VariantMeta
     variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     expected_data = "OmniCorp :: access_key :: secret_value"
-    assert variant.data == expected_data
-
-
-def test_variantmeta_repr():
-    # Test the repr method of VariantMeta
-    variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    expected_data = "<VariantMeta: `OmniCorp :: access_key :: secret_value`>"
-    assert repr(variant) == expected_data
+    assert variant.to_str() == expected_data
 
 
 def test_variantmeta_hash():
@@ -67,7 +60,7 @@ def test_variantmeta_val_property():
     # Test the val property
     variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     expected_val = "OmniCorp :: access_key :: secret_value"
-    assert variant.data == expected_val
+    assert variant.to_str() == expected_val
 
 
 def test_failing_regex_provider():
@@ -106,9 +99,6 @@ def test_from_str_valid():
     assert variant_meta.provider == "OmniCorp"
     assert variant_meta.key == "access_key"
     assert variant_meta.value == "secret_value"
-    assert (
-        repr(variant_meta) == "<VariantMeta: `OmniCorp :: access_key :: secret_value`>"
-    )
 
 
 def test_from_str_missing_parts():
@@ -140,9 +130,6 @@ def test_from_str_trailing_spaces():
     assert variant_meta.provider == "OmniCorp"
     assert variant_meta.key == "access_key"
     assert variant_meta.value == "secret_value"
-    assert (
-        repr(variant_meta) == "<VariantMeta: `OmniCorp :: access_key :: secret_value`>"
-    )
 
 
 def test_from_str_invalid_format():
@@ -156,17 +143,6 @@ def test_from_str_invalid_format():
 # -----------------------------------------------
 # Test for VariantDescription Class
 # -----------------------------------------------
-
-
-def test_variantdesc_repr():
-    # Test the repr method of VariantMeta
-    variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    variant_description = VariantDescription([variant])
-    expected_data = (
-        "<VariantDescription: "
-        "[<VariantMeta: `OmniCorp :: access_key :: secret_value`>]>"
-    )
-    assert repr(variant_description) == expected_data
 
 
 def test_variantdescription_initialization():
@@ -185,7 +161,7 @@ def test_variantdescription_initialization():
 
 def test_variantdescription_invalid_data():
     # Test invalid data (not a list or tuple)
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         VariantDescription("invalid_data")
 
     # Test data containing non-VariantMeta instances
@@ -239,8 +215,8 @@ def test_variantdescription_hexdigest():
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     expected_hash = hashlib.shake_128()
-    expected_hash.update(meta1.data.encode("utf-8"))
-    expected_hash.update(meta2.data.encode("utf-8"))
+    expected_hash.update(meta1.to_str().encode("utf-8"))
+    expected_hash.update(meta2.to_str().encode("utf-8"))
     expected_hexdigest = expected_hash.hexdigest(int(VARIANT_HASH_LEN / 2))
 
     assert variant_description.hexdigest == expected_hexdigest

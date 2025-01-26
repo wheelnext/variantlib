@@ -1,35 +1,36 @@
 import re
 
-import attr
-from attr import validators
+from attrs import field
+from attrs import frozen
+from attrs import validators
 
 from variantlib import _VALIDATION_REGEX
 
 
-@attr.s(frozen=True, repr=False)
+@frozen
 class KeyConfig:
-    key: str = attr.ib(
+    key: str = field(
         validator=[
             validators.instance_of(str),
             validators.matches_re(_VALIDATION_REGEX),
         ]
     )
+
     # Acceptable values in priority order
-    values: list[str] = attr.ib(validator=validators.instance_of(list))
+    values: list[str] = field(validator=validators.instance_of(list))
 
-    def __repr__(self):
-        return f"KeyConfig(key='{self.key}', values={self.values})"
-
-    # Custom validation method to ensure that no key has duplicate values
-    def __attrs_post_init__(self):
-        self._validate_values()
-
-    def _validate_values(self):
-        assert len(self.values) > 0
-        assert all(isinstance(value, str) for value in self.values)
+    @values.validator
+    def validate_configs(self, _, data: list[str]) -> None:
+        """The field `values` must comply with the following
+        - Being a non-empty list of string
+        - Each value inside the list must be unique
+        - Each value inside the list must comply with `_VALIDATION_REGEX`
+        """
+        assert len(data) > 0
+        assert all(isinstance(config, str) for config in data)
 
         seen = set()
-        for value in self.values:
+        for value in data:
             if value in seen:
                 raise ValueError(f"Duplicate value found: '{value}' in `values`.")
 
@@ -41,32 +42,31 @@ class KeyConfig:
             seen.add(value)
 
 
-@attr.s(frozen=True, repr=False)
+@frozen
 class ProviderConfig:
-    provider: str = attr.ib(
+    provider: str = field(
         validator=[
             validators.instance_of(str),
             validators.matches_re(_VALIDATION_REGEX),
         ]
     )
+
     # `KeyConfigs` in priority order
-    configs: list[KeyConfig] = attr.ib(validator=validators.instance_of(list))
+    configs: list[KeyConfig] = field(validator=validators.instance_of(list))
 
-    # Custom validation method to ensure that no key has duplicate values
-    def __attrs_post_init__(self):
-        self._validate_configs()
-
-    def _validate_configs(self):
-        assert len(self.configs) > 0
-        assert all(isinstance(config, KeyConfig) for config in self.configs)
+    @configs.validator
+    def validate_configs(self, _, data: list[KeyConfig]) -> None:
+        """The field `configs` must comply with the following
+        - Being a non-empty list of `KeyConfig`
+        - Each value inside the list must be unique
+        """
+        assert len(data) > 0
+        assert all(isinstance(config, KeyConfig) for config in data)
 
         # Check that no KeyConfig has duplicate keys
         seen = set()
-        for config in self.configs:
+        for config in data:
             key = config.key
             if key in seen:
                 raise ValueError(f"Duplicate `KeyConfig` for {key=} found.")
             seen.add(key)
-
-    def __repr__(self):
-        return f"ProviderConfig(provider='{self.provider}', configs={self.configs})"
