@@ -1,4 +1,5 @@
 import hashlib
+import re
 
 import attr
 from attr import validators
@@ -39,6 +40,30 @@ class VariantMeta:
     def data(self):
         # Variant: <provider> :: <key> :: <val>
         return f"{self.provider} :: {self.key} :: {self.value}"
+
+    @classmethod
+    def from_str(cls, input_str: str):
+        subpattern = _VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
+        pattern = rf"^(?P<provider>{subpattern}) :: (?P<key>{subpattern}) :: (?P<value>{subpattern})$"  # noqa: E501
+
+        # Try matching the input string with the regex pattern
+        match = re.match(pattern, input_str.strip())
+
+        if match is None:
+            raise ValueError(
+                f"Invalid format: {input_str}. "
+                "Expected format: '<provider> :: <key> :: <value>'"
+            )
+
+        # Extract the provider, key, and value from the match groups
+        provider = match.group("provider")
+        key = match.group("key")
+        value = match.group("value")
+
+        print(f"{value=}")
+
+        # Return an instance of VariantMeta using the parsed values
+        return cls(provider=provider, key=key, value=value)
 
 
 class VariantDescription:

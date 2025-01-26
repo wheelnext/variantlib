@@ -97,6 +97,62 @@ def test_failing_regex_value():
             _ = VariantMeta(provider="provider", key="key", value=f"val{c}ue")
 
 
+def test_from_str_valid():
+    # Test case: Valid string input
+    input_str = "OmniCorp :: access_key :: secret_value"
+    variant_meta = VariantMeta.from_str(input_str)
+
+    # Check if the resulting object matches the expected values
+    assert variant_meta.provider == "OmniCorp"
+    assert variant_meta.key == "access_key"
+    assert variant_meta.value == "secret_value"
+    assert (
+        repr(variant_meta) == "<VariantMeta: `OmniCorp :: access_key :: secret_value`>"
+    )
+
+
+def test_from_str_missing_parts():
+    with pytest.raises(ValueError, match="Invalid format"):
+        VariantMeta.from_str("OmniCorp :: access_key")
+
+
+def test_from_str_extra_colons():
+    with pytest.raises(ValueError, match="Invalid format"):
+        VariantMeta.from_str("OmniCorp :: access_key :: secret_value :: extra")
+
+
+def test_from_str_empty_value():
+    with pytest.raises(ValueError, match="Invalid format"):
+        VariantMeta.from_str("OmniCorp :: access_key ::")
+
+
+def test_from_str_edge_case_empty_string():
+    with pytest.raises(ValueError, match="Invalid format"):
+        VariantMeta.from_str("")
+
+
+def test_from_str_trailing_spaces():
+    # Test case: Input with leading/trailing spaces
+    input_str = "   OmniCorp :: access_key :: secret_value   "
+    variant_meta = VariantMeta.from_str(input_str.strip())
+
+    # Check if it still correctly parses and matches the expected values
+    assert variant_meta.provider == "OmniCorp"
+    assert variant_meta.key == "access_key"
+    assert variant_meta.value == "secret_value"
+    assert (
+        repr(variant_meta) == "<VariantMeta: `OmniCorp :: access_key :: secret_value`>"
+    )
+
+
+def test_from_str_invalid_format():
+    # Test case: Input with invalid format
+    input_str = "OmniCorp, access_key, secret_value"
+
+    with pytest.raises(ValueError, match="Invalid format"):
+        VariantMeta.from_str(input_str)
+
+
 # -----------------------------------------------
 # Test for VariantDescription Class
 # -----------------------------------------------
@@ -106,7 +162,10 @@ def test_variantdesc_repr():
     # Test the repr method of VariantMeta
     variant = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     variant_description = VariantDescription([variant])
-    expected_data = "<VariantDescription: [<VariantMeta: `OmniCorp :: access_key :: secret_value`>]>"
+    expected_data = (
+        "<VariantDescription: "
+        "[<VariantMeta: `OmniCorp :: access_key :: secret_value`>]>"
+    )
     assert repr(variant_description) == expected_data
 
 
@@ -121,7 +180,7 @@ def test_variantdescription_initialization():
     # Check that the _data property is a list
     assert isinstance(variant_description.data, list)
     assert len(variant_description.data) == 2
-    assert variant_description.data == list([meta1, meta2])
+    assert variant_description.data == [meta1, meta2]
 
 
 def test_variantdescription_invalid_data():
@@ -143,7 +202,7 @@ def test_variantdescription_duplicate_data():
     # Test that duplicate VariantMeta instances are removed
     meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     with pytest.raises(ValueError, match="Duplicate value"):
-        variant_description = VariantDescription([meta1, meta1])
+        _ = VariantDescription([meta1, meta1])
 
 
 def test_variantdescription_partial_duplicate_data():
@@ -151,7 +210,7 @@ def test_variantdescription_partial_duplicate_data():
     meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
     meta2 = VariantMeta(provider="OmniCorp", key="access_key", value="another_value")
     with pytest.raises(ValueError, match="Duplicate value"):
-        variant_description = VariantDescription([meta1, meta2])
+        _ = VariantDescription([meta1, meta2])
 
 
 def test_variantdescription_sorted_data():
@@ -193,7 +252,7 @@ def test_variantdescription_hexdigest():
 
 
 @pytest.mark.parametrize(
-    "provider,key,value",
+    ("provider", "key", "value"),
     [
         ("OmniCorp", "access_key", "secret_value"),
         ("TyrellCorporation", "client_id", "secret_key"),

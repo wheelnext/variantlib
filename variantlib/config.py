@@ -33,7 +33,7 @@ class KeyConfig:
             if value in seen:
                 raise ValueError(f"Duplicate value found: '{value}' in `values`.")
 
-            if re.fullmatch(_VALIDATION_REGEX, value) is None:
+            if re.match(_VALIDATION_REGEX, value) is None:
                 raise ValueError(
                     f"The value '{value}' does not follow the proper format."
                 )
