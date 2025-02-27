@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def analyze(args):
+def analyze_wheel(args):
     parser = argparse.ArgumentParser(
-        prog="analyze", description="Analyze a Wheel file for Variant Information"
+        prog="analyze_wheel", description="Analyze a Wheel file for Variant Information"
     )
     parser.add_argument(
         "-i",

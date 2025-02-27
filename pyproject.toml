@@ -53,7 +53,8 @@ test = [
 variantlib = "variantlib.commands.main:main"
 
 [project.entry-points."variantlib.actions"]
-analyze = "variantlib.commands.analyze:analyze"
+analyze_wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
+analyze_platform = "variantlib.commands.analyze_platform:analyze_platform"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]

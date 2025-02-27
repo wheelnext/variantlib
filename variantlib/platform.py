@@ -31,7 +31,7 @@ class VariantCache:
 
 
 @VariantCache()
-def _read_configuration() -> dict[str, ProviderConfig]:
+def _query_variant_plugins() -> dict[str, ProviderConfig]:
     logger.info("Discovering Wheel Variant plugins...")
     plugins = entry_points().select(group="variantlib.plugins")
 
@@ -130,7 +130,7 @@ def get_variant_hashes_by_priority(
                 key=lambda plg: provider_priority_dict.get(plg.name, float("inf")),
             )
 
-    provider_cfgs = _read_configuration()
+    provider_cfgs = _query_variant_plugins()
     sorted_provider_cfgs = [provider_cfgs[plugin.name] for plugin in plugins]
 
     if sorted_provider_cfgs:
