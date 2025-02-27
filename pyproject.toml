@@ -49,6 +49,12 @@ test = [
     "parameterized>=0.9.0,<0.10",
 ]
 
+[project.scripts]
+variantlib = "variantlib.commands.main:main"
+
+[project.entry-points."variantlib.actions"]
+analyze = "variantlib.commands.analyze:analyze"
+
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
 addopts = "-vvv --cov=variantlib --cov-report=term-missing"

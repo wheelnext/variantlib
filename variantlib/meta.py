@@ -143,3 +143,10 @@ class VariantDescription:
 
     def serialize(self) -> list[dict[str, str]]:
         return [vmeta.serialize() for vmeta in self.data]
+
+    def pretty_print(self) -> str:
+        result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
+        for vmeta in self:
+            result_str += f"\nVariant Metadata: {vmeta.to_str()}"
+        result_str += f"\n{'#' * 80}\n"
+        return result_str
