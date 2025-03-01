@@ -55,6 +55,7 @@ variantlib = "variantlib.commands.main:main"
 [project.entry-points."variantlib.actions"]
 analyze_wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
 analyze_platform = "variantlib.commands.analyze_platform:analyze_platform"
+generate_index_json = "variantlib.commands.generate_index_json:generate_index_json"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
