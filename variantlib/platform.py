@@ -6,6 +6,7 @@ from functools import cache
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
+from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
 from variantlib.config import ProviderConfig
 
@@ -82,6 +83,7 @@ def _query_variant_plugins() -> dict[str, ProviderConfig]:
 
 def get_variant_hashes_by_priority(
     provider_priority_dict: dict[str:int] | None = None,
+    variants_json: dict | None = None,
 ) -> Generator[VariantDescription]:
     plugins = entry_points().select(group="variantlib.plugins")
 
@@ -134,7 +136,11 @@ def get_variant_hashes_by_priority(
     sorted_provider_cfgs = [provider_cfgs[plugin.name] for plugin in plugins]
 
     if sorted_provider_cfgs:
-        for variant_desc in get_combinations(sorted_provider_cfgs):
-            yield variant_desc.hexdigest
+        if (variants_json or {}).get("variants") is not None:
+            for variant_desc in filtered_sorted_variants(variants_json["variants"], sorted_provider_cfgs):
+                yield variant_desc.hexdigest
+        else:
+            for variant_desc in get_combinations(sorted_provider_cfgs):
+                yield variant_desc.hexdigest
     else:
         yield from []
