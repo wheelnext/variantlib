@@ -57,7 +57,7 @@ def filtered_sorted_variants(variants_from_json: dict,
 
     def variant_filter(desc: VariantDescription):
         # Filter out the variant, unless all of its metas are supported.
-        return all(meta.value in providers.get(meta.provider, {})[1].get(meta.key, {})[1]
+        return all(meta.value in providers.get(meta.provider, (0, {}))[1].get(meta.key, (0, {}))[1]
                    for meta in desc)
 
     def meta_key(meta: VariantMeta) -> tuple[int, int, int]:
