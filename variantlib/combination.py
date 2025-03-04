@@ -88,12 +88,14 @@ def filtered_sorted_variants(variants_from_json: dict,
         # Variants with more matched values should go first.
         yield -len(desc.data)
         # Sort meta sort keys by their sort keys, so that metas containing
-        # more preferred sort key sort first.  We then combine these sorted
-        # sort keys, so that descs themselves are sorted according to their
-        # most preferred (provider, key, value) tuples -- and if these match,
-        # they sort according to the next most preferred tuple, and so on.
-        for x in sorted(meta_key(x) for x in desc.data):
-            yield from x
+        # more preferred sort key sort first.
+        meta_keys = sorted(meta_key(x) for x in desc.data)
+        # Order by provider priority first (variants with higher priority
+        # providers always go over lower priority providers), then by key
+        # and value priorities.
+        yield from (x[0] for x in meta_keys)
+        yield from (x[1] for x in meta_keys)
+        yield from (x[2] for x in meta_keys)
 
     res = sorted(filter(variant_filter,
                         unpack_variants_from_json(variants_from_json)),
