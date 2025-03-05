@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 import random
+import string
 
+from hypothesis import assume
+from hypothesis import given
+from hypothesis import strategies as st
 import jsondiff
 import pytest
 from variantlib.combination import filtered_sorted_variants
@@ -60,5 +64,52 @@ def desc_to_json(desc_list: list[VariantDescription]) -> dict:
 def test_filtered_sorted_variants_roundtrip(configs):
     """Test that we can round-trip all combinations via variants.json and get the same result."""
     combinations = list(get_combinations(configs))
+    variants_from_json = {k: v for k, v in desc_to_json(combinations)}
+    assert filtered_sorted_variants(variants_from_json, configs) == combinations
+
+
+@given(
+    st.lists(
+        min_size=1,
+        max_size=3,
+        unique_by=lambda provider_cfg: provider_cfg.provider,
+        elements=st.builds(
+            ProviderConfig,
+            provider=st.text(
+                string.ascii_letters + string.digits + "_", min_size=1, max_size=64
+            ),
+            configs=st.lists(
+                min_size=1,
+                max_size=2,
+                unique_by=lambda key_cfg: key_cfg.key,
+                elements=st.builds(
+                    KeyConfig,
+                    key=st.text(
+                        alphabet=string.ascii_letters + string.digits + "_",
+                        min_size=1,
+                        max_size=64,
+                    ),
+                    values=st.lists(
+                        min_size=1,
+                        max_size=3,
+                        unique=True,
+                        elements=st.text(
+                            alphabet=string.ascii_letters + string.digits + "_.",
+                            min_size=1,
+                            max_size=64,
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+)
+def test_filtered_sorted_variants_roundtrip_fuzz(configs):
+    def filter_long_combinations():
+        for i, x in enumerate(get_combinations(configs)):
+            assume(i < 65536)
+            yield x
+
+    combinations = list(filter_long_combinations())
     variants_from_json = {k: v for k, v in desc_to_json(combinations)}
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
