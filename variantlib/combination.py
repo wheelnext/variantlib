@@ -90,11 +90,8 @@ def filtered_sorted_variants(variants_from_json: dict,
         # Sort meta sort keys by their sort keys, so that metas containing
         # more preferred sort key sort first.
         meta_keys = sorted(meta_key(x) for x in desc.data)
-        # Order by provider priority first (variants with higher priority
-        # providers always go over lower priority providers), then by key
-        # and value priorities.
-        yield from (x[0] for x in meta_keys)
-        yield from (x[1] for x in meta_keys)
+        # Always prefer all values from the "stronger" keys over "weaker".
+        yield from (x[0:2] for x in meta_keys)
         yield from (x[2] for x in meta_keys)
 
     res = sorted(filter(variant_filter,
