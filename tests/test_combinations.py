@@ -4,6 +4,7 @@ import random
 import string
 
 from hypothesis import assume
+from hypothesis import example
 from hypothesis import given
 from hypothesis import strategies as st
 import jsondiff
@@ -68,6 +69,19 @@ def test_filtered_sorted_variants_roundtrip(configs):
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
 
 
+@example(
+    [
+        ProviderConfig(
+            provider="A",
+            configs=[
+                KeyConfig(key="A1", values=["x"]),
+                KeyConfig(key="A2", values=["x"]),
+            ],
+        ),
+        ProviderConfig(provider="B", configs=[KeyConfig(key="B1", values=["x"])]),
+        ProviderConfig(provider="C", configs=[KeyConfig(key="C1", values=["x"])]),
+    ]
+)
 @given(
     st.lists(
         min_size=1,
