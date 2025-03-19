@@ -34,9 +34,9 @@ dependencies = ["attrs>=24.3,<24.4"]
 dev = [
     "check-manifest",
     # Pre Commit Hooks
-    "pre-commit>=3.6.0,<3.7",
+    "pre-commit>=4,<5",
     # Linting
-    "ruff>=0.3,<0.4",
+    "ruff>=0.10,<1.0",
 ]
 test = [
     "jsondiff>=2.2,<2.3",
