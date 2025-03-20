@@ -2,39 +2,52 @@ import contextlib
 import hashlib
 import re
 from collections.abc import Iterator
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Self
-
-from attrs import Converter
-from attrs import asdict
-from attrs import field
-from attrs import frozen
-from attrs import validators
 
 from variantlib.constants import VALIDATION_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.validators import validate_instance_of
+from variantlib.validators import validate_list_of
+from variantlib.validators import validate_matches_re
 
 
-@frozen
+@dataclass(frozen=True)
 class VariantMeta:
     provider: str = field(
-        validator=[
-            validators.instance_of(str),
-            validators.matches_re(VALIDATION_REGEX),
-        ]
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, str),
+                lambda v: validate_matches_re(v, VALIDATION_REGEX),
+            ]
+        }
     )
     key: str = field(
-        validator=[
-            validators.instance_of(str),
-            validators.matches_re(VALIDATION_REGEX),
-        ]
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, str),
+                lambda v: validate_matches_re(v, VALIDATION_REGEX),
+            ]
+        }
     )
     value: str = field(
-        validator=[
-            validators.instance_of(str),
-            validators.matches_re(VALIDATION_VALUE_REGEX),
-        ]
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, str),
+                lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
+            ]
+        }
     )
+
+    def __post_init__(self):
+        # Execute the validators
+        for field_name, field_def in self.__dataclass_fields__.items():
+            value = getattr(self, field_name)
+            for validator in field_def.metadata.get("validators", []):
+                validator(value)
 
     def __hash__(self) -> int:
         # Variant Metas are unique in provider & key and ignore the value.
@@ -75,16 +88,8 @@ class VariantMeta:
         return cls(**data)
 
 
-def _sort_variantmetas(value: list[VariantMeta]) -> list[VariantMeta]:
-    # We sort the data so that they always get displayed/hashed
-    # in a consistent manner.
-    with contextlib.suppress(AttributeError):
-        return sorted(value, key=lambda x: (x.provider, x.key))
-    # Error will be rejected during validation
-    return value
-
-
-@frozen
+@dataclass(frozen=True)
+# @dataclass
 class VariantDescription:
     """
     A `Variant` is being described by a N >= 1 `VariantMeta` metadata.
@@ -96,17 +101,31 @@ class VariantDescription:
     """
 
     data: list[VariantMeta] = field(
-        validator=validators.instance_of(list), converter=Converter(_sort_variantmetas)
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, list),
+                lambda v: validate_list_of(v, VariantMeta),
+            ]
+        }
     )
 
-    @data.validator
-    def validate_data(self, _, data: list[VariantMeta]) -> None:
-        """The field `data` must comply with the following
-        - Being a non-empty list of `VariantMeta`
-        - Each value inside the list must be unique
-        """
-        assert len(data) > 0
-        assert all(isinstance(inst, VariantMeta) for inst in data)
+    def __post_init__(self):
+        # Execute the validators
+        for field_name, field_def in self.__dataclass_fields__.items():
+            value = getattr(self, field_name)
+            for validator in field_def.metadata.get("validators", []):
+                validator(value)
+
+        # We verify `data` is not empty
+        assert len(self.data) > 0
+
+        # We sort the data so that they always get displayed/hashed
+        # in a consistent manner.
+        with contextlib.suppress(AttributeError):
+            # Only "legal way" to modify a frozen dataclass attribute post init.
+            object.__setattr__(
+                self, "data", sorted(self.data, key=lambda x: (x.provider, x.key))
+            )
 
         # Detect multiple `VariantMeta` with identical provider/key
         # Ignores the attribute `value` of `VariantMeta`.
@@ -116,7 +135,7 @@ class VariantDescription:
         #       an exception when there is a collision instead of
         #       a silent behavior.
         seen = set()
-        for vmeta in data:
+        for vmeta in self.data:
             vmeta_hash = hash(vmeta)
             if vmeta_hash in seen:
                 raise ValueError(

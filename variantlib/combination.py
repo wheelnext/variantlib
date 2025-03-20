@@ -20,7 +20,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     data = [
         [
             VariantMeta(provider=provider_cnf.provider, key=key_config.key, value=val)
-            for val in key_config.values  # noqa: PD011
+            for val in key_config.values
         ]
         for provider_cnf in data
         for key_config in provider_cnf.configs
@@ -30,27 +30,26 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     for r in range(len(data), 0, -1):
         for combo in itertools.combinations(data, r):
             for vmetas in itertools.product(*combo):
-                yield VariantDescription(data=vmetas)
+                yield VariantDescription(data=list(vmetas))
 
 
-def unpack_variants_from_json(variants_from_json: dict
-                              ) -> Generator[VariantDescription]:
+def unpack_variants_from_json(
+    variants_from_json: dict,
+) -> Generator[VariantDescription]:
     def variant_to_metas(providers: dict) -> VariantMeta:
         for provider, keys in providers.items():
             for key, value in keys.items():
-                yield VariantMeta(provider=provider,
-                                  key=key,
-                                  value=value)
+                yield VariantMeta(provider=provider, key=key, value=value)
 
     for variant_hash, providers in variants_from_json.items():
-        desc = VariantDescription(variant_to_metas(providers))
+        desc = VariantDescription(list(variant_to_metas(providers)))
         assert variant_hash == desc.hexdigest
         yield desc
 
 
-def filtered_sorted_variants(variants_from_json: dict,
-                             data: list[ProviderConfig]
-                             ) -> Generator[VariantDescription]:
+def filtered_sorted_variants(  # noqa: C901
+    variants_from_json: dict, data: list[ProviderConfig]
+) -> Generator[VariantDescription]:
     providers = {}
     for provider_idx, provider_cnf in enumerate(data):
         keys = {}
@@ -94,15 +93,26 @@ def filtered_sorted_variants(variants_from_json: dict,
         yield from (x[0:2] for x in meta_keys)
         yield from (x[2] for x in meta_keys)
 
-    res = sorted(filter(variant_filter,
-                        unpack_variants_from_json(variants_from_json)),
-                 key=lambda x: tuple(variant_sort_key_gen(x)))
+    res = sorted(
+        filter(variant_filter, unpack_variants_from_json(variants_from_json)),
+        key=lambda x: tuple(variant_sort_key_gen(x)),
+    )
+
     if missing_providers:
-        logger.warn("No plugins provide the following variant providers: "
-                    f"{' '.join(missing_providers)}; some variants will be ignored")
+        logger.warning(
+            "No plugins provide the following variant providers: "
+            "%(provider)s; some variants will be ignored",
+            provider=" ".join(missing_providers),
+        )
+
     for provider, provider_missing_keys in missing_keys.items():
-        logger.warn(f"The {provider} provider does not provide the following expected keys: "
-                    f"{' '.join(provider_missing_keys)}; some variants will be ignored")
+        logger.warning(
+            "The %(provider)s provider does not provide the following expected keys: "
+            "%(missing_keys)s; some variants will be ignored",
+            provider=provider,
+            missing_keys=" ".join(provider_missing_keys),
+        )
+
     return res
 
 

@@ -1,4 +1,5 @@
 import pytest
+
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
 
@@ -7,7 +8,7 @@ def test_key_config_creation_valid():
     """Test valid creation of KeyConfig."""
     key_config = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
     assert key_config.key == "attr_nameA"
-    assert key_config.values == ["7", "4", "8", "12"]  # noqa: PD011
+    assert key_config.values == ["7", "4", "8", "12"]
 
 
 def test_provider_config_creation_valid():
