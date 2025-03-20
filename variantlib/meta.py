@@ -89,7 +89,6 @@ class VariantMeta:
 
 
 @dataclass(frozen=True)
-# @dataclass
 class VariantDescription:
     """
     A `Variant` is being described by a N >= 1 `VariantMeta` metadata.
