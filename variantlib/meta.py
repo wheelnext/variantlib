@@ -47,7 +47,7 @@ class VariantMeta:
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         subpattern = VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
-        pattern = rf"^(?P<provider>{subpattern}) :: (?P<key>{subpattern}) :: (?P<value>{subpattern})$"  # noqa: E501
+        pattern = rf"^(?P<provider>{subpattern})\s*::\s*(?P<key>{subpattern})\s*::\s*(?P<value>{subpattern})$"  # noqa: E501
 
         # Try matching the input string with the regex pattern
         match = re.match(pattern, input_str.strip())
