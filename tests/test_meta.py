@@ -90,9 +90,16 @@ def test_failing_regex_value():
             _ = VariantMeta(provider="provider", key="key", value=f"val{c}ue")
 
 
-def test_from_str_valid():
+@pytest.mark.parametrize(
+    "input_str",
+    [
+        "OmniCorp :: access_key :: secret_value",
+        "OmniCorp::access_key::secret_value",
+        "OmniCorp ::access_key::     secret_value",
+    ],
+)
+def test_from_str_valid(input_str: str):
     # Test case: Valid string input
-    input_str = "OmniCorp :: access_key :: secret_value"
     variant_meta = VariantMeta.from_str(input_str)
 
     # Check if the resulting object matches the expected values
