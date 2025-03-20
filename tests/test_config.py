@@ -86,7 +86,7 @@ def test_provider_config_invalid_configs_type():
 
 def test_provider_config_invalid_key_type_in_configs():
     """Test that invalid `KeyConfig` inside `ProviderConfig` raises an error."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         ProviderConfig(
             provider="provider_name",
             configs=[{"key": "attr_nameA", "values": ["7", "4", "8", "12"]}],
@@ -103,7 +103,7 @@ def test_provider_config_invalid_key_config_type():
     """Test that invalid key config types within ProviderConfig raise an error."""
     from types import SimpleNamespace
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         ProviderConfig(
             provider="provider_name",
             configs=[
