@@ -85,7 +85,7 @@ def get_variant_hashes_by_priority(
     provider_priority_dict: dict[str:int] | None = None,
     variants_json: dict | None = None,
 ) -> Generator[VariantDescription]:
-    plugins = entry_points().select(group="variantlib.plugins")
+    provider_cfgs = _query_variant_plugins()
 
     # sorting providers in priority order:
     if provider_priority_dict is not None:
@@ -117,27 +117,34 @@ def get_variant_hashes_by_priority(
                     logger.warning("Value: %s -> Keys: %s", value, keys)
 
             # ----------- Checking if two plugins hold the same priority ----------- #
-            for plugin in plugins:
-                if plugin.name not in provider_priority_dict:
+            for plugin_name in provider_cfgs:
+                if plugin_name not in provider_priority_dict:
                     logger.warning(
                         "Plugin: %s is not present in the `provider_priority_dict`. "
                         "Will be treated as lowest priority.",
-                        plugin.name,
+                        plugin_name,
                     )
                     continue
 
             # ------------------- Sorting the plugins by priority ------------------ #
             plugins = sorted(
-                plugins,
-                key=lambda plg: provider_priority_dict.get(plg.name, float("inf")),
+                provider_cfgs,
+                key=lambda plugin_name: provider_priority_dict.get(
+                    plugin_name, float("inf")
+                ),
             )
 
-    provider_cfgs = _query_variant_plugins()
-    sorted_provider_cfgs = [provider_cfgs[plugin.name] for plugin in plugins]
+            sorted_provider_cfgs = [
+                provider_cfgs[plugin_name] for plugin_name in plugins
+            ]
+    else:
+        sorted_provider_cfgs = list(provider_cfgs.values())
 
     if sorted_provider_cfgs:
         if (variants_json or {}).get("variants") is not None:
-            for variant_desc in filtered_sorted_variants(variants_json["variants"], sorted_provider_cfgs):
+            for variant_desc in filtered_sorted_variants(
+                variants_json["variants"], sorted_provider_cfgs
+            ):
                 yield variant_desc.hexdigest
         else:
             for variant_desc in get_combinations(sorted_provider_cfgs):
