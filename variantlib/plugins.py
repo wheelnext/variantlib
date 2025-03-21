@@ -17,6 +17,14 @@ class PluginLoader:
         self._dist_names = {}
         self._loaded = False
 
+    @cache
+    @staticmethod
+    def create() -> PluginLoader:
+        """Return a cached instance of PluginLoader with plugins loaded"""
+        loader = PluginLoader()
+        loader.load_plugins()
+        return loader
+
     def load_plugins(self) -> None:
         """Find, load and instantiate all plugins"""
 
@@ -82,11 +90,3 @@ class PluginLoader:
         assert self._loaded
 
         return self._dist_names
-
-
-@cache
-def load_plugins() -> PluginLoader:
-    """Return a cached instance of PluginLoader with plugins loaded"""
-    loader = PluginLoader()
-    loader.load_plugins()
-    return loader

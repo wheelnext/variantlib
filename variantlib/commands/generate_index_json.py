@@ -7,7 +7,7 @@ import pathlib
 import zipfile
 
 from variantlib.meta import VariantMeta
-from variantlib.plugins import load_plugins
+from variantlib.plugins import PluginLoader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -75,7 +75,7 @@ def generate_index_json(args):
                     f"{wheel}: different metadata assigned to {variant_hash}"
                 )
 
-    all_plugins = load_plugins().get_dist_name_mapping()
+    all_plugins = PluginLoader.create().get_dist_name_mapping()
     provider_requires = set()
     for provider in known_providers:
         if (plugin := all_plugins.get(provider)) is not None:

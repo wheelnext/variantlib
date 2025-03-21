@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
-from variantlib.plugins import load_plugins
+from variantlib.plugins import PluginLoader
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -32,7 +32,7 @@ class VariantCache:
 
 @VariantCache()
 def _query_variant_plugins() -> dict[str, ProviderConfig]:
-    return load_plugins().get_provider_configs()
+    return PluginLoader.create().get_provider_configs()
 
 
 def get_variant_hashes_by_priority(
