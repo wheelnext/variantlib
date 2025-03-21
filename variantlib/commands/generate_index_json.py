@@ -5,42 +5,12 @@ import json
 import logging
 import pathlib
 import zipfile
-from importlib.metadata import entry_points
-from typing import Iterable
 
 from variantlib.meta import VariantMeta
+from variantlib.plugins import load_plugins
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-def get_variant_plugins() -> Iterable[tuple[str, str]]:
-    logger.info("Discovering Wheel Variant plugins...")
-    plugins = entry_points().select(group="variantlib.plugins")
-
-    seen = set()
-    duplicates = set()
-    for plugin_name in [plugin.name for plugin in plugins]:
-        if plugin_name in seen:
-            duplicates.add(plugin_name)
-        else:
-            seen.add(plugin_name)
-
-    if duplicates:
-        logger.warning(
-            "Duplicate plugins found: %s - Unpredicatable behavior.", duplicates
-        )
-
-    for plugin in plugins:
-        try:
-            logger.info(
-                f"Loading plugin: {plugin.name} - v{plugin.dist.version}"
-            )  # noqa: G004
-            plugin_class = plugin.load()
-            # TODO: is __provider_name__ a public API?
-            yield (plugin_class.__provider_name__, plugin.dist.name)
-        except Exception:
-            logging.exception("An unknown error happened - Ignoring plugin")
 
 
 def generate_index_json(args):
@@ -105,7 +75,7 @@ def generate_index_json(args):
                     f"{wheel}: different metadata assigned to {variant_hash}"
                 )
 
-    all_plugins = dict(get_variant_plugins())
+    all_plugins = load_plugins().get_dist_name_mapping()
     provider_requires = set()
     for provider in known_providers:
         if (plugin := all_plugins.get(provider)) is not None:

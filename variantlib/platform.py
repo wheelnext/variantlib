@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from functools import cache
-from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
-from variantlib.config import ProviderConfig
+from variantlib.plugins import load_plugins
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from variantlib.config import ProviderConfig
     from variantlib.meta import VariantDescription
 
 logger = logging.getLogger(__name__)
@@ -33,52 +32,7 @@ class VariantCache:
 
 @VariantCache()
 def _query_variant_plugins() -> dict[str, ProviderConfig]:
-    logger.info("Discovering Wheel Variant plugins...")
-    plugins = entry_points().select(group="variantlib.plugins")
-
-    # ----------- Checking if two plugins have the same name ----------- #
-    seen = set()
-    duplicates = set()
-
-    for plugin_name in [plugin.name for plugin in plugins]:
-        if plugin_name in seen:
-            duplicates.add(plugin_name)
-        else:
-            seen.add(plugin_name)
-
-    if duplicates:
-        logger.warning(
-            "Duplicate plugins found: %s - Unpredicatable behavior.", duplicates
-        )
-
-    # ---------------------- Querying each plugin ---------------------- #
-    provider_cfgs = {}
-    for plugin in plugins:
-        try:
-            logger.info(f"Loading plugin: {plugin.name} - v{plugin.dist.version}")  # noqa: G004
-
-            # Dynamically load the plugin class
-            plugin_class = plugin.load()
-
-            # Instantiate the plugin
-            plugin_instance = plugin_class()
-
-            # Call the `run` method of the plugin
-            provider_cfg = plugin_instance.run()
-
-            if not isinstance(provider_cfg, ProviderConfig):
-                logging.error(
-                    f"Provider: {plugin.name} returned an unexpected type: "  # noqa: G004
-                    f"{type(provider_cfg)} - Expected: `ProviderConfig`. Ignoring..."
-                )
-                continue
-
-            provider_cfgs[plugin.name] = provider_cfg
-
-        except Exception:
-            logging.exception("An unknown error happened - Ignoring plugin")
-
-    return provider_cfgs
+    return load_plugins().get_provider_configs()
 
 
 def get_variant_hashes_by_priority(
