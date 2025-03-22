@@ -32,7 +32,7 @@ class VariantCache:
 
 @VariantCache()
 def _query_variant_plugins() -> dict[str, ProviderConfig]:
-    return PluginLoader.create().get_provider_configs()
+    return PluginLoader().get_provider_configs()
 
 
 def get_variant_hashes_by_priority(

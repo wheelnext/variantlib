@@ -5,25 +5,19 @@ from functools import cache
 from importlib.metadata import entry_points
 
 from variantlib.config import ProviderConfig
+from variantlib.metaclasses import SingletonMetaClass
 
 logger = logging.getLogger(__name__)
 
 
-class PluginLoader:
+class PluginLoader(metaclass=SingletonMeta):
     """Load and query plugins"""
 
     def __init__(self) -> None:
         self._plugins = {}
         self._dist_names = {}
-        self._loaded = False
 
-    @cache
-    @staticmethod
-    def create() -> PluginLoader:
-        """Return a cached instance of PluginLoader with plugins loaded"""
-        loader = PluginLoader()
-        loader.load_plugins()
-        return loader
+        load_plugins()
 
     def load_plugins(self) -> None:
         """Find, load and instantiate all plugins"""
@@ -62,12 +56,8 @@ class PluginLoader:
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
 
-        self._loaded = True
-
     def get_provider_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of plugin names to provider configs"""
-
-        assert self._loaded
 
         provider_cfgs = {}
         for name, plugin_instance in self._plugins.items():
@@ -86,7 +76,5 @@ class PluginLoader:
 
     def get_dist_name_mapping(self) -> dict[str, str]:
         """Get a mapping from plugin names to distribution names"""
-
-        assert self._loaded
 
         return self._dist_names
