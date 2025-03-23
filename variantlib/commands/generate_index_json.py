@@ -75,7 +75,7 @@ def generate_index_json(args):
                     f"{wheel}: different metadata assigned to {variant_hash}"
                 )
 
-    all_plugins = PluginLoader.create().get_dist_name_mapping()
+    all_plugins = PluginLoader().get_dist_name_mapping()
     provider_requires = set()
     for provider in known_providers:
         if (plugin := all_plugins.get(provider)) is not None:
