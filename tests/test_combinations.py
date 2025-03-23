@@ -1,14 +1,16 @@
 import json
-from pathlib import Path
 import random
 import string
+from collections.abc import Generator
+from pathlib import Path
 
+import jsondiff
+import pytest
 from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
 from hypothesis import strategies as st
-import jsondiff
-import pytest
+
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
 from variantlib.config import KeyConfig
@@ -51,7 +53,7 @@ def test_get_combinations(configs):
     assert not differences, f"Serialization altered JSON: {differences}"
 
 
-def desc_to_json(desc_list: list[VariantDescription]) -> dict:
+def desc_to_json(desc_list: list[VariantDescription]) -> Generator:
     shuffled_desc_list = list(desc_list)
     random.shuffle(shuffled_desc_list)
     for desc in shuffled_desc_list:
@@ -63,9 +65,10 @@ def desc_to_json(desc_list: list[VariantDescription]) -> dict:
 
 
 def test_filtered_sorted_variants_roundtrip(configs):
-    """Test that we can round-trip all combinations via variants.json and get the same result."""
+    """Test that we can round-trip all combinations via variants.json and get the same
+    result."""
     combinations = list(get_combinations(configs))
-    variants_from_json = {k: v for k, v in desc_to_json(combinations)}
+    variants_from_json = dict(desc_to_json(combinations))
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
 
 
@@ -125,5 +128,5 @@ def test_filtered_sorted_variants_roundtrip_fuzz(configs):
             yield x
 
     combinations = list(filter_long_combinations())
-    variants_from_json = {k: v for k, v in desc_to_json(combinations)}
+    variants_from_json = dict(desc_to_json(combinations))
     assert filtered_sorted_variants(variants_from_json, configs) == combinations

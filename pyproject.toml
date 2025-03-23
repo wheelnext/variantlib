@@ -28,7 +28,7 @@ maintainers = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
     { name = "Michael Sarahan", email = "msarahan@nvidia.com" },
 ]
-dependencies = ["attrs>=24.3,<24.4"]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [

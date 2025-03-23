@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from functools import cache
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
@@ -19,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class VariantCache:
+    """This class is not necessary today - can be used for finer cache control later."""
+
     def __init__(self):
         self.cache = None
 
@@ -137,7 +138,9 @@ def get_variant_hashes_by_priority(
 
     if sorted_provider_cfgs:
         if (variants_json or {}).get("variants") is not None:
-            for variant_desc in filtered_sorted_variants(variants_json["variants"], sorted_provider_cfgs):
+            for variant_desc in filtered_sorted_variants(
+                variants_json["variants"], sorted_provider_cfgs
+            ):
                 yield variant_desc.hexdigest
         else:
             for variant_desc in get_combinations(sorted_provider_cfgs):

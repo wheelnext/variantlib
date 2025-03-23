@@ -3,6 +3,7 @@ import random
 import string
 
 import pytest
+
 from variantlib import VARIANT_HASH_LEN
 from variantlib.meta import VariantDescription
 from variantlib.meta import VariantMeta
@@ -200,7 +201,7 @@ def test_variantdescription_invalid_data():
         "key": "access_key",
         "value": "secret_value",
     }
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         VariantDescription([invalid_meta])
 
 
