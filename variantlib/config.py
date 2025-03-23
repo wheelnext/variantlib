@@ -1,37 +1,51 @@
 import re
-
-from attrs import field
-from attrs import frozen
-from attrs import validators
+from dataclasses import dataclass
+from dataclasses import field
 
 from variantlib.constants import VALIDATION_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.validators import validate_instance_of
+from variantlib.validators import validate_list_of
+from variantlib.validators import validate_matches_re
 
 
-@frozen
+@dataclass(frozen=True)
 class KeyConfig:
     key: str = field(
-        validator=[
-            validators.instance_of(str),
-            validators.matches_re(VALIDATION_REGEX),
-        ]
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, str),
+                lambda v: validate_matches_re(v, VALIDATION_REGEX),
+            ]
+        }
     )
 
     # Acceptable values in priority order
-    values: list[str] = field(validator=validators.instance_of(list))
+    values: list[str] = field(
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, list),
+                lambda v: validate_list_of(v, str),
+            ]
+        }
+    )
 
-    @values.validator
-    def validate_configs(self, _, data: list[str]) -> None:
+    def __post_init__(self):
+        # Execute the validators
+        for field_name, field_def in self.__dataclass_fields__.items():
+            value = getattr(self, field_name)
+            for validator in field_def.metadata.get("validators", []):
+                validator(value)
+
+        # We verify `values` is not empty
+        assert len(self.values) > 0
+
         """The field `values` must comply with the following
-        - Being a non-empty list of string
         - Each value inside the list must be unique
         - Each value inside the list must comply with `VALIDATION_VALUE_REGEX`
         """
-        assert len(data) > 0
-        assert all(isinstance(config, str) for config in data)
-
         seen = set()
-        for value in data:
+        for value in self.values:
             if value in seen:
                 raise ValueError(f"Duplicate value found: '{value}' in `values`.")
 
@@ -43,30 +57,44 @@ class KeyConfig:
             seen.add(value)
 
 
-@frozen
+@dataclass(frozen=True)
 class ProviderConfig:
     provider: str = field(
-        validator=[
-            validators.instance_of(str),
-            validators.matches_re(VALIDATION_REGEX),
-        ]
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, str),
+                lambda v: validate_matches_re(v, VALIDATION_REGEX),
+            ]
+        }
     )
 
     # `KeyConfigs` in priority order
-    configs: list[KeyConfig] = field(validator=validators.instance_of(list))
+    configs: list[KeyConfig] = field(
+        metadata={
+            "validators": [
+                lambda v: validate_instance_of(v, list),
+                lambda v: validate_list_of(v, KeyConfig),
+            ]
+        }
+    )
 
-    @configs.validator
-    def validate_configs(self, _, data: list[KeyConfig]) -> None:
+    def __post_init__(self):
+        # Execute the validators
+        for field_name, field_def in self.__dataclass_fields__.items():
+            value = getattr(self, field_name)
+            for validator in field_def.metadata.get("validators", []):
+                validator(value)
+
+        # We verify `values` is not empty
+        assert len(self.configs) > 0
+
         """The field `configs` must comply with the following
-        - Being a non-empty list of `KeyConfig`
         - Each value inside the list must be unique
         """
-        assert len(data) > 0
-        assert all(isinstance(config, KeyConfig) for config in data)
 
         # Check that no KeyConfig has duplicate keys
         seen = set()
-        for config in data:
+        for config in self.configs:
             key = config.key
             if key in seen:
                 raise ValueError(f"Duplicate `KeyConfig` for {key=} found.")
@@ -77,7 +105,7 @@ class ProviderConfig:
         for kid, vconfig in enumerate(self.configs):
             result_str += (
                 f"\n\t- Variant Config [{kid + 1:03d}]: "
-                f"{vconfig.key} :: {vconfig.values}"  # noqa: PD011
+                f"{vconfig.key} :: {vconfig.values}"
             )
         result_str += f"\n{'#' * 80}\n"
         return result_str

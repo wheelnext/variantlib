@@ -17,7 +17,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     data = [
         [
             VariantMeta(provider=provider_cnf.provider, key=key_config.key, value=val)
-            for val in key_config.values  # noqa: PD011
+            for val in key_config.values
         ]
         for provider_cnf in data
         for key_config in provider_cnf.configs
@@ -27,7 +27,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     for r in range(len(data), 0, -1):
         for combo in itertools.combinations(data, r):
             for vmetas in itertools.product(*combo):
-                yield VariantDescription(data=vmetas)
+                yield VariantDescription(data=list(vmetas))
 
 
 if __name__ == "__main__":  # pragma: no cover

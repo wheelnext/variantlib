@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from functools import cache
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
@@ -18,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class VariantCache:
+    """This class is not necessary today - can be used for finer cache control later."""
+
     def __init__(self):
         self.cache = None
 
