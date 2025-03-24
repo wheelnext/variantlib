@@ -3,6 +3,7 @@
 
 import logging as _logging
 import sys
+from typing import Optional
 
 
 class _LoggerAPI:
@@ -65,7 +66,7 @@ class _LoggerAPI:
 
     @classmethod
     def setup_logger(
-        cls, handlers: list | None = None, formatter: _logging.Formatter | None = None
+        cls, handlers: Optional[list] = None, formatter: Optional[_logging.Formatter] = None
     ):
         if handlers is None:
             # Add the output handler.
