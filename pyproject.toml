@@ -18,7 +18,7 @@ name = "variantlib"
 version = "0.0.1.dev1"
 description = "A library to provide support for variants"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
