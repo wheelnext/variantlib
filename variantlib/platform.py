@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class VariantCache:
+    """This class is not necessary today - can be used for finer cache control later."""
+
     def __init__(self):
         self.cache = None
 
