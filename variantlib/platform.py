@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from importlib.metadata import entry_points
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from variantlib.combination import get_combinations
 from variantlib.config import ProviderConfig
@@ -82,7 +82,7 @@ def _query_variant_plugins() -> dict[str, ProviderConfig]:
 
 
 def get_variant_hashes_by_priority(
-    provider_priority_dict: dict[str:int] | None = None,
+    provider_priority_dict: Optional[dict[str:int]] = None,
 ) -> Generator[VariantDescription]:
     plugins = entry_points().select(group="variantlib.plugins")
 
