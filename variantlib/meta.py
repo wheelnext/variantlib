@@ -1,11 +1,16 @@
 import contextlib
 import hashlib
 import re
+import sys
 from collections.abc import Iterator
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Self
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 from variantlib.constants import VALIDATION_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
