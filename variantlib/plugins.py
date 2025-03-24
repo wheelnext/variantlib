@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from functools import cache
 from importlib.metadata import entry_points
 
 from variantlib.config import ProviderConfig
@@ -10,14 +9,13 @@ from variantlib.metaclasses import SingletonMetaClass
 logger = logging.getLogger(__name__)
 
 
-class PluginLoader(metaclass=SingletonMeta):
+class PluginLoader(metaclass=SingletonMetaClass):
     """Load and query plugins"""
 
     def __init__(self) -> None:
         self._plugins = {}
         self._dist_names = {}
-
-        load_plugins()
+        self.load_plugins()
 
     def load_plugins(self) -> None:
         """Find, load and instantiate all plugins"""
@@ -56,12 +54,12 @@ class PluginLoader(metaclass=SingletonMeta):
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
 
-    def get_provider_configs(self) -> dict[str, ProviderConfig]:
+    def get_supported_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of plugin names to provider configs"""
 
         provider_cfgs = {}
         for name, plugin_instance in self._plugins.items():
-            provider_cfg = plugin_instance.run()
+            provider_cfg = plugin_instance.get_supported_configs()
 
             if not isinstance(provider_cfg, ProviderConfig):
                 logging.error(
