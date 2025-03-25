@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from importlib.metadata import entry_points
 
+from variantlib.base import PluginType
 from variantlib.config import ProviderConfig
 from variantlib.metaclasses import SingletonMetaClass
 
@@ -48,6 +49,7 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
                 # Instantiate the plugin
                 self._plugins[plugin.name] = plugin_class()
+                assert isinstance(self._plugins[plugin.name], PluginType)
 
                 # Store package distribution names for later use
                 self._dist_names[plugin.name] = plugin.dist.name

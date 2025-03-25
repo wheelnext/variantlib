@@ -3,11 +3,12 @@ from typing import Any, Optional
 
 import pytest
 
-from variantlib.config import KeyConfig,ProviderConfig
+from variantlib.base import PluginBase
+from variantlib.config import KeyConfig, ProviderConfig
 from variantlib.plugins import PluginLoader
 
 
-class MockedPluginA:
+class MockedPluginA(PluginBase):
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
             provider="test_plugin",
@@ -18,6 +19,8 @@ class MockedPluginA:
         )
 
 
+# NB: this plugin deliberately does not inherit from PluginBase
+# to test that we don't rely on that inheritance
 class MockedPluginB:
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
@@ -28,7 +31,7 @@ class MockedPluginB:
         )
 
 
-class MockedPluginC:
+class MockedPluginC(PluginBase):
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return None
 
