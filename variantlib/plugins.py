@@ -92,3 +92,12 @@ class PluginLoader(metaclass=SingletonMetaClass):
         """Get a mapping from plugin names to distribution names"""
 
         return self._dist_names
+
+    def get_variant_labels(self, variant_desc: VariantDescription) -> list[str]:
+        """Get list of short labels to describe the variant"""
+
+        labels = []
+        for plugin in self._plugins.values():
+            labels += plugin.get_variant_labels(variant_desc)
+
+        return labels

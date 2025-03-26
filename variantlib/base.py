@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Protocol, runtime_checkable
 
 from variantlib.config import ProviderConfig
+from variantlib.meta import VariantDescription
 
 
 @runtime_checkable
@@ -17,6 +18,10 @@ class PluginType(Protocol):
         """Get supported configs for the current system"""
         ...
 
+    def get_variant_labels(self, variant_desc: VariantDescription) -> list[str]:
+        """Get list of short labels to describe the variant"""
+        ...
+
 
 class PluginBase(ABC):
     """An abstract base class that can be used to implement plugins"""
@@ -26,3 +31,6 @@ class PluginBase(ABC):
 
     @abstractmethod
     def get_supported_configs(self) -> ProviderConfig: ...
+
+    def get_variant_labels(self, variant_desc: VariantDescription) -> list[str]:
+        return []
