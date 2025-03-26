@@ -7,17 +7,17 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
 from variantlib.constants import VALIDATION_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.validators import validate_instance_of
 from variantlib.validators import validate_list_of
 from variantlib.validators import validate_matches_re
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 
 @dataclass(frozen=True)

@@ -1,47 +1,39 @@
+"""This file regroups the public API of the variantlib package."""
+
 from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
-from variantlib.plugins import PluginLoader
+from variantlib.config import KeyConfig
+from variantlib.config import ProviderConfig
+from variantlib.loader import PluginLoader
+from variantlib.meta import VariantDescription
+from variantlib.meta import VariantMeta
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from variantlib.config import ProviderConfig
-    from variantlib.meta import VariantDescription
+    from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-
-class VariantCache:
-    """This class is not necessary today - can be used for finer cache control later."""
-
-    def __init__(self):
-        self.cache = None
-
-    def __call__(self, func):
-        def wrapper(*args, **kwargs):
-            if self.cache is None:
-                self.cache = func(*args, **kwargs)
-            return self.cache
-
-        return wrapper
-
-
-@VariantCache()
-def _query_variant_plugins() -> dict[str, ProviderConfig]:
-    return PluginLoader().get_supported_configs()
+__all__ = [
+    "KeyConfig",
+    "ProviderConfig",
+    "VariantDescription",
+    "VariantMeta",
+    "get_variant_hashes_by_priority",
+]
 
 
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-    namespace_priority_dict: Optional[dict[str:int]] = None,
+    namespace_priority_dict: Optional[dict[str:int]] = None,  # noqa: UP007
 ) -> Generator[VariantDescription]:
-    provider_cfgs = _query_variant_plugins()
+    provider_cfgs = PluginLoader.get_supported_configs()
 
     # sorting providers in priority order:
     if namespace_priority_dict is not None:
@@ -90,9 +82,7 @@ def get_variant_hashes_by_priority(
                 ),
             )
 
-            sorted_provider_cfgs = [
-                provider_cfgs[namespace] for namespace in plugins
-            ]
+            sorted_provider_cfgs = [provider_cfgs[namespace] for namespace in plugins]
     else:
         sorted_provider_cfgs = list(provider_cfgs.values())
 

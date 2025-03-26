@@ -66,7 +66,9 @@ class _LoggerAPI:
 
     @classmethod
     def setup_logger(
-        cls, handlers: Optional[list] = None, formatter: Optional[_logging.Formatter] = None
+        cls,
+        handlers: Optional[list] = None,  # noqa: UP007
+        formatter: Optional[_logging.Formatter] = None,  # noqa: UP007
     ):
         if handlers is None:
             # Add the output handler.

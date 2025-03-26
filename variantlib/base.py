@@ -1,5 +1,7 @@
-from abc import ABC, abstractmethod, abstractproperty
-from typing import Protocol, runtime_checkable
+from abc import ABC
+from abc import abstractmethod
+from typing import Protocol
+from typing import runtime_checkable
 
 from variantlib.config import ProviderConfig
 
@@ -21,7 +23,8 @@ class PluginType(Protocol):
 class PluginBase(ABC):
     """An abstract base class that can be used to implement plugins"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def namespace(self) -> str: ...
 
     @abstractmethod

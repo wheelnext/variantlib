@@ -1,17 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 import pytest
 
 from variantlib.base import PluginBase
-from variantlib.config import KeyConfig, ProviderConfig
-from variantlib.plugins import PluginLoader
+from variantlib.config import KeyConfig
+from variantlib.config import ProviderConfig
+from variantlib.loader import PluginLoader
 
 
 class MockedPluginA(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:
+    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
         return ProviderConfig(
             namespace=self.namespace,
             configs=[
@@ -26,7 +28,7 @@ class MockedPluginA(PluginBase):
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:
+    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
         return ProviderConfig(
             namespace=self.namespace,
             configs=[
@@ -38,14 +40,14 @@ class MockedPluginB:
 class MockedPluginC(PluginBase):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:
+    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
         return None
 
 
 class ClashingPlugin(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:
+    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
         return None
 
 
@@ -57,11 +59,11 @@ class MockedDistribution:
 
 @dataclass
 class MockedEntryPoint:
-    name: Optional[str]
+    name: Optional[str]  # noqa: UP007
     value: str
     plugin: Any
-    group: Optional[str] = None
-    dist: Optional[MockedDistribution] = None
+    group: Optional[str] = None  # noqa: UP007
+    dist: Optional[MockedDistribution] = None  # noqa: UP007
 
     def load(self) -> Any:
         return self.plugin
@@ -69,7 +71,7 @@ class MockedEntryPoint:
 
 @pytest.fixture(scope="session")
 def mocked_plugin_loader(session_mocker):
-    session_mocker.patch("variantlib.plugins.entry_points")().select.return_value = [
+    session_mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="test_plugin",
             value="tests.test_plugins:MockedPluginA",
@@ -88,10 +90,12 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginC,
         ),
     ]
-    yield PluginLoader()
+    PluginLoader.load_plugins()
+    yield PluginLoader
+    PluginLoader.flush_cache()
 
 
-def test_get_supported_configs(mocked_plugin_loader):
+def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
     assert mocked_plugin_loader.get_supported_configs() == {
         "second_plugin": ProviderConfig(
             namespace="second_plugin",
@@ -109,15 +113,15 @@ def test_get_supported_configs(mocked_plugin_loader):
     }
 
 
-def test_get_dist_name_mapping(mocked_plugin_loader):
-    assert mocked_plugin_loader.get_dist_name_mapping() == {
+def test_get_dist_name_mapping(mocked_plugin_loader: type[PluginLoader]):
+    assert mocked_plugin_loader.distribution_names == {
         "second_plugin": "second-plugin",
         "test_plugin": "test-plugin",
     }
 
 
 def test_namespace_clash(mocker):
-    mocker.patch("variantlib.plugins.entry_points")().select.return_value = [
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="test_plugin",
             value="tests.test_plugins:MockedPluginA",
@@ -131,9 +135,9 @@ def test_namespace_clash(mocker):
             plugin=ClashingPlugin,
         ),
     ]
-    mocker.patch("variantlib.metaclasses.SingletonMetaClass._instances", [])
-    with pytest.raises(RuntimeError) as exc:
-        PluginLoader()
-    assert "same namespace test_plugin" in str(exc)
-    assert "test-plugin" in str(exc)
-    assert "clashing-plugin" in str(exc)
+    with pytest.raises(
+        RuntimeError,
+        match="Two plugins found using the same namespace test_plugin. Refusing to "
+        "proceed. Please uninstall one of them: test-plugin or test-plugin",
+    ):
+        PluginLoader.load_plugins()

@@ -46,7 +46,7 @@ def test_single_item_values_list_in_key_config():
     """Test KeyConfig creation with a single value."""
     key_config = KeyConfig(key="attr_nameA", values=["7"])
     assert key_config.key == "attr_nameA"
-    assert key_config.values == ["7"]  # noqa: PD011
+    assert key_config.values == ["7"]
 
 
 def test_duplicate_values_in_key_config():

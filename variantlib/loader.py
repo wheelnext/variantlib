@@ -4,26 +4,38 @@ import logging
 from importlib.metadata import entry_points
 
 from variantlib.base import PluginType
+from variantlib.cache import VariantCache
 from variantlib.config import ProviderConfig
-from variantlib.metaclasses import SingletonMetaClass
 
 logger = logging.getLogger(__name__)
 
 
-class PluginLoader(metaclass=SingletonMetaClass):
+class classproperty(property):  # noqa: N801
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
+
+
+class PluginLoader:
     """Load and query plugins"""
 
-    def __init__(self) -> None:
-        self._plugins = {}
-        self._dist_names = {}
-        self.load_plugins()
+    _plugins = {}
+    _dist_names = {}
 
-    def load_plugins(self) -> None:
+    def __new__(cls, *args, **kwargs):
+        raise RuntimeError(f"Cannot instantiate {cls.__name__}")
+
+    @classmethod
+    def flush_cache(cls) -> None:
+        """Flush all loaded plugins"""
+        cls._plugins = {}
+        cls._dist_names = {}
+
+    @classmethod
+    def load_plugins(cls) -> None:
         """Find, load and instantiate all plugins"""
 
         logger.info("Discovering Wheel Variant plugins...")
         plugins = entry_points().select(group="variantlib.plugins")
-        duplicates = set()
 
         for plugin in plugins:
             try:
@@ -45,28 +57,31 @@ class PluginLoader(metaclass=SingletonMetaClass):
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
                 assert isinstance(plugin_instance, PluginType)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 logging.exception("An unknown error happened - Ignoring plugin")
             else:
-                if plugin_instance.namespace in self._plugins:
-                    pkg1 = self._dist_names.get(plugin_instance.namespace)
+                if plugin_instance.namespace in cls._plugins:
+                    pkg1 = cls._dist_names.get(plugin_instance.namespace)
                     pkg2 = plugin.dist.name if plugin.dist is not None else None
                     if pkg1 is not None and pkg2 is not None:
                         hint = f": {pkg1} or {pkg2}."
                     raise RuntimeError(
                         "Two plugins found using the same namespace "
                         f"{plugin_instance.namespace}. Refusing to proceed. "
-                        f"Please uninstall one of them{hint}..")
-                self._plugins[plugin_instance.namespace] = plugin_instance
+                        f"Please uninstall one of them{hint}.."
+                    )
+                cls._plugins[plugin_instance.namespace] = plugin_instance
 
                 if plugin.dist is not None:
-                    self._dist_names[plugin_instance.namespace] = plugin.dist.name
+                    cls._dist_names[plugin_instance.namespace] = plugin.dist.name
 
-    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+    @classmethod
+    @VariantCache()
+    def get_supported_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of plugin names to provider configs"""
 
         provider_cfgs = {}
-        for namespace, plugin_instance in self._plugins.items():
+        for namespace, plugin_instance in cls._plugins.items():
             provider_cfg = plugin_instance.get_supported_configs()
 
             if not isinstance(provider_cfg, ProviderConfig):
@@ -88,7 +103,16 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
         return provider_cfgs
 
-    def get_dist_name_mapping(self) -> dict[str, str]:
+    @classproperty
+    def distribution_names(cls) -> dict[str, str]:  # noqa: N805
         """Get a mapping from plugin names to distribution names"""
+        return cls._dist_names
 
-        return self._dist_names
+    @classproperty
+    def plugins(cls) -> dict[str, str]:  # noqa: N805
+        """Get the loaded plugins"""
+        return cls._plugins
+
+
+# cleanup - do not provide a public API for this classproperty
+del classproperty
