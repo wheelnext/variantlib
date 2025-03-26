@@ -5,7 +5,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional
 
 from variantlib.combination import filtered_sorted_variants
-from variantlib.combination import get_combinations
 from variantlib.plugins import PluginLoader
 
 if TYPE_CHECKING:
@@ -38,8 +37,9 @@ def _query_variant_plugins() -> dict[str, ProviderConfig]:
 
 
 def get_variant_hashes_by_priority(
+    *,
+    variants_json: dict,
     provider_priority_dict: Optional[dict[str:int]] = None,
-    variants_json: Optional[dict] = None,
 ) -> Generator[VariantDescription]:
     provider_cfgs = _query_variant_plugins()
 
@@ -97,13 +97,9 @@ def get_variant_hashes_by_priority(
         sorted_provider_cfgs = list(provider_cfgs.values())
 
     if sorted_provider_cfgs:
-        if (variants_json or {}).get("variants") is not None:
-            for variant_desc in filtered_sorted_variants(
-                variants_json["variants"], sorted_provider_cfgs
-            ):
-                yield variant_desc.hexdigest
-        else:
-            for variant_desc in get_combinations(sorted_provider_cfgs):
-                yield variant_desc.hexdigest
+        for variant_desc in filtered_sorted_variants(
+            variants_json["variants"], sorted_provider_cfgs
+        ):
+            yield variant_desc.hexdigest
     else:
         yield from []

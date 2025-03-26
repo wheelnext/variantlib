@@ -102,15 +102,14 @@ def filtered_sorted_variants(  # noqa: C901
         logger.warning(
             "No plugins provide the following variant providers: "
             "%(provider)s; some variants will be ignored",
-            provider=" ".join(missing_providers),
+            {"provider": " ".join(missing_providers)},
         )
 
     for provider, provider_missing_keys in missing_keys.items():
         logger.warning(
             "The %(provider)s provider does not provide the following expected keys: "
             "%(missing_keys)s; some variants will be ignored",
-            provider=provider,
-            missing_keys=" ".join(provider_missing_keys),
+            {"provider": provider, "missing_keys": " ".join(provider_missing_keys)},
         )
 
     return res
