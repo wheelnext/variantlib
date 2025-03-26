@@ -23,23 +23,8 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
         logger.info("Discovering Wheel Variant plugins...")
         plugins = entry_points().select(group="variantlib.plugins")
-
-        # ----------- Checking if two plugins have the same name ----------- #
-        seen = set()
         duplicates = set()
 
-        for plugin_name in [plugin.name for plugin in plugins]:
-            if plugin_name in seen:
-                duplicates.add(plugin_name)
-            else:
-                seen.add(plugin_name)
-
-        if duplicates:
-            logger.warning(
-                "Duplicate plugins found: %s - Unpredicatable behavior.", duplicates
-            )
-
-        # ---------------------- Querying each plugin ---------------------- #
         for plugin in plugins:
             try:
                 logger.info(f"Loading plugin: {plugin.name} - v{plugin.dist.version}")  # noqa: G004
@@ -50,12 +35,19 @@ class PluginLoader(metaclass=SingletonMetaClass):
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
                 assert isinstance(plugin_instance, PluginType)
-                self._plugins[plugin_instance.name] = plugin_instance
-
-                # Store package distribution names for later use
-                self._dist_names[plugin_instance.name] = plugin.dist.name
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
+            else:
+                if plugin_instance.name in self._plugins:
+                    duplicates.add(plugin_instance.name)
+                self._plugins[plugin_instance.name] = plugin_instance
+
+                self._dist_names[plugin_instance.name] = plugin.dist.name
+
+        if duplicates:
+            logger.warning(
+                "Duplicate plugins found: %s - Unpredicatable behavior.", duplicates
+            )
 
     def get_supported_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of plugin names to provider configs"""
