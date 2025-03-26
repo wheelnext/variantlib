@@ -59,7 +59,7 @@ class KeyConfig:
 
 @dataclass(frozen=True)
 class ProviderConfig:
-    provider: str = field(
+    namespace: str = field(
         metadata={
             "validators": [
                 lambda v: validate_instance_of(v, str),
@@ -101,7 +101,7 @@ class ProviderConfig:
             seen.add(key)
 
     def pretty_print(self) -> str:
-        result_str = f"{'#' * 20} Provider Config: `{self.provider}` {'#' * 20}"
+        result_str = f"{'#' * 20} Provider Config: `{self.namespace}` {'#' * 20}"
         for kid, vconfig in enumerate(self.configs):
             result_str += (
                 f"\n\t- Variant Config [{kid + 1:03d}]: "

@@ -9,9 +9,11 @@ from variantlib.plugins import PluginLoader
 
 
 class MockedPluginA(PluginBase):
+    namespace = "test_plugin"
+
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
-            provider="test_plugin",
+            namespace=self.namespace,
             configs=[
                 KeyConfig("key1", ["val1a", "val1b"]),
                 KeyConfig("key2", ["val2a", "val2b", "val2c"]),
@@ -22,9 +24,11 @@ class MockedPluginA(PluginBase):
 # NB: this plugin deliberately does not inherit from PluginBase
 # to test that we don't rely on that inheritance
 class MockedPluginB:
+    namespace = "second_plugin"
+
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
-            provider="second_plugin",
+            namespace=self.namespace,
             configs=[
                 KeyConfig("key3", ["val3a"]),
             ],
@@ -32,6 +36,15 @@ class MockedPluginB:
 
 
 class MockedPluginC(PluginBase):
+    namespace = "incompatible_plugin"
+
+    def get_supported_configs(self) -> Optional[ProviderConfig]:
+        return None
+
+
+class ClashingPlugin(PluginBase):
+    namespace = "test_plugin"
+
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return None
 
@@ -64,15 +77,14 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginA,
         ),
         MockedEntryPoint(
-            name="other_plugin",
+            name="second_plugin",
             value="tests.test_plugins:MockedPluginB",
-            dist=MockedDistribution(name="other-plugin", version="4.5.6"),
+            dist=MockedDistribution(name="second-plugin", version="4.5.6"),
             plugin=MockedPluginB,
         ),
         MockedEntryPoint(
             name="incompatible_plugin",
             value="tests.test_plugins:MockedPluginC",
-            dist=MockedDistribution(name="incompatible-plugin", version="0.0.0"),
             plugin=MockedPluginC,
         ),
     ]
@@ -81,14 +93,14 @@ def mocked_plugin_loader(session_mocker):
 
 def test_get_supported_configs(mocked_plugin_loader):
     assert mocked_plugin_loader.get_supported_configs() == {
-        "other_plugin": ProviderConfig(
-            provider="second_plugin",
+        "second_plugin": ProviderConfig(
+            namespace="second_plugin",
             configs=[
                 KeyConfig("key3", ["val3a"]),
             ],
         ),
         "test_plugin": ProviderConfig(
-            provider="test_plugin",
+            namespace="test_plugin",
             configs=[
                 KeyConfig("key1", ["val1a", "val1b"]),
                 KeyConfig("key2", ["val2a", "val2b", "val2c"]),
@@ -99,7 +111,29 @@ def test_get_supported_configs(mocked_plugin_loader):
 
 def test_get_dist_name_mapping(mocked_plugin_loader):
     assert mocked_plugin_loader.get_dist_name_mapping() == {
-        "incompatible_plugin": "incompatible-plugin",
-        "other_plugin": "other-plugin",
+        "second_plugin": "second-plugin",
         "test_plugin": "test-plugin",
     }
+
+
+def test_namespace_clash(mocker):
+    mocker.patch("variantlib.plugins.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="test_plugin",
+            value="tests.test_plugins:MockedPluginA",
+            dist=MockedDistribution(name="test-plugin", version="1.2.3"),
+            plugin=MockedPluginA,
+        ),
+        MockedEntryPoint(
+            name="clashing_plugin",
+            value="tests.test_plugins:ClashingPlugin",
+            dist=MockedDistribution(name="clashing-plugin", version="4.5.6"),
+            plugin=ClashingPlugin,
+        ),
+    ]
+    mocker.patch("variantlib.metaclasses.SingletonMetaClass._instances", [])
+    with pytest.raises(RuntimeError) as exc:
+        PluginLoader()
+    assert "same namespace test_plugin" in str(exc)
+    assert "test-plugin" in str(exc)
+    assert "clashing-plugin" in str(exc)

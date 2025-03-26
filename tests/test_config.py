@@ -16,10 +16,10 @@ def test_provider_config_creation_valid():
     key_config_1 = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
     key_config_2 = KeyConfig(key="attr_nameB", values=["3", "7", "2", "18", "22"])
     provider_config = ProviderConfig(
-        provider="provider_name", configs=[key_config_1, key_config_2]
+        namespace="provider_name", configs=[key_config_1, key_config_2]
     )
 
-    assert provider_config.provider == "provider_name"
+    assert provider_config.namespace == "provider_name"
     assert len(provider_config.configs) == 2
     assert provider_config.configs[0].key == "attr_nameA"
     assert provider_config.configs[1].key == "attr_nameB"
@@ -33,7 +33,7 @@ def test_duplicate_key_config():
     with pytest.raises(
         ValueError, match="Duplicate `KeyConfig` for key='attr_nameA' found."
     ):
-        ProviderConfig(provider="provider_name", configs=[key_config_1, key_config_2])
+        ProviderConfig(namespace="provider_name", configs=[key_config_1, key_config_2])
 
 
 def test_empty_values_list_in_key_config():
@@ -69,11 +69,11 @@ def test_invalid_values_type_in_key_config():
         )  # Expecting a list for `values`
 
 
-def test_provider_config_invalid_provider_type():
-    """Test that an invalid provider type raises a validation error."""
+def test_provider_config_invalid_namespace_type():
+    """Test that an invalid namespace type raises a validation error."""
     with pytest.raises(TypeError):
         ProviderConfig(
-            provider=1,
+            namespace=1,
             configs=[KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])],
         )
 
@@ -81,14 +81,14 @@ def test_provider_config_invalid_provider_type():
 def test_provider_config_invalid_configs_type():
     """Test that an invalid configs type raises a validation error."""
     with pytest.raises(TypeError):
-        ProviderConfig(provider="provider_name", configs="not_a_list_of_key_configs")
+        ProviderConfig(namespace="provider_name", configs="not_a_list_of_key_configs")
 
 
 def test_provider_config_invalid_key_type_in_configs():
     """Test that invalid `KeyConfig` inside `ProviderConfig` raises an error."""
     with pytest.raises(TypeError):
         ProviderConfig(
-            provider="provider_name",
+            namespace="provider_name",
             configs=[{"key": "attr_nameA", "values": ["7", "4", "8", "12"]}],
         )
 
@@ -96,7 +96,7 @@ def test_provider_config_invalid_key_type_in_configs():
 def test_empty_provider_config():
     """Test creation of ProviderConfig with an empty list of KeyConfigs."""
     with pytest.raises(AssertionError):
-        _ = ProviderConfig(provider="provider_name", configs=[])
+        _ = ProviderConfig(namespace="provider_name", configs=[])
 
 
 def test_provider_config_invalid_key_config_type():
@@ -105,7 +105,7 @@ def test_provider_config_invalid_key_config_type():
 
     with pytest.raises(TypeError):
         ProviderConfig(
-            provider="provider_name",
+            namespace="provider_name",
             configs=[
                 KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"]),
                 SimpleNamespace(key=1, values=["1", "2"]),
@@ -130,11 +130,11 @@ def test_provider_config_repr():
     key_config_1 = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
     key_config_2 = KeyConfig(key="attr_nameB", values=["3", "7", "2", "18", "22"])
     provider_config = ProviderConfig(
-        provider="provider_name", configs=[key_config_1, key_config_2]
+        namespace="provider_name", configs=[key_config_1, key_config_2]
     )
 
     expected_repr = (
-        "ProviderConfig(provider='provider_name', "
+        "ProviderConfig(namespace='provider_name', "
         "configs=[KeyConfig(key='attr_nameA', values=['7', '4', '8', '12']), "
         "KeyConfig(key='attr_nameB', values=['3', '7', '2', '18', '22'])])"
     )

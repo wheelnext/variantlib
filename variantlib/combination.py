@@ -19,7 +19,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
 
     data = [
         [
-            VariantMeta(provider=provider_cnf.provider, key=key_config.key, value=val)
+            VariantMeta(namespace=provider_cnf.namespace, key=key_config.key, value=val)
             for val in key_config.values
         ]
         for provider_cnf in data
@@ -36,13 +36,13 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
 def unpack_variants_from_json(
     variants_from_json: dict,
 ) -> Generator[VariantDescription]:
-    def variant_to_metas(providers: dict) -> VariantMeta:
-        for provider, keys in providers.items():
+    def variant_to_metas(namespaces: dict) -> VariantMeta:
+        for namespace, keys in namespaces.items():
             for key, value in keys.items():
-                yield VariantMeta(provider=provider, key=key, value=value)
+                yield VariantMeta(namespace=namespace, key=key, value=value)
 
-    for variant_hash, providers in variants_from_json.items():
-        desc = VariantDescription(list(variant_to_metas(providers)))
+    for variant_hash, namespaces in variants_from_json.items():
+        desc = VariantDescription(list(variant_to_metas(namespaces)))
         assert variant_hash == desc.hexdigest
         yield desc
 
@@ -50,25 +50,25 @@ def unpack_variants_from_json(
 def filtered_sorted_variants(  # noqa: C901
     variants_from_json: dict, data: list[ProviderConfig]
 ) -> Generator[VariantDescription]:
-    providers = {}
-    for provider_idx, provider_cnf in enumerate(data):
+    namespaces = {}
+    for namespace_idx, namespace_cnf in enumerate(data):
         keys = {}
-        for key_idx, key_cnf in enumerate(provider_cnf.configs):
+        for key_idx, key_cnf in enumerate(namespace_cnf.configs):
             keys[key_cnf.key] = key_idx, key_cnf.values
-        providers[provider_cnf.provider] = provider_idx, keys
+        namespaces[namespace_cnf.namespace] = namespace_idx, keys
 
-    missing_providers = set()
+    missing_namespaces = set()
     missing_keys = {}
 
     def variant_filter(desc: VariantDescription):
         # Filter out the variant, unless all of its metas are supported.
         for meta in desc:
-            if (provider_data := providers.get(meta.provider)) is None:
-                missing_providers.add(meta.provider)
+            if (namespace_data := namespaces.get(meta.namespace)) is None:
+                missing_namespaces.add(meta.namespace)
                 return False
-            _, keys = provider_data
+            _, keys = namespace_data
             if (key_data := keys.get(meta.key)) is None:
-                missing_keys.setdefault(meta.provider, set()).add(meta.key)
+                missing_keys.setdefault(meta.namespace, set()).add(meta.key)
                 return False
             _, values = key_data
             if meta.value not in values:
@@ -76,12 +76,12 @@ def filtered_sorted_variants(  # noqa: C901
         return True
 
     def meta_key(meta: VariantMeta) -> tuple[int, int, int]:
-        # The sort key is a tuple of (provider, key, value) indices, so that
-        # the metas with more preferred (provider, key, value) sort first.
-        provider_idx, keys = providers.get(meta.provider)
+        # The sort key is a tuple of (namespace, key, value) indices, so that
+        # the metas with more preferred (namespace, key, value) sort first.
+        namespace_idx, keys = namespaces.get(meta.namespace)
         key_idx, values = keys.get(meta.key)
         value_idx = values.index(meta.value)
-        return provider_idx, key_idx, value_idx
+        return namespace_idx, key_idx, value_idx
 
     def variant_sort_key_gen(desc: VariantDescription) -> Generator[tuple]:
         # Variants with more matched values should go first.
@@ -98,18 +98,18 @@ def filtered_sorted_variants(  # noqa: C901
         key=lambda x: tuple(variant_sort_key_gen(x)),
     )
 
-    if missing_providers:
+    if missing_namespaces:
         logger.warning(
-            "No plugins provide the following variant providers: "
-            "%(provider)s; some variants will be ignored",
-            {"provider": " ".join(missing_providers)},
+            "No plugins provide the following variant namespaces: "
+            "%(namespace)s; some variants will be ignored",
+            {"namespace": " ".join(missing_namespaces)},
         )
 
-    for provider, provider_missing_keys in missing_keys.items():
+    for namespace, namespace_missing_keys in missing_keys.items():
         logger.warning(
-            "The %(provider)s provider does not provide the following expected keys: "
+            "The %(namespace)s provider does not provide the following expected keys: "
             "%(missing_keys)s; some variants will be ignored",
-            {"provider": provider, "missing_keys": " ".join(provider_missing_keys)},
+            {"namespace": namespace, "missing_keys": " ".join(namespace_missing_keys)},
         )
 
     return res
@@ -122,7 +122,7 @@ if __name__ == "__main__":  # pragma: no cover
     from variantlib.config import KeyConfig
 
     config_custom_hw = ProviderConfig(
-        provider="custom_hw",
+        namespace="custom_hw",
         configs=[
             KeyConfig(key="driver_version", values=["1.3", "1.2", "1.1", "1"]),
             KeyConfig(key="hw_architecture", values=["3.4", "3"]),
@@ -130,7 +130,7 @@ if __name__ == "__main__":  # pragma: no cover
     )
 
     config_networking = ProviderConfig(
-        provider="networking",
+        namespace="networking",
         configs=[
             KeyConfig(key="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
         ],

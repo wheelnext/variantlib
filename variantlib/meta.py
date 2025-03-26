@@ -22,7 +22,7 @@ from variantlib.validators import validate_matches_re
 
 @dataclass(frozen=True)
 class VariantMeta:
-    provider: str = field(
+    namespace: str = field(
         metadata={
             "validators": [
                 lambda v: validate_instance_of(v, str),
@@ -55,17 +55,17 @@ class VariantMeta:
                 validator(value)
 
     def __hash__(self) -> int:
-        # Variant Metas are unique in provider & key and ignore the value.
-        return hash((self.__class__, self.provider, self.key))
+        # Variant Metas are unique in namespace & key and ignore the value.
+        return hash((self.__class__, self.namespace, self.key))
 
     def to_str(self) -> str:
-        # Variant: <provider> :: <key> :: <val>
-        return f"{self.provider} :: {self.key} :: {self.value}"
+        # Variant: <namespace> :: <key> :: <val>
+        return f"{self.namespace} :: {self.key} :: {self.value}"
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         subpattern = VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
-        pattern = rf"^(?P<provider>{subpattern})\s*::\s*(?P<key>{subpattern})\s*::\s*(?P<value>{subpattern})$"  # noqa: E501
+        pattern = rf"^(?P<namespace>{subpattern})\s*::\s*(?P<key>{subpattern})\s*::\s*(?P<value>{subpattern})$"  # noqa: E501
 
         # Try matching the input string with the regex pattern
         match = re.match(pattern, input_str.strip())
@@ -73,23 +73,23 @@ class VariantMeta:
         if match is None:
             raise ValueError(
                 f"Invalid format: {input_str}. "
-                "Expected format: '<provider> :: <key> :: <value>'"
+                "Expected format: '<namespace> :: <key> :: <value>'"
             )
 
-        # Extract the provider, key, and value from the match groups
-        provider = match.group("provider")
+        # Extract the namespace, key, and value from the match groups
+        namespace = match.group("namespace")
         key = match.group("key")
         value = match.group("value")
 
         # Return an instance of VariantMeta using the parsed values
-        return cls(provider=provider, key=key, value=value)
+        return cls(namespace=namespace, key=key, value=value)
 
     def serialize(self) -> dict[str, str]:
         return asdict(self)
 
     @classmethod
     def deserialize(cls, data: dict[str, str]) -> Self:
-        assert all(key in data for key in ["provider", "key", "value"])
+        assert all(key in data for key in ["namespace", "key", "value"])
         return cls(**data)
 
 
@@ -97,7 +97,7 @@ class VariantMeta:
 class VariantDescription:
     """
     A `Variant` is being described by a N >= 1 `VariantMeta` metadata.
-    Each informing the packaging toolkit about a unique `provider-key-value`
+    Each informing the packaging toolkit about a unique `namespace-key-value`
     combination.
 
     All together they identify the package producing a "variant hash", unique
@@ -128,10 +128,10 @@ class VariantDescription:
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(
-                self, "data", sorted(self.data, key=lambda x: (x.provider, x.key))
+                self, "data", sorted(self.data, key=lambda x: (x.namespace, x.key))
             )
 
-        # Detect multiple `VariantMeta` with identical provider/key
+        # Detect multiple `VariantMeta` with identical namespace/key
         # Ignores the attribute `value` of `VariantMeta`.
         # Uses `__hash__` for collision detection.
         #
@@ -144,7 +144,7 @@ class VariantDescription:
             if vmeta_hash in seen:
                 raise ValueError(
                     "Duplicate value for:\n"
-                    f"\t- `provider`: {vmeta.provider}\n"
+                    f"\t- `namespace`: {vmeta.namespace}\n"
                     f"\t- `key`: {vmeta.key}"
                 )
             seen.add(vmeta_hash)
