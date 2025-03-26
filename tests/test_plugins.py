@@ -78,7 +78,6 @@ def mocked_plugin_loader(session_mocker):
         MockedEntryPoint(
             name="incompatible_plugin",
             value="tests.test_plugins:MockedPluginC",
-            dist=MockedDistribution(name="incompatible-plugin", version="0.0.0"),
             plugin=MockedPluginC,
         ),
     ]
@@ -105,7 +104,6 @@ def test_get_supported_configs(mocked_plugin_loader):
 
 def test_get_dist_name_mapping(mocked_plugin_loader):
     assert mocked_plugin_loader.get_dist_name_mapping() == {
-        "incompatible_plugin": "incompatible-plugin",
         "second_plugin": "second-plugin",
         "test_plugin": "test-plugin",
     }

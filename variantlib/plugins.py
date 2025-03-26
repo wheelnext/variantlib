@@ -27,7 +27,17 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
         for plugin in plugins:
             try:
-                logger.info(f"Loading plugin: {plugin.name} - v{plugin.dist.version}")  # noqa: G004
+                logger.info(
+                    "Loading plugin: %(name)s - version %(version)s",
+                    {
+                        "name": plugin.name,
+                        "version": (
+                            plugin.dist.version
+                            if plugin.dist is not None
+                            else "unknown"
+                        ),
+                    },
+                )
 
                 # Dynamically load the plugin class
                 plugin_class = plugin.load()
@@ -42,7 +52,8 @@ class PluginLoader(metaclass=SingletonMetaClass):
                     duplicates.add(plugin_instance.name)
                 self._plugins[plugin_instance.name] = plugin_instance
 
-                self._dist_names[plugin_instance.name] = plugin.dist.name
+                if plugin.dist is not None:
+                    self._dist_names[plugin_instance.name] = plugin.dist.name
 
         if duplicates:
             logger.warning(
