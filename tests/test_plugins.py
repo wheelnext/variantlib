@@ -9,11 +9,11 @@ from variantlib.plugins import PluginLoader
 
 
 class MockedPluginA(PluginBase):
-    name = "test_plugin"
+    namespace = "test_plugin"
 
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
-            provider=self.name,
+            namespace=self.namespace,
             configs=[
                 KeyConfig("key1", ["val1a", "val1b"]),
                 KeyConfig("key2", ["val2a", "val2b", "val2c"]),
@@ -24,11 +24,11 @@ class MockedPluginA(PluginBase):
 # NB: this plugin deliberately does not inherit from PluginBase
 # to test that we don't rely on that inheritance
 class MockedPluginB:
-    name = "second_plugin"
+    namespace = "second_plugin"
 
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return ProviderConfig(
-            provider=self.name,
+            namespace=self.namespace,
             configs=[
                 KeyConfig("key3", ["val3a"]),
             ],
@@ -36,7 +36,7 @@ class MockedPluginB:
 
 
 class MockedPluginC(PluginBase):
-    name = "incompatible_plugin"
+    namespace = "incompatible_plugin"
 
     def get_supported_configs(self) -> Optional[ProviderConfig]:
         return None
@@ -87,13 +87,13 @@ def mocked_plugin_loader(session_mocker):
 def test_get_supported_configs(mocked_plugin_loader):
     assert mocked_plugin_loader.get_supported_configs() == {
         "second_plugin": ProviderConfig(
-            provider="second_plugin",
+            namespace="second_plugin",
             configs=[
                 KeyConfig("key3", ["val3a"]),
             ],
         ),
         "test_plugin": ProviderConfig(
-            provider="test_plugin",
+            namespace="test_plugin",
             configs=[
                 KeyConfig("key1", ["val1a", "val1b"]),
                 KeyConfig("key2", ["val2a", "val2b", "val2c"]),

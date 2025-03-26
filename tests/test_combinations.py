@@ -21,7 +21,7 @@ from variantlib.meta import VariantDescription
 @pytest.fixture(scope="session")
 def configs():
     config_custom_hw = ProviderConfig(
-        provider="custom_hw",
+        namespace="custom_hw",
         configs=[
             KeyConfig(key="driver_version", values=["1.3", "1.2", "1.1", "1"]),
             KeyConfig(key="hw_architecture", values=["3.4", "3"]),
@@ -29,7 +29,7 @@ def configs():
     )
 
     config_networking = ProviderConfig(
-        provider="networking",
+        namespace="networking",
         configs=[
             KeyConfig(key="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
         ],
@@ -59,7 +59,7 @@ def desc_to_json(desc_list: list[VariantDescription]) -> Generator:
     for desc in shuffled_desc_list:
         variant_dict = {}
         for variant_meta in desc:
-            provider_dict = variant_dict.setdefault(variant_meta.provider, {})
+            provider_dict = variant_dict.setdefault(variant_meta.namespace, {})
             provider_dict[variant_meta.key] = variant_meta.value
         yield (desc.hexdigest, variant_dict)
 
@@ -75,24 +75,24 @@ def test_filtered_sorted_variants_roundtrip(configs):
 @example(
     [
         ProviderConfig(
-            provider="A",
+            namespace="A",
             configs=[
                 KeyConfig(key="A1", values=["x"]),
                 KeyConfig(key="A2", values=["x"]),
             ],
         ),
-        ProviderConfig(provider="B", configs=[KeyConfig(key="B1", values=["x"])]),
-        ProviderConfig(provider="C", configs=[KeyConfig(key="C1", values=["x"])]),
+        ProviderConfig(namespace="B", configs=[KeyConfig(key="B1", values=["x"])]),
+        ProviderConfig(namespace="C", configs=[KeyConfig(key="C1", values=["x"])]),
     ]
 )
 @given(
     st.lists(
         min_size=1,
         max_size=3,
-        unique_by=lambda provider_cfg: provider_cfg.provider,
+        unique_by=lambda provider_cfg: provider_cfg.namespace,
         elements=st.builds(
             ProviderConfig,
-            provider=st.text(
+            namespace=st.text(
                 string.ascii_letters + string.digits + "_", min_size=1, max_size=64
             ),
             configs=st.lists(

@@ -48,12 +48,12 @@ class PluginLoader(metaclass=SingletonMetaClass):
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
             else:
-                if plugin_instance.name in self._plugins:
-                    duplicates.add(plugin_instance.name)
-                self._plugins[plugin_instance.name] = plugin_instance
+                if plugin_instance.namespace in self._plugins:
+                    duplicates.add(plugin_instance.namespace)
+                self._plugins[plugin_instance.namespace] = plugin_instance
 
                 if plugin.dist is not None:
-                    self._dist_names[plugin_instance.name] = plugin.dist.name
+                    self._dist_names[plugin_instance.namespace] = plugin.dist.name
 
         if duplicates:
             logger.warning(
@@ -64,25 +64,25 @@ class PluginLoader(metaclass=SingletonMetaClass):
         """Get a mapping of plugin names to provider configs"""
 
         provider_cfgs = {}
-        for name, plugin_instance in self._plugins.items():
+        for namespace, plugin_instance in self._plugins.items():
             provider_cfg = plugin_instance.get_supported_configs()
 
             if not isinstance(provider_cfg, ProviderConfig):
                 logging.error(
-                    f"Provider: {name} returned an unexpected type: "  # noqa: G004
+                    f"Provider: {namespace} returned an unexpected type: "  # noqa: G004
                     f"{type(provider_cfg)} - Expected: `ProviderConfig`. Ignoring..."
                 )
                 continue
 
-            if provider_cfg.provider != name:
+            if provider_cfg.namespace != namespace:
                 logging.error(
-                    "Provider %(name)s returned different provider name "
+                    "Provider %(namespace)s returned different provider namespace "
                     "in config: %(cfg_name)s. Ignoring...",
-                    {"name": name, "cfg_name": provider_cfg.provider},
+                    {"namespace": namespace, "cfg_name": provider_cfg.provider},
                 )
                 continue
 
-            provider_cfgs[name] = provider_cfg
+            provider_cfgs[namespace] = provider_cfg
 
         return provider_cfgs
 

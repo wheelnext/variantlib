@@ -16,9 +16,9 @@ from variantlib.meta import VariantMeta
 def test_variantmeta_initialization():
     # Valid initialization
     valid_variant = VariantMeta(
-        provider="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", key="access_key", value="secret_value"
     )
-    assert valid_variant.provider == "OmniCorp"
+    assert valid_variant.namespace == "OmniCorp"
     assert valid_variant.key == "access_key"
     assert valid_variant.value == "secret_value"
 
@@ -26,69 +26,69 @@ def test_variantmeta_initialization():
 def test_variantmeta_invalid_type():
     # Invalid initialization for provider (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(provider="OmniCorp", key="access_key", value=123)
+        VariantMeta(namespace="OmniCorp", key="access_key", value=123)
 
     # Invalid initialization for key (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(provider="OmniCorp", key=123, value="secret_value")
+        VariantMeta(namespace="OmniCorp", key=123, value="secret_value")
 
     # Invalid initialization for value (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(provider="OmniCorp", key="access_key", value=123)
+        VariantMeta(namespace="OmniCorp", key="access_key", value=123)
 
 
 def test_variantmeta_data():
     # Test the repr method of VariantMeta
-    vmeta = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    vmeta = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     expected_data = "OmniCorp :: access_key :: secret_value"
     assert vmeta.to_str() == expected_data
 
 
 def test_variantmeta_hash():
     # Test the hashing functionality of VariantMeta
-    variant1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    variant2 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    variant1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
+    variant2 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     assert hash(variant1) == hash(variant2)
 
-    # Different value, same provider and key. Should also result in identical hash
+    # Different value, same namespace and key. Should also result in identical hash
     variant3 = VariantMeta(
-        provider="OmniCorp", key="access_key", value="different_value"
+        namespace="OmniCorp", key="access_key", value="different_value"
     )
     assert hash(variant1) == hash(variant3)
 
 
 def test_variantmeta_val_property():
     # Test the val property
-    vmeta = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    vmeta = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     expected_val = "OmniCorp :: access_key :: secret_value"
     assert vmeta.to_str() == expected_val
 
 
-def test_failing_regex_provider():
+def test_failing_regex_namespace():
     with pytest.raises(ValueError, match="must match regex"):
-        _ = VariantMeta(provider="", key="key", value="value")
+        _ = VariantMeta(namespace="", key="key", value="value")
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
-            _ = VariantMeta(provider=f"Omni{c}Corp", key="key", value="value")
+            _ = VariantMeta(namespace=f"Omni{c}Corp", key="key", value="value")
 
 
 def test_failing_regex_key():
     with pytest.raises(ValueError, match="must match regex"):
-        _ = VariantMeta(provider="provider", key="", value="value")
+        _ = VariantMeta(namespace="provider", key="", value="value")
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
-            _ = VariantMeta(provider="provider", key=f"access{c}key", value="value")
+            _ = VariantMeta(namespace="provider", key=f"access{c}key", value="value")
 
 
 def test_failing_regex_value():
     with pytest.raises(ValueError, match="must match regex"):
-        _ = VariantMeta(provider="provider", key="key", value="")
+        _ = VariantMeta(namespace="provider", key="key", value="")
 
     for c in "@#$%&*^()[]?!-{}[]\\/ ":
         with pytest.raises(ValueError, match="must match regex"):
-            _ = VariantMeta(provider="provider", key="key", value=f"val{c}ue")
+            _ = VariantMeta(namespace="provider", key="key", value=f"val{c}ue")
 
 
 @pytest.mark.parametrize(
@@ -104,7 +104,7 @@ def test_from_str_valid(input_str: str):
     variant_meta = VariantMeta.from_str(input_str)
 
     # Check if the resulting object matches the expected values
-    assert variant_meta.provider == "OmniCorp"
+    assert variant_meta.namespace == "OmniCorp"
     assert variant_meta.key == "access_key"
     assert variant_meta.value == "secret_value"
 
@@ -135,7 +135,7 @@ def test_from_str_trailing_spaces():
     variant_meta = VariantMeta.from_str(input_str.strip())
 
     # Check if it still correctly parses and matches the expected values
-    assert variant_meta.provider == "OmniCorp"
+    assert variant_meta.namespace == "OmniCorp"
     assert variant_meta.key == "access_key"
     assert variant_meta.value == "secret_value"
 
@@ -149,9 +149,9 @@ def test_from_str_invalid_format():
 
 
 def test_variantmeta_serialization():
-    vmeta = VariantMeta(provider="provider", key="key", value="value")
+    vmeta = VariantMeta(namespace="provider", key="key", value="value")
     assert vmeta.serialize() == {
-        "provider": "provider",
+        "namespace": "provider",
         "key": "key",
         "value": "value",
     }
@@ -159,14 +159,14 @@ def test_variantmeta_serialization():
 
 def test_variantmeta_deserialization():
     data = {
-        "provider": "provider",
+        "namespace": "provider",
         "key": "key",
         "value": "value",
     }
 
     vmeta = VariantMeta.deserialize(data)
 
-    assert vmeta.provider == data["provider"]
+    assert vmeta.namespace == data["namespace"]
     assert vmeta.key == data["key"]
     assert vmeta.value == data["value"]
 
@@ -178,9 +178,9 @@ def test_variantmeta_deserialization():
 
 def test_variantdescription_initialization():
     # Valid input: List of VariantMeta instances
-    meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     meta2 = VariantMeta(
-        provider="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", key="client_id", value="secret_key"
     )
     variant_description = VariantDescription([meta1, meta2])
 
@@ -197,7 +197,7 @@ def test_variantdescription_invalid_data():
 
     # Test data containing non-VariantMeta instances
     invalid_meta = {
-        "provider": "OmniCorp",
+        "namespace": "OmniCorp",
         "key": "access_key",
         "value": "secret_value",
     }
@@ -207,40 +207,40 @@ def test_variantdescription_invalid_data():
 
 def test_variantdescription_duplicate_data():
     # Test that duplicate VariantMeta instances are removed
-    meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     with pytest.raises(ValueError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta1])
 
 
 def test_variantdescription_partial_duplicate_data():
     # Test that duplicate VariantMeta instances are removed
-    meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
-    meta2 = VariantMeta(provider="OmniCorp", key="access_key", value="another_value")
+    meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
+    meta2 = VariantMeta(namespace="OmniCorp", key="access_key", value="another_value")
     with pytest.raises(ValueError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta2])
 
 
 def test_variantdescription_sorted_data():
-    # Ensure that the data is sorted by provider, key, value
-    meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    # Ensure that the data is sorted by namespace, key, value
+    meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     meta2 = VariantMeta(
-        provider="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", key="client_id", value="secret_key"
     )
-    meta3 = VariantMeta(provider="OmniCorp", key="secret_key", value="client_value")
+    meta3 = VariantMeta(namespace="OmniCorp", key="secret_key", value="client_value")
     variant_description = VariantDescription([meta1, meta2, meta3])
 
-    # Check that data is sorted by provider, key, and value
+    # Check that data is sorted by namespace, key, and value
     sorted_data = sorted(
-        [meta1, meta2, meta3], key=lambda x: (x.provider, x.key, x.value)
+        [meta1, meta2, meta3], key=lambda x: (x.namespace, x.key, x.value)
     )
     assert list(variant_description) == sorted_data
 
 
 def test_variantdescription_hexdigest():
     # Ensure that the hexdigest property works correctly
-    meta1 = VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")
+    meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     meta2 = VariantMeta(
-        provider="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", key="client_id", value="secret_key"
     )
     variant_description = VariantDescription([meta1, meta2])
 
@@ -254,12 +254,12 @@ def test_variantdescription_hexdigest():
 
 
 def test_variantdescription_serialization():
-    vmeta = VariantMeta(provider="provider", key="key", value="value")
+    vmeta = VariantMeta(namespace="provider", key="key", value="value")
     vdesc = VariantDescription(data=[vmeta])
 
     assert vdesc.serialize() == [
         {
-            "provider": "provider",
+            "namespace": "provider",
             "key": "key",
             "value": "value",
         }
@@ -269,7 +269,7 @@ def test_variantdescription_serialization():
 def test_variantdescription_deserialization():
     data = [
         {
-            "provider": "provider",
+            "namespace": "provider",
             "key": "key",
             "value": "value",
         }
@@ -278,7 +278,7 @@ def test_variantdescription_deserialization():
     vdesc = VariantDescription.deserialize(data)
 
     assert len(vdesc.data) == 1
-    assert vdesc.data[0].provider == "provider"
+    assert vdesc.data[0].namespace == "provider"
     assert vdesc.data[0].key == "key"
     assert vdesc.data[0].value == "value"
     assert vdesc.hexdigest == "5b7306b3"
@@ -290,7 +290,7 @@ def test_variantdescription_deserialization():
 
 
 @pytest.mark.parametrize(
-    ("provider", "key", "value"),
+    ("namespace", "key", "value"),
     [
         ("OmniCorp", "access_key", "secret_value"),
         ("TyrellCorporation", "client_id", "secret_key"),
@@ -300,10 +300,10 @@ def test_variantdescription_deserialization():
         ("CyberdyneSystems", "version", "10.1.4"),
     ],
 )
-def test_fuzzy_variantmeta(provider, key, value):
+def test_fuzzy_variantmeta(namespace, key, value):
     # Fuzzy test for random combinations of VariantMeta
-    variant = VariantMeta(provider=provider, key=key, value=value)
-    assert variant.provider == provider
+    variant = VariantMeta(namespace=namespace, key=key, value=value)
+    assert variant.namespace == namespace
     assert variant.key == key
     assert variant.value == value
 
@@ -311,27 +311,27 @@ def test_fuzzy_variantmeta(provider, key, value):
 @pytest.mark.parametrize(
     "meta_data",
     [
-        ([VariantMeta(provider="OmniCorp", key="access_key", value="secret_value")]),
+        ([VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")]),
         (
             [
                 VariantMeta(
-                    provider="TyrellCorporation", key="client_id", value="secret_key"
+                    namespace="TyrellCorporation", key="client_id", value="secret_key"
                 ),
                 VariantMeta(
-                    provider="OmniCorp", key="access_key", value="secret_value"
+                    namespace="OmniCorp", key="access_key", value="secret_value"
                 ),
             ]
         ),
         (
             [
                 VariantMeta(
-                    provider="OmniCorp", key="access_key", value="secret_value"
+                    namespace="OmniCorp", key="access_key", value="secret_value"
                 ),
                 VariantMeta(
-                    provider="TyrellCorporation", key="client_id", value="secret_key"
+                    namespace="TyrellCorporation", key="client_id", value="secret_key"
                 ),
                 VariantMeta(
-                    provider="OmniCorp", key="secret_key", value="client_value"
+                    namespace="OmniCorp", key="secret_key", value="client_value"
                 ),
             ]
         ),
@@ -357,7 +357,7 @@ def test_random_hexdigest(num_entries):
 
     meta_data = [
         VariantMeta(
-            provider=random_string(5), key=random_string(5), value=random_string(8)
+            namespace=random_string(5), key=random_string(5), value=random_string(8)
         )
         for _ in range(num_entries)
     ]

@@ -39,19 +39,19 @@ def _query_variant_plugins() -> dict[str, ProviderConfig]:
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-    provider_priority_dict: Optional[dict[str:int]] = None,
+    namespace_priority_dict: Optional[dict[str:int]] = None,
 ) -> Generator[VariantDescription]:
     provider_cfgs = _query_variant_plugins()
 
     # sorting providers in priority order:
-    if provider_priority_dict is not None:
+    if namespace_priority_dict is not None:
         if (
-            not isinstance(provider_priority_dict, dict)
-            or not all(isinstance(key, str) for key in provider_priority_dict)
-            or not all(isinstance(key, int) for key in provider_priority_dict.values())
+            not isinstance(namespace_priority_dict, dict)
+            or not all(isinstance(key, str) for key in namespace_priority_dict)
+            or not all(isinstance(key, int) for key in namespace_priority_dict.values())
         ):
             logger.warning(
-                "Invalid `provider_priority_dict` provided. Should follow "
+                "Invalid `namespace_priority_dict` provided. Should follow "
                 "format: dict[str:int]. Ignoring..."
             )
         else:
@@ -59,7 +59,7 @@ def get_variant_hashes_by_priority(
             value_to_keys = defaultdict(list)  # temp storage
 
             # Populate the dictionary with values and their corresponding keys
-            for key, value in provider_priority_dict.items():
+            for key, value in namespace_priority_dict.items():
                 value_to_keys[value].append(key)
 
             # Isolate the duplicate values and their corresponding keys
@@ -73,25 +73,25 @@ def get_variant_hashes_by_priority(
                     logger.warning("Value: %s -> Keys: %s", value, keys)
 
             # ----------- Checking if two plugins hold the same priority ----------- #
-            for plugin_name in provider_cfgs:
-                if plugin_name not in provider_priority_dict:
+            for namespace in provider_cfgs:
+                if namespace not in namespace_priority_dict:
                     logger.warning(
-                        "Plugin: %s is not present in the `provider_priority_dict`. "
+                        "Plugin: %s is not present in the `namespace_priority_dict`. "
                         "Will be treated as lowest priority.",
-                        plugin_name,
+                        namespace,
                     )
                     continue
 
             # ------------------- Sorting the plugins by priority ------------------ #
             plugins = sorted(
                 provider_cfgs,
-                key=lambda plugin_name: provider_priority_dict.get(
-                    plugin_name, float("inf")
+                key=lambda namespace: namespace_priority_dict.get(
+                    namespace, float("inf")
                 ),
             )
 
             sorted_provider_cfgs = [
-                provider_cfgs[plugin_name] for plugin_name in plugins
+                provider_cfgs[namespace] for namespace in plugins
             ]
     else:
         sorted_provider_cfgs = list(provider_cfgs.values())

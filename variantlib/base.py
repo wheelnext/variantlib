@@ -9,8 +9,8 @@ class PluginType(Protocol):
     """A protocol for plugin classes"""
 
     @property
-    def name(self) -> str:
-        """Get provider name"""
+    def namespace(self) -> str:
+        """Get provider namespace"""
         ...
 
     def get_supported_configs(self) -> ProviderConfig:
@@ -22,7 +22,7 @@ class PluginBase(ABC):
     """An abstract base class that can be used to implement plugins"""
 
     @abstractproperty
-    def name(self) -> str: ...
+    def namespace(self) -> str: ...
 
     @abstractmethod
     def get_supported_configs(self) -> ProviderConfig: ...

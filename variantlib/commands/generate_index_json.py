@@ -37,7 +37,7 @@ def generate_index_json(args):
 
     metadata_parser = email.parser.BytesParser(policy=email.policy.compat32)
     known_variants = {}
-    known_providers = set()
+    known_namespaces = set()
 
     for wheel in directory.glob("*.whl"):
         with zipfile.ZipFile(wheel, "r") as zip_file:
@@ -60,13 +60,13 @@ def generate_index_json(args):
             variant_dict = {}
             for variant_entry in variant_entries:
                 variant_meta = VariantMeta.from_str(variant_entry)
-                provider_dict = variant_dict.setdefault(variant_meta.provider, {})
-                if variant_meta.key in provider_dict:
+                namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
+                if variant_meta.key in namespace_dict:
                     logger.warn(
-                        f"{wheel}: Duplicate key: {variant_meta.provider} :: {variant_meta.key}"
+                        f"{wheel}: Duplicate key: {variant_meta.namespace} :: {variant_meta.key}"
                     )
-                provider_dict[variant_meta.key] = variant_meta.value
-                known_providers.add(variant_meta.provider)
+                namespace_dict[variant_meta.key] = variant_meta.value
+                known_namespaces.add(variant_meta.namespace)
 
             if (existing_entry := known_variants.get(variant_hash)) is None:
                 known_variants[variant_hash] = variant_dict
@@ -77,11 +77,11 @@ def generate_index_json(args):
 
     all_plugins = PluginLoader().get_dist_name_mapping()
     provider_requires = set()
-    for provider in known_providers:
-        if (plugin := all_plugins.get(provider)) is not None:
+    for namespace in known_namespaces:
+        if (plugin := all_plugins.get(namespace)) is not None:
             provider_requires.add(plugin)
         else:
-            logger.warning(f"No known plugin matches variant provider: {provider}")
+            logger.warning(f"No known plugin matches variant namespace: {namespace}")
     provider_requires = {
         plugin
         for provider in known_providers
