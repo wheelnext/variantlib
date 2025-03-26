@@ -42,6 +42,13 @@ class MockedPluginC(PluginBase):
         return None
 
 
+class ClashingPlugin(PluginBase):
+    namespace = "test_plugin"
+
+    def get_supported_configs(self) -> Optional[ProviderConfig]:
+        return None
+
+
 @dataclass
 class MockedDistribution:
     name: str
@@ -107,3 +114,26 @@ def test_get_dist_name_mapping(mocked_plugin_loader):
         "second_plugin": "second-plugin",
         "test_plugin": "test-plugin",
     }
+
+
+def test_namespace_clash(mocker):
+    mocker.patch("variantlib.plugins.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="test_plugin",
+            value="tests.test_plugins:MockedPluginA",
+            dist=MockedDistribution(name="test-plugin", version="1.2.3"),
+            plugin=MockedPluginA,
+        ),
+        MockedEntryPoint(
+            name="clashing_plugin",
+            value="tests.test_plugins:ClashingPlugin",
+            dist=MockedDistribution(name="clashing-plugin", version="4.5.6"),
+            plugin=ClashingPlugin,
+        ),
+    ]
+    mocker.patch("variantlib.metaclasses.SingletonMetaClass._instances", [])
+    with pytest.raises(RuntimeError) as exc:
+        PluginLoader()
+    assert "same namespace test_plugin" in str(exc)
+    assert "test-plugin" in str(exc)
+    assert "clashing-plugin" in str(exc)

@@ -49,16 +49,18 @@ class PluginLoader(metaclass=SingletonMetaClass):
                 logging.exception("An unknown error happened - Ignoring plugin")
             else:
                 if plugin_instance.namespace in self._plugins:
-                    duplicates.add(plugin_instance.namespace)
+                    pkg1 = self._dist_names.get(plugin_instance.namespace)
+                    pkg2 = plugin.dist.name if plugin.dist is not None else None
+                    if pkg1 is not None and pkg2 is not None:
+                        hint = f": {pkg1} or {pkg2}."
+                    raise RuntimeError(
+                        "Two plugins found using the same namespace "
+                        f"{plugin_instance.namespace}. Refusing to proceed. "
+                        f"Please uninstall one of them{hint}..")
                 self._plugins[plugin_instance.namespace] = plugin_instance
 
                 if plugin.dist is not None:
                     self._dist_names[plugin_instance.namespace] = plugin.dist.name
-
-        if duplicates:
-            logger.warning(
-                "Duplicate plugins found: %s - Unpredicatable behavior.", duplicates
-            )
 
     def get_supported_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of plugin names to provider configs"""
