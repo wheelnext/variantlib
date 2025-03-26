@@ -61,6 +61,13 @@ class MockedPluginC(PluginBase):
         return ret
 
 
+class MockedPluginD:
+    namespace = "plugin_without_labels"
+
+    def get_supported_configs(self) -> Optional[ProviderConfig]:
+        return None
+
+
 class ClashingPlugin(PluginBase):
     namespace = "test_plugin"
 
@@ -112,6 +119,11 @@ def mocked_plugin_loader(session_mocker):
             name="incompatible_plugin",
             value="tests.test_plugins:MockedPluginC",
             plugin=MockedPluginC,
+        ),
+        MockedEntryPoint(
+            name="no_labels",
+            value="tests.test_plugins:MockedPluginD",
+            plugin=MockedPluginD,
         ),
     ]
     yield PluginLoader()

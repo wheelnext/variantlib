@@ -44,7 +44,12 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
-                assert isinstance(plugin_instance, PluginType)
+
+                # Check for obligatory members
+                for attr in ("namespace", "get_supported_configs"):
+                    assert hasattr(
+                        plugin_instance, attr
+                    ), f"Plugin is missing required member: {attr}"
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
             else:
@@ -98,6 +103,7 @@ class PluginLoader(metaclass=SingletonMetaClass):
 
         labels = []
         for plugin in self._plugins.values():
-            labels += plugin.get_variant_labels(variant_desc)
+            if hasattr(plugin, "get_variant_labels"):
+                labels += plugin.get_variant_labels(variant_desc)
 
         return labels

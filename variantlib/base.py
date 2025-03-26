@@ -5,7 +5,6 @@ from variantlib.config import ProviderConfig
 from variantlib.meta import VariantDescription
 
 
-@runtime_checkable
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
