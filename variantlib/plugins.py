@@ -48,11 +48,12 @@ class PluginLoader(metaclass=SingletonMetaClass):
                 plugin_class = plugin.load()
 
                 # Instantiate the plugin
-                self._plugins[plugin.name] = plugin_class()
-                assert isinstance(self._plugins[plugin.name], PluginType)
+                plugin_instance = plugin_class()
+                assert isinstance(plugin_instance, PluginType)
+                self._plugins[plugin_instance.name] = plugin_instance
 
                 # Store package distribution names for later use
-                self._dist_names[plugin.name] = plugin.dist.name
+                self._dist_names[plugin_instance.name] = plugin.dist.name
             except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
 
@@ -67,6 +68,14 @@ class PluginLoader(metaclass=SingletonMetaClass):
                 logging.error(
                     f"Provider: {name} returned an unexpected type: "  # noqa: G004
                     f"{type(provider_cfg)} - Expected: `ProviderConfig`. Ignoring..."
+                )
+                continue
+
+            if provider_cfg.provider != name:
+                logging.error(
+                    "Provider %(name)s returned different provider name "
+                    "in config: %(cfg_name)s. Ignoring...",
+                    {"name": name, "cfg_name": provider_cfg.provider},
                 )
                 continue
 
