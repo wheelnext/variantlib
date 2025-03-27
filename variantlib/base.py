@@ -1,11 +1,23 @@
 from __future__ import annotations
 
-from abc import ABC
 from abc import abstractmethod
 from typing import Protocol
 from typing import runtime_checkable
 
-from variantlib.config import ProviderConfig
+
+@runtime_checkable
+class KeyConfigType(Protocol):
+    """A protocol for key configs"""
+
+    @property
+    def key(self) -> str:
+        """Key name"""
+        ...
+
+    @property
+    def values(self) -> list[str]:
+        """Ordered list of values, most preferred first"""
+        ...
 
 
 @runtime_checkable
@@ -13,21 +25,12 @@ class PluginType(Protocol):
     """A protocol for plugin classes"""
 
     @property
+    @abstractmethod
     def namespace(self) -> str:
         """Get provider namespace"""
-        ...
+        raise NotImplementedError
 
-    def get_supported_configs(self) -> ProviderConfig:
+    @abstractmethod
+    def get_supported_configs(self) -> list[KeyConfigType]:
         """Get supported configs for the current system"""
-        ...
-
-
-class PluginBase(ABC):
-    """An abstract base class that can be used to implement plugins"""
-
-    @property
-    @abstractmethod
-    def namespace(self) -> str: ...
-
-    @abstractmethod
-    def get_supported_configs(self) -> ProviderConfig: ...
+        raise NotImplementedError

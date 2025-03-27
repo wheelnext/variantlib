@@ -1,54 +1,53 @@
 from __future__ import annotations
 
+from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from variantlib.base import PluginBase
+from variantlib.base import KeyConfigType
+from variantlib.base import PluginType
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
 from variantlib.loader import PluginLoader
 
 
-class MockedPluginA(PluginBase):
+class MockedPluginA(PluginType):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return ProviderConfig(
-            namespace=self.namespace,
-            configs=[
-                KeyConfig("key1", ["val1a", "val1b"]),
-                KeyConfig("key2", ["val2a", "val2b", "val2c"]),
-            ],
-        )
+    def get_supported_configs(self) -> list[KeyConfigType]:
+        return [
+            KeyConfig("key1", ["val1a", "val1b"]),
+            KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+        ]
 
 
-# NB: this plugin deliberately does not inherit from PluginBase
+MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
+
+
+# NB: this plugin deliberately does not inherit from PluginType
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return ProviderConfig(
-            namespace=self.namespace,
-            configs=[
-                KeyConfig("key3", ["val3a"]),
-            ],
-        )
+    def get_supported_configs(self) -> list[MyKeyConfig]:
+        return [
+            MyKeyConfig("key3", ["val3a"]),
+        ]
 
 
-class MockedPluginC(PluginBase):
+class MockedPluginC(PluginType):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return None
+    def get_supported_configs(self) -> list[KeyConfigType]:
+        return []
 
 
-class ClashingPlugin(PluginBase):
+class ClashingPlugin(PluginType):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return None
+    def get_supported_configs(self) -> list[KeyConfigType]:
+        return []
 
 
 @dataclass
