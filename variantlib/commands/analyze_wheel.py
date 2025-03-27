@@ -69,9 +69,9 @@ def analyze_wheel(args):
         # Extract the hash value
         hash_match = re.search(r"Variant-hash: (\w+)", metadata_str)
         hash_value = hash_match.group(1) if hash_match else None
-        assert (
-            hash_value == variant_hash
-        ), "Hash value does not match - this variant is not valid"
+        assert hash_value == variant_hash, (
+            "Hash value does not match - this variant is not valid"
+        )
 
         # Extract all variant strings
         variant_matches = re.findall(r"Variant: (.+)", metadata_str)

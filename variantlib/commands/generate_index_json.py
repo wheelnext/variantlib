@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def generate_index_json(args):
+def generate_index_json(args) -> None:  # noqa: C901, PLR0912
     parser = argparse.ArgumentParser(
         prog="generate_index_json",
         description="Generate a JSON index of all package variants",
@@ -75,7 +75,7 @@ def generate_index_json(args):
                     f"{wheel}: different metadata assigned to {variant_hash}"
                 )
 
-    all_plugins = PluginLoader().get_dist_name_mapping()
+    all_plugins = PluginLoader.distribution_names
     provider_requires = set()
     for namespace in known_namespaces:
         if (plugin := all_plugins.get(namespace)) is not None:

@@ -36,7 +36,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
 def unpack_variants_from_json(
     variants_from_json: dict,
 ) -> Generator[VariantDescription]:
-    def variant_to_metas(namespaces: dict) -> VariantMeta:
+    def variant_to_metas(namespaces: dict) -> Generator[VariantMeta]:
         for namespace, keys in namespaces.items():
             for key, value in keys.items():
                 yield VariantMeta(namespace=namespace, key=key, value=value)
@@ -113,36 +113,3 @@ def filtered_sorted_variants(  # noqa: C901
         )
 
     return res
-
-
-if __name__ == "__main__":  # pragma: no cover
-    import json
-    from pathlib import Path
-
-    from variantlib.config import KeyConfig
-
-    config_custom_hw = ProviderConfig(
-        namespace="custom_hw",
-        configs=[
-            KeyConfig(key="driver_version", values=["1.3", "1.2", "1.1", "1"]),
-            KeyConfig(key="hw_architecture", values=["3.4", "3"]),
-        ],
-    )
-
-    config_networking = ProviderConfig(
-        namespace="networking",
-        configs=[
-            KeyConfig(key="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
-        ],
-    )
-
-    configs = [config_custom_hw, config_networking]
-
-    output_f = Path("example.json")
-    with output_f.open(mode="w") as outfile:
-        json.dump(
-            list(get_combinations(configs)),
-            outfile,
-            default=lambda o: o.serialize(),
-            indent=4,
-        )
