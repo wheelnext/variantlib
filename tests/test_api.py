@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from variantlib import config as vconfig
 from variantlib import meta as vmeta
 from variantlib.api import KeyConfig

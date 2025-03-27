@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 from typing import Optional
 
 import pytest
-
 from variantlib.base import PluginBase
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig

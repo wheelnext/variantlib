@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class VariantCache:
     """This class is not necessary today - can be used for finer cache control later."""
 

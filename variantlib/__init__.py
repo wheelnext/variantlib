@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.metadata
 
 from variantlib import logger  # noqa: F401
