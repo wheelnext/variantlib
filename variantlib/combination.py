@@ -22,7 +22,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     assert len(data) > 0
     assert all(isinstance(config, ProviderConfig) for config in data)
 
-    data = [
+    meta_lists = [
         [
             VariantMeta(namespace=provider_cnf.namespace, key=key_config.key, value=val)
             for val in key_config.values
@@ -32,8 +32,8 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     ]
 
     # Generate all possible combinations, including optional elements
-    for r in range(len(data), 0, -1):
-        for combo in itertools.combinations(data, r):
+    for r in range(len(meta_lists), 0, -1):
+        for combo in itertools.combinations(meta_lists, r):
             for vmetas in itertools.product(*combo):
                 yield VariantDescription(data=list(vmetas))
 
@@ -54,7 +54,7 @@ def unpack_variants_from_json(
 
 def filtered_sorted_variants(  # noqa: C901
     variants_from_json: dict, data: list[ProviderConfig]
-) -> Generator[VariantDescription]:
+) -> list[VariantDescription]:
     namespaces = {}
     for namespace_idx, namespace_cnf in enumerate(data):
         keys = {}
@@ -63,7 +63,7 @@ def filtered_sorted_variants(  # noqa: C901
         namespaces[namespace_cnf.namespace] = namespace_idx, keys
 
     missing_namespaces = set()
-    missing_keys = {}
+    missing_keys: dict[str, set[str]] = {}
 
     def variant_filter(desc: VariantDescription):
         # Filter out the variant, unless all of its metas are supported.
@@ -83,12 +83,14 @@ def filtered_sorted_variants(  # noqa: C901
     def meta_key(meta: VariantMeta) -> tuple[int, int, int]:
         # The sort key is a tuple of (namespace, key, value) indices, so that
         # the metas with more preferred (namespace, key, value) sort first.
-        namespace_idx, keys = namespaces.get(meta.namespace)
-        key_idx, values = keys.get(meta.key)
+        namespace_idx, keys = namespaces[meta.namespace]
+        key_idx, values = keys[meta.key]
         value_idx = values.index(meta.value)
         return namespace_idx, key_idx, value_idx
 
-    def variant_sort_key_gen(desc: VariantDescription) -> Generator[tuple]:
+    def variant_sort_key_gen(
+        desc: VariantDescription,
+    ) -> Generator[int | tuple[int, int]]:
         # Variants with more matched values should go first.
         yield -len(desc.data)
         # Sort meta sort keys by their sort keys, so that metas containing

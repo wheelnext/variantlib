@@ -63,7 +63,7 @@ def desc_to_json(desc_list: list[VariantDescription]) -> Generator:
     shuffled_desc_list = list(desc_list)
     random.shuffle(shuffled_desc_list)
     for desc in shuffled_desc_list:
-        variant_dict = {}
+        variant_dict: dict[str, dict[str, str]] = {}
         for variant_meta in desc:
             provider_dict = variant_dict.setdefault(variant_meta.namespace, {})
             provider_dict[variant_meta.key] = variant_meta.value

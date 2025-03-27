@@ -30,8 +30,8 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-    namespace_priority_dict: dict[str:int] | None = None,
-) -> Generator[VariantDescription]:
+    namespace_priority_dict: dict[str, int] | None = None,
+) -> Generator[str]:
     provider_cfgs = PluginLoader.get_supported_configs()
 
     # sorting providers in priority order:

@@ -38,7 +38,7 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     metadata_parser = email.parser.BytesParser(policy=email.policy.compat32)
-    known_variants = {}
+    known_variants: dict[str, dict[str, dict[str, str]]] = {}
     known_namespaces = set()
 
     for wheel in directory.glob("*.whl"):
@@ -61,16 +61,18 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
                 )
                 continue
 
-            variant_dict = {}
+            variant_dict: dict[str, dict[str, str]] = {}
             for variant_entry in variant_entries:
                 variant_meta = VariantMeta.from_str(variant_entry)
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
                 if variant_meta.key in namespace_dict:
                     logger.warning(
                         "%(wheel)s: Duplicate key: %(namespace)s :: %(key)s",
-                        wheel=wheel,
-                        namespace=variant_meta.namespace,
-                        key=variant_meta.key,
+                        {
+                            "wheel": wheel,
+                            "namespace": variant_meta.namespace,
+                            "key": variant_meta.key,
+                        },
                     )
                 namespace_dict[variant_meta.key] = variant_meta.value
                 known_namespaces.add(variant_meta.namespace)
