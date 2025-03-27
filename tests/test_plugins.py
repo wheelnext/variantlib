@@ -13,14 +13,11 @@ from variantlib.loader import PluginLoader
 class MockedPluginA(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return ProviderConfig(
-            namespace=self.namespace,
-            configs=[
-                KeyConfig("key1", ["val1a", "val1b"]),
-                KeyConfig("key2", ["val2a", "val2b", "val2c"]),
-            ],
-        )
+    def get_supported_configs(self) -> list[KeyConfig]:
+        return [
+            KeyConfig("key1", ["val1a", "val1b"]),
+            KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+        ]
 
 
 # NB: this plugin deliberately does not inherit from PluginBase
@@ -28,27 +25,24 @@ class MockedPluginA(PluginBase):
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return ProviderConfig(
-            namespace=self.namespace,
-            configs=[
-                KeyConfig("key3", ["val3a"]),
-            ],
-        )
+    def get_supported_configs(self) -> list[KeyConfig]:
+        return [
+            KeyConfig("key3", ["val3a"]),
+        ]
 
 
 class MockedPluginC(PluginBase):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return None
+    def get_supported_configs(self) -> list[KeyConfig]:
+        return []
 
 
 class ClashingPlugin(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> ProviderConfig | None:
-        return None
+    def get_supported_configs(self) -> list[KeyConfig]:
+        return []
 
 
 @dataclass

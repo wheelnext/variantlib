@@ -5,6 +5,7 @@ from importlib.metadata import entry_points
 
 from variantlib.base import PluginType
 from variantlib.cache import VariantCache
+from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ class PluginLoader:
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
                 assert isinstance(plugin_instance, PluginType)
-            except Exception:  # noqa: PERF203
+            except Exception:
                 logging.exception("An unknown error happened - Ignoring plugin")
             else:
                 if plugin_instance.namespace in cls._plugins:
@@ -82,24 +83,32 @@ class PluginLoader:
 
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
-            provider_cfg = plugin_instance.get_supported_configs()
+            key_configs = plugin_instance.get_supported_configs()
 
-            if not isinstance(provider_cfg, ProviderConfig):
+            if not isinstance(key_configs, list):
                 logging.error(
-                    f"Provider: {namespace} returned an unexpected type: "  # noqa: G004
-                    f"{type(provider_cfg)} - Expected: `ProviderConfig`. Ignoring..."
+                    "Provider: %(namespace)s returned an unexpected type: "
+                    "%(type)s - Expected: `list[KeyConfig]`. Ignoring...",
+                    {"namespace": namespace, "type": type(key_configs)},
                 )
                 continue
 
-            if provider_cfg.namespace != namespace:
-                logging.error(
-                    "Provider %(namespace)s returned different provider namespace "
-                    "in config: %(cfg_name)s. Ignoring...",
-                    {"namespace": namespace, "cfg_name": provider_cfg.provider},
-                )
+            # skip providers that do not return any supported configs
+            if not key_configs:
                 continue
 
-            provider_cfgs[namespace] = provider_cfg
+            for key_cfg in key_configs:
+                if not isinstance(key_cfg, KeyConfig):
+                    logging.error(
+                        "Provider: %(namespace)s returned an unexpected list member "
+                        "type: %(type)s - Expected: `KeyConfig`. Ignoring...",
+                        {"namespace": namespace, "type": type(key_configs)},
+                    )
+                    continue
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace, configs=key_configs
+            )
 
         return provider_cfgs
 
