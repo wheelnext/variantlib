@@ -6,13 +6,13 @@ from typing import Any
 
 import pytest
 from variantlib.base import KeyConfigType
-from variantlib.base import PluginBase
+from variantlib.base import PluginType
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
 from variantlib.loader import PluginLoader
 
 
-class MockedPluginA(PluginBase):
+class MockedPluginA(PluginType):
     namespace = "test_plugin"
 
     def get_supported_configs(self) -> list[KeyConfigType]:
@@ -25,7 +25,7 @@ class MockedPluginA(PluginBase):
 MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
 
 
-# NB: this plugin deliberately does not inherit from PluginBase
+# NB: this plugin deliberately does not inherit from PluginType
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_plugin"
@@ -36,14 +36,14 @@ class MockedPluginB:
         ]
 
 
-class MockedPluginC(PluginBase):
+class MockedPluginC(PluginType):
     namespace = "incompatible_plugin"
 
     def get_supported_configs(self) -> list[KeyConfigType]:
         return []
 
 
-class ClashingPlugin(PluginBase):
+class ClashingPlugin(PluginType):
     namespace = "test_plugin"
 
     def get_supported_configs(self) -> list[KeyConfigType]:
