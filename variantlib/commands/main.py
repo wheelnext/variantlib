@@ -8,7 +8,7 @@ from importlib.metadata import entry_points
 import variantlib
 
 
-def main():
+def main() -> None:
     registered_commands = entry_points(group="variantlib.actions")
 
     parser = argparse.ArgumentParser(prog="variantlib")

@@ -52,7 +52,7 @@ class VariantMeta:
         }
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Execute the validators
         for field_name, field_def in self.__dataclass_fields__.items():
             value = getattr(self, field_name)
@@ -118,7 +118,7 @@ class VariantDescription:
         }
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Execute the validators
         for field_name, field_def in self.__dataclass_fields__.items():
             value = getattr(self, field_name)

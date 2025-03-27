@@ -65,7 +65,7 @@ def filtered_sorted_variants(  # noqa: C901
     missing_namespaces = set()
     missing_keys: dict[str, set[str]] = {}
 
-    def variant_filter(desc: VariantDescription):
+    def variant_filter(desc: VariantDescription) -> bool:
         # Filter out the variant, unless all of its metas are supported.
         for meta in desc:
             if (namespace_data := namespaces.get(meta.namespace)) is None:
