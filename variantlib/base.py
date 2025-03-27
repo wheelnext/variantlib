@@ -10,8 +10,15 @@ from typing import runtime_checkable
 class KeyConfigType(Protocol):
     """A protocol for key configs"""
 
-    key: str
-    values: list[str]
+    @property
+    def key(self) -> str:
+        """Key name"""
+        ...
+
+    @property
+    def values(self) -> list[str]:
+        """Ordered list of values, most preferred first"""
+        ...
 
 
 @runtime_checkable

@@ -20,8 +20,8 @@ class classproperty(property):  # noqa: N801
 class PluginLoader:
     """Load and query plugins"""
 
-    _plugins = {}
-    _dist_names = {}
+    _plugins: dict[str, PluginType] = {}
+    _dist_names: dict[str, str] = {}
 
     def __new__(cls, *args, **kwargs):
         raise RuntimeError(f"Cannot instantiate {cls.__name__}")
@@ -123,7 +123,7 @@ class PluginLoader:
         return cls._dist_names
 
     @classproperty
-    def plugins(cls) -> dict[str, str]:  # noqa: N805
+    def plugins(cls) -> dict[str, PluginType]:  # noqa: N805
         """Get the loaded plugins"""
         return cls._plugins
 

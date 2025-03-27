@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from variantlib.base import KeyConfigType
 from variantlib.base import PluginBase
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
@@ -14,7 +15,7 @@ from variantlib.loader import PluginLoader
 class MockedPluginA(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfig]:
+    def get_supported_configs(self) -> list[KeyConfigType]:
         return [
             KeyConfig("key1", ["val1a", "val1b"]),
             KeyConfig("key2", ["val2a", "val2b", "val2c"]),
@@ -38,14 +39,14 @@ class MockedPluginB:
 class MockedPluginC(PluginBase):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfig]:
+    def get_supported_configs(self) -> list[KeyConfigType]:
         return []
 
 
 class ClashingPlugin(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfig]:
+    def get_supported_configs(self) -> list[KeyConfigType]:
         return []
 
 
