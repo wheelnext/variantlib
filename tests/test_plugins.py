@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
-from typing import Optional
 
 import pytest
-
 from variantlib.base import PluginBase
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
@@ -13,7 +13,7 @@ from variantlib.loader import PluginLoader
 class MockedPluginA(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
+    def get_supported_configs(self) -> ProviderConfig | None:
         return ProviderConfig(
             namespace=self.namespace,
             configs=[
@@ -28,7 +28,7 @@ class MockedPluginA(PluginBase):
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
+    def get_supported_configs(self) -> ProviderConfig | None:
         return ProviderConfig(
             namespace=self.namespace,
             configs=[
@@ -40,14 +40,14 @@ class MockedPluginB:
 class MockedPluginC(PluginBase):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
+    def get_supported_configs(self) -> ProviderConfig | None:
         return None
 
 
 class ClashingPlugin(PluginBase):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> Optional[ProviderConfig]:  # noqa: UP007
+    def get_supported_configs(self) -> ProviderConfig | None:
         return None
 
 
@@ -59,11 +59,11 @@ class MockedDistribution:
 
 @dataclass
 class MockedEntryPoint:
-    name: Optional[str]  # noqa: UP007
+    name: str | None
     value: str
     plugin: Any
-    group: Optional[str] = None  # noqa: UP007
-    dist: Optional[MockedDistribution] = None  # noqa: UP007
+    group: str | None = None
+    dist: MockedDistribution | None = None
 
     def load(self) -> Any:
         return self.plugin

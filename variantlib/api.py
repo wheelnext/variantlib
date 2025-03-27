@@ -15,7 +15,6 @@ from variantlib.meta import VariantMeta
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-    namespace_priority_dict: Optional[dict[str:int]] = None,  # noqa: UP007
+    namespace_priority_dict: dict[str:int] | None = None,
 ) -> Generator[VariantDescription]:
     provider_cfgs = PluginLoader.get_supported_configs()
 

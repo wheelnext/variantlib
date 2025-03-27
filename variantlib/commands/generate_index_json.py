@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import email.parser
 import email.policy
@@ -54,7 +56,7 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
                 logger.info(f"{wheel}: no Variant-hash")
                 continue
             if (variant_entries := metadata.get_all("Variant")) is None:
-                logger.warn(f"{wheel}: Variant-hash present but no Variant metadata")
+                logger.warning(f"{wheel}: Variant-hash present but no Variant metadata")
                 continue
 
             variant_dict = {}
@@ -62,7 +64,7 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
                 variant_meta = VariantMeta.from_str(variant_entry)
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
                 if variant_meta.key in namespace_dict:
-                    logger.warn(
+                    logger.warning(
                         f"{wheel}: Duplicate key: {variant_meta.namespace} :: {variant_meta.key}"
                     )
                 namespace_dict[variant_meta.key] = variant_meta.value
