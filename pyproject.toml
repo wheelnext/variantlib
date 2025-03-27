@@ -62,3 +62,12 @@ generate_index_json = "variantlib.commands.generate_index_json:generate_index_js
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
 addopts = "-vvv --cov=variantlib --cov-report=term-missing"
+
+[tool.mypy]
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "jsondiff",
+]
+ignore_missing_imports = true
