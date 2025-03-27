@@ -1,4 +1,3 @@
-
 exclude: "^docs/|/migrations/|devcontainer.json|.*.html|.*.css|.*.js|.*.svg|.*.dist"
 
 default_language_version:
