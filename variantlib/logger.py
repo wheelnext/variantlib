@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import logging as _logging
 import sys
-from typing import Optional
 
 
 class _LoggerAPI:
@@ -69,8 +68,8 @@ class _LoggerAPI:
     @classmethod
     def setup_logger(
         cls,
-        handlers: Optional[list] = None,  # noqa: UP007
-        formatter: Optional[_logging.Formatter] = None,  # noqa: UP007
+        handlers: list | None = None,
+        formatter: _logging.Formatter | None = None,
     ):
         if handlers is None:
             # Add the output handler.
