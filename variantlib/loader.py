@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from importlib.metadata import entry_points
 
+from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
 from variantlib.cache import VariantCache
 from variantlib.config import KeyConfig
@@ -98,16 +99,20 @@ class PluginLoader:
                 continue
 
             for key_cfg in key_configs:
-                if not isinstance(key_cfg, KeyConfig):
+                if not isinstance(key_cfg, KeyConfigType):
                     logging.error(
                         "Provider: %(namespace)s returned an unexpected list member "
-                        "type: %(type)s - Expected: `KeyConfig`. Ignoring...",
+                        "type: %(type)s - Expected: `KeyConfigType`. Ignoring...",
                         {"namespace": namespace, "type": type(key_configs)},
                     )
                     continue
 
             provider_cfgs[namespace] = ProviderConfig(
-                plugin_instance.namespace, configs=key_configs
+                plugin_instance.namespace,
+                configs=[
+                    KeyConfig(key=key_cfg.key, values=key_cfg.values)
+                    for key_cfg in key_configs
+                ],
             )
 
         return provider_cfgs

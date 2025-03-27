@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any
 
@@ -20,14 +21,17 @@ class MockedPluginA(PluginBase):
         ]
 
 
+MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
+
+
 # NB: this plugin deliberately does not inherit from PluginBase
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfig]:
+    def get_supported_configs(self) -> list[MyKeyConfig]:
         return [
-            KeyConfig("key3", ["val3a"]),
+            MyKeyConfig("key3", ["val3a"]),
         ]
 
 
