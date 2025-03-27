@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 
-from variantlib.platform import _query_variant_plugins
+from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,7 +17,7 @@ def analyze_platform(args):
     _ = parser.parse_args(args)
 
     logger.info("Analyzing the platform ... \n")
-    variant_cfgs = _query_variant_plugins().values()
+    variant_cfgs = PluginLoader.get_supported_configs().values()
 
     for variant_cfg in variant_cfgs:
         logger.info(variant_cfg.pretty_print())

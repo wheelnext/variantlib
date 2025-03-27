@@ -8,8 +8,8 @@ import logging
 import pathlib
 import zipfile
 
+from variantlib.loader import PluginLoader
 from variantlib.meta import VariantMeta
-from variantlib.plugins import PluginLoader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -49,14 +49,16 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
                         metadata = metadata_parser.parse(f, headersonly=True)
                     break
             else:
-                logger.warning(f"{wheel}: no METADATA file found")
+                logger.warning("%s: no METADATA file found", wheel)
                 continue
 
             if (variant_hash := metadata.get("Variant-hash")) is None:
-                logger.info(f"{wheel}: no Variant-hash")
+                logger.info("%s: no Variant-hash", wheel)
                 continue
             if (variant_entries := metadata.get_all("Variant")) is None:
-                logger.warning(f"{wheel}: Variant-hash present but no Variant metadata")
+                logger.warning(
+                    "%s: Variant-hash present but no Variant metadata", wheel
+                )
                 continue
 
             variant_dict = {}
@@ -65,7 +67,10 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
                 if variant_meta.key in namespace_dict:
                     logger.warning(
-                        f"{wheel}: Duplicate key: {variant_meta.namespace} :: {variant_meta.key}"
+                        "%(wheel)s: Duplicate key: %(namespace)s :: %(key)s",
+                        wheel=wheel,
+                        namespace=variant_meta.namespace,
+                        key=variant_meta.key,
                     )
                 namespace_dict[variant_meta.key] = variant_meta.value
                 known_namespaces.add(variant_meta.namespace)
@@ -83,10 +88,10 @@ def generate_index_json(args) -> None:  # noqa: C901, PLR0912
         if (plugin := all_plugins.get(namespace)) is not None:
             provider_requires.add(plugin)
         else:
-            logger.warning(f"No known plugin matches variant namespace: {namespace}")
+            logger.warning("No known plugin matches variant namespace: %s", namespace)
     provider_requires = {
         plugin
-        for provider in known_providers
+        for provider in known_namespaces
         if (plugin := all_plugins.get(provider)) is not None
     }
 

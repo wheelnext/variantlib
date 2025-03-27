@@ -5,6 +5,7 @@ import random
 import string
 
 import pytest
+
 from variantlib import VARIANT_HASH_LEN
 from variantlib.meta import VariantDescription
 from variantlib.meta import VariantMeta

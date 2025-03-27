@@ -59,8 +59,11 @@ class PluginLoader:
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
                 assert isinstance(plugin_instance, PluginType)
-            except Exception:
-                logging.exception("An unknown error happened - Ignoring plugin")
+
+            except Exception:  # noqa: PERF203
+                logger.exception("An unknown error happened - Ignoring plugin")
+                continue
+
             else:
                 if plugin_instance.namespace in cls._plugins:
                     pkg1 = cls._dist_names.get(plugin_instance.namespace)

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import importlib.metadata
 
-from variantlib import logger  # noqa: F401
-from variantlib.constants import VARIANT_HASH_LEN  # noqa: F401
+# flake8: noqa: F401
+from variantlib import logger
+from variantlib.constants import VARIANT_HASH_LEN
 
 __version__ = importlib.metadata.version("variantlib")

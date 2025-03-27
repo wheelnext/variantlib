@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import random
 import string
-from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import jsondiff
 import pytest
@@ -17,7 +17,11 @@ from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
-from variantlib.meta import VariantDescription
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from variantlib.meta import VariantDescription
 
 
 @pytest.fixture(scope="session")

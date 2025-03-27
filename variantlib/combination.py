@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import itertools
 import logging
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from variantlib.config import ProviderConfig
 from variantlib.meta import VariantDescription
 from variantlib.meta import VariantMeta
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logger = logging.getLogger(__name__)
 

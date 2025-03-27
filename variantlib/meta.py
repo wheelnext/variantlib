@@ -4,10 +4,10 @@ import contextlib
 import hashlib
 import re
 import sys
-from collections.abc import Iterator
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -15,6 +15,9 @@ from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.validators import validate_instance_of
 from variantlib.validators import validate_list_of
 from variantlib.validators import validate_matches_re
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 if sys.version_info >= (3, 11):
     from typing import Self

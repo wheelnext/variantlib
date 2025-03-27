@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+
 from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
 from variantlib.config import KeyConfig
