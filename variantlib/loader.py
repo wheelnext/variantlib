@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import sys
 from importlib.metadata import entry_points
+from typing import Any
 
 from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
@@ -9,12 +11,17 @@ from variantlib.cache import VariantCache
 from variantlib.config import KeyConfig
 from variantlib.config import ProviderConfig
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 logger = logging.getLogger(__name__)
 
 
 class classproperty(property):  # noqa: N801
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
+    def __get__(self, cls: Any, owner: type | None = None) -> Any:
+        return classmethod(self.fget).__get__(None, owner)()  # type: ignore[arg-type]
 
 
 class PluginLoader:
@@ -23,7 +30,7 @@ class PluginLoader:
     _plugins: dict[str, PluginType] = {}
     _dist_names: dict[str, str] = {}
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: dict[str, Any]) -> Self:
         raise RuntimeError(f"Cannot instantiate {cls.__name__}")
 
     @classmethod

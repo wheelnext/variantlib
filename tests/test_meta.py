@@ -28,15 +28,15 @@ def test_variantmeta_initialization():
 def test_variantmeta_invalid_type():
     # Invalid initialization for provider (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(namespace="OmniCorp", key="access_key", value=123)
+        VariantMeta(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
 
     # Invalid initialization for key (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(namespace="OmniCorp", key=123, value="secret_value")
+        VariantMeta(namespace="OmniCorp", key=123, value="secret_value")  # type: ignore[arg-type]
 
     # Invalid initialization for value (should raise TypeError)
     with pytest.raises(TypeError):
-        VariantMeta(namespace="OmniCorp", key="access_key", value=123)
+        VariantMeta(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
 
 
 def test_variantmeta_data():
@@ -195,7 +195,7 @@ def test_variantdescription_initialization():
 def test_variantdescription_invalid_data():
     # Test invalid data (not a list or tuple)
     with pytest.raises(TypeError):
-        VariantDescription("invalid_data")
+        VariantDescription("invalid_data")  # type: ignore[arg-type]
 
     # Test data containing non-VariantMeta instances
     invalid_meta = {
@@ -204,7 +204,7 @@ def test_variantdescription_invalid_data():
         "value": "secret_value",
     }
     with pytest.raises(TypeError):
-        VariantDescription([invalid_meta])
+        VariantDescription([invalid_meta])  # type: ignore[list-item]
 
 
 def test_variantdescription_duplicate_data():

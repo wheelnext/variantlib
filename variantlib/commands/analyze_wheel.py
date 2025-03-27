@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def analyze_wheel(args):
+def analyze_wheel(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="analyze_wheel", description="Analyze a Wheel file for Variant Information"
     )

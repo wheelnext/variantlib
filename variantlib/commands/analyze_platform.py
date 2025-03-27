@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def analyze_platform(args):
+def analyze_platform(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="analyze_platform",
         description="Analyze the platform and return the variant hashes compatible",

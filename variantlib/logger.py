@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging as _logging
 import sys
+from typing import Any
 
 
 class _LoggerAPI:
@@ -34,31 +35,31 @@ class _LoggerAPI:
     #
     # proxying all function calls
     #
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str) -> Any:
         try:
             return super().__getattribute__(name)
         except AttributeError:
             return getattr(object.__getattribute__(self, "_logger"), name)
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         try:
             super().__delattr__(name)
         except AttributeError:
             delattr(object.__getattribute__(self, "_logger"), name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         try:
             super().__setattr__(name, value)
         except AttributeError:
             setattr(self._logger, name, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(object.__getattribute__(self, "_logger"))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(object.__getattribute__(self, "_logger"))
 
-    def getLogger(self, name) -> _logging.Logger:  # noqa: N802
+    def getLogger(self, name: str) -> _logging.Logger:  # noqa: N802
         return _logging.getLogger(name)
 
     #
@@ -70,7 +71,7 @@ class _LoggerAPI:
         cls,
         handlers: list | None = None,
         formatter: _logging.Formatter | None = None,
-    ):
+    ) -> _logging.Logger:
         if handlers is None:
             # Add the output handler.
             handler_stdout = _logging.StreamHandler(sys.stdout)
