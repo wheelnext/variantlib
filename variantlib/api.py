@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
@@ -23,6 +24,7 @@ __all__ = [
     "ProviderConfig",
     "VariantDescription",
     "VariantMeta",
+    "VariantValidationResult",
     "get_variant_hashes_by_priority",
     "validate_variant",
 ]
@@ -95,9 +97,14 @@ def get_variant_hashes_by_priority(
         yield from []
 
 
+@dataclass
+class VariantValidationResult:
+    results: dict[VariantMeta, bool | None]
+
+
 def validate_variant(
     variant_desc: VariantDescription,
-) -> dict[VariantMeta, bool | None]:
+) -> VariantValidationResult:
     """
     Validate all metas in the variant description
 
@@ -119,4 +126,6 @@ def validate_variant(
                 return vmeta.value in key_cfg.values
         return False
 
-    return {vmeta: _validate_variant(vmeta) for vmeta in variant_desc}
+    return VariantValidationResult(
+        {vmeta: _validate_variant(vmeta) for vmeta in variant_desc}
+    )

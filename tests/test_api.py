@@ -9,6 +9,7 @@ from variantlib.api import KeyConfig
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
 from variantlib.api import VariantMeta
+from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import validate_variant
 
@@ -31,7 +32,7 @@ def test_get_variant_hashes_by_priority():
 
 
 def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
-    assert validate_variant(
+    res = validate_variant(
         VariantDescription(
             [
                 VariantMeta("test_plugin", "key1", "val1d"),
@@ -45,14 +46,22 @@ def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F8
                 VariantMeta("private", "build_type", "debug"),
             ]
         )
-    ) == {
-        VariantMeta(namespace="test_plugin", key="key1", value="val1d"): True,
-        VariantMeta(namespace="test_plugin", key="key2", value="val2d"): False,
-        VariantMeta(namespace="test_plugin", key="key3", value="val3a"): False,
-        VariantMeta(namespace="second_plugin", key="key3", value="val3a"): True,
-        VariantMeta(namespace="incompatible_plugin", key="flag1", value="on"): True,
-        VariantMeta(namespace="incompatible_plugin", key="flag2", value="off"): False,
-        VariantMeta(namespace="incompatible_plugin", key="flag5", value="on"): False,
-        VariantMeta(namespace="missing_plugin", key="key", value="val"): None,
-        VariantMeta(namespace="private", key="build_type", value="debug"): None,
-    }
+    )
+
+    assert res == VariantValidationResult(
+        {
+            VariantMeta(namespace="test_plugin", key="key1", value="val1d"): True,
+            VariantMeta(namespace="test_plugin", key="key2", value="val2d"): False,
+            VariantMeta(namespace="test_plugin", key="key3", value="val3a"): False,
+            VariantMeta(namespace="second_plugin", key="key3", value="val3a"): True,
+            VariantMeta(namespace="incompatible_plugin", key="flag1", value="on"): True,
+            VariantMeta(
+                namespace="incompatible_plugin", key="flag2", value="off"
+            ): False,
+            VariantMeta(
+                namespace="incompatible_plugin", key="flag5", value="on"
+            ): False,
+            VariantMeta(namespace="missing_plugin", key="key", value="val"): None,
+            VariantMeta(namespace="private", key="build_type", value="debug"): None,
+        }
+    )
