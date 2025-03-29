@@ -101,6 +101,11 @@ def get_variant_hashes_by_priority(
 class VariantValidationResult:
     results: dict[VariantMeta, bool | None]
 
+    def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
+        return False not in self.results.values() and (
+            allow_unknown_plugins or None not in self.results.values()
+        )
+
 
 def validate_variant(
     variant_desc: VariantDescription,

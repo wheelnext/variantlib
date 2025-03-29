@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from string import ascii_lowercase
 from typing import TYPE_CHECKING
+
+import pytest
 
 from tests.test_plugins import mocked_plugin_loader  # noqa: F401
 from variantlib import config as vconfig
@@ -29,6 +32,37 @@ def test_api_accessible():
 def test_get_variant_hashes_by_priority():
     # TODO
     assert True
+
+
+@pytest.mark.parametrize(
+    ("bools", "valid", "valid_strict"),
+    [
+        ((True,), True, True),
+        ((None,), True, False),
+        ((False,), False, False),
+        ((True, True, True), True, True),
+        ((True, True, None), True, False),
+        ((None, None, None), True, False),
+        ((True, True, False), False, False),
+        ((True, None, False), False, False),
+        ((None, None, False), False, False),
+        # corner case: the base variant is also valid
+        ((), True, True),
+    ],
+)
+def test_validation_result_is_valid(
+    bools: tuple[bool, ...], valid: bool, valid_strict: bool
+):
+    res = VariantValidationResult(
+        {
+            VariantMeta(
+                ascii_lowercase[i], ascii_lowercase[i], ascii_lowercase[i]
+            ): var_res
+            for i, var_res in enumerate(bools)
+        }
+    )
+    assert res.is_valid() == valid
+    assert res.is_valid(allow_unknown_plugins=False) == valid_strict
 
 
 def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
@@ -65,3 +99,4 @@ def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F8
             VariantMeta(namespace="private", key="build_type", value="debug"): None,
         }
     )
+    assert not res.is_valid()
