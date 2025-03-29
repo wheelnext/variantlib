@@ -16,6 +16,12 @@ from variantlib.loader import PluginLoader
 class MockedPluginA(PluginType):
     namespace = "test_plugin"
 
+    def get_all_configs(self) -> list[KeyConfigType]:
+        return [
+            KeyConfig("key1", ["val1a", "val1b", "val1c", "val1d"]),
+            KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+        ]
+
     def get_supported_configs(self) -> list[KeyConfigType]:
         return [
             KeyConfig("key1", ["val1a", "val1b"]),
@@ -31,14 +37,36 @@ MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
 class MockedPluginB:
     namespace = "second_plugin"
 
+    def get_all_configs(self) -> list[MyKeyConfig]:
+        return [
+            MyKeyConfig("key3", ["val3a", "val3b", "val3c"]),
+        ]
+
     def get_supported_configs(self) -> list[MyKeyConfig]:
         return [
             MyKeyConfig("key3", ["val3a"]),
         ]
 
 
+class MyFlag:
+    key: str
+    values: list[str]
+
+    def __init__(self, key: str) -> None:
+        self.key = key
+        self.values = ["on"]
+
+
 class MockedPluginC(PluginType):
     namespace = "incompatible_plugin"
+
+    def get_all_configs(self) -> list[KeyConfigType]:
+        return [
+            MyFlag("flag1"),
+            MyFlag("flag2"),
+            MyFlag("flag3"),
+            MyFlag("flag4"),
+        ]
 
     def get_supported_configs(self) -> list[KeyConfigType]:
         return []
@@ -93,6 +121,33 @@ def mocked_plugin_loader(session_mocker):
     PluginLoader.load_plugins()
     yield PluginLoader
     PluginLoader.flush_cache()
+
+
+def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
+    assert mocked_plugin_loader.get_all_configs() == {
+        "incompatible_plugin": ProviderConfig(
+            namespace="incompatible_plugin",
+            configs=[
+                KeyConfig("flag1", ["on"]),
+                KeyConfig("flag2", ["on"]),
+                KeyConfig("flag3", ["on"]),
+                KeyConfig("flag4", ["on"]),
+            ],
+        ),
+        "second_plugin": ProviderConfig(
+            namespace="second_plugin",
+            configs=[
+                KeyConfig("key3", ["val3a", "val3b", "val3c"]),
+            ],
+        ),
+        "test_plugin": ProviderConfig(
+            namespace="test_plugin",
+            configs=[
+                KeyConfig("key1", ["val1a", "val1b", "val1c", "val1d"]),
+                KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
 
 
 def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
