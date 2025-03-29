@@ -31,6 +31,11 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def get_all_configs(self) -> list[KeyConfigType]:
+        """Get all configs for the plugin"""
+        raise NotImplementedError
+
+    @abstractmethod
     def get_supported_configs(self) -> list[KeyConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError

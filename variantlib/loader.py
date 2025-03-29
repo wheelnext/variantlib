@@ -90,7 +90,7 @@ class PluginLoader:
     @classmethod
     @VariantCache()
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
-        """Get a mapping of plugin names to provider configs"""
+        """Get a mapping of namespaces to supported configs"""
 
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
@@ -106,6 +106,49 @@ class PluginLoader:
 
             # skip providers that do not return any supported configs
             if not key_configs:
+                continue
+
+            for key_cfg in key_configs:
+                if not isinstance(key_cfg, KeyConfigType):
+                    logging.error(
+                        "Provider: %(namespace)s returned an unexpected list member "
+                        "type: %(type)s - Expected: `KeyConfigType`. Ignoring...",
+                        {"namespace": namespace, "type": type(key_configs)},
+                    )
+                    continue
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace,
+                configs=[
+                    KeyConfig(key=key_cfg.key, values=key_cfg.values)
+                    for key_cfg in key_configs
+                ],
+            )
+
+        return provider_cfgs
+
+    @classmethod
+    @VariantCache()
+    def get_all_configs(cls) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to all valid configs"""
+
+        provider_cfgs = {}
+        for namespace, plugin_instance in cls._plugins.items():
+            key_configs = plugin_instance.get_all_configs()
+
+            if not isinstance(key_configs, list):
+                logging.error(
+                    "Provider: %(namespace)s returned an unexpected type: "
+                    "%(type)s - Expected: `list[KeyConfig]`. Ignoring...",
+                    {"namespace": namespace, "type": type(key_configs)},
+                )
+                continue
+
+            if not key_configs:
+                logging.error(
+                    "Provider: %(namespace)s does not support any configs!",
+                    {"namespace": namespace},
+                )
                 continue
 
             for key_cfg in key_configs:
