@@ -24,6 +24,7 @@ __all__ = [
     "VariantDescription",
     "VariantMeta",
     "get_variant_hashes_by_priority",
+    "validate_variant",
 ]
 
 
@@ -92,3 +93,30 @@ def get_variant_hashes_by_priority(
             yield variant_desc.hexdigest
     else:
         yield from []
+
+
+def validate_variant(
+    variant_desc: VariantDescription,
+) -> dict[VariantMeta, bool | None]:
+    """
+    Validate all metas in the variant description
+
+    Check whether all metas in the variant description are valid, and return
+    a dictionary mapping individual metas into a tri-state variable: True
+    indicates that the variant is valid, False that it is not, and None
+    that no plugin provides given namespace and therefore the variant cannot
+    be verified.
+    """
+
+    provider_cfgs = PluginLoader.get_all_configs()
+
+    def _validate_variant(vmeta: VariantMeta) -> bool | None:
+        provider_cfg = provider_cfgs.get(vmeta.namespace)
+        if provider_cfg is None:
+            return None
+        for key_cfg in provider_cfg.configs:
+            if key_cfg.key == vmeta.key:
+                return vmeta.value in key_cfg.values
+        return False
+
+    return {vmeta: _validate_variant(vmeta) for vmeta in variant_desc}
