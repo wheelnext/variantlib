@@ -118,6 +118,7 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginC,
         ),
     ]
+    PluginLoader.flush_cache()
     PluginLoader.load_plugins()
     yield PluginLoader
     PluginLoader.flush_cache()
