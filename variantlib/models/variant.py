@@ -7,6 +7,7 @@ import sys
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from operator import attrgetter
 from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_KEY_REGEX
@@ -32,7 +33,7 @@ else:
 
 
 @dataclass(frozen=True)
-class VariantMeta(BaseModel):
+class VariantFeature(BaseModel):
     namespace: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -55,6 +56,58 @@ class VariantMeta(BaseModel):
             )
         }
     )
+
+    @property
+    def hexdigest(self) -> int:
+        # Variant Metas are unique in namespace & key and ignore the value.
+        # Class is added to the hash to avoid collisions with other dataclasses.
+        return hash((self.namespace, self.key))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, VariantFeature):
+            return NotImplemented
+        return self.namespace == other.namespace and self.key == other.key
+
+    def to_str(self) -> str:
+        # Variant: <namespace> :: <key> :: <val>
+        return f"{self.namespace} :: {self.key}"
+
+    def serialize(self) -> dict[str, str]:
+        return asdict(self)
+
+    @classmethod
+    def deserialize(cls, data: dict[str, str]) -> Self:
+        for key in cls.__dataclass_fields__:
+            if key not in data:
+                raise ValidationError(f"Extra field not known: `{key}`")
+        return cls(**data)
+
+    @classmethod
+    def from_str(cls, input_str: str) -> Self:
+        # removing starting `^` and trailing `$`
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
+        pttn_key = VALIDATION_KEY_REGEX[1:-1]
+
+        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<key>{pttn_key})$"
+
+        # Try matching the input string with the regex pattern
+        match = re.match(pattern, input_str.strip())
+
+        if match is None:
+            raise ValidationError(
+                f"Invalid format: {input_str}. Expected format: '<namespace> :: <key>'"
+            )
+
+        # Extract the namespace, key, and value from the match groups
+        namespace = match.group("namespace")
+        key = match.group("key")
+
+        # Return an instance of VariantFeature using the parsed values
+        return cls(namespace=namespace, key=key)
+
+
+@dataclass(frozen=True)
+class VariantMeta(VariantFeature):
     value: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -67,10 +120,15 @@ class VariantMeta(BaseModel):
         }
     )
 
-    def __hash__(self) -> int:
-        # Variant Metas are unique in namespace & key and ignore the value.
-        # Class is added to the hash to avoid collisions with other dataclasses.
-        return hash((self.__class__, self.namespace, self.key))
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, VariantMeta):
+            return NotImplemented
+
+        return (
+            self.namespace == other.namespace
+            and self.key == other.key
+            and self.value == other.value
+        )
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <key> :: <val>
@@ -102,14 +160,6 @@ class VariantMeta(BaseModel):
         # Return an instance of VariantMeta using the parsed values
         return cls(namespace=namespace, key=key, value=value)
 
-    def serialize(self) -> dict[str, str]:
-        return asdict(self)
-
-    @classmethod
-    def deserialize(cls, data: dict[str, str]) -> Self:
-        assert all(key in data for key in ["namespace", "key", "value"])
-        return cls(**data)
-
 
 @dataclass(frozen=True)
 class VariantDescription(BaseModel):
@@ -129,7 +179,7 @@ class VariantDescription(BaseModel):
                     lambda v: validate_instance_of(v, list),
                     lambda v: validate_list_of(v, VariantMeta),
                     lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v, key=hash),
+                    lambda v: validate_list_all_unique(v, key=attrgetter("hexdigest")),
                 ],
                 value=val,
             ),

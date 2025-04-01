@@ -47,17 +47,15 @@ def test_variantmeta_data():
     assert vmeta.to_str() == expected_data
 
 
-def test_variantmeta_hash():
+def test_variantmeta_hexdigest():
     # Test the hashing functionality of VariantMeta
-    variant1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
-    variant2 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
-    assert hash(variant1) == hash(variant2)
+    vmeta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="value1")
+    vmeta2 = VariantMeta(namespace="OmniCorp", key="access_key", value="value2")
+    assert vmeta1.hexdigest == vmeta2.hexdigest
 
     # Different value, same namespace and key. Should also result in identical hash
-    variant3 = VariantMeta(
-        namespace="OmniCorp", key="access_key", value="different_value"
-    )
-    assert hash(variant1) == hash(variant3)
+    vmeta3 = VariantMeta(namespace="OmniCorp", key="access_key", value="value2")
+    assert vmeta1.hexdigest == vmeta3.hexdigest
 
 
 def test_variantmeta_val_property():
