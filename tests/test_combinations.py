@@ -68,7 +68,7 @@ def desc_to_json(desc_list: list[VariantDescription]) -> Generator:
         variant_dict: dict[str, dict[str, str]] = {}
         for variant_meta in desc:
             provider_dict = variant_dict.setdefault(variant_meta.namespace, {})
-            provider_dict[variant_meta.key] = variant_meta.value
+            provider_dict[variant_meta.feature] = variant_meta.value
         yield (desc.hexdigest, variant_dict)
 
 

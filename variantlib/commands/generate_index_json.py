@@ -65,16 +65,16 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
             for variant_entry in variant_entries:
                 variant_meta = VariantMetadata.from_str(variant_entry)
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
-                if variant_meta.key in namespace_dict:
+                if variant_meta.feature in namespace_dict:
                     logger.warning(
-                        "%(wheel)s: Duplicate feature: %(namespace)s :: %(key)s",
+                        "%(wheel)s: Duplicate feature: %(namespace)s :: %(feature)s",
                         {
                             "wheel": wheel,
                             "namespace": variant_meta.namespace,
-                            "key": variant_meta.key,
+                            "feature": variant_meta.feature,
                         },
                     )
-                namespace_dict[variant_meta.key] = variant_meta.value
+                namespace_dict[variant_meta.feature] = variant_meta.value
                 known_namespaces.add(variant_meta.namespace)
 
             if (existing_entry := known_variants.get(variant_hash)) is None:

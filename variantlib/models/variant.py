@@ -45,7 +45,7 @@ class VariantFeature(BaseModel):
             )
         }
     )
-    key: str = field(
+    feature: str = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -59,51 +59,52 @@ class VariantFeature(BaseModel):
 
     @property
     def hexdigest(self) -> int:
-        # Variant Metas are unique in namespace & key and ignore the value.
+        # Variant Metas are unique in namespace & feature and ignore the value.
         # Class is added to the hash to avoid collisions with other dataclasses.
-        return hash((self.namespace, self.key))
+        return hash((self.namespace, self.feature))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VariantFeature):
             return NotImplemented
-        return self.namespace == other.namespace and self.key == other.key
+        return self.namespace == other.namespace and self.feature == other.feature
 
     def to_str(self) -> str:
-        # Variant: <namespace> :: <key> :: <val>
-        return f"{self.namespace} :: {self.key}"
+        # Variant: <namespace> :: <feature> :: <val>
+        return f"{self.namespace} :: {self.feature}"
 
     def serialize(self) -> dict[str, str]:
         return asdict(self)
 
     @classmethod
     def deserialize(cls, data: dict[str, str]) -> Self:
-        for key in cls.__dataclass_fields__:
-            if key not in data:
-                raise ValidationError(f"Extra field not known: `{key}`")
+        for field_name in cls.__dataclass_fields__:
+            if field_name not in data:
+                raise ValidationError(f"Extra field not known: `{field_name}`")
         return cls(**data)
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
         pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_key = VALIDATION_FEATURE_REGEX[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<key>{pttn_key})$"
+        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
 
         # Try matching the input string with the regex pattern
         match = re.match(pattern, input_str.strip())
 
         if match is None:
             raise ValidationError(
-                f"Invalid format: {input_str}. Expected format: '<namespace> :: <key>'"
+                f"Invalid format: {input_str}. Expected format: "
+                "'<namespace> :: <feature>'"
             )
 
-        # Extract the namespace, key, and value from the match groups
+        # Extract the namespace, feature, and value from the match groups
         namespace = match.group("namespace")
-        key = match.group("key")
+        feature = match.group("feature")
 
         # Return an instance of VariantFeature using the parsed values
-        return cls(namespace=namespace, key=key)
+        return cls(namespace=namespace, feature=feature)
 
 
 @dataclass(frozen=True)
@@ -126,22 +127,22 @@ class VariantMetadata(VariantFeature):
 
         return (
             self.namespace == other.namespace
-            and self.key == other.key
+            and self.feature == other.feature
             and self.value == other.value
         )
 
     def to_str(self) -> str:
-        # Variant: <namespace> :: <key> :: <val>
-        return f"{self.namespace} :: {self.key} :: {self.value}"
+        # Variant: <namespace> :: <feature> :: <val>
+        return f"{self.namespace} :: {self.feature} :: {self.value}"
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
         pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_key = VALIDATION_FEATURE_REGEX[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
         pttn_value = VALIDATION_VALUE_REGEX[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<key>{pttn_key})\s*::\s*(?P<value>{pttn_value})$"  # noqa: E501
+        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"  # noqa: E501
 
         # Try matching the input string with the regex pattern
         match = re.match(pattern, input_str.strip())
@@ -149,23 +150,23 @@ class VariantMetadata(VariantFeature):
         if match is None:
             raise ValidationError(
                 f"Invalid format: {input_str}. "
-                "Expected format: '<namespace> :: <key> :: <value>'"
+                "Expected format: '<namespace> :: <feature> :: <value>'"
             )
 
-        # Extract the namespace, key, and value from the match groups
+        # Extract the namespace, feature, and value from the match groups
         namespace = match.group("namespace")
-        key = match.group("key")
+        feature = match.group("feature")
         value = match.group("value")
 
         # Return an instance of VariantMetadata using the parsed values
-        return cls(namespace=namespace, key=key, value=value)
+        return cls(namespace=namespace, feature=feature, value=value)
 
 
 @dataclass(frozen=True)
 class VariantDescription(BaseModel):
     """
     A `Variant` is being described by a N >= 1 `VariantMetadata` metadata.
-    Each informing the packaging toolkit about a unique `namespace-key-value`
+    Each informing the packaging toolkit about a unique `namespace-feature-value`
     combination.
 
     All together they identify the package producing a "variant hash", unique
@@ -194,7 +195,7 @@ class VariantDescription(BaseModel):
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(
-                self, "data", sorted(self.data, key=lambda x: (x.namespace, x.key))
+                self, "data", sorted(self.data, key=lambda x: (x.namespace, x.feature))
             )
 
         # Execute the validator

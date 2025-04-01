@@ -25,7 +25,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     meta_lists = [
         [
             VariantMetadata(
-                namespace=provider_cnf.namespace, key=vfeat_cfg.name, value=val
+                namespace=provider_cnf.namespace, feature=vfeat_cfg.name, value=val
             )
             for val in vfeat_cfg.values
         ]
@@ -46,7 +46,7 @@ def unpack_variants_from_json(
     def variant_to_metas(namespaces: dict) -> Generator[VariantMetadata]:
         for namespace, keys in namespaces.items():
             for key, value in keys.items():
-                yield VariantMetadata(namespace=namespace, key=key, value=value)
+                yield VariantMetadata(namespace=namespace, feature=key, value=value)
 
     for variant_hash, namespaces in variants_from_json.items():
         desc = VariantDescription(list(variant_to_metas(namespaces)))
@@ -74,8 +74,8 @@ def filtered_sorted_variants(  # noqa: C901
                 missing_namespaces.add(meta.namespace)
                 return False
             _, keys = namespace_data
-            if (key_data := keys.get(meta.key)) is None:
-                missing_keys.setdefault(meta.namespace, set()).add(meta.key)
+            if (key_data := keys.get(meta.feature)) is None:
+                missing_keys.setdefault(meta.namespace, set()).add(meta.feature)
                 return False
             _, values = key_data
             if meta.value not in values:
@@ -86,7 +86,7 @@ def filtered_sorted_variants(  # noqa: C901
         # The sort key is a tuple of (namespace, key, value) indices, so that
         # the metas with more preferred (namespace, key, value) sort first.
         namespace_idx, keys = namespaces[meta.namespace]
-        key_idx, values = keys[meta.key]
+        key_idx, values = keys[meta.feature]
         value_idx = values.index(meta.value)
         return namespace_idx, key_idx, value_idx
 

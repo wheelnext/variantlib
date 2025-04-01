@@ -19,91 +19,101 @@ from variantlib.models.variant import VariantMetadata
 def test_variantmeta_initialization():
     # Valid initialization
     valid_variant = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     assert valid_variant.namespace == "OmniCorp"
-    assert valid_variant.key == "access_key"
+    assert valid_variant.feature == "custom_feat"
     assert valid_variant.value == "secret_value"
 
 
 def test_variantmeta_invalid_type():
-    # Invalid initialization for provider (should raise TypeError)
+    # Invalid initialization for provider (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantMetadata(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
+        VariantMetadata(namespace="OmniCorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
 
-    # Invalid initialization for key (should raise TypeError)
+    # Invalid initialization for feature (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantMetadata(namespace="OmniCorp", key=123, value="secret_value")  # type: ignore[arg-type]
+        VariantMetadata(namespace="OmniCorp", feature=123, value="secret_value")  # type: ignore[arg-type]
 
-    # Invalid initialization for value (should raise TypeError)
+    # Invalid initialization for value (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantMetadata(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
+        VariantMetadata(namespace="OmniCorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
 
 
 def test_variantmeta_data():
     # Test the repr method of VariantMetadata
     vmeta = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    expected_data = "OmniCorp :: access_key :: secret_value"
+    expected_data = "OmniCorp :: custom_feat :: secret_value"
     assert vmeta.to_str() == expected_data
 
 
 def test_variantmeta_hexdigest():
     # Test the hashing functionality of VariantMetadata
-    vmeta1 = VariantMetadata(namespace="OmniCorp", key="access_key", value="value1")
-    vmeta2 = VariantMetadata(namespace="OmniCorp", key="access_key", value="value2")
+    vmeta1 = VariantMetadata(
+        namespace="OmniCorp", feature="custom_feat", value="value1"
+    )
+    vmeta2 = VariantMetadata(
+        namespace="OmniCorp", feature="custom_feat", value="value2"
+    )
     assert vmeta1.hexdigest == vmeta2.hexdigest
 
-    # Different value, same namespace and key. Should also result in identical hash
-    vmeta3 = VariantMetadata(namespace="OmniCorp", key="access_key", value="value2")
+    # Different value, same namespace and feature. Should also result in identical hash
+    vmeta3 = VariantMetadata(
+        namespace="OmniCorp", feature="custom_feat", value="value2"
+    )
     assert vmeta1.hexdigest == vmeta3.hexdigest
 
 
 def test_variantmeta_val_property():
     # Test the val property
     vmeta = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    expected_val = "OmniCorp :: access_key :: secret_value"
+    expected_val = "OmniCorp :: custom_feat :: secret_value"
     assert vmeta.to_str() == expected_val
 
 
 def test_failing_regex_namespace():
     with pytest.raises(ValidationError, match="must match regex"):
-        _ = VariantMetadata(namespace="", key="key", value="value")
-
-    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
-        with pytest.raises(ValidationError, match="must match regex"):
-            _ = VariantMetadata(namespace=f"Omni{c}Corp", key="key", value="value")
-
-
-def test_failing_regex_key():
-    with pytest.raises(ValidationError, match="must match regex"):
-        _ = VariantMetadata(namespace="provider", key="", value="value")
+        _ = VariantMetadata(namespace="", feature="feature", value="value")
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantMetadata(
-                namespace="provider", key=f"access{c}key", value="value"
+                namespace=f"Omni{c}Corp", feature="feature", value="value"
+            )
+
+
+def test_failing_regex_feature():
+    with pytest.raises(ValidationError, match="must match regex"):
+        _ = VariantMetadata(namespace="provider", feature="", value="value")
+
+    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
+        with pytest.raises(ValidationError, match="must match regex"):
+            _ = VariantMetadata(
+                namespace="provider", feature=f"access{c}feature", value="value"
             )
 
 
 def test_failing_regex_value():
     with pytest.raises(ValidationError, match="must match regex"):
-        _ = VariantMetadata(namespace="provider", key="key", value="")
+        _ = VariantMetadata(namespace="provider", feature="feature", value="")
 
     for c in "@#$%&*^()[]?!-{}[]\\/ ":
         with pytest.raises(ValidationError, match="must match regex"):
-            _ = VariantMetadata(namespace="provider", key="key", value=f"val{c}ue")
+            _ = VariantMetadata(
+                namespace="provider", feature="feature", value=f"val{c}ue"
+            )
 
 
 @pytest.mark.parametrize(
     "input_str",
     [
-        "OmniCorp :: access_key :: secret_value",
-        "OmniCorp::access_key::secret_value",
-        "OmniCorp ::access_key::     secret_value",
+        "OmniCorp :: custom_feat :: secret_value",
+        "OmniCorp::custom_feat::secret_value",
+        "OmniCorp ::custom_feat::     secret_value",
     ],
 )
 def test_from_str_valid(input_str: str):
@@ -112,23 +122,23 @@ def test_from_str_valid(input_str: str):
 
     # Check if the resulting object matches the expected values
     assert variant_meta.namespace == "OmniCorp"
-    assert variant_meta.key == "access_key"
+    assert variant_meta.feature == "custom_feat"
     assert variant_meta.value == "secret_value"
 
 
 def test_from_str_missing_parts():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantMetadata.from_str("OmniCorp :: access_key")
+        VariantMetadata.from_str("OmniCorp :: custom_feat")
 
 
 def test_from_str_extra_colons():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantMetadata.from_str("OmniCorp :: access_key :: secret_value :: extra")
+        VariantMetadata.from_str("OmniCorp :: custom_feat :: secret_value :: extra")
 
 
 def test_from_str_empty_value():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantMetadata.from_str("OmniCorp :: access_key ::")
+        VariantMetadata.from_str("OmniCorp :: custom_feat ::")
 
 
 def test_from_str_edge_case_empty_string():
@@ -138,28 +148,28 @@ def test_from_str_edge_case_empty_string():
 
 def test_from_str_trailing_spaces():
     # Test case: Input with leading/trailing spaces
-    input_str = "   OmniCorp :: access_key :: secret_value   "
+    input_str = "   OmniCorp :: custom_feat :: secret_value   "
     variant_meta = VariantMetadata.from_str(input_str.strip())
 
     # Check if it still correctly parses and matches the expected values
     assert variant_meta.namespace == "OmniCorp"
-    assert variant_meta.key == "access_key"
+    assert variant_meta.feature == "custom_feat"
     assert variant_meta.value == "secret_value"
 
 
 def test_from_str_invalid_format():
     # Test case: Input with invalid format
-    input_str = "OmniCorp, access_key, secret_value"
+    input_str = "OmniCorp, custom_feat, secret_value"
 
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantMetadata.from_str(input_str)
 
 
 def test_variantmeta_serialization():
-    vmeta = VariantMetadata(namespace="provider", key="key", value="value")
+    vmeta = VariantMetadata(namespace="provider", feature="feature", value="value")
     assert vmeta.serialize() == {
         "namespace": "provider",
-        "key": "key",
+        "feature": "feature",
         "value": "value",
     }
 
@@ -167,14 +177,14 @@ def test_variantmeta_serialization():
 def test_variantmeta_deserialization():
     data = {
         "namespace": "provider",
-        "key": "key",
+        "feature": "feature",
         "value": "value",
     }
 
     vmeta = VariantMetadata.deserialize(data)
 
     assert vmeta.namespace == data["namespace"]
-    assert vmeta.key == data["key"]
+    assert vmeta.feature == data["feature"]
     assert vmeta.value == data["value"]
 
 
@@ -186,10 +196,10 @@ def test_variantmeta_deserialization():
 def test_variantdescription_initialization():
     # Valid input: List of VariantMetadata instances
     meta1 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     meta2 = VariantMetadata(
-        namespace="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
     variant_description = VariantDescription([meta1, meta2])
 
@@ -207,7 +217,7 @@ def test_variantdescription_invalid_data():
     # Test data containing non-VariantMetadata instances
     invalid_meta = {
         "namespace": "OmniCorp",
-        "key": "access_key",
+        "feature": "custom_feat",
         "value": "secret_value",
     }
     with pytest.raises(ValidationError):
@@ -217,7 +227,7 @@ def test_variantdescription_invalid_data():
 def test_variantdescription_duplicate_data():
     # Test that duplicate VariantMetadata instances are removed
     meta1 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta1])
@@ -226,31 +236,31 @@ def test_variantdescription_duplicate_data():
 def test_variantdescription_partial_duplicate_data():
     # Test that duplicate VariantMetadata instances are removed
     meta1 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     meta2 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="another_value"
+        namespace="OmniCorp", feature="custom_feat", value="another_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta2])
 
 
 def test_variantdescription_sorted_data():
-    # Ensure that the data is sorted by namespace, key, value
+    # Ensure that the data is sorted by namespace, feature, value
     meta1 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     meta2 = VariantMetadata(
-        namespace="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
     meta3 = VariantMetadata(
-        namespace="OmniCorp", key="secret_key", value="client_value"
+        namespace="OmniCorp", feature="secret_pass", value="client_value"
     )
     variant_description = VariantDescription([meta1, meta2, meta3])
 
-    # Check that data is sorted by namespace, key, and value
+    # Check that data is sorted by namespace, feature, and value
     sorted_data = sorted(
-        [meta1, meta2, meta3], key=lambda x: (x.namespace, x.key, x.value)
+        [meta1, meta2, meta3], key=lambda x: (x.namespace, x.feature, x.value)
     )
     assert list(variant_description) == sorted_data
 
@@ -258,10 +268,10 @@ def test_variantdescription_sorted_data():
 def test_variantdescription_hexdigest():
     # Ensure that the hexdigest property works correctly
     meta1 = VariantMetadata(
-        namespace="OmniCorp", key="access_key", value="secret_value"
+        namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     meta2 = VariantMetadata(
-        namespace="TyrellCorporation", key="client_id", value="secret_key"
+        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
     variant_description = VariantDescription([meta1, meta2])
 
@@ -275,13 +285,13 @@ def test_variantdescription_hexdigest():
 
 
 def test_variantdescription_serialization():
-    vmeta = VariantMetadata(namespace="provider", key="key", value="value")
+    vmeta = VariantMetadata(namespace="provider", feature="feature", value="value")
     vdesc = VariantDescription(data=[vmeta])
 
     assert vdesc.serialize() == [
         {
             "namespace": "provider",
-            "key": "key",
+            "feature": "feature",
             "value": "value",
         }
     ]
@@ -291,7 +301,7 @@ def test_variantdescription_deserialization():
     data = [
         {
             "namespace": "provider",
-            "key": "key",
+            "feature": "feature",
             "value": "value",
         }
     ]
@@ -300,9 +310,9 @@ def test_variantdescription_deserialization():
 
     assert len(vdesc.data) == 1
     assert vdesc.data[0].namespace == "provider"
-    assert vdesc.data[0].key == "key"
+    assert vdesc.data[0].feature == "feature"
     assert vdesc.data[0].value == "value"
-    assert vdesc.hexdigest == "5b7306b3"
+    assert vdesc.hexdigest == "fafeda9c"
 
 
 # -----------------------------------------------
@@ -311,21 +321,21 @@ def test_variantdescription_deserialization():
 
 
 @pytest.mark.parametrize(
-    ("namespace", "key", "value"),
+    ("namespace", "feature", "value"),
     [
-        ("OmniCorp", "access_key", "secret_value"),
-        ("TyrellCorporation", "client_id", "secret_key"),
+        ("OmniCorp", "custom_feat", "secret_value"),
+        ("TyrellCorporation", "client_id", "secret_pass"),
         ("InGenTechnologies", "tenant_id", "secret_value123"),
         ("SoylentCorporation", "token", "auth_value_123"),
         ("CyberdyneSystems", "version", "10.1"),
         ("CyberdyneSystems", "version", "10.1.4"),
     ],
 )
-def test_fuzzy_variantmeta(namespace, key, value):
+def test_fuzzy_variantmeta(namespace, feature, value):
     # Fuzzy test for random combinations of VariantMetadata
-    variant = VariantMetadata(namespace=namespace, key=key, value=value)
+    variant = VariantMetadata(namespace=namespace, feature=feature, value=value)
     assert variant.namespace == namespace
-    assert variant.key == key
+    assert variant.feature == feature
     assert variant.value == value
 
 
@@ -335,30 +345,34 @@ def test_fuzzy_variantmeta(namespace, key, value):
         (
             [
                 VariantMetadata(
-                    namespace="OmniCorp", key="access_key", value="secret_value"
+                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
                 )
             ]
         ),
         (
             [
                 VariantMetadata(
-                    namespace="TyrellCorporation", key="client_id", value="secret_key"
+                    namespace="TyrellCorporation",
+                    feature="client_id",
+                    value="secret_pass",
                 ),
                 VariantMetadata(
-                    namespace="OmniCorp", key="access_key", value="secret_value"
+                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
                 ),
             ]
         ),
         (
             [
                 VariantMetadata(
-                    namespace="OmniCorp", key="access_key", value="secret_value"
+                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
                 ),
                 VariantMetadata(
-                    namespace="TyrellCorporation", key="client_id", value="secret_key"
+                    namespace="TyrellCorporation",
+                    feature="client_id",
+                    value="secret_pass",
                 ),
                 VariantMetadata(
-                    namespace="OmniCorp", key="secret_key", value="client_value"
+                    namespace="OmniCorp", feature="secret_pass", value="client_value"
                 ),
             ]
         ),
@@ -384,7 +398,7 @@ def test_random_hexdigest(num_entries):
 
     meta_data = [
         VariantMetadata(
-            namespace=random_string(5), key=random_string(5), value=random_string(8)
+            namespace=random_string(5), feature=random_string(5), value=random_string(8)
         )
         for _ in range(num_entries)
     ]
