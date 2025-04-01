@@ -25,12 +25,12 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     meta_lists = [
         [
             VariantMetadata(
-                namespace=provider_cnf.namespace, key=key_config.key, value=val
+                namespace=provider_cnf.namespace, key=vfeat_cfg.name, value=val
             )
-            for val in key_config.values
+            for val in vfeat_cfg.values
         ]
         for provider_cnf in data
-        for key_config in provider_cnf.configs
+        for vfeat_cfg in provider_cnf.configs
     ]
 
     # Generate all possible combinations, including optional elements
@@ -61,7 +61,7 @@ def filtered_sorted_variants(  # noqa: C901
     for namespace_idx, namespace_cnf in enumerate(data):
         keys = {}
         for key_idx, key_cnf in enumerate(namespace_cnf.configs):
-            keys[key_cnf.key] = key_idx, key_cnf.values
+            keys[key_cnf.name] = key_idx, key_cnf.values
         namespaces[namespace_cnf.namespace] = namespace_idx, keys
 
     missing_namespaces = set()

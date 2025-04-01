@@ -5,11 +5,11 @@ import sys
 from importlib.metadata import entry_points
 from typing import Any
 
-from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
+from variantlib.base import VariantFeatureConfigType
 from variantlib.cache import VariantCache
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 from variantlib.utils import classproperty
 
 if sys.version_info >= (3, 11):
@@ -90,34 +90,35 @@ class PluginLoader:
 
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
-            key_configs = plugin_instance.get_supported_configs()
+            vfeat_configs = plugin_instance.get_supported_configs()
 
-            if not isinstance(key_configs, list):
+            if not isinstance(vfeat_configs, list):
                 logging.error(
                     "Provider: %(namespace)s returned an unexpected type: "
-                    "%(type)s - Expected: `list[KeyConfig]`. Ignoring...",
-                    {"namespace": namespace, "type": type(key_configs)},
+                    "%(type)s - Expected: `list[VariantFeatureConfig]`. Ignoring...",
+                    {"namespace": namespace, "type": type(vfeat_configs)},
                 )
                 continue
 
             # skip providers that do not return any supported configs
-            if not key_configs:
+            if not vfeat_configs:
                 continue
 
-            for key_cfg in key_configs:
-                if not isinstance(key_cfg, KeyConfigType):
+            for vfeat_cfg in vfeat_configs:
+                if not isinstance(vfeat_cfg, VariantFeatureConfigType):
                     logging.error(
                         "Provider: %(namespace)s returned an unexpected list member "
-                        "type: %(type)s - Expected: `KeyConfigType`. Ignoring...",
-                        {"namespace": namespace, "type": type(key_configs)},
+                        "type: %(type)s - Expected: `VariantFeatureConfigType`. "
+                        "Ignoring...",
+                        {"namespace": namespace, "type": type(vfeat_configs)},
                     )
                     continue
 
             provider_cfgs[namespace] = ProviderConfig(
                 plugin_instance.namespace,
                 configs=[
-                    KeyConfig(key=key_cfg.key, values=key_cfg.values)
-                    for key_cfg in key_configs
+                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
+                    for vfeat_cfg in vfeat_configs
                 ],
             )
 

@@ -15,8 +15,8 @@ from hypothesis import strategies as st
 
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -29,15 +29,17 @@ def configs():
     config_custom_hw = ProviderConfig(
         namespace="custom_hw",
         configs=[
-            KeyConfig(key="driver_version", values=["1.3", "1.2", "1.1", "1"]),
-            KeyConfig(key="hw_architecture", values=["3.4", "3"]),
+            VariantFeatureConfig(
+                name="driver_version", values=["1.3", "1.2", "1.1", "1"]
+            ),
+            VariantFeatureConfig(name="hw_architecture", values=["3.4", "3"]),
         ],
     )
 
     config_networking = ProviderConfig(
         namespace="networking",
         configs=[
-            KeyConfig(key="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
+            VariantFeatureConfig(name="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
         ],
     )
 
@@ -83,12 +85,16 @@ def test_filtered_sorted_variants_roundtrip(configs):
         ProviderConfig(
             namespace="A",
             configs=[
-                KeyConfig(key="A1", values=["x"]),
-                KeyConfig(key="A2", values=["x"]),
+                VariantFeatureConfig(name="A1", values=["x"]),
+                VariantFeatureConfig(name="A2", values=["x"]),
             ],
         ),
-        ProviderConfig(namespace="B", configs=[KeyConfig(key="B1", values=["x"])]),
-        ProviderConfig(namespace="C", configs=[KeyConfig(key="C1", values=["x"])]),
+        ProviderConfig(
+            namespace="B", configs=[VariantFeatureConfig(name="B1", values=["x"])]
+        ),
+        ProviderConfig(
+            namespace="C", configs=[VariantFeatureConfig(name="C1", values=["x"])]
+        ),
     ]
 )
 @given(
@@ -104,10 +110,10 @@ def test_filtered_sorted_variants_roundtrip(configs):
             configs=st.lists(
                 min_size=1,
                 max_size=2,
-                unique_by=lambda key_cfg: key_cfg.key,
+                unique_by=lambda vfeat_cfg: vfeat_cfg.name,
                 elements=st.builds(
-                    KeyConfig,
-                    key=st.text(
+                    VariantFeatureConfig,
+                    name=st.text(
                         alphabet=string.ascii_letters + string.digits + "_",
                         min_size=1,
                         max_size=64,

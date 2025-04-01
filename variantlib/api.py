@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 from variantlib.combination import filtered_sorted_variants
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantMetadata
 
@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "VARIANT_HASH_LEN",
-    "KeyConfig",
     "ProviderConfig",
     "VariantDescription",
+    "VariantFeatureConfig",
     "VariantMetadata",
     "get_variant_hashes_by_priority",
 ]

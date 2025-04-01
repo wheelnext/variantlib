@@ -67,7 +67,7 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
                 if variant_meta.key in namespace_dict:
                     logger.warning(
-                        "%(wheel)s: Duplicate key: %(namespace)s :: %(key)s",
+                        "%(wheel)s: Duplicate feature: %(namespace)s :: %(key)s",
                         {
                             "wheel": wheel,
                             "namespace": variant_meta.namespace,
