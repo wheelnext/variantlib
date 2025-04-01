@@ -4,9 +4,9 @@ import itertools
 import logging
 from typing import TYPE_CHECKING
 
-from variantlib.config import ProviderConfig
-from variantlib.meta import VariantDescription
-from variantlib.meta import VariantMeta
+from variantlib.models.provider import ProviderConfig
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantMeta
 
 if TYPE_CHECKING:
     from collections.abc import Generator

@@ -7,11 +7,12 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
-from variantlib.config import KeyConfig
-from variantlib.config import ProviderConfig
+from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
-from variantlib.meta import VariantDescription
-from variantlib.meta import VariantMeta
+from variantlib.models.provider import KeyConfig
+from variantlib.models.provider import ProviderConfig
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantMeta
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "VARIANT_HASH_LEN",
     "KeyConfig",
     "ProviderConfig",
     "VariantDescription",
