@@ -128,7 +128,6 @@ class PluginLoader:
         return provider_cfgs
 
     @classmethod
-    @VariantCache()
     def get_all_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
 
@@ -137,28 +136,24 @@ class PluginLoader:
             key_configs = plugin_instance.get_all_configs()
 
             if not isinstance(key_configs, list):
-                logging.error(
-                    "Provider: %(namespace)s returned an unexpected type: "
-                    "%(type)s - Expected: `list[KeyConfig]`. Ignoring...",
-                    {"namespace": namespace, "type": type(key_configs)},
+                raise TypeError(
+                    f"Provider {namespace}, get_all_configs() method returned "
+                    f"incorrect type {type(key_configs)}, excepted: list[KeyConfig]"
                 )
-                continue
 
             if not key_configs:
-                logging.error(
-                    "Provider: %(namespace)s does not support any configs!",
-                    {"namespace": namespace},
+                raise ValueError(
+                    f"Provider {namespace}, get_all_configs() method returned no valid "
+                    "configs"
                 )
-                continue
 
             for key_cfg in key_configs:
                 if not isinstance(key_cfg, KeyConfigType):
-                    logging.error(
-                        "Provider: %(namespace)s returned an unexpected list member "
-                        "type: %(type)s - Expected: `KeyConfigType`. Ignoring...",
-                        {"namespace": namespace, "type": type(key_configs)},
+                    raise TypeError(
+                        f"Provider {namespace}, get_all_configs() method returned "
+                        f"incorrect list member type {type(key_cfg)}, excepted: "
+                        "KeyConfig"
                     )
-                    continue
 
             provider_cfgs[namespace] = ProviderConfig(
                 plugin_instance.namespace,

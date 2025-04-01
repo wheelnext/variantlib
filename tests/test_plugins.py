@@ -75,8 +75,30 @@ class MockedPluginC(PluginType):
 class ClashingPlugin(PluginType):
     namespace = "test_plugin"
 
+    def get_all_configs(self) -> list[KeyConfigType]:
+        return [
+            KeyConfig("key1", ["val1a", "val1b", "val1c", "val1d"]),
+        ]
+
     def get_supported_configs(self) -> list[KeyConfigType]:
         return []
+
+
+class ExceptionTestingPlugin(PluginType):
+    namespace = "exception_test"
+
+    def __init__(self, returned_value: Any) -> None:
+        self.returned_value = returned_value
+
+    def get_all_configs(self) -> list[KeyConfigType]:
+        return self.returned_value
+
+    def get_supported_configs(self) -> list[KeyConfigType]:
+        return self.returned_value
+
+    def __call__(self) -> ExceptionTestingPlugin:
+        """Fake instantiation"""
+        return self
 
 
 @dataclass
@@ -197,3 +219,59 @@ def test_namespace_clash(mocker):
         "proceed. Please uninstall one of them: test-plugin or test-plugin",
     ):
         PluginLoader.load_plugins()
+
+
+def test_get_all_configs_incorrect_list_type(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin(
+                (KeyConfig("k1", ["v1"]), KeyConfig("k2", ["v2"]))
+            ),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        TypeError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
+        r"type <class 'tuple'>, excepted: list\[KeyConfig\]",
+    ):
+        PluginLoader.get_all_configs()
+
+
+def test_get_all_configs_incorrect_list_length(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin([]),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        ValueError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
+        r"configs",
+    ):
+        PluginLoader.get_all_configs()
+
+
+def test_get_all_configs_incorrect_list_member_type(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        TypeError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
+        r"list member type <class 'dict'>, excepted: KeyConfig",
+    ):
+        PluginLoader.get_all_configs()
