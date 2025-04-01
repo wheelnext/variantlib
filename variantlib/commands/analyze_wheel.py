@@ -7,7 +7,7 @@ import re
 import zipfile
 
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -79,7 +79,9 @@ def analyze_wheel(args: list[str]) -> None:
         variant_matches = re.findall(r"Variant: (.+)", metadata_str)
         variant_metadata = variant_matches if variant_matches else []
 
-        variant_metas = [VariantMeta.from_str(variant) for variant in variant_metadata]
+        variant_metas = [
+            VariantMetadata.from_str(variant) for variant in variant_metadata
+        ]
         variant_description = VariantDescription(variant_metas)
 
         logger.info(variant_description.pretty_print())

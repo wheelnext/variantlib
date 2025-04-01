@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantMetadata
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription]:
-    """Generate all possible combinations of `VariantMeta` given a list of
+    """Generate all possible combinations of `VariantMetadata` given a list of
     `ProviderConfig`. This function respects ordering and priority provided."""
 
     assert isinstance(data, (list, tuple))
@@ -24,7 +24,9 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
 
     meta_lists = [
         [
-            VariantMeta(namespace=provider_cnf.namespace, key=key_config.key, value=val)
+            VariantMetadata(
+                namespace=provider_cnf.namespace, key=key_config.key, value=val
+            )
             for val in key_config.values
         ]
         for provider_cnf in data
@@ -41,10 +43,10 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
 def unpack_variants_from_json(
     variants_from_json: dict,
 ) -> Generator[VariantDescription]:
-    def variant_to_metas(namespaces: dict) -> Generator[VariantMeta]:
+    def variant_to_metas(namespaces: dict) -> Generator[VariantMetadata]:
         for namespace, keys in namespaces.items():
             for key, value in keys.items():
-                yield VariantMeta(namespace=namespace, key=key, value=value)
+                yield VariantMetadata(namespace=namespace, key=key, value=value)
 
     for variant_hash, namespaces in variants_from_json.items():
         desc = VariantDescription(list(variant_to_metas(namespaces)))
@@ -80,7 +82,7 @@ def filtered_sorted_variants(  # noqa: C901
                 return False
         return True
 
-    def meta_key(meta: VariantMeta) -> tuple[int, int, int]:
+    def meta_key(meta: VariantMetadata) -> tuple[int, int, int]:
         # The sort key is a tuple of (namespace, key, value) indices, so that
         # the metas with more preferred (namespace, key, value) sort first.
         namespace_idx, keys = namespaces[meta.namespace]

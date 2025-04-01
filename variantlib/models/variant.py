@@ -107,7 +107,7 @@ class VariantFeature(BaseModel):
 
 
 @dataclass(frozen=True)
-class VariantMeta(VariantFeature):
+class VariantMetadata(VariantFeature):
     value: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -121,7 +121,7 @@ class VariantMeta(VariantFeature):
     )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VariantMeta):
+        if not isinstance(other, VariantMetadata):
             return NotImplemented
 
         return (
@@ -157,27 +157,27 @@ class VariantMeta(VariantFeature):
         key = match.group("key")
         value = match.group("value")
 
-        # Return an instance of VariantMeta using the parsed values
+        # Return an instance of VariantMetadata using the parsed values
         return cls(namespace=namespace, key=key, value=value)
 
 
 @dataclass(frozen=True)
 class VariantDescription(BaseModel):
     """
-    A `Variant` is being described by a N >= 1 `VariantMeta` metadata.
+    A `Variant` is being described by a N >= 1 `VariantMetadata` metadata.
     Each informing the packaging toolkit about a unique `namespace-key-value`
     combination.
 
     All together they identify the package producing a "variant hash", unique
-    to the exact combination of `VariantMeta` provided for a given package.
+    to the exact combination of `VariantMetadata` provided for a given package.
     """
 
-    data: list[VariantMeta] = field(
+    data: list[VariantMetadata] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantMeta),
+                    lambda v: validate_list_of(v, VariantMetadata),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v, key=attrgetter("hexdigest")),
                 ],
@@ -200,7 +200,7 @@ class VariantDescription(BaseModel):
         # Execute the validator
         super().__post_init__()
 
-    def __iter__(self) -> Iterator[VariantMeta]:
+    def __iter__(self) -> Iterator[VariantMetadata]:
         yield from self.data
 
     @property
@@ -213,7 +213,7 @@ class VariantDescription(BaseModel):
 
     @classmethod
     def deserialize(cls, data: list[dict[str, str]]) -> Self:
-        return cls(data=[VariantMeta.deserialize(vdata) for vdata in data])
+        return cls(data=[VariantMetadata.deserialize(vdata) for vdata in data])
 
     def serialize(self) -> list[dict[str, str]]:
         return [vmeta.serialize() for vmeta in self.data]

@@ -9,7 +9,7 @@ import pathlib
 import zipfile
 
 from variantlib.loader import PluginLoader
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,7 +63,7 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
 
             variant_dict: dict[str, dict[str, str]] = {}
             for variant_entry in variant_entries:
-                variant_meta = VariantMeta.from_str(variant_entry)
+                variant_meta = VariantMetadata.from_str(variant_entry)
                 namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
                 if variant_meta.key in namespace_dict:
                     logger.warning(
