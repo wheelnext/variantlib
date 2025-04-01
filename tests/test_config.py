@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from variantlib.config import KeyConfig
-from variantlib.config import ProviderConfig
+from variantlib.errors import ValidationError
+from variantlib.models.provider import KeyConfig
+from variantlib.models.provider import ProviderConfig
 
 
 def test_key_config_creation_valid():
@@ -32,15 +33,15 @@ def test_duplicate_key_config():
     key_config_1 = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
     key_config_2 = KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])
 
-    with pytest.raises(
-        ValueError, match="Duplicate `KeyConfig` for key='attr_nameA' found."
-    ):
+    with pytest.raises(ValidationError, match="Duplicate value found: 'attr_nameA'"):
         ProviderConfig(namespace="provider_name", configs=[key_config_1, key_config_2])
 
 
 def test_empty_values_list_in_key_config():
     """Test KeyConfig creation with empty values."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(
+        ValidationError, match="List must have at least 1 elements, got 0"
+    ):
         _ = KeyConfig(key="attr_nameA", values=[])
 
 
@@ -53,20 +54,20 @@ def test_single_item_values_list_in_key_config():
 
 def test_duplicate_values_in_key_config():
     """Test that duplicate values in KeyConfig do not raise an error."""
-    with pytest.raises(ValueError, match="Duplicate value found: '7' in `values`"):
+    with pytest.raises(ValidationError, match="Duplicate value found: '7' in list"):
         _ = KeyConfig(key="attr_nameA", values=["7", "7", "8", "12"])
 
 
 def test_invalid_key_type_in_key_config():
     """Test that an invalid key type in KeyConfig raises a validation error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         # Expecting string for `key`
         KeyConfig(key=1, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
 
 
 def test_invalid_values_type_in_key_config():
     """Test that invalid values type in KeyConfig raises a validation error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         KeyConfig(
             key="attr_nameA",
             values="not_a_list",  # type: ignore[arg-type]
@@ -75,7 +76,7 @@ def test_invalid_values_type_in_key_config():
 
 def test_provider_config_invalid_namespace_type():
     """Test that an invalid namespace type raises a validation error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         ProviderConfig(
             namespace=1,  # type: ignore[arg-type]
             configs=[KeyConfig(key="attr_nameA", values=["7", "4", "8", "12"])],
@@ -84,7 +85,7 @@ def test_provider_config_invalid_namespace_type():
 
 def test_provider_config_invalid_configs_type():
     """Test that an invalid configs type raises a validation error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         ProviderConfig(
             namespace="provider_name",
             configs="not_a_list_of_key_configs",  # type: ignore[arg-type]
@@ -93,7 +94,7 @@ def test_provider_config_invalid_configs_type():
 
 def test_provider_config_invalid_key_type_in_configs():
     """Test that invalid `KeyConfig` inside `ProviderConfig` raises an error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         ProviderConfig(
             namespace="provider_name",
             configs=[{"key": "attr_nameA", "values": ["7", "4", "8", "12"]}],  # type: ignore[list-item]
@@ -102,7 +103,9 @@ def test_provider_config_invalid_key_type_in_configs():
 
 def test_empty_provider_config():
     """Test creation of ProviderConfig with an empty list of KeyConfigs."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(
+        ValidationError, match="List must have at least 1 elements, got 0"
+    ):
         _ = ProviderConfig(namespace="provider_name", configs=[])
 
 
@@ -110,7 +113,7 @@ def test_provider_config_invalid_key_config_type():
     """Test that invalid key config types within ProviderConfig raise an error."""
     from types import SimpleNamespace
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         ProviderConfig(
             namespace="provider_name",
             configs=[
@@ -122,13 +125,13 @@ def test_provider_config_invalid_key_config_type():
 
 def test_key_config_invalid_values_type():
     """Test that KeyConfig raises a validation error for non-list type values."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         KeyConfig(key="attr_nameA", values="invalid_values")  # type: ignore[arg-type]
 
 
 def test_key_config_non_string_key():
     """Test that non-string keys in KeyConfig raise an error."""
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         KeyConfig(key=12345, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
 
 
@@ -156,18 +159,18 @@ def test_key_config_repr():
 
 
 def test_failing_regex_key():
-    with pytest.raises(ValueError, match="must match regex"):
+    with pytest.raises(ValidationError, match="must match regex"):
         _ = KeyConfig(key="", values=["7", "4", "8", "12"])
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
-        with pytest.raises(ValueError, match="must match regex"):
+        with pytest.raises(ValidationError, match="must match regex"):
             _ = KeyConfig(key=f"key{c}value", values=["7", "4", "8", "12"])
 
 
 def test_failing_regex_value():
-    with pytest.raises(ValueError, match="does not follow the proper format"):
+    with pytest.raises(ValidationError, match="must match regex"):
         _ = KeyConfig(key="key", values=[""])
 
     for c in "@#$%&*^()[]?!-{}[]\\/ ":
-        with pytest.raises(ValueError, match="does not follow the proper format"):
+        with pytest.raises(ValidationError, match="must match regex"):
             _ = KeyConfig(key="key", values=[f"val{c}ue"])

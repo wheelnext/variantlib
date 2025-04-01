@@ -8,9 +8,9 @@ import pytest
 
 from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
-from variantlib.config import KeyConfig
-from variantlib.config import ProviderConfig
 from variantlib.loader import PluginLoader
+from variantlib.models.provider import KeyConfig
+from variantlib.models.provider import ProviderConfig
 
 
 class MockedPluginA(PluginType):
