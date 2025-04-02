@@ -86,7 +86,7 @@ class PluginLoader:
     @classmethod
     @VariantCache()
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
-        """Get a mapping of plugin names to provider configs"""
+        """Get a mapping of namespaces to supported configs"""
 
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
@@ -112,6 +112,44 @@ class PluginLoader:
                         {"namespace": namespace, "type": type(key_configs)},
                     )
                     continue
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace,
+                configs=[
+                    KeyConfig(key=key_cfg.key, values=key_cfg.values)
+                    for key_cfg in key_configs
+                ],
+            )
+
+        return provider_cfgs
+
+    @classmethod
+    def get_all_configs(cls) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to all valid configs"""
+
+        provider_cfgs = {}
+        for namespace, plugin_instance in cls._plugins.items():
+            key_configs = plugin_instance.get_all_configs()
+
+            if not isinstance(key_configs, list):
+                raise TypeError(
+                    f"Provider {namespace}, get_all_configs() method returned "
+                    f"incorrect type {type(key_configs)}, excepted: list[KeyConfig]"
+                )
+
+            if not key_configs:
+                raise ValueError(
+                    f"Provider {namespace}, get_all_configs() method returned no valid "
+                    "configs"
+                )
+
+            for key_cfg in key_configs:
+                if not isinstance(key_cfg, KeyConfigType):
+                    raise TypeError(
+                        f"Provider {namespace}, get_all_configs() method returned "
+                        f"incorrect list member type {type(key_cfg)}, excepted: "
+                        "KeyConfig"
+                    )
 
             provider_cfgs[namespace] = ProviderConfig(
                 plugin_instance.namespace,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
@@ -25,7 +26,9 @@ __all__ = [
     "ProviderConfig",
     "VariantDescription",
     "VariantMeta",
+    "VariantValidationResult",
     "get_variant_hashes_by_priority",
+    "validate_variant",
 ]
 
 
@@ -94,3 +97,42 @@ def get_variant_hashes_by_priority(
             yield variant_desc.hexdigest
     else:
         yield from []
+
+
+@dataclass
+class VariantValidationResult:
+    results: dict[VariantMeta, bool | None]
+
+    def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
+        return False not in self.results.values() and (
+            allow_unknown_plugins or None not in self.results.values()
+        )
+
+
+def validate_variant(
+    variant_desc: VariantDescription,
+) -> VariantValidationResult:
+    """
+    Validate all metas in the variant description
+
+    Check whether all metas in the variant description are valid, and return
+    a dictionary mapping individual metas into a tri-state variable: True
+    indicates that the variant is valid, False that it is not, and None
+    that no plugin provides given namespace and therefore the variant cannot
+    be verified.
+    """
+
+    provider_cfgs = PluginLoader.get_all_configs()
+
+    def _validate_variant(vmeta: VariantMeta) -> bool | None:
+        provider_cfg = provider_cfgs.get(vmeta.namespace)
+        if provider_cfg is None:
+            return None
+        for key_cfg in provider_cfg.configs:
+            if key_cfg.key == vmeta.key:
+                return vmeta.value in key_cfg.values
+        return False
+
+    return VariantValidationResult(
+        {vmeta: _validate_variant(vmeta) for vmeta in variant_desc}
+    )
