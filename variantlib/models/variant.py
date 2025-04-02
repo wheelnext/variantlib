@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import hashlib
 import re
 import sys
 from dataclasses import asdict
@@ -13,9 +12,8 @@ from typing import TYPE_CHECKING
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
-from variantlib.models.base import BaseModel
+from variantlib.models.base import BaseHashableModel
 from variantlib.models.validators import validate_and
 from variantlib.models.validators import validate_instance_of
 from variantlib.models.validators import validate_list_all_unique
@@ -33,7 +31,7 @@ else:
 
 
 @dataclass(frozen=True)
-class VariantFeature(BaseModel):
+class VariantFeature(BaseHashableModel):
     namespace: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -57,11 +55,9 @@ class VariantFeature(BaseModel):
         }
     )
 
-    @property
-    def hexdigest(self) -> int:
-        # Variant Metas are unique in namespace & feature and ignore the value.
-        # Class is added to the hash to avoid collisions with other dataclasses.
-        return hash((self.namespace, self.feature))
+    def _data_to_hash(self) -> list[bytes]:
+        # Variant Features are unique in namespace & feature name.
+        return [data.encode("utf-8") for data in (self.namespace, self.feature)]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VariantFeature):
@@ -131,6 +127,18 @@ class VariantMetadata(VariantFeature):
             and self.value == other.value
         )
 
+    @property
+    def value_hexdigest(self) -> str:
+        """
+        Compute the feature-hash of the object.
+        """
+        # Create a hash digest specific to namespace-feature-value combination.
+        data = [
+            data.encode("utf-8") for data in (self.namespace, self.feature, self.value)
+        ]
+
+        return self._compute_hash(data)
+
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>
         return f"{self.namespace} :: {self.feature} :: {self.value}"
@@ -163,7 +171,7 @@ class VariantMetadata(VariantFeature):
 
 
 @dataclass(frozen=True)
-class VariantDescription(BaseModel):
+class VariantDescription(BaseHashableModel):
     """
     A `Variant` is being described by a N >= 1 `VariantMetadata` metadata.
     Each informing the packaging toolkit about a unique `namespace-feature-value`
@@ -204,13 +212,9 @@ class VariantDescription(BaseModel):
     def __iter__(self) -> Iterator[VariantMetadata]:
         yield from self.data
 
-    @property
-    def hexdigest(self) -> str:
-        hash_object = hashlib.shake_128()
-        for vmeta in self:
-            hash_object.update(vmeta.to_str().encode("utf-8"))
-
-        return hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
+    def _data_to_hash(self) -> list[bytes]:
+        # Variant Features are unique in namespace & feature name.
+        return [vmeta.to_str().encode("utf-8") for vmeta in self]
 
     @classmethod
     def deserialize(cls, data: list[dict[str, str]]) -> Self:
