@@ -6,9 +6,10 @@ import string
 
 import pytest
 
-from variantlib import VARIANT_HASH_LEN
-from variantlib.meta import VariantDescription
-from variantlib.meta import VariantMeta
+from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.errors import ValidationError
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantMeta
 
 # -----------------------------------------------
 # Test for VariantMeta Class
@@ -27,15 +28,15 @@ def test_variantmeta_initialization():
 
 def test_variantmeta_invalid_type():
     # Invalid initialization for provider (should raise TypeError)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         VariantMeta(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
 
     # Invalid initialization for key (should raise TypeError)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         VariantMeta(namespace="OmniCorp", key=123, value="secret_value")  # type: ignore[arg-type]
 
     # Invalid initialization for value (should raise TypeError)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         VariantMeta(namespace="OmniCorp", key="access_key", value=123)  # type: ignore[arg-type]
 
 
@@ -67,29 +68,29 @@ def test_variantmeta_val_property():
 
 
 def test_failing_regex_namespace():
-    with pytest.raises(ValueError, match="must match regex"):
+    with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantMeta(namespace="", key="key", value="value")
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
-        with pytest.raises(ValueError, match="must match regex"):
+        with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantMeta(namespace=f"Omni{c}Corp", key="key", value="value")
 
 
 def test_failing_regex_key():
-    with pytest.raises(ValueError, match="must match regex"):
+    with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantMeta(namespace="provider", key="", value="value")
 
     for c in "@#$%&*^()[]?.!-{}[]\\/ ":
-        with pytest.raises(ValueError, match="must match regex"):
+        with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantMeta(namespace="provider", key=f"access{c}key", value="value")
 
 
 def test_failing_regex_value():
-    with pytest.raises(ValueError, match="must match regex"):
+    with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantMeta(namespace="provider", key="key", value="")
 
     for c in "@#$%&*^()[]?!-{}[]\\/ ":
-        with pytest.raises(ValueError, match="must match regex"):
+        with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantMeta(namespace="provider", key="key", value=f"val{c}ue")
 
 
@@ -112,22 +113,22 @@ def test_from_str_valid(input_str: str):
 
 
 def test_from_str_missing_parts():
-    with pytest.raises(ValueError, match="Invalid format"):
+    with pytest.raises(ValidationError, match="Invalid format"):
         VariantMeta.from_str("OmniCorp :: access_key")
 
 
 def test_from_str_extra_colons():
-    with pytest.raises(ValueError, match="Invalid format"):
+    with pytest.raises(ValidationError, match="Invalid format"):
         VariantMeta.from_str("OmniCorp :: access_key :: secret_value :: extra")
 
 
 def test_from_str_empty_value():
-    with pytest.raises(ValueError, match="Invalid format"):
+    with pytest.raises(ValidationError, match="Invalid format"):
         VariantMeta.from_str("OmniCorp :: access_key ::")
 
 
 def test_from_str_edge_case_empty_string():
-    with pytest.raises(ValueError, match="Invalid format"):
+    with pytest.raises(ValidationError, match="Invalid format"):
         VariantMeta.from_str("")
 
 
@@ -146,7 +147,7 @@ def test_from_str_invalid_format():
     # Test case: Input with invalid format
     input_str = "OmniCorp, access_key, secret_value"
 
-    with pytest.raises(ValueError, match="Invalid format"):
+    with pytest.raises(ValidationError, match="Invalid format"):
         VariantMeta.from_str(input_str)
 
 
@@ -194,7 +195,7 @@ def test_variantdescription_initialization():
 
 def test_variantdescription_invalid_data():
     # Test invalid data (not a list or tuple)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         VariantDescription("invalid_data")  # type: ignore[arg-type]
 
     # Test data containing non-VariantMeta instances
@@ -203,14 +204,14 @@ def test_variantdescription_invalid_data():
         "key": "access_key",
         "value": "secret_value",
     }
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         VariantDescription([invalid_meta])  # type: ignore[list-item]
 
 
 def test_variantdescription_duplicate_data():
     # Test that duplicate VariantMeta instances are removed
     meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
-    with pytest.raises(ValueError, match="Duplicate value"):
+    with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta1])
 
 
@@ -218,7 +219,7 @@ def test_variantdescription_partial_duplicate_data():
     # Test that duplicate VariantMeta instances are removed
     meta1 = VariantMeta(namespace="OmniCorp", key="access_key", value="secret_value")
     meta2 = VariantMeta(namespace="OmniCorp", key="access_key", value="another_value")
-    with pytest.raises(ValueError, match="Duplicate value"):
+    with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([meta1, meta2])
 
 

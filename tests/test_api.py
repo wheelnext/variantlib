@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 import pytest
 
 from tests.test_plugins import mocked_plugin_loader  # noqa: F401
-from variantlib import config as vconfig
-from variantlib import meta as vmeta
 from variantlib.api import KeyConfig
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
@@ -15,6 +13,8 @@ from variantlib.api import VariantMeta
 from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import validate_variant
+from variantlib.models import provider as pconfig
+from variantlib.models import variant as vconfig
 
 if TYPE_CHECKING:
     from variantlib.loader import PluginLoader
@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 def test_api_accessible():
     """Test that the API is accessible."""
     assert get_variant_hashes_by_priority is not None
-    assert vconfig.KeyConfig is KeyConfig
-    assert vconfig.ProviderConfig is ProviderConfig
-    assert vmeta.VariantDescription is VariantDescription
-    assert vmeta.VariantMeta is VariantMeta
+    assert pconfig.KeyConfig is KeyConfig
+    assert pconfig.ProviderConfig is ProviderConfig
+    assert vconfig.VariantDescription is VariantDescription
+    assert vconfig.VariantMeta is VariantMeta
 
 
 def test_get_variant_hashes_by_priority():

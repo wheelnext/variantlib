@@ -9,7 +9,7 @@ import pathlib
 import zipfile
 
 from variantlib.loader import PluginLoader
-from variantlib.meta import VariantMeta
+from variantlib.models.variant import VariantMeta
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

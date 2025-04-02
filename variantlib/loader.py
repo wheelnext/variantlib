@@ -8,8 +8,9 @@ from typing import Any
 from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
 from variantlib.cache import VariantCache
-from variantlib.config import KeyConfig
-from variantlib.config import ProviderConfig
+from variantlib.models.provider import KeyConfig
+from variantlib.models.provider import ProviderConfig
+from variantlib.utils import classproperty
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -17,11 +18,6 @@ else:
     from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
-
-
-class classproperty(property):  # noqa: N801
-    def __get__(self, cls: Any, owner: type | None = None) -> Any:
-        return classmethod(self.fget).__get__(None, owner)()  # type: ignore[arg-type]
 
 
 class PluginLoader:

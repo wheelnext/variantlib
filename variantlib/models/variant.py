@@ -9,12 +9,18 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import TYPE_CHECKING
 
-from variantlib.constants import VALIDATION_REGEX
+from variantlib.constants import VALIDATION_KEY_REGEX
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.validators import validate_instance_of
-from variantlib.validators import validate_list_of
-from variantlib.validators import validate_matches_re
+from variantlib.errors import ValidationError
+from variantlib.models.base import BaseModel
+from variantlib.models.validators import validate_and
+from variantlib.models.validators import validate_instance_of
+from variantlib.models.validators import validate_list_all_unique
+from variantlib.models.validators import validate_list_min_len
+from variantlib.models.validators import validate_list_of
+from variantlib.models.validators import validate_matches_re
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -26,41 +32,44 @@ else:
 
 
 @dataclass(frozen=True)
-class VariantMeta:
+class VariantMeta(BaseModel):
     namespace: str = field(
         metadata={
-            "validators": [
-                lambda v: validate_instance_of(v, str),
-                lambda v: validate_matches_re(v, VALIDATION_REGEX),
-            ]
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
+                ],
+                value=val,
+            )
         }
     )
     key: str = field(
         metadata={
-            "validators": [
-                lambda v: validate_instance_of(v, str),
-                lambda v: validate_matches_re(v, VALIDATION_REGEX),
-            ]
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_KEY_REGEX),
+                ],
+                value=val,
+            )
         }
     )
     value: str = field(
         metadata={
-            "validators": [
-                lambda v: validate_instance_of(v, str),
-                lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
-            ]
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
+                ],
+                value=val,
+            )
         }
     )
 
-    def __post_init__(self) -> None:
-        # Execute the validators
-        for field_name, field_def in self.__dataclass_fields__.items():
-            value = getattr(self, field_name)
-            for validator in field_def.metadata.get("validators", []):
-                validator(value)
-
     def __hash__(self) -> int:
         # Variant Metas are unique in namespace & key and ignore the value.
+        # Class is added to the hash to avoid collisions with other dataclasses.
         return hash((self.__class__, self.namespace, self.key))
 
     def to_str(self) -> str:
@@ -69,14 +78,18 @@ class VariantMeta:
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
-        subpattern = VALIDATION_REGEX[1:-1]  # removing starting `^` and trailing `$`
-        pattern = rf"^(?P<namespace>{subpattern})\s*::\s*(?P<key>{subpattern})\s*::\s*(?P<value>{subpattern})$"  # noqa: E501
+        # removing starting `^` and trailing `$`
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
+        pttn_key = VALIDATION_KEY_REGEX[1:-1]
+        pttn_value = VALIDATION_VALUE_REGEX[1:-1]
+
+        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<key>{pttn_key})\s*::\s*(?P<value>{pttn_value})$"  # noqa: E501
 
         # Try matching the input string with the regex pattern
         match = re.match(pattern, input_str.strip())
 
         if match is None:
-            raise ValueError(
+            raise ValidationError(
                 f"Invalid format: {input_str}. "
                 "Expected format: '<namespace> :: <key> :: <value>'"
             )
@@ -99,7 +112,7 @@ class VariantMeta:
 
 
 @dataclass(frozen=True)
-class VariantDescription:
+class VariantDescription(BaseModel):
     """
     A `Variant` is being described by a N >= 1 `VariantMeta` metadata.
     Each informing the packaging toolkit about a unique `namespace-key-value`
@@ -111,48 +124,31 @@ class VariantDescription:
 
     data: list[VariantMeta] = field(
         metadata={
-            "validators": [
-                lambda v: validate_instance_of(v, list),
-                lambda v: validate_list_of(v, VariantMeta),
-            ]
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_instance_of(v, list),
+                    lambda v: validate_list_of(v, VariantMeta),
+                    lambda v: validate_list_min_len(v, 1),
+                    lambda v: validate_list_all_unique(v, key=hash),
+                ],
+                value=val,
+            ),
         }
     )
 
     def __post_init__(self) -> None:
-        # Execute the validators
-        for field_name, field_def in self.__dataclass_fields__.items():
-            value = getattr(self, field_name)
-            for validator in field_def.metadata.get("validators", []):
-                validator(value)
-
-        # We verify `data` is not empty
-        assert len(self.data) > 0
-
         # We sort the data so that they always get displayed/hashed
         # in a consistent manner.
+        # Note: We have to execute this before validation to guarantee hash consistency.
+
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(
                 self, "data", sorted(self.data, key=lambda x: (x.namespace, x.key))
             )
 
-        # Detect multiple `VariantMeta` with identical namespace/key
-        # Ignores the attribute `value` of `VariantMeta`.
-        # Uses `__hash__` for collision detection.
-        #
-        # Note: Can not use `data = set(data)` in order to raise
-        #       an exception when there is a collision instead of
-        #       a silent behavior.
-        seen = set()
-        for vmeta in self.data:
-            vmeta_hash = hash(vmeta)
-            if vmeta_hash in seen:
-                raise ValueError(
-                    "Duplicate value for:\n"
-                    f"\t- `namespace`: {vmeta.namespace}\n"
-                    f"\t- `key`: {vmeta.key}"
-                )
-            seen.add(vmeta_hash)
+        # Execute the validator
+        super().__post_init__()
 
     def __iter__(self) -> Iterator[VariantMeta]:
         yield from self.data

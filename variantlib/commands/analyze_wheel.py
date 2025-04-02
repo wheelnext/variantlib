@@ -6,8 +6,8 @@ import pathlib
 import re
 import zipfile
 
-from variantlib.meta import VariantDescription
-from variantlib.meta import VariantMeta
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantMeta
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

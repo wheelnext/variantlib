@@ -15,13 +15,13 @@ from hypothesis import strategies as st
 
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
-from variantlib.config import KeyConfig
-from variantlib.config import ProviderConfig
+from variantlib.models.provider import KeyConfig
+from variantlib.models.provider import ProviderConfig
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from variantlib.meta import VariantDescription
+    from variantlib.models.variant import VariantDescription
 
 
 @pytest.fixture(scope="session")
