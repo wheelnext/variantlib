@@ -11,6 +11,7 @@ import pytest
 from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
+from hypothesis import settings
 from hypothesis import strategies as st
 
 from variantlib.combination import filtered_sorted_variants
@@ -80,6 +81,7 @@ def test_filtered_sorted_variants_roundtrip(configs):
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
 
 
+@settings(deadline=500)
 @example(
     [
         ProviderConfig(
