@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import re
 import sys
 from dataclasses import asdict
@@ -11,8 +12,9 @@ from operator import attrgetter
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
-from variantlib.models.base import BaseHashableModel
+from variantlib.models.base import BaseModel
 from variantlib.models.validators import validate_and
 from variantlib.models.validators import validate_instance_of
 from variantlib.models.validators import validate_list_all_unique
@@ -27,7 +29,7 @@ else:
 
 
 @dataclass(frozen=True)
-class VariantFeature(BaseHashableModel):
+class VariantFeature(BaseModel):
     namespace: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -51,14 +53,9 @@ class VariantFeature(BaseHashableModel):
         }
     )
 
-    def _data_to_hash(self) -> list[bytes]:
-        # Variant Features are unique in namespace & feature name.
-        return [data.encode("utf-8") for data in (self.namespace, self.feature)]
-
     @property
-    def feature_hexdigest(self) -> str:
-        """Alias of `hexdigest` property."""
-        return self.hexdigest
+    def feature_hash(self) -> int:
+        return hash((self.namespace, self.feature))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VariantFeature):
@@ -129,16 +126,8 @@ class VariantProperty(VariantFeature):
         )
 
     @property
-    def property_hexdigest(self) -> str:
-        """
-        Compute the feature-hash of the object.
-        """
-        # Create a hash digest specific to namespace-feature-value combination.
-        data = [
-            data.encode("utf-8") for data in (self.namespace, self.feature, self.value)
-        ]
-
-        return self._compute_hash(data)
+    def property_hash(self) -> int:
+        return hash((self.namespace, self.feature, self.value))
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>
@@ -172,7 +161,7 @@ class VariantProperty(VariantFeature):
 
 
 @dataclass(frozen=True)
-class VariantDescription(BaseHashableModel):
+class VariantDescription(BaseModel):
     """
     A `Variant` is being described by a N >= 1 `VariantProperty`.
     Each informing the packaging toolkit about a unique `namespace-feature-value`
@@ -190,7 +179,7 @@ class VariantDescription(BaseHashableModel):
                     lambda v: validate_list_of(v, VariantProperty),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(
-                        v, key=attrgetter("feature_hexdigest")
+                        v, key=attrgetter("feature_hash")
                     ),
                 ],
                 value=val,
@@ -214,9 +203,20 @@ class VariantDescription(BaseHashableModel):
         # Execute the validator
         super().__post_init__()
 
-    def _data_to_hash(self) -> list[bytes]:
-        # Variant Features are unique in namespace & feature name.
-        return [vprop.to_str().encode("utf-8") for vprop in self.properties]
+    @property
+    def hexdigest(self) -> str:
+        """
+        Compute the hash of the object.
+        """
+        hash_object = hashlib.shake_128()
+        for item in [vprop.to_str().encode("utf-8") for vprop in self.properties]:
+            hash_object.update(item)
+
+        # Like digest() except the digest is returned as a string object of double
+        # length, containing only hexadecimal digits. This may be used to exchange the
+        # value safely in email or other non-binary environments.
+        # Source: https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest
+        return hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
 
     @classmethod
     def deserialize(cls, properties: list[dict[str, str]]) -> Self:

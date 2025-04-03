@@ -88,9 +88,9 @@ def get_variant_hashes_by_priority(
         sorted_provider_cfgs = list(provider_cfgs.values())
 
     if sorted_provider_cfgs:
-        for variant_desc in filtered_sorted_variants(
+        for vdesc in filtered_sorted_variants(
             variants_json["variants"], sorted_provider_cfgs
         ):
-            yield variant_desc.hexdigest
+            yield vdesc.hexdigest
     else:
         yield from []

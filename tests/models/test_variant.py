@@ -57,24 +57,14 @@ def test_variantprop_hexdigest():
     vprop2 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="value2"
     )
-    assert (
-        vprop1.hexdigest
-        == vprop2.hexdigest
-        == vprop1.feature_hexdigest
-        == vprop2.feature_hexdigest
-    )
-    assert vprop1.property_hexdigest != vprop2.property_hexdigest
+    assert vprop1.feature_hash == vprop2.feature_hash
+    assert vprop1.property_hash != vprop2.property_hash
 
     # Different object, same everything. Should also result in identical hash
     vprop3 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="value1"
     )
-    assert (
-        vprop1.hexdigest
-        == vprop3.hexdigest
-        == vprop1.feature_hexdigest
-        == vprop3.feature_hexdigest
-    )
+    assert vprop1.feature_hash == vprop3.feature_hash
 
 
 def test_variantprop_to_str():
@@ -283,12 +273,13 @@ def test_variantdescription_hexdigest():
     vprop2 = VariantProperty(
         namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
-    vdesc = VariantDescription([vprop1, vprop2])
+    vprops = [vprop1, vprop2]
+    vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     expected_hash = hashlib.shake_128()
-    expected_hash.update(vprop1.to_str().encode("utf-8"))
-    expected_hash.update(vprop2.to_str().encode("utf-8"))
+    for vprop in vprops:
+        expected_hash.update(vprop.to_str().encode("utf-8"))
     expected_hexdigest = expected_hash.hexdigest(int(VARIANT_HASH_LEN / 2))
 
     assert vdesc.hexdigest == expected_hexdigest

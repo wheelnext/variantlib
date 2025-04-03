@@ -27,7 +27,7 @@ def analyze_wheel(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    input_file = parsed_args.input_file
+    input_file = pathlib.Path(parsed_args.input_file)
 
     if not input_file.exists():
         raise FileNotFoundError(f"File not found: `{input_file}`")
