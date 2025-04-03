@@ -14,23 +14,27 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription]:
+def get_combinations(
+    provider_cfgs: list[ProviderConfig],
+) -> Generator[VariantDescription]:
     """Generate all possible combinations of `VariantProperty` given a list of
     `ProviderConfig`. This function respects ordering and priority provided."""
 
-    assert isinstance(data, (list, tuple))
-    assert len(data) > 0
-    assert all(isinstance(config, ProviderConfig) for config in data)
+    assert isinstance(provider_cfgs, (list, tuple))
+    assert len(provider_cfgs) > 0
+    assert all(isinstance(config, ProviderConfig) for config in provider_cfgs)
 
     vprop_lists = [
         [
             VariantProperty(
-                namespace=provider_cnf.namespace, feature=vfeat_cfg.name, value=val
+                namespace=provider_cfg.namespace,
+                feature=vfeat_config.name,
+                value=vprop_value,
             )
-            for val in vfeat_cfg.values
+            for vprop_value in vfeat_config.values
         ]
-        for provider_cnf in data
-        for vfeat_cfg in provider_cnf.configs
+        for provider_cfg in provider_cfgs
+        for vfeat_config in provider_cfg.configs
     ]
 
     # Generate all possible combinations, including optional elements
@@ -55,10 +59,10 @@ def unpack_variants_from_json(
 
 
 def filtered_sorted_variants(  # noqa: C901
-    variants_from_json: dict, data: list[ProviderConfig]
+    variants_from_json: dict, provider_configs: list[ProviderConfig]
 ) -> list[VariantDescription]:
     namespaces = {}
-    for namespace_idx, namespace_cnf in enumerate(data):
+    for namespace_idx, namespace_cnf in enumerate(provider_configs):
         keys = {}
         for key_idx, key_cnf in enumerate(namespace_cnf.configs):
             keys[key_cnf.name] = key_idx, key_cnf.values

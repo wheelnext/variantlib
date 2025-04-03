@@ -19,15 +19,15 @@ def validate_instance_of(value: Any, expected_type: type) -> None:
         raise ValidationError(f"Expected {expected_type}, got {type(value)}")
 
 
-def validate_list_of(data: Iterable[Any], expected_type: type) -> None:
-    for value in data:
-        if not isinstance(value, expected_type):
-            raise ValidationError(f"Expected {expected_type}, got {type(value)}")
-
-
 def validate_matches_re(value: str, pattern: str) -> None:
     if not re.match(pattern, value):
         raise ValidationError(f"Value `{value}` must match regex {pattern}")
+
+
+def validate_list_of(values: Iterable[Any], expected_type: type) -> None:
+    for value in values:
+        if not isinstance(value, expected_type):
+            raise ValidationError(f"Expected {expected_type}, got {type(value)}")
 
 
 def validate_list_matches_re(values: list[str], pattern: str) -> None:
@@ -35,10 +35,10 @@ def validate_list_matches_re(values: list[str], pattern: str) -> None:
         validate_matches_re(value, pattern)
 
 
-def validate_list_min_len(value: list, min_length: int) -> None:
-    if len(value) < min_length:
+def validate_list_min_len(values: list, min_length: int) -> None:
+    if len(values) < min_length:
         raise ValidationError(
-            f"List must have at least {min_length} elements, got {len(value)}"
+            f"List must have at least {min_length} elements, got {len(values)}"
         )
 
 

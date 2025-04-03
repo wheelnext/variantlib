@@ -9,19 +9,21 @@ from variantlib.models.provider import VariantFeatureConfig
 
 def test_vfeat_config_creation_valid():
     """Test valid creation of VariantFeatureConfig."""
-    feat_config = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
-    assert feat_config.name == "attr_nameA"
-    assert feat_config.values == ["7", "4", "8", "12"]
+    vfeat_config = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
+    assert vfeat_config.name == "attr_nameA"
+    assert vfeat_config.values == ["7", "4", "8", "12"]
 
 
 def test_provider_config_creation_valid():
     """Test valid creation of ProviderConfig."""
-    feat_config1 = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
-    feat_config2 = VariantFeatureConfig(
+    vfeat_config1 = VariantFeatureConfig(
+        name="attr_nameA", values=["7", "4", "8", "12"]
+    )
+    vfeat_config2 = VariantFeatureConfig(
         name="attr_nameB", values=["3", "7", "2", "18", "22"]
     )
     provider_config = ProviderConfig(
-        namespace="provider_name", configs=[feat_config1, feat_config2]
+        namespace="provider_name", configs=[vfeat_config1, vfeat_config2]
     )
 
     assert provider_config.namespace == "provider_name"
@@ -32,11 +34,17 @@ def test_provider_config_creation_valid():
 
 def test_duplicate_vfeat_config():
     """Test that a duplicate name raises a ValueError in ProviderConfig."""
-    feat_cfg_1 = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
-    feat_cfg_2 = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
+    vfeat_config_1 = VariantFeatureConfig(
+        name="attr_nameA", values=["7", "4", "8", "12"]
+    )
+    vfeat_config_2 = VariantFeatureConfig(
+        name="attr_nameA", values=["7", "4", "8", "12"]
+    )
 
     with pytest.raises(ValidationError, match="Duplicate value found: 'attr_nameA'"):
-        ProviderConfig(namespace="provider_name", configs=[feat_cfg_1, feat_cfg_2])
+        ProviderConfig(
+            namespace="provider_name", configs=[vfeat_config_1, vfeat_config_2]
+        )
 
 
 def test_empty_values_list_in_vfeat_config():
@@ -49,9 +57,9 @@ def test_empty_values_list_in_vfeat_config():
 
 def test_single_item_values_list_in_vfeat_config():
     """Test VariantFeatureConfig creation with a single value."""
-    vfeat_cfg = VariantFeatureConfig(name="attr_nameA", values=["7"])
-    assert vfeat_cfg.name == "attr_nameA"
-    assert vfeat_cfg.values == ["7"]
+    vfeat_config = VariantFeatureConfig(name="attr_nameA", values=["7"])
+    assert vfeat_config.name == "attr_nameA"
+    assert vfeat_config.values == ["7"]
 
 
 def test_duplicate_values_in_vfeat_config():
@@ -143,10 +151,14 @@ def test_vfeat_config_non_string_name():
 
 def test_provider_config_repr():
     """Test the __repr__ method of ProviderConfig."""
-    feat_cfg_1 = VariantFeatureConfig(name="attr_nameA", values=["7", "4", "8", "12"])
-    feat_cfg_2 = VariantFeatureConfig(name="attr_nameB", values=["3", "7", "2", "18"])
+    vfeat_config_1 = VariantFeatureConfig(
+        name="attr_nameA", values=["7", "4", "8", "12"]
+    )
+    vfeat_config_2 = VariantFeatureConfig(
+        name="attr_nameB", values=["3", "7", "2", "18"]
+    )
     provider_config = ProviderConfig(
-        namespace="provider_name", configs=[feat_cfg_1, feat_cfg_2]
+        namespace="provider_name", configs=[vfeat_config_1, vfeat_config_2]
     )
 
     expected_repr = (
@@ -159,13 +171,13 @@ def test_provider_config_repr():
 
 def test_name_config_repr():
     """Test the __repr__ method of VariantFeatureConfig."""
-    feat_cfg = VariantFeatureConfig(
+    vfeat_config = VariantFeatureConfig(
         name="attr_nameA", values=["7", "4", "8.4.3", "12.1"]
     )
     expected_repr = (
         "VariantFeatureConfig(name='attr_nameA', values=['7', '4', '8.4.3', '12.1'])"
     )
-    assert repr(feat_cfg) == expected_repr
+    assert repr(vfeat_config) == expected_repr
 
 
 def test_failing_regex_name():

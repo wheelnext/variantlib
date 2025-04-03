@@ -226,23 +226,23 @@ def test_variantdescription_invalid_data():
 
 def test_variantdescription_duplicate_data():
     # Test that duplicate VariantProperty instances are removed
-    prop1 = VariantProperty(
+    vprop1 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
-        _ = VariantDescription([prop1, prop1])
+        _ = VariantDescription([vprop1, vprop1])
 
 
 def test_variantdescription_partial_duplicate_data():
     # Test that duplicate VariantProperty instances are removed
-    prop1 = VariantProperty(
+    vprop1 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    prop2 = VariantProperty(
+    vprop2 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="another_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
-        _ = VariantDescription([prop1, prop2])
+        _ = VariantDescription([vprop1, vprop2])
 
 
 def test_variantdescription_sorted_data():
