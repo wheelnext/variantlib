@@ -9,7 +9,7 @@ import pathlib
 import zipfile
 
 from variantlib.loader import PluginLoader
-from variantlib.models.variant import VariantMetadata
+from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,7 +37,7 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
     if not directory.is_dir():
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
-    metadata_parser = email.parser.BytesParser(policy=email.policy.compat32)
+    vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
     known_variants: dict[str, dict[str, dict[str, str]]] = {}
     known_namespaces = set()
 
@@ -46,42 +46,42 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
             for name in zip_file.namelist():
                 if name.endswith(".dist-info/METADATA"):
                     with zip_file.open(name) as f:
-                        metadata = metadata_parser.parse(f, headersonly=True)
+                        wheel_metadata = vprop_parser.parse(f, headersonly=True)
                     break
             else:
                 logger.warning("%s: no METADATA file found", wheel)
                 continue
 
-            if (variant_hash := metadata.get("Variant-hash")) is None:
+            if (variant_hash := wheel_metadata.get("Variant-hash")) is None:
                 logger.info("%s: no Variant-hash", wheel)
                 continue
-            if (variant_entries := metadata.get_all("Variant")) is None:
+            if (variant_entries := wheel_metadata.get_all("Variant")) is None:
                 logger.warning(
-                    "%s: Variant-hash present but no Variant metadata", wheel
+                    "%s: Variant-hash present but no Variant property", wheel
                 )
                 continue
 
             variant_dict: dict[str, dict[str, str]] = {}
             for variant_entry in variant_entries:
-                variant_meta = VariantMetadata.from_str(variant_entry)
-                namespace_dict = variant_dict.setdefault(variant_meta.namespace, {})
-                if variant_meta.feature in namespace_dict:
+                variant_prop = VariantProperty.from_str(variant_entry)
+                namespace_dict = variant_dict.setdefault(variant_prop.namespace, {})
+                if variant_prop.feature in namespace_dict:
                     logger.warning(
                         "%(wheel)s: Duplicate feature: %(namespace)s :: %(feature)s",
                         {
                             "wheel": wheel,
-                            "namespace": variant_meta.namespace,
-                            "feature": variant_meta.feature,
+                            "namespace": variant_prop.namespace,
+                            "feature": variant_prop.feature,
                         },
                     )
-                namespace_dict[variant_meta.feature] = variant_meta.value
-                known_namespaces.add(variant_meta.namespace)
+                namespace_dict[variant_prop.feature] = variant_prop.value
+                known_namespaces.add(variant_prop.namespace)
 
             if (existing_entry := known_variants.get(variant_hash)) is None:
                 known_variants[variant_hash] = variant_dict
             elif existing_entry != variant_dict:
                 raise ValueError(
-                    f"{wheel}: different metadata assigned to {variant_hash}"
+                    f"{wheel}: different property assigned to {variant_hash}"
                 )
 
     all_plugins = PluginLoader.distribution_names

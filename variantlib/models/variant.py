@@ -104,7 +104,7 @@ class VariantFeature(BaseHashableModel):
 
 
 @dataclass(frozen=True)
-class VariantMetadata(VariantFeature):
+class VariantProperty(VariantFeature):
     value: str = field(
         metadata={
             "validator": lambda val: validate_and(
@@ -118,7 +118,7 @@ class VariantMetadata(VariantFeature):
     )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VariantMetadata):
+        if not isinstance(other, VariantProperty):
             return NotImplemented
 
         return (
@@ -166,27 +166,27 @@ class VariantMetadata(VariantFeature):
         feature = match.group("feature")
         value = match.group("value")
 
-        # Return an instance of VariantMetadata using the parsed values
+        # Return an instance of VariantProperty using the parsed values
         return cls(namespace=namespace, feature=feature, value=value)
 
 
 @dataclass(frozen=True)
 class VariantDescription(BaseHashableModel):
     """
-    A `Variant` is being described by a N >= 1 `VariantMetadata` metadata.
+    A `Variant` is being described by a N >= 1 `VariantProperty`.
     Each informing the packaging toolkit about a unique `namespace-feature-value`
     combination.
 
     All together they identify the package producing a "variant hash", unique
-    to the exact combination of `VariantMetadata` provided for a given package.
+    to the exact combination of `VariantProperty` provided for a given package.
     """
 
-    data: list[VariantMetadata] = field(
+    data: list[VariantProperty] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantMetadata),
+                    lambda v: validate_list_of(v, VariantProperty),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v, key=attrgetter("hexdigest")),
                 ],
@@ -209,23 +209,23 @@ class VariantDescription(BaseHashableModel):
         # Execute the validator
         super().__post_init__()
 
-    def __iter__(self) -> Iterator[VariantMetadata]:
+    def __iter__(self) -> Iterator[VariantProperty]:
         yield from self.data
 
     def _data_to_hash(self) -> list[bytes]:
         # Variant Features are unique in namespace & feature name.
-        return [vmeta.to_str().encode("utf-8") for vmeta in self]
+        return [vprop.to_str().encode("utf-8") for vprop in self]
 
     @classmethod
     def deserialize(cls, data: list[dict[str, str]]) -> Self:
-        return cls(data=[VariantMetadata.deserialize(vdata) for vdata in data])
+        return cls(data=[VariantProperty.deserialize(vdata) for vdata in data])
 
     def serialize(self) -> list[dict[str, str]]:
-        return [vmeta.serialize() for vmeta in self.data]
+        return [vprop.serialize() for vprop in self.data]
 
     def pretty_print(self) -> str:
         result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
-        for vmeta in self:
-            result_str += f"\nVariant Metadata: {vmeta.to_str()}"
+        for vprop in self:
+            result_str += f"\nVariant Metadata: {vprop.to_str()}"
         result_str += f"\n{'#' * 80}\n"
         return result_str

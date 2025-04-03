@@ -12,7 +12,7 @@ from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMetadata
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -24,7 +24,7 @@ __all__ = [
     "ProviderConfig",
     "VariantDescription",
     "VariantFeatureConfig",
-    "VariantMetadata",
+    "VariantProperty",
     "get_variant_hashes_by_priority",
 ]
 

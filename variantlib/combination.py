@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMetadata
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription]:
-    """Generate all possible combinations of `VariantMetadata` given a list of
+    """Generate all possible combinations of `VariantProperty` given a list of
     `ProviderConfig`. This function respects ordering and priority provided."""
 
     assert isinstance(data, (list, tuple))
     assert len(data) > 0
     assert all(isinstance(config, ProviderConfig) for config in data)
 
-    meta_lists = [
+    vprop_lists = [
         [
-            VariantMetadata(
+            VariantProperty(
                 namespace=provider_cnf.namespace, feature=vfeat_cfg.name, value=val
             )
             for val in vfeat_cfg.values
@@ -34,22 +34,22 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     ]
 
     # Generate all possible combinations, including optional elements
-    for r in range(len(meta_lists), 0, -1):
-        for combo in itertools.combinations(meta_lists, r):
-            for vmetas in itertools.product(*combo):
-                yield VariantDescription(data=list(vmetas))
+    for r in range(len(vprop_lists), 0, -1):
+        for combo in itertools.combinations(vprop_lists, r):
+            for vprops in itertools.product(*combo):
+                yield VariantDescription(data=list(vprops))
 
 
 def unpack_variants_from_json(
     variants_from_json: dict,
 ) -> Generator[VariantDescription]:
-    def variant_to_metas(namespaces: dict) -> Generator[VariantMetadata]:
+    def variant_to_vprops(namespaces: dict) -> Generator[VariantProperty]:
         for namespace, keys in namespaces.items():
             for key, value in keys.items():
-                yield VariantMetadata(namespace=namespace, feature=key, value=value)
+                yield VariantProperty(namespace=namespace, feature=key, value=value)
 
     for variant_hash, namespaces in variants_from_json.items():
-        desc = VariantDescription(list(variant_to_metas(namespaces)))
+        desc = VariantDescription(list(variant_to_vprops(namespaces)))
         assert variant_hash == desc.hexdigest
         yield desc
 
@@ -68,26 +68,26 @@ def filtered_sorted_variants(  # noqa: C901
     missing_keys: dict[str, set[str]] = {}
 
     def variant_filter(desc: VariantDescription) -> bool:
-        # Filter out the variant, unless all of its metas are supported.
-        for meta in desc:
-            if (namespace_data := namespaces.get(meta.namespace)) is None:
-                missing_namespaces.add(meta.namespace)
+        # Filter out the variant, unless all of its vprops are supported.
+        for vprop in desc:
+            if (namespace_data := namespaces.get(vprop.namespace)) is None:
+                missing_namespaces.add(vprop.namespace)
                 return False
             _, keys = namespace_data
-            if (key_data := keys.get(meta.feature)) is None:
-                missing_keys.setdefault(meta.namespace, set()).add(meta.feature)
+            if (key_data := keys.get(vprop.feature)) is None:
+                missing_keys.setdefault(vprop.namespace, set()).add(vprop.feature)
                 return False
             _, values = key_data
-            if meta.value not in values:
+            if vprop.value not in values:
                 return False
         return True
 
-    def meta_key(meta: VariantMetadata) -> tuple[int, int, int]:
+    def vprop_key(vprop: VariantProperty) -> tuple[int, int, int]:
         # The sort key is a tuple of (namespace, key, value) indices, so that
-        # the metas with more preferred (namespace, key, value) sort first.
-        namespace_idx, keys = namespaces[meta.namespace]
-        key_idx, values = keys[meta.feature]
-        value_idx = values.index(meta.value)
+        # the vprops with more preferred (namespace, key, value) sort first.
+        namespace_idx, keys = namespaces[vprop.namespace]
+        key_idx, values = keys[vprop.feature]
+        value_idx = values.index(vprop.value)
         return namespace_idx, key_idx, value_idx
 
     def variant_sort_key_gen(
@@ -95,12 +95,12 @@ def filtered_sorted_variants(  # noqa: C901
     ) -> Generator[int | tuple[int, int]]:
         # Variants with more matched values should go first.
         yield -len(desc.data)
-        # Sort meta sort keys by their sort keys, so that metas containing
+        # Sort vprop by their sort keys, so that vprops containing
         # more preferred sort key sort first.
-        meta_keys = sorted(meta_key(x) for x in desc.data)
+        vprop_keys = sorted(vprop_key(x) for x in desc.data)
         # Always prefer all values from the "stronger" keys over "weaker".
-        yield from (x[0:2] for x in meta_keys)
-        yield from (x[2] for x in meta_keys)
+        yield from (x[0:2] for x in vprop_keys)
+        yield from (x[2] for x in vprop_keys)
 
     res = sorted(
         filter(variant_filter, unpack_variants_from_json(variants_from_json)),

@@ -7,7 +7,7 @@ import re
 import zipfile
 
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMetadata
+from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -65,23 +65,21 @@ def analyze_wheel(args: list[str]) -> None:
         # original_xml_data = xmltodict.parse(zip_file.open("Data.xml").read())
         for name in zip_file.namelist():
             if name.endswith(".dist-info/METADATA"):
-                metadata_str = zip_file.open(name).read().decode("utf-8")
+                vprop_str = zip_file.open(name).read().decode("utf-8")
                 break
 
         # Extract the hash value
-        hash_match = re.search(r"Variant-hash: (\w+)", metadata_str)
+        hash_match = re.search(r"Variant-hash: (\w+)", vprop_str)
         hash_value = hash_match.group(1) if hash_match else None
         assert hash_value == variant_hash, (
             "Hash value does not match - this variant is not valid"
         )
 
         # Extract all variant strings
-        variant_matches = re.findall(r"Variant: (.+)", metadata_str)
-        variant_metadata = variant_matches if variant_matches else []
+        variant_matches = re.findall(r"Variant: (.+)", vprop_str)
+        variant_prop = variant_matches if variant_matches else []
 
-        variant_metas = [
-            VariantMetadata.from_str(variant) for variant in variant_metadata
-        ]
-        variant_description = VariantDescription(variant_metas)
+        variant_props = [VariantProperty.from_str(variant) for variant in variant_prop]
+        variant_description = VariantDescription(variant_props)
 
         logger.info(variant_description.pretty_print())
