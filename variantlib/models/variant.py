@@ -56,7 +56,8 @@ class VariantFeature(BaseModel):
     @property
     def feature_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
-        return hash((self.__class__, self.namespace, self.feature))
+        # note: can't use `self.__class__` because of inheritance
+        return hash((VariantFeature, self.namespace, self.feature))
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>

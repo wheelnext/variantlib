@@ -277,10 +277,10 @@ def test_variantdescription_hexdigest():
     vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
-    expected_hash = hashlib.shake_128()
+    hash_object = hashlib.shake_128()
     for vprop in vprops:
-        expected_hash.update(vprop.to_str().encode("utf-8"))
-    expected_hexdigest = expected_hash.hexdigest(int(VARIANT_HASH_LEN / 2))
+        hash_object.update(vprop.to_str().encode("utf-8"))
+    expected_hexdigest = hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
 
     assert vdesc.hexdigest == expected_hexdigest
 
