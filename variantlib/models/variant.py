@@ -233,6 +233,6 @@ class VariantDescription(BaseHashableModel):
     def pretty_print(self) -> str:
         result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
         for vprop in self:
-            result_str += f"\nVariant Metadata: {vprop.to_str()}"
+            result_str += f"\nVariant Property: {vprop.to_str()}"
         result_str += f"\n{'#' * 80}\n"
         return result_str
