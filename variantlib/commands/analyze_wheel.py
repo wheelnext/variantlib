@@ -77,9 +77,10 @@ def analyze_wheel(args: list[str]) -> None:
 
         # Extract all variant strings
         variant_matches = re.findall(r"Variant: (.+)", vprop_str)
-        variant_prop = variant_matches if variant_matches else []
+        vprop = variant_matches if variant_matches else []
 
-        variant_props = [VariantProperty.from_str(variant) for variant in variant_prop]
-        variant_description = VariantDescription(variant_props)
+        vdesc = VariantDescription(
+            [VariantProperty.from_str(variant) for variant in vprop]
+        )
 
-        logger.info(variant_description.pretty_print())
+        logger.info(vdesc.pretty_print())

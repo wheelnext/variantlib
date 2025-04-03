@@ -7,7 +7,6 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from operator import attrgetter
-from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -20,9 +19,6 @@ from variantlib.models.validators import validate_list_all_unique
 from variantlib.models.validators import validate_list_min_len
 from variantlib.models.validators import validate_list_of
 from variantlib.models.validators import validate_matches_re
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -186,7 +182,7 @@ class VariantDescription(BaseHashableModel):
     to the exact combination of `VariantProperty` provided for a given package.
     """
 
-    data: list[VariantProperty] = field(
+    properties: list[VariantProperty] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -210,29 +206,30 @@ class VariantDescription(BaseHashableModel):
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(
-                self, "data", sorted(self.data, key=lambda x: (x.namespace, x.feature))
+                self,
+                "properties",
+                sorted(self.properties, key=lambda x: (x.namespace, x.feature)),
             )
 
         # Execute the validator
         super().__post_init__()
 
-    def __iter__(self) -> Iterator[VariantProperty]:
-        yield from self.data
-
     def _data_to_hash(self) -> list[bytes]:
         # Variant Features are unique in namespace & feature name.
-        return [vprop.to_str().encode("utf-8") for vprop in self]
+        return [vprop.to_str().encode("utf-8") for vprop in self.properties]
 
     @classmethod
-    def deserialize(cls, data: list[dict[str, str]]) -> Self:
-        return cls(data=[VariantProperty.deserialize(vdata) for vdata in data])
+    def deserialize(cls, properties: list[dict[str, str]]) -> Self:
+        return cls(
+            properties=[VariantProperty.deserialize(vdata) for vdata in properties]
+        )
 
     def serialize(self) -> list[dict[str, str]]:
-        return [vprop.serialize() for vprop in self.data]
+        return [vprop.serialize() for vprop in self.properties]
 
     def pretty_print(self) -> str:
         result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
-        for vprop in self:
+        for vprop in self.properties:
             result_str += f"\nVariant Property: {vprop.to_str()}"
         result_str += f"\n{'#' * 80}\n"
         return result_str

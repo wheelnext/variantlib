@@ -63,19 +63,19 @@ def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
 
             variant_dict: dict[str, dict[str, str]] = {}
             for variant_entry in variant_entries:
-                variant_prop = VariantProperty.from_str(variant_entry)
-                namespace_dict = variant_dict.setdefault(variant_prop.namespace, {})
-                if variant_prop.feature in namespace_dict:
+                vprop = VariantProperty.from_str(variant_entry)
+                namespace_dict = variant_dict.setdefault(vprop.namespace, {})
+                if vprop.feature in namespace_dict:
                     logger.warning(
                         "%(wheel)s: Duplicate feature: %(namespace)s :: %(feature)s",
                         {
                             "wheel": wheel,
-                            "namespace": variant_prop.namespace,
-                            "feature": variant_prop.feature,
+                            "namespace": vprop.namespace,
+                            "feature": vprop.feature,
                         },
                     )
-                namespace_dict[variant_prop.feature] = variant_prop.value
-                known_namespaces.add(variant_prop.namespace)
+                namespace_dict[vprop.feature] = vprop.value
+                known_namespaces.add(vprop.namespace)
 
             if (existing_entry := known_variants.get(variant_hash)) is None:
                 known_variants[variant_hash] = variant_dict

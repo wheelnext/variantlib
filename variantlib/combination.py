@@ -37,7 +37,7 @@ def get_combinations(data: list[ProviderConfig]) -> Generator[VariantDescription
     for r in range(len(vprop_lists), 0, -1):
         for combo in itertools.combinations(vprop_lists, r):
             for vprops in itertools.product(*combo):
-                yield VariantDescription(data=list(vprops))
+                yield VariantDescription(properties=list(vprops))
 
 
 def unpack_variants_from_json(
@@ -67,9 +67,9 @@ def filtered_sorted_variants(  # noqa: C901
     missing_namespaces = set()
     missing_keys: dict[str, set[str]] = {}
 
-    def variant_filter(desc: VariantDescription) -> bool:
+    def variant_filter(vdesc: VariantDescription) -> bool:
         # Filter out the variant, unless all of its vprops are supported.
-        for vprop in desc:
+        for vprop in vdesc.properties:
             if (namespace_data := namespaces.get(vprop.namespace)) is None:
                 missing_namespaces.add(vprop.namespace)
                 return False
@@ -91,13 +91,13 @@ def filtered_sorted_variants(  # noqa: C901
         return namespace_idx, key_idx, value_idx
 
     def variant_sort_key_gen(
-        desc: VariantDescription,
+        vdesc: VariantDescription,
     ) -> Generator[int | tuple[int, int]]:
         # Variants with more matched values should go first.
-        yield -len(desc.data)
+        yield -len(vdesc.properties)
         # Sort vprop by their sort keys, so that vprops containing
         # more preferred sort key sort first.
-        vprop_keys = sorted(vprop_key(x) for x in desc.data)
+        vprop_keys = sorted(vprop_key(x) for x in vdesc.properties)
         # Always prefer all values from the "stronger" keys over "weaker".
         yield from (x[0:2] for x in vprop_keys)
         yield from (x[2] for x in vprop_keys)

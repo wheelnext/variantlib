@@ -128,12 +128,12 @@ def test_failing_regex_value():
 )
 def test_from_str_valid(input_str: str):
     # Test case: Valid string input
-    variant_prop = VariantProperty.from_str(input_str)
+    vprop = VariantProperty.from_str(input_str)
 
     # Check if the resulting object matches the expected values
-    assert variant_prop.namespace == "OmniCorp"
-    assert variant_prop.feature == "custom_feat"
-    assert variant_prop.value == "secret_value"
+    assert vprop.namespace == "OmniCorp"
+    assert vprop.feature == "custom_feat"
+    assert vprop.value == "secret_value"
 
 
 def test_from_str_missing_parts():
@@ -159,12 +159,12 @@ def test_from_str_edge_case_empty_string():
 def test_from_str_trailing_spaces():
     # Test case: Input with leading/trailing spaces
     input_str = "   OmniCorp :: custom_feat :: secret_value   "
-    variant_prop = VariantProperty.from_str(input_str.strip())
+    vprop = VariantProperty.from_str(input_str.strip())
 
     # Check if it still correctly parses and matches the expected values
-    assert variant_prop.namespace == "OmniCorp"
-    assert variant_prop.feature == "custom_feat"
-    assert variant_prop.value == "secret_value"
+    assert vprop.namespace == "OmniCorp"
+    assert vprop.feature == "custom_feat"
+    assert vprop.value == "secret_value"
 
 
 def test_from_str_invalid_format():
@@ -205,18 +205,18 @@ def test_variantprop_deserialization():
 
 def test_variantdescription_initialization():
     # Valid input: List of VariantProperty instances
-    prop1 = VariantProperty(
+    vprop1 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    prop2 = VariantProperty(
+    vprop2 = VariantProperty(
         namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
-    variant_description = VariantDescription([prop1, prop2])
+    vdesc = VariantDescription([vprop1, vprop2])
 
     # Check that the _data property is a list
-    assert isinstance(variant_description.data, list)
-    assert len(variant_description.data) == 2
-    assert variant_description.data == [prop1, prop2]
+    assert isinstance(vdesc.properties, list)
+    assert len(vdesc.properties) == 2
+    assert vdesc.properties == [vprop1, vprop2]
 
 
 def test_variantdescription_invalid_data():
@@ -257,46 +257,46 @@ def test_variantdescription_partial_duplicate_data():
 
 def test_variantdescription_sorted_data():
     # Ensure that the data is sorted by namespace, feature, value
-    prop1 = VariantProperty(
+    vprop1 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    prop2 = VariantProperty(
+    vprop2 = VariantProperty(
         namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
-    prop3 = VariantProperty(
+    vprop3 = VariantProperty(
         namespace="OmniCorp", feature="secret_pass", value="client_value"
     )
-    variant_description = VariantDescription([prop1, prop2, prop3])
+    vdesc = VariantDescription([vprop1, vprop2, vprop3])
 
     # Check that data is sorted by namespace, feature, and value
-    sorted_data = sorted(
-        [prop1, prop2, prop3], key=lambda x: (x.namespace, x.feature, x.value)
+    sorted_vprops = sorted(
+        [vprop1, vprop2, vprop3], key=lambda x: (x.namespace, x.feature, x.value)
     )
-    assert list(variant_description) == sorted_data
+    assert vdesc.properties == sorted_vprops
 
 
 def test_variantdescription_hexdigest():
     # Ensure that the hexdigest property works correctly
-    prop1 = VariantProperty(
+    vprop1 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    prop2 = VariantProperty(
+    vprop2 = VariantProperty(
         namespace="TyrellCorporation", feature="client_id", value="secret_pass"
     )
-    variant_description = VariantDescription([prop1, prop2])
+    vdesc = VariantDescription([vprop1, vprop2])
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     expected_hash = hashlib.shake_128()
-    expected_hash.update(prop1.to_str().encode("utf-8"))
-    expected_hash.update(prop2.to_str().encode("utf-8"))
+    expected_hash.update(vprop1.to_str().encode("utf-8"))
+    expected_hash.update(vprop2.to_str().encode("utf-8"))
     expected_hexdigest = expected_hash.hexdigest(int(VARIANT_HASH_LEN / 2))
 
-    assert variant_description.hexdigest == expected_hexdigest
+    assert vdesc.hexdigest == expected_hexdigest
 
 
 def test_variantdescription_serialization():
     vprop = VariantProperty(namespace="provider", feature="feature", value="value")
-    vdesc = VariantDescription(data=[vprop])
+    vdesc = VariantDescription(properties=[vprop])
 
     assert vdesc.serialize() == [
         {
@@ -318,10 +318,10 @@ def test_variantdescription_deserialization():
 
     vdesc = VariantDescription.deserialize(data)
 
-    assert len(vdesc.data) == 1
-    assert vdesc.data[0].namespace == "provider"
-    assert vdesc.data[0].feature == "feature"
-    assert vdesc.data[0].value == "value"
+    assert len(vdesc.properties) == 1
+    assert vdesc.properties[0].namespace == "provider"
+    assert vdesc.properties[0].feature == "feature"
+    assert vdesc.properties[0].value == "value"
     assert vdesc.hexdigest == "fafeda9c"
 
 
@@ -390,9 +390,9 @@ def test_fuzzy_variantprop(namespace, feature, value):
 )
 def test_fuzzy_variantdescription(vprop: list[VariantProperty]):
     # Fuzzy test for random combinations of VariantDescription
-    variant_description = VariantDescription(vprop)
-    assert isinstance(variant_description.data, list)
-    assert len(variant_description.data) >= 1
+    vdesc = VariantDescription(vprop)
+    assert isinstance(vdesc.properties, list)
+    assert len(vdesc.properties) >= 1
 
 
 # -----------------------------------------------
@@ -412,6 +412,6 @@ def test_random_hexdigest(num_entries):
         )
         for _ in range(num_entries)
     ]
-    variant_description = VariantDescription(vprop)
-    assert isinstance(variant_description.hexdigest, str)
-    assert len(variant_description.hexdigest) == VARIANT_HASH_LEN
+    vdesc = VariantDescription(vprop)
+    assert isinstance(vdesc.hexdigest, str)
+    assert len(vdesc.hexdigest) == VARIANT_HASH_LEN
