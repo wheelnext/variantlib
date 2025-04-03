@@ -55,12 +55,8 @@ class VariantFeature(BaseModel):
 
     @property
     def feature_hash(self) -> int:
-        return hash((self.namespace, self.feature))
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VariantFeature):
-            return NotImplemented
-        return self.namespace == other.namespace and self.feature == other.feature
+        # __class__ is being added to guarantee the hash to be specific to this class
+        return hash((self.__class__, self.namespace, self.feature))
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>
@@ -115,19 +111,10 @@ class VariantProperty(VariantFeature):
         }
     )
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VariantProperty):
-            return NotImplemented
-
-        return (
-            self.namespace == other.namespace
-            and self.feature == other.feature
-            and self.value == other.value
-        )
-
     @property
     def property_hash(self) -> int:
-        return hash((self.namespace, self.feature, self.value))
+        # __class__ is being added to guarantee the hash to be specific to this class
+        return hash((self.__class__, self.namespace, self.feature, self.value))
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>
