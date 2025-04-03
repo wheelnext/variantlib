@@ -59,6 +59,11 @@ class VariantFeature(BaseHashableModel):
         # Variant Features are unique in namespace & feature name.
         return [data.encode("utf-8") for data in (self.namespace, self.feature)]
 
+    @property
+    def feature_hexdigest(self) -> str:
+        """Alias of `hexdigest` property."""
+        return self.hexdigest
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VariantFeature):
             return NotImplemented
@@ -128,7 +133,7 @@ class VariantProperty(VariantFeature):
         )
 
     @property
-    def value_hexdigest(self) -> str:
+    def property_hexdigest(self) -> str:
         """
         Compute the feature-hash of the object.
         """
@@ -188,7 +193,9 @@ class VariantDescription(BaseHashableModel):
                     lambda v: validate_instance_of(v, list),
                     lambda v: validate_list_of(v, VariantProperty),
                     lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v, key=attrgetter("hexdigest")),
+                    lambda v: validate_list_all_unique(
+                        v, key=attrgetter("feature_hexdigest")
+                    ),
                 ],
                 value=val,
             ),

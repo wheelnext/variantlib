@@ -49,9 +49,9 @@ def unpack_variants_from_json(
                 yield VariantProperty(namespace=namespace, feature=key, value=value)
 
     for variant_hash, namespaces in variants_from_json.items():
-        desc = VariantDescription(list(variant_to_vprops(namespaces)))
-        assert variant_hash == desc.hexdigest
-        yield desc
+        vdesc = VariantDescription(list(variant_to_vprops(namespaces)))
+        assert variant_hash == vdesc.hexdigest
+        yield vdesc
 
 
 def filtered_sorted_variants(  # noqa: C901

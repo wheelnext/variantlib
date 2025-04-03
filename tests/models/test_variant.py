@@ -57,13 +57,24 @@ def test_variantprop_hexdigest():
     vprop2 = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="value2"
     )
-    assert vprop1.hexdigest == vprop2.hexdigest
-
-    # Different value, same namespace and feature. Should also result in identical hash
-    vprop3 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="value2"
+    assert (
+        vprop1.hexdigest
+        == vprop2.hexdigest
+        == vprop1.feature_hexdigest
+        == vprop2.feature_hexdigest
     )
-    assert vprop1.hexdigest == vprop3.hexdigest
+    assert vprop1.property_hexdigest != vprop2.property_hexdigest
+
+    # Different object, same everything. Should also result in identical hash
+    vprop3 = VariantProperty(
+        namespace="OmniCorp", feature="custom_feat", value="value1"
+    )
+    assert (
+        vprop1.hexdigest
+        == vprop3.hexdigest
+        == vprop1.feature_hexdigest
+        == vprop3.feature_hexdigest
+    )
 
 
 def test_variantprop_to_str():
