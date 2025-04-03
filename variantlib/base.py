@@ -7,7 +7,7 @@ from typing import runtime_checkable
 
 @runtime_checkable
 class VariantFeatureConfigType(Protocol):
-    """A protocol for VariantFeatures configs"""
+    """A protocol for VariantFeature configs"""
 
     @property
     def name(self) -> str:
