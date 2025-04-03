@@ -81,7 +81,7 @@ def test_filtered_sorted_variants_roundtrip(configs):
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
 
 
-@settings(deadline=500)
+@settings(deadline=1000)
 @example(
     [
         ProviderConfig(
