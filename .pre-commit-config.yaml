@@ -38,6 +38,18 @@ repos:
     hooks:
       - id: mypy
 
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1  # check for the latest version
+    hooks:
+      - id: autoflake
+        args: [
+          "--in-place",
+          "--remove-all-unused-imports",
+          "--remove-unused-variables",
+          "--expand-star-imports"
+        ]
+        additional_dependencies: ["autoflake"]
+
 # sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:
   autoupdate_schedule: weekly
