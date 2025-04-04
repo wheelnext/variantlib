@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 from variantlib.combination import filtered_sorted_variants
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "VARIANT_HASH_LEN",
-    "KeyConfig",
     "ProviderConfig",
     "VariantDescription",
-    "VariantMeta",
+    "VariantFeatureConfig",
+    "VariantProperty",
     "get_variant_hashes_by_priority",
 ]
 
@@ -88,9 +88,9 @@ def get_variant_hashes_by_priority(
         sorted_provider_cfgs = list(provider_cfgs.values())
 
     if sorted_provider_cfgs:
-        for variant_desc in filtered_sorted_variants(
+        for vdesc in filtered_sorted_variants(
             variants_json["variants"], sorted_provider_cfgs
         ):
-            yield variant_desc.hexdigest
+            yield vdesc.hexdigest
     else:
         yield from []

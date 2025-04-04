@@ -7,7 +7,7 @@ import re
 import zipfile
 
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,7 +27,7 @@ def analyze_wheel(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    input_file = parsed_args.input_file
+    input_file = pathlib.Path(parsed_args.input_file)
 
     if not input_file.exists():
         raise FileNotFoundError(f"File not found: `{input_file}`")
@@ -65,21 +65,22 @@ def analyze_wheel(args: list[str]) -> None:
         # original_xml_data = xmltodict.parse(zip_file.open("Data.xml").read())
         for name in zip_file.namelist():
             if name.endswith(".dist-info/METADATA"):
-                metadata_str = zip_file.open(name).read().decode("utf-8")
+                vprop_str = zip_file.open(name).read().decode("utf-8")
                 break
 
         # Extract the hash value
-        hash_match = re.search(r"Variant-hash: (\w+)", metadata_str)
+        hash_match = re.search(r"Variant-hash: (\w+)", vprop_str)
         hash_value = hash_match.group(1) if hash_match else None
         assert hash_value == variant_hash, (
             "Hash value does not match - this variant is not valid"
         )
 
         # Extract all variant strings
-        variant_matches = re.findall(r"Variant: (.+)", metadata_str)
-        variant_metadata = variant_matches if variant_matches else []
+        variant_matches = re.findall(r"Variant: (.+)", vprop_str)
+        vprop = variant_matches if variant_matches else []
 
-        variant_metas = [VariantMeta.from_str(variant) for variant in variant_metadata]
-        variant_description = VariantDescription(variant_metas)
+        vdesc = VariantDescription(
+            [VariantProperty.from_str(variant) for variant in vprop]
+        )
 
-        logger.info(variant_description.pretty_print())
+        logger.info(vdesc.pretty_print())

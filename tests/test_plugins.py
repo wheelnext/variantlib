@@ -6,24 +6,24 @@ from typing import Any
 
 import pytest
 
-from variantlib.base import KeyConfigType
 from variantlib.base import PluginType
+from variantlib.base import VariantFeatureConfigType
 from variantlib.loader import PluginLoader
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 
 
 class MockedPluginA(PluginType):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            KeyConfig("key1", ["val1a", "val1b"]),
-            KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+            VariantFeatureConfig("name1", ["val1a", "val1b"]),
+            VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
 
-MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
+MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values"))
 
 
 # NB: this plugin deliberately does not inherit from PluginType
@@ -31,23 +31,23 @@ MyKeyConfig = namedtuple("MyKeyConfig", ("key", "values"))
 class MockedPluginB:
     namespace = "second_plugin"
 
-    def get_supported_configs(self) -> list[MyKeyConfig]:
+    def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
         return [
-            MyKeyConfig("key3", ["val3a"]),
+            MyVariantFeatureConfig("name3", ["val3a"]),
         ]
 
 
 class MockedPluginC(PluginType):
     namespace = "incompatible_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
 class ClashingPlugin(PluginType):
     namespace = "test_plugin"
 
-    def get_supported_configs(self) -> list[KeyConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -100,14 +100,14 @@ def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
         "second_plugin": ProviderConfig(
             namespace="second_plugin",
             configs=[
-                KeyConfig("key3", ["val3a"]),
+                VariantFeatureConfig("name3", ["val3a"]),
             ],
         ),
         "test_plugin": ProviderConfig(
             namespace="test_plugin",
             configs=[
-                KeyConfig("key1", ["val1a", "val1b"]),
-                KeyConfig("key2", ["val2a", "val2b", "val2c"]),
+                VariantFeatureConfig("name1", ["val1a", "val1b"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
             ],
         ),
     }

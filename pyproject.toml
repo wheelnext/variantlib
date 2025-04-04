@@ -73,7 +73,5 @@ disallow_untyped_defs = false
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = [
-    "jsondiff",
-]
+module = ["jsondiff"]
 ignore_missing_imports = true

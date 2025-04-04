@@ -6,12 +6,12 @@ from typing import runtime_checkable
 
 
 @runtime_checkable
-class KeyConfigType(Protocol):
-    """A protocol for key configs"""
+class VariantFeatureConfigType(Protocol):
+    """A protocol for VariantFeature configs"""
 
     @property
-    def key(self) -> str:
-        """Key name"""
+    def name(self) -> str:
+        """feature name"""
         ...
 
     @property
@@ -31,6 +31,6 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_supported_configs(self) -> list[KeyConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError
