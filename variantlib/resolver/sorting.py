@@ -109,7 +109,7 @@ def get_variant_property_priority_tuple(
     """
     validate_instance_of(vprop, VariantProperty)
 
-    return (
+    ranking_tuple = (
         # First Priority
         get_property_priority(vprop, property_priorities),
         # Second Priority
@@ -117,6 +117,13 @@ def get_variant_property_priority_tuple(
         # Third Priority
         get_namespace_priority(vprop, namespace_priorities),
     )
+
+    if all(x == sys.maxsize for x in ranking_tuple):
+        raise ValidationError(
+            f"VariantProperty {vprop} has no priority - this should not happen."
+        )
+
+    return ranking_tuple
 
 
 def sort_variant_properties(

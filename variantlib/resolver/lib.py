@@ -90,47 +90,6 @@ def filter_variants(
     yield from result
 
 
-def sort_variants_by_supported_properties(
-    vdescs: list[VariantDescription],
-    supported_vprops: list[VariantProperty],
-    property_priorities: list[VariantProperty] | None = None,
-    feature_priorities: list[VariantFeature] | None = None,
-    namespace_priorities: list[str] | None = None,
-) -> list[VariantDescription]:
-    """
-    Sort a list of `VariantDescription` objects based on their `VariantProperty`s.
-
-    :param vdescs: List of `VariantDescription` objects.
-    :param supported_vprops: list of `VariantProperty` objects supported on the platform
-    :param property_priorities: ordered list of `VariantProperty` objects.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
-    :param namespace_priorities: ordered list of `str` objects.
-    :return: Sorted list of `VariantDescription` objects.
-    """
-    validate_instance_of(vdescs, list)
-    validate_list_of(vdescs, VariantDescription)
-
-    if supported_vprops is None:
-        return []
-
-    validate_instance_of(supported_vprops, list)
-    validate_list_of(supported_vprops, VariantProperty)
-
-    # Step 1: we sort the supported properties based on the priorities
-    sorted_supported_vprops = sort_variant_properties(
-        vprops=supported_vprops,
-        property_priorities=property_priorities,
-        feature_priorities=feature_priorities,
-        namespace_priorities=namespace_priorities,
-    )
-
-    # Step 2: we sort the `VariantDescription` based on the sorted supported properties
-    return sort_variants_descriptions(
-        vdescs,
-        property_priorities=sorted_supported_vprops,
-    )
-
-
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty] | None = None,
@@ -160,20 +119,26 @@ def sort_and_filter_supported_variants(
     validate_list_of(supported_vprops, VariantProperty)
 
     # Step 1: we remove any duplicate, or unsupported `VariantDescription` on
-    # this platform.
-    filtered_vdescs = filter_variants(
-        vdescs=vdescs,
-        allowed_properties=supported_vprops,
-        allowed_features=feature_priorities,
-        allowed_namespaces=namespace_priorities,
+    #         this platform.
+    filtered_vdescs = list(
+        filter_variants(
+            vdescs=vdescs,
+            allowed_namespaces=namespace_priorities,
+        )
     )
 
-    # Step 2: we sort the `VariantDescription` based on the supported properties
-    # and the priorities
-    return sort_variants_by_supported_properties(
-        vdescs=list(filtered_vdescs),
-        supported_vprops=supported_vprops,
+    # Step 2: we sort the supported `VariantProperty`s based on their respective
+    #         priority.
+    sorted_supported_vprops = sort_variant_properties(
+        vprops=supported_vprops,
         property_priorities=property_priorities,
         feature_priorities=feature_priorities,
         namespace_priorities=namespace_priorities,
+    )
+
+    # Step 3: we sort the `VariantDescription` based on the sorted supported properties
+    #         and their respective priority.
+    return sort_variants_descriptions(
+        filtered_vdescs,
+        property_priorities=sorted_supported_vprops,
     )
