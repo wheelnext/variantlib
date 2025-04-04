@@ -95,7 +95,7 @@ class Configuration:
                 with cfg_f.open("rb") as f:
                     try:
                         if config_name == ConfigEnvironments.PROJECT:
-                            config = tomllib.load(f)["tool"]["variantlib"]
+                            config = tomllib.load(f)["variants"]
                         else:
                             config = tomllib.load(f)
 

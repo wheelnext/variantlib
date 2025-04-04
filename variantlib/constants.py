@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 VARIANT_HASH_LEN = 8
-CONFIG_FILENAME = "wheelvariant.toml"
+CONFIG_FILENAME = "variants.toml"
 
 VALIDATION_NAMESPACE_REGEX = r"^[A-Za-z0-9_]+$"
 VALIDATION_FEATURE_REGEX = r"^[A-Za-z0-9_]+$"

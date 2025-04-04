@@ -171,7 +171,6 @@ def test_sort_variant_properties():
         VariantProperty(namespace="OtherCorp", feature="featB", value="value2"),
         VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
         VariantProperty(namespace="OtherCorp", feature="featD", value="value"),
-        VariantProperty(namespace="AnyCorp", feature="feature", value="value"),
     ]
     property_priorities = [
         VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
@@ -201,8 +200,6 @@ def test_sort_variant_properties():
         # sorted by namespace priorities
         VariantProperty(namespace="OmniCorp", feature="featD", value="value"),
         VariantProperty(namespace="OtherCorp", feature="featD", value="value"),
-        # not a listed namespace or feature or property
-        VariantProperty(namespace="AnyCorp", feature="feature", value="value"),
     ]
 
 
@@ -270,6 +267,15 @@ def test_sort_variant_properties_validation_error():
             property_priorities=None,
             feature_priorities=None,
             namespace_priorities=[{"not a str": True}],  # type: ignore[list-item]
+        )
+
+    # Can't sort without ordering priorities
+    with pytest.raises(ValidationError, match="has no priority"):
+        sort_variant_properties(
+            vprops=vprops,
+            property_priorities=None,
+            feature_priorities=None,
+            namespace_priorities=None,  # type: ignore[list-item]
         )
 
 
