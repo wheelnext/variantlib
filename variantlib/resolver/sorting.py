@@ -178,8 +178,21 @@ def sort_variants_descriptions(
         Get the rank tuple of a `VariantDescription` object.
 
         :param vdesc: `VariantDescription` object.
-        :return: Rank tuple of the `VariantDescription` object.
+        :return: Rank tuple[int, ...] of the `VariantDescription` object.
         """
+
+        # --------------------------- Implementation Notes --------------------------- #
+        # - `property_hash_priorities` is ordered. It's a list.
+        # - `vdesc_prop_hashes` is unordered. It's a set.
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Performance Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+        # * Only `property_hash_priorities` needs to be ordered. The set is used for
+        # performance reasons.
+        # * `vdesc.properties` hashes are pre-computed and saved to avoid recomputing
+        #  them multiple times.
+        # * `property_priorities` are also pre-hashed to avoid recomputing them
+        # ---------------------------------------------------------------------------- #
+
         # using a set for performance reason: O(1) access time.
         vdesc_prop_hashes = {vprop.property_hash for vprop in vdesc.properties}
 
