@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING
 from variantlib.combination import filtered_sorted_variants
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantMeta
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -22,11 +22,10 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "VARIANT_HASH_LEN",
-    "KeyConfig",
     "ProviderConfig",
     "VariantDescription",
-    "VariantMeta",
-    "VariantValidationResult",
+    "VariantFeatureConfig",
+    "VariantProperty",
     "get_variant_hashes_by_priority",
     "validate_variant",
 ]
@@ -91,17 +90,17 @@ def get_variant_hashes_by_priority(
         sorted_provider_cfgs = list(provider_cfgs.values())
 
     if sorted_provider_cfgs:
-        for variant_desc in filtered_sorted_variants(
+        for vdesc in filtered_sorted_variants(
             variants_json["variants"], sorted_provider_cfgs
         ):
-            yield variant_desc.hexdigest
+            yield vdesc.hexdigest
     else:
         yield from []
 
 
 @dataclass
 class VariantValidationResult:
-    results: dict[VariantMeta, bool | None]
+    results: dict[VariantProperty, bool | None]
 
     def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
         return False not in self.results.values() and (
@@ -124,15 +123,15 @@ def validate_variant(
 
     provider_cfgs = PluginLoader.get_all_configs()
 
-    def _validate_variant(vmeta: VariantMeta) -> bool | None:
-        provider_cfg = provider_cfgs.get(vmeta.namespace)
+    def _validate_variant(vprop: VariantProperty) -> bool | None:
+        provider_cfg = provider_cfgs.get(vprop.namespace)
         if provider_cfg is None:
             return None
         for key_cfg in provider_cfg.configs:
-            if key_cfg.key == vmeta.key:
-                return vmeta.value in key_cfg.values
+            if key_cfg.name == vprop.feature:
+                return vprop.value in key_cfg.values
         return False
 
     return VariantValidationResult(
-        {vmeta: _validate_variant(vmeta) for vmeta in variant_desc}
+        {vprop: _validate_variant(vprop) for vprop in variant_desc.properties}
     )

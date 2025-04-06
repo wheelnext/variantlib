@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from tests.test_plugins import mocked_plugin_loader  # noqa: F401
-from variantlib.api import KeyConfig
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
-from variantlib.api import VariantMeta
+from variantlib.api import VariantFeatureConfig
+from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import validate_variant
@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 def test_api_accessible():
     """Test that the API is accessible."""
     assert get_variant_hashes_by_priority is not None
-    assert pconfig.KeyConfig is KeyConfig
+    assert pconfig.VariantFeatureConfig is VariantFeatureConfig
     assert pconfig.ProviderConfig is ProviderConfig
     assert vconfig.VariantDescription is VariantDescription
-    assert vconfig.VariantMeta is VariantMeta
+    assert vconfig.VariantProperty is VariantProperty
 
 
 def test_get_variant_hashes_by_priority():
@@ -55,7 +55,7 @@ def test_validation_result_is_valid(
 ):
     res = VariantValidationResult(
         {
-            VariantMeta(
+            VariantProperty(
                 ascii_lowercase[i], ascii_lowercase[i], ascii_lowercase[i]
             ): var_res
             for i, var_res in enumerate(bools)
@@ -69,34 +69,30 @@ def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F8
     res = validate_variant(
         VariantDescription(
             [
-                VariantMeta("test_plugin", "key1", "val1d"),
-                VariantMeta("test_plugin", "key2", "val2d"),
-                VariantMeta("test_plugin", "key3", "val3a"),
-                VariantMeta("second_plugin", "key3", "val3a"),
-                VariantMeta("incompatible_plugin", "flag1", "on"),
-                VariantMeta("incompatible_plugin", "flag2", "off"),
-                VariantMeta("incompatible_plugin", "flag5", "on"),
-                VariantMeta("missing_plugin", "key", "val"),
-                VariantMeta("private", "build_type", "debug"),
+                VariantProperty("test_plugin", "name1", "val1d"),
+                VariantProperty("test_plugin", "name2", "val2d"),
+                VariantProperty("test_plugin", "name3", "val3a"),
+                VariantProperty("second_plugin", "name3", "val3a"),
+                VariantProperty("incompatible_plugin", "flag1", "on"),
+                VariantProperty("incompatible_plugin", "flag2", "off"),
+                VariantProperty("incompatible_plugin", "flag5", "on"),
+                VariantProperty("missing_plugin", "name", "val"),
+                VariantProperty("private", "build_type", "debug"),
             ]
         )
     )
 
     assert res == VariantValidationResult(
         {
-            VariantMeta(namespace="test_plugin", key="key1", value="val1d"): True,
-            VariantMeta(namespace="test_plugin", key="key2", value="val2d"): False,
-            VariantMeta(namespace="test_plugin", key="key3", value="val3a"): False,
-            VariantMeta(namespace="second_plugin", key="key3", value="val3a"): True,
-            VariantMeta(namespace="incompatible_plugin", key="flag1", value="on"): True,
-            VariantMeta(
-                namespace="incompatible_plugin", key="flag2", value="off"
-            ): False,
-            VariantMeta(
-                namespace="incompatible_plugin", key="flag5", value="on"
-            ): False,
-            VariantMeta(namespace="missing_plugin", key="key", value="val"): None,
-            VariantMeta(namespace="private", key="build_type", value="debug"): None,
+            VariantProperty("test_plugin", "name1", "val1d"): True,
+            VariantProperty("test_plugin", "name2", "val2d"): False,
+            VariantProperty("test_plugin", "name3", "val3a"): False,
+            VariantProperty("second_plugin", "name3", "val3a"): True,
+            VariantProperty("incompatible_plugin", "flag1", "on"): True,
+            VariantProperty("incompatible_plugin", "flag2", "off"): False,
+            VariantProperty("incompatible_plugin", "flag5", "on"): False,
+            VariantProperty("missing_plugin", "name", "val"): None,
+            VariantProperty("private", "build_type", "debug"): None,
         }
     )
     assert not res.is_valid()

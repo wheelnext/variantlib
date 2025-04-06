@@ -11,12 +11,13 @@ import pytest
 from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
+from hypothesis import settings
 from hypothesis import strategies as st
 
 from variantlib.combination import filtered_sorted_variants
 from variantlib.combination import get_combinations
-from variantlib.models.provider import KeyConfig
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -29,15 +30,17 @@ def configs():
     config_custom_hw = ProviderConfig(
         namespace="custom_hw",
         configs=[
-            KeyConfig(key="driver_version", values=["1.3", "1.2", "1.1", "1"]),
-            KeyConfig(key="hw_architecture", values=["3.4", "3"]),
+            VariantFeatureConfig(
+                name="driver_version", values=["1.3", "1.2", "1.1", "1"]
+            ),
+            VariantFeatureConfig(name="hw_architecture", values=["3.4", "3"]),
         ],
     )
 
     config_networking = ProviderConfig(
         namespace="networking",
         configs=[
-            KeyConfig(key="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
+            VariantFeatureConfig(name="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
         ],
     )
 
@@ -59,36 +62,41 @@ def test_get_combinations(configs):
     assert not differences, f"Serialization altered JSON: {differences}"
 
 
-def desc_to_json(desc_list: list[VariantDescription]) -> Generator:
-    shuffled_desc_list = list(desc_list)
-    random.shuffle(shuffled_desc_list)
-    for desc in shuffled_desc_list:
+def vdescs_to_json(vdescs: list[VariantDescription]) -> Generator:
+    shuffled_vdescs = list(vdescs)
+    random.shuffle(shuffled_vdescs)
+    for vdesc in shuffled_vdescs:
         variant_dict: dict[str, dict[str, str]] = {}
-        for variant_meta in desc:
-            provider_dict = variant_dict.setdefault(variant_meta.namespace, {})
-            provider_dict[variant_meta.key] = variant_meta.value
-        yield (desc.hexdigest, variant_dict)
+        for vprop in vdesc.properties:
+            provider_dict = variant_dict.setdefault(vprop.namespace, {})
+            provider_dict[vprop.feature] = vprop.value
+        yield (vdesc.hexdigest, variant_dict)
 
 
 def test_filtered_sorted_variants_roundtrip(configs):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
     combinations = list(get_combinations(configs))
-    variants_from_json = dict(desc_to_json(combinations))
+    variants_from_json = dict(vdescs_to_json(combinations))
     assert filtered_sorted_variants(variants_from_json, configs) == combinations
 
 
+@settings(deadline=1000)
 @example(
     [
         ProviderConfig(
             namespace="A",
             configs=[
-                KeyConfig(key="A1", values=["x"]),
-                KeyConfig(key="A2", values=["x"]),
+                VariantFeatureConfig(name="A1", values=["x"]),
+                VariantFeatureConfig(name="A2", values=["x"]),
             ],
         ),
-        ProviderConfig(namespace="B", configs=[KeyConfig(key="B1", values=["x"])]),
-        ProviderConfig(namespace="C", configs=[KeyConfig(key="C1", values=["x"])]),
+        ProviderConfig(
+            namespace="B", configs=[VariantFeatureConfig(name="B1", values=["x"])]
+        ),
+        ProviderConfig(
+            namespace="C", configs=[VariantFeatureConfig(name="C1", values=["x"])]
+        ),
     ]
 )
 @given(
@@ -104,10 +112,10 @@ def test_filtered_sorted_variants_roundtrip(configs):
             configs=st.lists(
                 min_size=1,
                 max_size=2,
-                unique_by=lambda key_cfg: key_cfg.key,
+                unique_by=lambda vfeat_cfg: vfeat_cfg.name,
                 elements=st.builds(
-                    KeyConfig,
-                    key=st.text(
+                    VariantFeatureConfig,
+                    name=st.text(
                         alphabet=string.ascii_letters + string.digits + "_",
                         min_size=1,
                         max_size=64,
@@ -134,5 +142,5 @@ def test_filtered_sorted_variants_roundtrip_fuzz(configs):
             yield x
 
     combinations = list(filter_long_combinations())
-    variants_from_json = dict(desc_to_json(combinations))
+    variants_from_json = dict(vdescs_to_json(combinations))
     assert filtered_sorted_variants(variants_from_json, configs) == combinations

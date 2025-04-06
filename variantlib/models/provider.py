@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from operator import attrgetter
 
-from variantlib.constants import VALIDATION_KEY_REGEX
+from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
@@ -18,13 +18,13 @@ from variantlib.models.validators import validate_matches_re
 
 
 @dataclass(frozen=True)
-class KeyConfig(BaseModel):
-    key: str = field(
+class VariantFeatureConfig(BaseModel):
+    name: str = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_instance_of(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_KEY_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_REGEX),
                 ],
                 value=val,
             )
@@ -62,15 +62,15 @@ class ProviderConfig(BaseModel):
         }
     )
 
-    # `KeyConfigs` in priority order
-    configs: list[KeyConfig] = field(
+    # `VariantFeatureConfigs` in priority order
+    configs: list[VariantFeatureConfig] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, KeyConfig),
+                    lambda v: validate_list_of(v, VariantFeatureConfig),
                     lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v, key=attrgetter("key")),
+                    lambda v: validate_list_all_unique(v, key=attrgetter("name")),
                 ],
                 value=val,
             ),
@@ -82,7 +82,7 @@ class ProviderConfig(BaseModel):
         for kid, vconfig in enumerate(self.configs):
             result_str += (
                 f"\n\t- Variant Config [{kid + 1:03d}]: "
-                f"{vconfig.key} :: {vconfig.values}"
+                f"{vconfig.name} :: {vconfig.values}"
             )
         result_str += f"\n{'#' * 80}\n"
         return result_str
