@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Self
 
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
@@ -13,9 +13,14 @@ from variantlib.models.validators import validate_list_of
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 
 @dataclass(frozen=True)
-class Configuration(BaseModel):
+class VariantConfiguration(BaseModel):
     """
     Configuration class for variantlib.
 
@@ -23,9 +28,12 @@ class Configuration(BaseModel):
     It includes fields for the namespace, feature, and value, along with validation
     checks for each field.
 
+    # Sorting Note: First is best.
+
     Attributes:
-        namespaces_by_priority (list): The namespace of the configuration.
-        features_by_priority (list): The feature of the configuration.
+        namespaces_priority (list): Sorted list of "variant namespaces" by priority.
+        features_priority (list): Sorted list of `VariantFeature` by priority.
+        property_priority (list): Sorted list of `VariantProperty` by priority.
     """
 
     namespaces_priority: list[str] = field(
@@ -50,7 +58,8 @@ class Configuration(BaseModel):
                 ],
                 value=val,
             )
-        }
+        },
+        default_factory=list,
     )
 
     property_priority: list[VariantProperty] = field(
@@ -62,16 +71,17 @@ class Configuration(BaseModel):
                 ],
                 value=val,
             )
-        }
+        },
+        default_factory=list,
     )
 
     @classmethod
     def default(cls) -> Self:
         """
-        Create a default Configuration instance.
+        Create a default `VariantConfiguration` instance.
 
         Returns:
-            Configuration: A new Configuration instance with default values.
+            VariantConfiguration: A new instance with default values.
         """
 
         # TODO: Verify the default values make sense
@@ -99,16 +109,16 @@ class Configuration(BaseModel):
         # Convert the `features_priority: list[str]` into `list[VariantFeature]`
         _features_priority: list[VariantFeature] = []
         if features_priority is not None:
-            for feature in features_priority:
-                validate_instance_of(feature, str)
-                _features_priority.append(VariantFeature.from_str(feature))
+            for vfeat in features_priority:
+                validate_instance_of(vfeat, str)
+                _features_priority.append(VariantFeature.from_str(vfeat))
 
         # Convert the `property_priority: list[str]` into `list[VariantProperty]`
         _property_priority: list[VariantProperty] = []
         if property_priority is not None:
             for vprop in property_priority:
                 validate_instance_of(vprop, str)
-                _property_priority.append(VariantProperty.from_str(feature))
+                _property_priority.append(VariantProperty.from_str(vprop))
 
         return cls(
             namespaces_priority=namespaces_priority or [],

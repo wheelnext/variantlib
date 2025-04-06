@@ -84,7 +84,7 @@ class VariantFeature(BaseModel):
 
         if match is None:
             raise ValidationError(
-                f"Invalid format: {input_str}. Expected format: "
+                f"Invalid format: `{input_str}`, expected format: "
                 "'<namespace> :: <feature>'"
             )
 
@@ -133,8 +133,8 @@ class VariantProperty(VariantFeature):
 
         if match is None:
             raise ValidationError(
-                f"Invalid format: {input_str}. "
-                "Expected format: '<namespace> :: <feature> :: <value>'"
+                f"Invalid format: `{input_str}`, "
+                "expected format: `<namespace> :: <feature> :: <value>`"
             )
 
         # Extract the namespace, feature, and value from the match groups

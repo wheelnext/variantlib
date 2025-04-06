@@ -30,6 +30,8 @@ maintainers = [
 ]
 dependencies = [
     "importlib-metadata; python_version < '3.10'",
+    "platformdirs>=4.3,<5.0",
+    "tomli; python_version < '3.11'",
     "typing-extensions; python_version < '3.11'",
 ]
 
