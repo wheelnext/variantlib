@@ -14,20 +14,9 @@ from variantlib.errors import ValidationError
 logger = logging.getLogger(__name__)
 
 
-def validate_instance_of(value: Any, expected_type: type) -> None:
-    if not isinstance(value, expected_type):
-        raise ValidationError(f"Expected {expected_type}, got {type(value)}")
-
-
 def validate_matches_re(value: str, pattern: str) -> None:
     if not re.match(pattern, value):
         raise ValidationError(f"Value `{value}` must match regex {pattern}")
-
-
-def validate_list_of(values: Iterable[Any], expected_type: type) -> None:
-    for value in values:
-        if not isinstance(value, expected_type):
-            raise ValidationError(f"Expected {expected_type}, got {type(value)}")
 
 
 def validate_list_matches_re(values: list[str], pattern: str) -> None:
