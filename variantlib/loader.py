@@ -9,6 +9,7 @@ from typing import Any
 from typing import get_type_hints
 
 from variantlib.base import PluginType
+from variantlib.errors import PluginError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.validators import ValidationError
@@ -52,45 +53,60 @@ class PluginLoader:
         plugins = entry_points().select(group="variantlib.plugins")
 
         for plugin in plugins:
-            try:
-                logger.info(
-                    "Loading plugin: %(name)s - version %(version)s",
-                    {
-                        "name": plugin.name,
-                        "version": (
-                            plugin.dist.version
-                            if plugin.dist is not None
-                            else "unknown"
-                        ),
-                    },
-                )
+            logger.info(
+                "Loading plugin: %(name)s - version %(version)s",
+                {
+                    "name": plugin.name,
+                    "version": (
+                        plugin.dist.version if plugin.dist is not None else "unknown"
+                    ),
+                },
+            )
 
+            try:
                 # Dynamically load the plugin class
                 plugin_class = plugin.load()
+            except Exception as exc:
+                raise PluginError(
+                    f"Loading the plugin from entry point {plugin.name} failed: {exc}"
+                ) from exc
 
+            if not callable(plugin_class):
+                raise PluginError(
+                    f"Entry point {plugin.name} points at a value that is not "
+                    f"callable: {plugin_class!r}"
+                )
+
+            try:
                 # Instantiate the plugin
                 plugin_instance = plugin_class()
-                assert isinstance(plugin_instance, PluginType)
+            except Exception as exc:
+                raise PluginError(
+                    f"Instantiating the plugin from entry point {plugin.name} failed: "
+                    f"{exc}"
+                ) from exc
 
-            except Exception:  # noqa: PERF203
-                logger.exception("An unknown error happened - Ignoring plugin")
-                continue
+            if not isinstance(plugin_instance, PluginType):
+                raise PluginError(
+                    f"Instantiating the plugin from entry point {plugin.name} "
+                    "returned an object that does not meet the PluginType prototype: "
+                    f"{plugin_instance!r}"
+                )
 
-            else:
-                if plugin_instance.namespace in cls._plugins:
-                    pkg1 = cls._dist_names.get(plugin_instance.namespace)
-                    pkg2 = plugin.dist.name if plugin.dist is not None else None
-                    if pkg1 is not None and pkg2 is not None:
-                        hint = f": {pkg1} or {pkg2}."
-                    raise RuntimeError(
-                        "Two plugins found using the same namespace "
-                        f"{plugin_instance.namespace}. Refusing to proceed. "
-                        f"Please uninstall one of them{hint}.."
-                    )
-                cls._plugins[plugin_instance.namespace] = plugin_instance
+            if plugin_instance.namespace in cls._plugins:
+                pkg1 = cls._dist_names.get(plugin_instance.namespace)
+                pkg2 = plugin.dist.name if plugin.dist is not None else None
+                if pkg1 is not None and pkg2 is not None:
+                    hint = f": {pkg1} or {pkg2}."
+                raise RuntimeError(
+                    "Two plugins found using the same namespace "
+                    f"{plugin_instance.namespace}. Refusing to proceed. "
+                    f"Please uninstall one of them{hint}.."
+                )
+            cls._plugins[plugin_instance.namespace] = plugin_instance
 
-                if plugin.dist is not None:
-                    cls._dist_names[plugin_instance.namespace] = plugin.dist.name
+            if plugin.dist is not None:
+                cls._dist_names[plugin_instance.namespace] = plugin.dist.name
 
     @classmethod
     def _call(cls, method: Callable[[], Any]) -> Any:
