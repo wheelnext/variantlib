@@ -162,9 +162,9 @@ class PluginLoader:
         cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
-            key_configs = cls._call(plugin_instance.get_all_configs)
+            vfeat_configs = cls._call(plugin_instance.get_all_configs)
 
-            if not key_configs:
+            if not vfeat_configs:
                 raise ValueError(
                     f"Provider {namespace}, get_all_configs() method returned no valid "
                     "configs"
@@ -174,7 +174,7 @@ class PluginLoader:
                 plugin_instance.namespace,
                 configs=[
                     VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
-                    for vfeat_cfg in key_configs
+                    for vfeat_cfg in vfeat_configs
                 ],
             )
 
