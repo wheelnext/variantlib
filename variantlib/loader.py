@@ -54,12 +54,14 @@ class PluginLoader:
 
         for plugin in plugins:
             logger.info(
-                "Loading plugin: %(name)s - version %(version)s",
+                "Loading plugin from entry point: %(name)s; provided by package "
+                "%(package)s %(version)s",
                 {
                     "name": plugin.name,
-                    "version": (
-                        plugin.dist.version if plugin.dist is not None else "unknown"
-                    ),
+                    "package": plugin.dist.name
+                    if plugin.dist is not None
+                    else "unknown",
+                    "version": (plugin.dist.version if plugin.dist is not None else ""),
                 },
             )
 
