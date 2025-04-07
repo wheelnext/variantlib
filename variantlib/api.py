@@ -13,6 +13,7 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import VariantValidationResult
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -26,6 +27,7 @@ __all__ = [
     "VariantFeatureConfig",
     "VariantProperty",
     "get_variant_hashes_by_priority",
+    "validate_variant",
 ]
 
 
@@ -94,3 +96,32 @@ def get_variant_hashes_by_priority(
             yield vdesc.hexdigest
     else:
         yield from []
+
+
+def validate_variant(
+    variant_desc: VariantDescription,
+) -> VariantValidationResult:
+    """
+    Validate all metas in the variant description
+
+    Check whether all metas in the variant description are valid, and return
+    a dictionary mapping individual metas into a tri-state variable: True
+    indicates that the variant is valid, False that it is not, and None
+    that no plugin provides given namespace and therefore the variant cannot
+    be verified.
+    """
+
+    provider_cfgs = PluginLoader.get_all_configs()
+
+    def _validate_variant(vprop: VariantProperty) -> bool | None:
+        provider_cfg = provider_cfgs.get(vprop.namespace)
+        if provider_cfg is None:
+            return None
+        for key_cfg in provider_cfg.configs:
+            if key_cfg.name == vprop.feature:
+                return vprop.value in key_cfg.values
+        return False
+
+    return VariantValidationResult(
+        {vprop: _validate_variant(vprop) for vprop in variant_desc.properties}
+    )

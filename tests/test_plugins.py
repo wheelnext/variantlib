@@ -16,6 +16,12 @@ from variantlib.models.provider import VariantFeatureConfig
 class MockedPluginA(PluginType):
     namespace = "test_plugin"
 
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+            VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+        ]
+
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
@@ -31,14 +37,36 @@ MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values")
 class MockedPluginB:
     namespace = "second_plugin"
 
+    def get_all_configs(self) -> list[MyVariantFeatureConfig]:
+        return [
+            MyVariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+        ]
+
     def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
         return [
             MyVariantFeatureConfig("name3", ["val3a"]),
         ]
 
 
+class MyFlag:
+    name: str
+    values: list[str]
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.values = ["on"]
+
+
 class MockedPluginC(PluginType):
     namespace = "incompatible_plugin"
+
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return [
+            MyFlag("flag1"),
+            MyFlag("flag2"),
+            MyFlag("flag3"),
+            MyFlag("flag4"),
+        ]
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
@@ -47,8 +75,30 @@ class MockedPluginC(PluginType):
 class ClashingPlugin(PluginType):
     namespace = "test_plugin"
 
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+        ]
+
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
+
+
+class ExceptionTestingPlugin(PluginType):
+    namespace = "exception_test"
+
+    def __init__(self, returned_value: Any) -> None:
+        self.returned_value = returned_value
+
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return self.returned_value
+
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+        return self.returned_value
+
+    def __call__(self) -> ExceptionTestingPlugin:
+        """Fake instantiation"""
+        return self
 
 
 @dataclass
@@ -90,9 +140,37 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginC,
         ),
     ]
+    PluginLoader.flush_cache()
     PluginLoader.load_plugins()
     yield PluginLoader
     PluginLoader.flush_cache()
+
+
+def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
+    assert mocked_plugin_loader.get_all_configs() == {
+        "incompatible_plugin": ProviderConfig(
+            namespace="incompatible_plugin",
+            configs=[
+                VariantFeatureConfig("flag1", ["on"]),
+                VariantFeatureConfig("flag2", ["on"]),
+                VariantFeatureConfig("flag3", ["on"]),
+                VariantFeatureConfig("flag4", ["on"]),
+            ],
+        ),
+        "second_plugin": ProviderConfig(
+            namespace="second_plugin",
+            configs=[
+                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+            ],
+        ),
+        "test_plugin": ProviderConfig(
+            namespace="test_plugin",
+            configs=[
+                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
 
 
 def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
@@ -141,3 +219,59 @@ def test_namespace_clash(mocker):
         "proceed. Please uninstall one of them: test-plugin or test-plugin",
     ):
         PluginLoader.load_plugins()
+
+
+def test_get_all_configs_incorrect_list_type(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin(
+                (VariantFeatureConfig("k1", ["v1"]), VariantFeatureConfig("k2", ["v2"]))
+            ),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        TypeError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
+        r"type <class 'tuple'>, excepted: list\[VariantFeatureConfig\]",
+    ):
+        PluginLoader.get_all_configs()
+
+
+def test_get_all_configs_incorrect_list_length(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin([]),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        ValueError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
+        r"configs",
+    ):
+        PluginLoader.get_all_configs()
+
+
+def test_get_all_configs_incorrect_list_member_type(mocker):
+    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="exception_test",
+            value="tests.test_plugins:ExceptionTestingPlugin",
+            plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
+        ),
+    ]
+    PluginLoader.flush_cache()
+    PluginLoader.load_plugins()
+    with pytest.raises(
+        TypeError,
+        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
+        r"list member type <class 'dict'>, excepted: VariantFeatureConfig",
+    ):
+        PluginLoader.get_all_configs()

@@ -86,7 +86,7 @@ class PluginLoader:
     @classmethod
     @VariantCache()
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
-        """Get a mapping of plugin names to provider configs"""
+        """Get a mapping of namespaces to supported configs"""
 
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
@@ -119,6 +119,45 @@ class PluginLoader:
                 configs=[
                     VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
                     for vfeat_cfg in vfeat_configs
+                ],
+            )
+
+        return provider_cfgs
+
+    @classmethod
+    def get_all_configs(cls) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to all valid configs"""
+
+        provider_cfgs = {}
+        for namespace, plugin_instance in cls._plugins.items():
+            key_configs = plugin_instance.get_all_configs()
+
+            if not isinstance(key_configs, list):
+                raise TypeError(
+                    f"Provider {namespace}, get_all_configs() method returned "
+                    f"incorrect type {type(key_configs)}, excepted: "
+                    "list[VariantFeatureConfig]"
+                )
+
+            if not key_configs:
+                raise ValueError(
+                    f"Provider {namespace}, get_all_configs() method returned no valid "
+                    "configs"
+                )
+
+            for vfeat_cfg in key_configs:
+                if not isinstance(vfeat_cfg, VariantFeatureConfigType):
+                    raise TypeError(
+                        f"Provider {namespace}, get_all_configs() method returned "
+                        f"incorrect list member type {type(vfeat_cfg)}, excepted: "
+                        "VariantFeatureConfig"
+                    )
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace,
+                configs=[
+                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
+                    for vfeat_cfg in key_configs
                 ],
             )
 
