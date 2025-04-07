@@ -119,7 +119,7 @@ class MockedEntryPoint:
         return self.plugin
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mocked_plugin_loader(session_mocker):
     session_mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
@@ -140,7 +140,7 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginC,
         ),
     ]
-    PluginLoader.flush_cache()
+
     PluginLoader.load_plugins()
     yield PluginLoader
     PluginLoader.flush_cache()
@@ -213,12 +213,15 @@ def test_namespace_clash(mocker):
             plugin=ClashingPlugin,
         ),
     ]
-    with pytest.raises(
-        RuntimeError,
-        match="Two plugins found using the same namespace test_plugin. Refusing to "
-        "proceed. Please uninstall one of them: test-plugin or test-plugin",
-    ):
-        PluginLoader.load_plugins()
+    try:
+        with pytest.raises(
+            RuntimeError,
+            match="Two plugins found using the same namespace test_plugin. Refusing to "
+            "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
+        ):
+            PluginLoader.load_plugins()
+    finally:
+        PluginLoader.flush_cache()
 
 
 def test_get_all_configs_incorrect_list_type(mocker):
