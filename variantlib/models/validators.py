@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
+from collections.abc import Iterable
+from types import GenericAlias
 from typing import Any
 from typing import Callable
+from typing import get_args
+from typing import get_origin
 
 from variantlib.errors import ValidationError
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -108,3 +108,25 @@ def validate_and(validators: list[Callable], value: Any) -> None:
             {"name": validator.__name__, "value": value},
         )
         raise
+
+
+def validate_type(value: Any, expected_type: type) -> None:
+    """Validate that the value matches specified type"""
+
+    if isinstance(expected_type, GenericAlias):
+        list_type = get_origin(expected_type)
+        if not isinstance(value, list_type):
+            raise ValidationError(f"Expected {expected_type}, got {type(value)}")
+        (item_type,) = get_args(expected_type)
+        assert isinstance(value, Iterable)
+        incorrect_types = {
+            type(item) for item in value if not isinstance(item, item_type)
+        }
+        if incorrect_types:
+            ored = item_type
+            while incorrect_types:
+                ored |= incorrect_types.pop()
+            wrong_type = list_type[ored]  # type: ignore[index]
+            raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
+    elif not isinstance(value, expected_type):
+        raise ValidationError(f"Expected {expected_type}, got {type(value)}")

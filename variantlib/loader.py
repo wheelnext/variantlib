@@ -3,19 +3,27 @@ from __future__ import annotations
 import logging
 import sys
 from importlib.metadata import entry_points
+from types import MethodType
+from typing import TYPE_CHECKING
 from typing import Any
+from typing import get_type_hints
 
 from variantlib.base import PluginType
 from variantlib.base import VariantFeatureConfigType
 from variantlib.cache import VariantCache
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.validators import ValidationError
+from variantlib.models.validators import validate_type
 from variantlib.utils import classproperty
 
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +95,25 @@ class PluginLoader:
                     cls._dist_names[plugin_instance.namespace] = plugin.dist.name
 
     @classmethod
+    def _call(cls, method: Callable[[], Any]) -> Any:
+        """Call plugin method and verify the return type"""
+
+        value = method()
+
+        try:
+            validate_type(value, get_type_hints(method)["return"])
+        except ValidationError as err:
+            assert isinstance(method, MethodType)
+            plugin_instance = method.__self__
+            assert isinstance(plugin_instance, PluginType)
+            raise TypeError(
+                f"Provider {plugin_instance.namespace}, {method.__func__.__name__}() "
+                f"method returned incorrect type. {err}"
+            ) from None
+
+        return value
+
+    @classmethod
     @VariantCache()
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
@@ -135,28 +162,13 @@ class PluginLoader:
         cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
-            key_configs = plugin_instance.get_all_configs()
-
-            if not isinstance(key_configs, list):
-                raise TypeError(
-                    f"Provider {namespace}, get_all_configs() method returned "
-                    f"incorrect type {type(key_configs)}, excepted: "
-                    "list[VariantFeatureConfig]"
-                )
+            key_configs = cls._call(plugin_instance.get_all_configs)
 
             if not key_configs:
                 raise ValueError(
                     f"Provider {namespace}, get_all_configs() method returned no valid "
                     "configs"
                 )
-
-            for vfeat_cfg in key_configs:
-                if not isinstance(vfeat_cfg, VariantFeatureConfigType):
-                    raise TypeError(
-                        f"Provider {namespace}, get_all_configs() method returned "
-                        f"incorrect list member type {type(vfeat_cfg)}, excepted: "
-                        "VariantFeatureConfig"
-                    )
 
             provider_cfgs[namespace] = ProviderConfig(
                 plugin_instance.namespace,

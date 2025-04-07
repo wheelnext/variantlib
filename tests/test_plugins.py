@@ -231,8 +231,9 @@ def test_get_all_configs_incorrect_list_type(mocker):
     ]
     with pytest.raises(
         TypeError,
-        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
-        r"type <class 'tuple'>, excepted: list\[VariantFeatureConfig\]",
+        match=r"Provider exception_test, get_all_configs\(\) method returned "
+        r"incorrect type. Expected list\[variantlib.base.VariantFeatureConfigType\], "
+        r"got <class 'tuple'>",
     ):
         PluginLoader.get_all_configs()
 
@@ -258,12 +259,16 @@ def test_get_all_configs_incorrect_list_member_type(mocker):
         MockedEntryPoint(
             name="exception_test",
             value="tests.test_plugins:ExceptionTestingPlugin",
-            plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
+            plugin=ExceptionTestingPlugin(
+                [{"k1": ["v1"], "k2": ["v2"]}, "k3", 1, True, (1, 2, 3)]
+            ),
         ),
     ]
     with pytest.raises(
         TypeError,
-        match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
-        r"list member type <class 'dict'>, excepted: VariantFeatureConfig",
+        match=r"Provider exception_test, get_all_configs\(\) method returned "
+        r"incorrect type. Expected list\[variantlib.base.VariantFeatureConfigType\], "
+        r"got list\[variantlib.base.VariantFeatureConfigType \| str \| tuple \| bool "
+        r"\| dict \| int\]",
     ):
         PluginLoader.get_all_configs()
