@@ -274,9 +274,9 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         match=re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
             "Expected list[variantlib.base.VariantFeatureConfigType], "
-            "got list[variantlib.base.VariantFeatureConfigType | "
+            "got list[typing.Union[variantlib.base.VariantFeatureConfigType, "
         )
-        + r"(dict \| int|int \| dict)",
+        + r"(dict, int|int, dict)",
     ):
         getattr(PluginLoader, method)()
 

@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from types import GenericAlias
 from typing import Any
 from typing import Callable
+from typing import Union
 from typing import get_args
 from typing import get_origin
 
@@ -112,9 +113,7 @@ def validate_type(value: Any, expected_type: type) -> None:
             type(item) for item in value if not isinstance(item, item_type)
         }
         if incorrect_types:
-            ored = item_type
-            while incorrect_types:
-                ored |= incorrect_types.pop()
+            ored = Union.__getitem__((item_type, *incorrect_types))
             wrong_type = list_type[ored]  # type: ignore[index]
             raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
     elif not isinstance(value, expected_type):
