@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import argparse
-from importlib.metadata import entry_points
+import sys
 
 import variantlib
+
+if sys.version_info >= (3, 10):
+    from importlib.metadata import entry_points
+else:
+    from importlib_metadata import entry_points
 
 
 def main() -> None:

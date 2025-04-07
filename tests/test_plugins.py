@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
+import sys
 from collections import namedtuple
 from dataclasses import dataclass
-from importlib.metadata import EntryPoint
 from typing import Any
 
 import pytest
@@ -14,6 +14,11 @@ from variantlib.errors import PluginError
 from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+
+if sys.version_info >= (3, 10):
+    from importlib.metadata import EntryPoint
+else:
+    from importlib_metadata import EntryPoint
 
 
 class MockedPluginA(PluginType):

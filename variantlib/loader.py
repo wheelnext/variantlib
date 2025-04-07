@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import sys
-from importlib.metadata import entry_points
 from types import MethodType
 from typing import TYPE_CHECKING
 from typing import Any
@@ -15,6 +14,11 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.validators import ValidationError
 from variantlib.models.validators import validate_type
 from variantlib.utils import classproperty
+
+if sys.version_info >= (3, 10):
+    from importlib.metadata import entry_points
+else:
+    from importlib_metadata import entry_points
 
 if sys.version_info >= (3, 11):
     from typing import Self
