@@ -119,7 +119,7 @@ class MockedEntryPoint:
         return self.plugin
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mocked_plugin_loader(session_mocker):
     session_mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
@@ -140,10 +140,8 @@ def mocked_plugin_loader(session_mocker):
             plugin=MockedPluginC,
         ),
     ]
-    PluginLoader.flush_cache()
-    PluginLoader.load_plugins()
-    yield PluginLoader
-    PluginLoader.flush_cache()
+
+    return PluginLoader
 
 
 def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
@@ -216,7 +214,7 @@ def test_namespace_clash(mocker):
     with pytest.raises(
         RuntimeError,
         match="Two plugins found using the same namespace test_plugin. Refusing to "
-        "proceed. Please uninstall one of them: test-plugin or test-plugin",
+        "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
     ):
         PluginLoader.load_plugins()
 
@@ -231,8 +229,6 @@ def test_get_all_configs_incorrect_list_type(mocker):
             ),
         ),
     ]
-    PluginLoader.flush_cache()
-    PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
         match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
@@ -249,8 +245,6 @@ def test_get_all_configs_incorrect_list_length(mocker):
             plugin=ExceptionTestingPlugin([]),
         ),
     ]
-    PluginLoader.flush_cache()
-    PluginLoader.load_plugins()
     with pytest.raises(
         ValueError,
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
@@ -267,8 +261,6 @@ def test_get_all_configs_incorrect_list_member_type(mocker):
             plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
         ),
     ]
-    PluginLoader.flush_cache()
-    PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
         match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
