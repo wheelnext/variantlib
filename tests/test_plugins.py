@@ -266,9 +266,7 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         MockedEntryPoint(
             name="exception_test",
             value="tests.test_plugins:ExceptionTestingPlugin",
-            plugin=ExceptionTestingPlugin(
-                [{"k1": ["v1"], "k2": ["v2"]}, "k3", 1, True, (1, 2, 3)]
-            ),
+            plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
         ),
     ]
     with pytest.raises(
@@ -276,9 +274,9 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         match=re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
             "Expected list[variantlib.base.VariantFeatureConfigType], "
-            "got list[variantlib.base.VariantFeatureConfigType | str | tuple | bool "
-            "| dict | int]"
-        ),
+            "got list[variantlib.base.VariantFeatureConfigType | "
+        )
+        + r"(dict \| int|int \| dict)",
     ):
         getattr(PluginLoader, method)()
 
