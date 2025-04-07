@@ -142,8 +142,7 @@ def mocked_plugin_loader(session_mocker):
     ]
 
     PluginLoader.load_plugins()
-    yield PluginLoader
-    PluginLoader.flush_cache()
+    return PluginLoader
 
 
 def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
@@ -213,15 +212,12 @@ def test_namespace_clash(mocker):
             plugin=ClashingPlugin,
         ),
     ]
-    try:
-        with pytest.raises(
-            RuntimeError,
-            match="Two plugins found using the same namespace test_plugin. Refusing to "
-            "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
-        ):
-            PluginLoader.load_plugins()
-    finally:
-        PluginLoader.flush_cache()
+    with pytest.raises(
+        RuntimeError,
+        match="Two plugins found using the same namespace test_plugin. Refusing to "
+        "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
+    ):
+        PluginLoader.load_plugins()
 
 
 def test_get_all_configs_incorrect_list_type(mocker):
@@ -234,7 +230,6 @@ def test_get_all_configs_incorrect_list_type(mocker):
             ),
         ),
     ]
-    PluginLoader.flush_cache()
     PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
@@ -252,7 +247,6 @@ def test_get_all_configs_incorrect_list_length(mocker):
             plugin=ExceptionTestingPlugin([]),
         ),
     ]
-    PluginLoader.flush_cache()
     PluginLoader.load_plugins()
     with pytest.raises(
         ValueError,
@@ -270,7 +264,6 @@ def test_get_all_configs_incorrect_list_member_type(mocker):
             plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
         ),
     ]
-    PluginLoader.flush_cache()
     PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
