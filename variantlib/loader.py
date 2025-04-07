@@ -39,6 +39,9 @@ class PluginLoader:
     def load_plugins(cls) -> None:
         """Find, load and instantiate all plugins"""
 
+        if cls._plugins:
+            return
+
         logger.info("Discovering Wheel Variant plugins...")
         plugins = entry_points().select(group="variantlib.plugins")
 
