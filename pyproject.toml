@@ -28,7 +28,11 @@ maintainers = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
     { name = "Michael Sarahan", email = "msarahan@nvidia.com" },
 ]
-dependencies = ["typing-extensions; python_version < '3.11'"]
+dependencies = [
+    "typing-extensions; python_version < '3.11'",
+    "tomli; python_version < '3.11'",
+    "platformdirs>=4.3,<5.0",
+]
 
 [project.optional-dependencies]
 dev = [
