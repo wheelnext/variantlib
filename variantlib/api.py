@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
@@ -14,6 +13,7 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import VariantValidationResult
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -96,16 +96,6 @@ def get_variant_hashes_by_priority(
             yield vdesc.hexdigest
     else:
         yield from []
-
-
-@dataclass
-class VariantValidationResult:
-    results: dict[VariantProperty, bool | None]
-
-    def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
-        return False not in self.results.values() and (
-            allow_unknown_plugins or None not in self.results.values()
-        )
 
 
 def validate_variant(

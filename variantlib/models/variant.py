@@ -221,3 +221,13 @@ class VariantDescription(BaseModel):
             result_str += f"\nVariant Property: {vprop.to_str()}"
         result_str += f"\n{'#' * 80}\n"
         return result_str
+
+
+@dataclass(frozen=True)
+class VariantValidationResult:
+    results: dict[VariantProperty, bool | None]
+
+    def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
+        return False not in self.results.values() and (
+            allow_unknown_plugins or None not in self.results.values()
+        )
