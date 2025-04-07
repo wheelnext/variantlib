@@ -141,7 +141,6 @@ def mocked_plugin_loader(session_mocker):
         ),
     ]
 
-    PluginLoader.load_plugins()
     return PluginLoader
 
 
@@ -230,7 +229,6 @@ def test_get_all_configs_incorrect_list_type(mocker):
             ),
         ),
     ]
-    PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
         match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "
@@ -247,7 +245,6 @@ def test_get_all_configs_incorrect_list_length(mocker):
             plugin=ExceptionTestingPlugin([]),
         ),
     ]
-    PluginLoader.load_plugins()
     with pytest.raises(
         ValueError,
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
@@ -264,7 +261,6 @@ def test_get_all_configs_incorrect_list_member_type(mocker):
             plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}]),
         ),
     ]
-    PluginLoader.load_plugins()
     with pytest.raises(
         TypeError,
         match=r"Provider exception_test, get_all_configs\(\) method returned incorrect "

@@ -88,6 +88,7 @@ class PluginLoader:
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
 
+        cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
             vfeat_configs = plugin_instance.get_supported_configs()
@@ -128,6 +129,7 @@ class PluginLoader:
     def get_all_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
 
+        cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
             key_configs = plugin_instance.get_all_configs()
@@ -166,11 +168,13 @@ class PluginLoader:
     @classproperty
     def distribution_names(cls) -> dict[str, str]:  # noqa: N805
         """Get a mapping from plugin names to distribution names"""
+        cls.load_plugins()
         return cls._dist_names
 
     @classproperty
     def plugins(cls) -> dict[str, PluginType]:  # noqa: N805
         """Get the loaded plugins"""
+        cls.load_plugins()
         return cls._plugins
 
 
