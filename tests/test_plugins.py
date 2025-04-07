@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any
@@ -219,7 +220,8 @@ def test_namespace_clash(mocker):
         PluginLoader.load_plugins()
 
 
-def test_get_all_configs_incorrect_list_type(mocker):
+@pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
+def test_get_configs_incorrect_list_type(method: str, mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="exception_test",
@@ -231,11 +233,13 @@ def test_get_all_configs_incorrect_list_type(mocker):
     ]
     with pytest.raises(
         TypeError,
-        match=r"Provider exception_test, get_all_configs\(\) method returned "
-        r"incorrect type. Expected list\[variantlib.base.VariantFeatureConfigType\], "
-        r"got <class 'tuple'>",
+        match=re.escape(
+            f"Provider exception_test, {method}() method returned incorrect type. "
+            "Expected list[variantlib.base.VariantFeatureConfigType], "
+            "got <class 'tuple'>"
+        ),
     ):
-        PluginLoader.get_all_configs()
+        getattr(PluginLoader, method)()
 
 
 def test_get_all_configs_incorrect_list_length(mocker):
@@ -254,7 +258,8 @@ def test_get_all_configs_incorrect_list_length(mocker):
         PluginLoader.get_all_configs()
 
 
-def test_get_all_configs_incorrect_list_member_type(mocker):
+@pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
+def test_get_configs_incorrect_list_member_type(method: str, mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="exception_test",
@@ -266,9 +271,11 @@ def test_get_all_configs_incorrect_list_member_type(mocker):
     ]
     with pytest.raises(
         TypeError,
-        match=r"Provider exception_test, get_all_configs\(\) method returned "
-        r"incorrect type. Expected list\[variantlib.base.VariantFeatureConfigType\], "
-        r"got list\[variantlib.base.VariantFeatureConfigType \| str \| tuple \| bool "
-        r"\| dict \| int\]",
+        match=re.escape(
+            f"Provider exception_test, {method}() method returned incorrect type. "
+            "Expected list[variantlib.base.VariantFeatureConfigType], "
+            "got list[variantlib.base.VariantFeatureConfigType | str | tuple | bool "
+            "| dict | int]"
+        ),
     ):
-        PluginLoader.get_all_configs()
+        getattr(PluginLoader, method)()

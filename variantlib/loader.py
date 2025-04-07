@@ -9,8 +9,6 @@ from typing import Any
 from typing import get_type_hints
 
 from variantlib.base import PluginType
-from variantlib.base import VariantFeatureConfigType
-from variantlib.cache import VariantCache
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.validators import ValidationError
@@ -114,36 +112,17 @@ class PluginLoader:
         return value
 
     @classmethod
-    @VariantCache()
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
 
         cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls._plugins.items():
-            vfeat_configs = plugin_instance.get_supported_configs()
-
-            if not isinstance(vfeat_configs, list):
-                logging.error(
-                    "Provider: %(namespace)s returned an unexpected type: "
-                    "%(type)s - Expected: `list[VariantFeatureConfig]`. Ignoring...",
-                    {"namespace": namespace, "type": type(vfeat_configs)},
-                )
-                continue
+            vfeat_configs = cls._call(plugin_instance.get_supported_configs)
 
             # skip providers that do not return any supported configs
             if not vfeat_configs:
                 continue
-
-            for vfeat_cfg in vfeat_configs:
-                if not isinstance(vfeat_cfg, VariantFeatureConfigType):
-                    logging.error(
-                        "Provider: %(namespace)s returned an unexpected list member "
-                        "type: %(type)s - Expected: `VariantFeatureConfigType`. "
-                        "Ignoring...",
-                        {"namespace": namespace, "type": type(vfeat_configs)},
-                    )
-                    continue
 
             provider_cfgs[namespace] = ProviderConfig(
                 plugin_instance.namespace,
