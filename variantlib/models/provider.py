@@ -9,12 +9,11 @@ from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_instance_of
 from variantlib.models.validators import validate_list_all_unique
 from variantlib.models.validators import validate_list_matches_re
 from variantlib.models.validators import validate_list_min_len
-from variantlib.models.validators import validate_list_of
 from variantlib.models.validators import validate_matches_re
+from variantlib.models.validators import validate_type
 
 
 @dataclass(frozen=True)
@@ -23,7 +22,7 @@ class VariantFeatureConfig(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_type(v, str),
                     lambda v: validate_matches_re(v, VALIDATION_FEATURE_REGEX),
                 ],
                 value=val,
@@ -36,8 +35,7 @@ class VariantFeatureConfig(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, str),
+                    lambda v: validate_type(v, list[str]),
                     lambda v: validate_list_matches_re(v, VALIDATION_VALUE_REGEX),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v),
@@ -54,7 +52,7 @@ class ProviderConfig(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_type(v, str),
                     lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
@@ -67,8 +65,7 @@ class ProviderConfig(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantFeatureConfig),
+                    lambda v: validate_type(v, list[VariantFeatureConfig]),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v, key=attrgetter("name")),
                 ],

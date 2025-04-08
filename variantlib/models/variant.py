@@ -16,11 +16,10 @@ from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
 from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_instance_of
 from variantlib.models.validators import validate_list_all_unique
 from variantlib.models.validators import validate_list_min_len
-from variantlib.models.validators import validate_list_of
 from variantlib.models.validators import validate_matches_re
+from variantlib.models.validators import validate_type
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -34,7 +33,7 @@ class VariantFeature(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_type(v, str),
                     lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
@@ -45,7 +44,7 @@ class VariantFeature(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_type(v, str),
                     lambda v: validate_matches_re(v, VALIDATION_FEATURE_REGEX),
                 ],
                 value=val,
@@ -104,7 +103,7 @@ class VariantProperty(VariantFeature):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, str),
+                    lambda v: validate_type(v, str),
                     lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
                 ],
                 value=val,
@@ -163,8 +162,7 @@ class VariantDescription(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantProperty),
+                    lambda v: validate_type(v, list[VariantProperty]),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(
                         v, key=attrgetter("feature_hash")
