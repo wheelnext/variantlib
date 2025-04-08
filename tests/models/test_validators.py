@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from types import NoneType
 from typing import Any
 from typing import Protocol
 from typing import Union
@@ -34,7 +33,7 @@ class MyClass(HalfClass):
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
-        (None, NoneType),
+        (None, type(None)),
         (False, bool),
         (11, int),
         (4.5, float),
@@ -58,7 +57,7 @@ def test_validate_type_good(value: Any, expected: type):
 @pytest.mark.parametrize(
     ("value", "expected", "have"),
     [
-        (None, bool, NoneType),
+        (None, bool, type(None)),
         (False, str, bool),
         (11, float, int),
         (4.5, int, float),
