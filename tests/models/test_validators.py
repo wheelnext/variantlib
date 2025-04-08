@@ -47,6 +47,8 @@ class MyClass(HalfClass):
         (MyClass(1, "2"), MyProtocol),
         ([[1], [2, 3], [4, 5]], list[list[int]]),
         ([[[1], [2, 3], [4, 5]]], list[list[list[int]]]),
+        ({"a": 1, "b": 2}, dict[str, int]),
+        ({"a": [1, 2, 3], "b": [4]}, dict[str, list[int]]),
     ],
 )
 def test_validate_type_good(value: Any, expected: type):
@@ -83,6 +85,17 @@ def test_validate_type_good(value: Any, expected: type):
             [[[1], [2, "3"], ["4", 5]]],
             list[list[list[int]]],
             list[Union[list[list[int]], list[Union[list[int], list[Union[int, str]]]]]],
+        ),
+        ({"a": "1", "b": 2}, dict[str, int], dict[str, Union[int, str]]),
+        (
+            {"a": [1, "2", 3], "b": ["4"]},
+            dict[str, list[int]],
+            dict[str, Union[list[int], list[Union[int, str]]]],
+        ),
+        (
+            {"a": [1, 2, 3], "b": 4},
+            dict[str, list[int]],
+            dict[str, Union[list[int], int]],
         ),
     ],
 )
