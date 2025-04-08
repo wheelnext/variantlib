@@ -10,10 +10,14 @@ import pytest
 
 from variantlib.base import PluginType
 from variantlib.base import VariantFeatureConfigType
+from variantlib.base import VariantPropertyType
 from variantlib.errors import PluginError
+from variantlib.errors import PluginMissingError
 from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantProperty
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import EntryPoint
@@ -35,6 +39,16 @@ class MockedPluginA(PluginType):
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
+
+    def get_build_setup(self, properties: list[VariantPropertyType]) -> dict[str, str]:
+        for prop in properties:
+            assert prop.namespace == self.namespace
+            if prop.feature == "name1":
+                return {
+                    "cflags": f"-march={prop.value}",
+                    "cxxflags": f"-march={prop.value}",
+                }
+        return {}
 
 
 MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values"))
@@ -78,6 +92,19 @@ class MockedPluginC(PluginType):
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
+
+    def get_build_setup(self, properties: list[VariantPropertyType]) -> dict[str, str]:
+        flag_opts = []
+
+        for prop in properties:
+            assert prop.namespace == self.namespace
+            assert prop.value == "on"
+            flag_opts.append(f"-m{prop.feature}")
+
+        return {
+            "cflags": " ".join(flag_opts),
+            "cxxflags": " ".join(flag_opts),
+        }
 
 
 class ClashingPlugin(PluginType):
@@ -406,3 +433,34 @@ def test_plugin_instantiation_returns_incorrect_type(cls: type, mocker):
         r"\(missing attributes: get_all_configs\)",
     ):
         PluginLoader.load_plugins()
+
+
+def test_get_build_setup(mocked_plugin_loader):
+    variant_desc = VariantDescription(
+        [
+            VariantProperty("test_plugin", "name1", "val1b"),
+            VariantProperty("second_plugin", "name3", "val3c"),
+            VariantProperty("incompatible_plugin", "flag1", "on"),
+            VariantProperty("incompatible_plugin", "flag4", "on"),
+        ]
+    )
+
+    assert mocked_plugin_loader.get_build_setup(variant_desc) == {
+        "cflags": "-mflag1 -mflag4 -march=val1b",
+        "cxxflags": "-mflag1 -mflag4 -march=val1b",
+    }
+
+
+def test_get_build_setup_missing_plugin(mocked_plugin_loader):
+    variant_desc = VariantDescription(
+        [
+            VariantProperty("test_plugin", "name1", "val1b"),
+            VariantProperty("missing_plugin", "name", "val"),
+        ]
+    )
+
+    with pytest.raises(
+        PluginMissingError,
+        match=r"No plugin found for namespace missing_plugin",
+    ):
+        assert mocked_plugin_loader.get_build_setup(variant_desc) == {}
