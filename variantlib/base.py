@@ -10,14 +10,16 @@ class VariantFeatureConfigType(Protocol):
     """A protocol for VariantFeature configs"""
 
     @property
+    @abstractmethod
     def name(self) -> str:
         """feature name"""
-        ...
+        raise NotImplementedError
 
     @property
+    @abstractmethod
     def values(self) -> list[str]:
         """Ordered list of values, most preferred first"""
-        ...
+        raise NotImplementedError
 
 
 @runtime_checkable
