@@ -45,6 +45,8 @@ class MyClass(HalfClass):
         ({1, 2, 3}, set[int]),
         (set(), set[int]),
         (MyClass(1, "2"), MyProtocol),
+        ([[1], [2, 3], [4, 5]], list[list[int]]),
+        ([[[1], [2, 3], [4, 5]]], list[list[list[int]]]),
     ],
 )
 def test_validate_type_good(value: Any, expected: type):
@@ -70,6 +72,18 @@ def test_validate_type_good(value: Any, expected: type):
         (object(), MyProtocol, object),
         ({"a": 1, "b": "2"}, MyProtocol, dict),
         (HalfClass(1), MyProtocol, HalfClass),
+        (
+            [[1], ["2", 3], ["4", "5"]],
+            list[list[int]],
+            list[Union[list[int], list[Union[int, str]]]],
+        ),
+        ([[1], {2, 3}, [4, 5]], list[list[int]], list[Union[list[int], set]]),
+        ([1, 2, 3], list[list[int]], list[Union[list[int], int]]),
+        (
+            [[[1], [2, "3"], ["4", 5]]],
+            list[list[list[int]]],
+            list[Union[list[list[int]], list[Union[list[int], list[Union[int, str]]]]]],
+        ),
     ],
 )
 def test_validate_type_bad(value: Any, expected: type, have: type):
