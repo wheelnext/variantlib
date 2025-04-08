@@ -65,6 +65,27 @@ def test_validation_result_is_valid(
     assert res.is_valid(allow_unknown_plugins=False) == valid_strict
 
 
+def test_validation_result_properties():
+    res = VariantValidationResult(
+        {
+            VariantProperty("blas", "variant", "mkl"): True,
+            VariantProperty("cuda", "runtime", "12.0"): None,
+            VariantProperty("blas", "invariant", "lkm"): False,
+            VariantProperty("x86_64", "baseline", "v10"): False,
+            VariantProperty("orange", "juice", "good"): None,
+        }
+    )
+
+    assert res.invalid_properties == [
+        VariantProperty("blas", "invariant", "lkm"),
+        VariantProperty("x86_64", "baseline", "v10"),
+    ]
+    assert res.unknown_properties == [
+        VariantProperty("cuda", "runtime", "12.0"),
+        VariantProperty("orange", "juice", "good"),
+    ]
+
+
 def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
     res = validate_variant(
         VariantDescription(
