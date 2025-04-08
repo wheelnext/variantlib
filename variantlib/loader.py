@@ -92,11 +92,15 @@ class PluginLoader:
                     f"{exc}"
                 ) from exc
 
-            if not isinstance(plugin_instance, PluginType):
+            required_attributes = PluginType.__abstractmethods__
+            if missing_attributes := required_attributes.difference(
+                dir(plugin_instance)
+            ):
                 raise PluginError(
                     f"Instantiating the plugin from entry point {plugin.name} "
                     "returned an object that does not meet the PluginType prototype: "
-                    f"{plugin_instance!r}"
+                    f"{plugin_instance!r} (missing attributes: "
+                    f"{', '.join(sorted(missing_attributes))})"
                 )
 
             if plugin_instance.namespace in cls._plugins:
