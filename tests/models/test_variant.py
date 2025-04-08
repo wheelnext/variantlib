@@ -188,6 +188,34 @@ def test_variantprop_deserialization():
     assert vprop.value == data["value"]
 
 
+def test_variantprop_sorting():
+    data = [
+        VariantProperty("z", "a", "a"),
+        VariantProperty("z", "a", "b"),
+        VariantProperty("a", "b", "a"),
+        VariantProperty("a", "a", "a"),
+        VariantProperty("a", "a", "z"),
+        VariantProperty("c", "x", "a"),
+        VariantProperty("z", "a", "a"),
+        VariantProperty("b", "b", "a"),
+        VariantProperty("b", "b", "b"),
+        VariantProperty("z", "b", "a"),
+    ]
+
+    assert sorted(data) == [
+        VariantProperty("a", "a", "a"),
+        VariantProperty("a", "a", "z"),
+        VariantProperty("a", "b", "a"),
+        VariantProperty("b", "b", "a"),
+        VariantProperty("b", "b", "b"),
+        VariantProperty("c", "x", "a"),
+        VariantProperty("z", "a", "a"),
+        VariantProperty("z", "a", "a"),
+        VariantProperty("z", "a", "b"),
+        VariantProperty("z", "b", "a"),
+    ]
+
+
 # -----------------------------------------------
 # Test for VariantDescription Class
 # -----------------------------------------------

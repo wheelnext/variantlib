@@ -27,7 +27,7 @@ else:
     from typing_extensions import Self
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class VariantFeature(BaseModel):
     namespace: str = field(
         metadata={
@@ -97,7 +97,7 @@ class VariantFeature(BaseModel):
         return cls(namespace=namespace, feature=feature)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class VariantProperty(VariantFeature):
     value: str = field(
         metadata={
@@ -180,11 +180,7 @@ class VariantDescription(BaseModel):
 
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
-            object.__setattr__(
-                self,
-                "properties",
-                sorted(self.properties, key=lambda x: (x.namespace, x.feature)),
-            )
+            object.__setattr__(self, "properties", sorted(self.properties))
 
         # Execute the validator
         super().__post_init__()
