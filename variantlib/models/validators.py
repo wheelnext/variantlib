@@ -100,21 +100,40 @@ def validate_and(validators: list[Callable], value: Any) -> None:
         raise
 
 
-def validate_type(value: Any, expected_type: type) -> None:
-    """Validate that the value matches specified type"""
-
+def _validate_type(value: Any, expected_type: type) -> type | None:
     if isinstance(expected_type, GenericAlias):
         list_type = get_origin(expected_type)
         if not isinstance(value, list_type):
-            raise ValidationError(f"Expected {expected_type}, got {type(value)}")
-        (item_type,) = get_args(expected_type)
-        assert isinstance(value, Iterable)
-        incorrect_types = {
-            type(item) for item in value if not isinstance(item, item_type)
-        }
-        if incorrect_types:
-            ored = Union.__getitem__((item_type, *incorrect_types))
-            wrong_type = list_type[ored]  # type: ignore[index]
-            raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
+            return type(value)
+        if list_type is dict:
+            assert isinstance(value, dict)
+            key_type, value_type = get_args(expected_type)
+            incorrect_key_types = {_validate_type(key, key_type) for key in value}
+            incorrect_key_types.discard(None)
+            incorrect_value_types = {
+                _validate_type(v, value_type) for v in value.values()
+            }
+            incorrect_value_types.discard(None)
+            if incorrect_key_types or incorrect_value_types:
+                key_ored = Union.__getitem__((key_type, *incorrect_key_types))
+                value_ored = Union.__getitem__((value_type, *incorrect_value_types))
+                return list_type[key_ored, value_ored]  # type: ignore[index]
+        else:
+            (item_type,) = get_args(expected_type)
+            assert isinstance(value, Iterable)
+            incorrect_types = {_validate_type(item, item_type) for item in value}
+            incorrect_types.discard(None)
+            if incorrect_types:
+                ored = Union.__getitem__((item_type, *incorrect_types))
+                return list_type[ored]  # type: ignore[index]
     elif not isinstance(value, expected_type):
-        raise ValidationError(f"Expected {expected_type}, got {type(value)}")
+        return type(value)
+    return None
+
+
+def validate_type(value: Any, expected_type: type) -> None:
+    """Validate that the value matches specified type"""
+
+    wrong_type = _validate_type(value, expected_type)
+    if wrong_type is not None:
+        raise ValidationError(f"Expected {expected_type}, got {wrong_type}")

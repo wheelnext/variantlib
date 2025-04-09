@@ -400,8 +400,9 @@ def test_plugin_instantiation_returns_incorrect_type(cls: type, mocker):
 
     with pytest.raises(
         PluginError,
-        match="Instantiating the plugin from entry point exception_test returned "
-        "an object that does not meet the PluginType prototype: "
-        "<tests.test_plugins.IncompletePlugin object at .*>",
+        match=r"Instantiating the plugin from entry point exception_test returned "
+        r"an object that does not meet the PluginType prototype: "
+        r"<tests.test_plugins.IncompletePlugin object at .*> "
+        r"\(missing attributes: get_all_configs\)",
     ):
         PluginLoader.load_plugins()
