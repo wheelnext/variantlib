@@ -229,3 +229,13 @@ class VariantValidationResult:
         return False not in self.results.values() and (
             allow_unknown_plugins or None not in self.results.values()
         )
+
+    @property
+    def invalid_properties(self) -> list[VariantProperty]:
+        """List of properties declared invalid by plugins"""
+        return [x for x, y in self.results.items() if y is False]
+
+    @property
+    def unknown_properties(self) -> list[VariantProperty]:
+        """List of properties not in any recognized namespace"""
+        return [x for x, y in self.results.items() if y is None]
