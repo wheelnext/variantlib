@@ -190,11 +190,11 @@ class PluginLoader:
         return provider_cfgs
 
     @classmethod
-    def get_build_setup(cls, properties: VariantDescription) -> dict[str, str]:
+    def get_build_setup(cls, properties: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
         cls.load_plugins()
 
-        ret_env: dict[str, str] = {}
+        ret_env: dict[str, list[str]] = {}
         for namespace, p_props in groupby(
             sorted(properties.properties), lambda prop: prop.namespace
         ):
@@ -205,7 +205,7 @@ class PluginLoader:
                 plugin_env = plugin.get_build_setup(list(p_props))
 
                 try:
-                    validate_type(plugin_env, dict[str, str])
+                    validate_type(plugin_env, dict[str, list[str]])
                 except ValidationError as err:
                     raise TypeError(
                         f"Provider {namespace}, get_build_setup() "
@@ -215,10 +215,7 @@ class PluginLoader:
                 plugin_env = {}
 
             for k, v in plugin_env.items():
-                if k in ret_env:
-                    ret_env[k] += f" {v}"
-                else:
-                    ret_env[k] = v
+                ret_env.setdefault(k, []).extend(v)
         return ret_env
 
     @classproperty

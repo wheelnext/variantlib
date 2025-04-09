@@ -40,13 +40,15 @@ class MockedPluginA(PluginType):
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
-    def get_build_setup(self, properties: list[VariantPropertyType]) -> dict[str, str]:
+    def get_build_setup(
+        self, properties: list[VariantPropertyType]
+    ) -> dict[str, list[str]]:
         for prop in properties:
             assert prop.namespace == self.namespace
             if prop.feature == "name1":
                 return {
-                    "cflags": f"-march={prop.value}",
-                    "cxxflags": f"-march={prop.value}",
+                    "cflags": [f"-march={prop.value}"],
+                    "cxxflags": [f"-march={prop.value}"],
                 }
         return {}
 
@@ -93,7 +95,9 @@ class MockedPluginC(PluginType):
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
-    def get_build_setup(self, properties: list[VariantPropertyType]) -> dict[str, str]:
+    def get_build_setup(
+        self, properties: list[VariantPropertyType]
+    ) -> dict[str, list[str]]:
         flag_opts = []
 
         for prop in properties:
@@ -102,8 +106,8 @@ class MockedPluginC(PluginType):
             flag_opts.append(f"-m{prop.feature}")
 
         return {
-            "cflags": " ".join(flag_opts),
-            "cxxflags": " ".join(flag_opts),
+            "cflags": flag_opts,
+            "cxxflags": flag_opts,
         }
 
 
@@ -446,8 +450,8 @@ def test_get_build_setup(mocked_plugin_loader):
     )
 
     assert mocked_plugin_loader.get_build_setup(variant_desc) == {
-        "cflags": "-mflag1 -mflag4 -march=val1b",
-        "cxxflags": "-mflag1 -mflag4 -march=val1b",
+        "cflags": ["-mflag1", "-mflag4", "-march=val1b"],
+        "cxxflags": ["-mflag1", "-mflag4", "-march=val1b"],
     }
 
 

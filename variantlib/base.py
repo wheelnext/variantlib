@@ -65,6 +65,8 @@ class PluginType(Protocol):
         """Get supported configs for the current system"""
         raise NotImplementedError
 
-    def get_build_setup(self, properties: list[VariantPropertyType]) -> dict[str, str]:
+    def get_build_setup(
+        self, properties: list[VariantPropertyType]
+    ) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
         return {}
