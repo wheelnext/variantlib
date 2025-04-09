@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from itertools import groupby
 from types import MethodType
 from typing import TYPE_CHECKING
 from typing import Any
@@ -9,6 +10,7 @@ from typing import get_type_hints
 
 from variantlib.base import PluginType
 from variantlib.errors import PluginError
+from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.validators import ValidationError
@@ -27,6 +29,8 @@ else:
 
 if TYPE_CHECKING:
     from typing import Callable
+
+    from variantlib.models.variant import VariantDescription
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +188,35 @@ class PluginLoader:
             )
 
         return provider_cfgs
+
+    @classmethod
+    def get_build_setup(cls, properties: VariantDescription) -> dict[str, list[str]]:
+        """Get build variables for a variant made of specified properties"""
+        cls.load_plugins()
+
+        ret_env: dict[str, list[str]] = {}
+        for namespace, p_props in groupby(
+            sorted(properties.properties), lambda prop: prop.namespace
+        ):
+            if (plugin := cls._plugins.get(namespace)) is None:
+                raise PluginMissingError(f"No plugin found for namespace {namespace}")
+
+            if hasattr(plugin, "get_build_setup"):
+                plugin_env = plugin.get_build_setup(list(p_props))
+
+                try:
+                    validate_type(plugin_env, dict[str, list[str]])
+                except ValidationError as err:
+                    raise TypeError(
+                        f"Provider {namespace}, get_build_setup() "
+                        f"method returned incorrect type. {err}"
+                    ) from None
+            else:
+                plugin_env = {}
+
+            for k, v in plugin_env.items():
+                ret_env.setdefault(k, []).extend(v)
+        return ret_env
 
     @classproperty
     def distribution_names(cls) -> dict[str, str]:  # noqa: N805
