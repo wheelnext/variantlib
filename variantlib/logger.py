@@ -74,13 +74,8 @@ class _LoggerAPI:
     ) -> _logging.Logger:
         if handlers is None:
             # Add the output handler.
-            handler_stdout = _logging.StreamHandler(sys.stdout)
-            handler_stdout.addFilter(lambda record: record.levelno <= _logging.INFO)
-
             handler_stderr = _logging.StreamHandler(sys.stderr)
-            handler_stderr.addFilter(lambda record: record.levelno > _logging.INFO)
-
-            handlers = [handler_stdout, handler_stderr]
+            handlers = [handler_stderr]
 
         if formatter is None:
             # ---------------- Date Format - Directives ----------------
