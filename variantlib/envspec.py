@@ -21,7 +21,7 @@ VARIANT_EXPR_RE = re.compile(
 VARIANT_ERROR_RE = re.compile(
     r"("
     # variants OP ...
-    r"\b variants \s* ([=!<>] | \s (not \s+)? in) |"
+    r"\b variants \s* ([~=!<>] | \s (not \s+)? in) |"
     # ... OP variants ; where OP != "in"
     r"[=!<>] \s* variants\b"
     r")",

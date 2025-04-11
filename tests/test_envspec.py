@@ -60,6 +60,12 @@ def test_evaluate_variant_requirements(
         "variants in'x'",
         "variants not in'x'",
         "'x'!=variants",
+        "variants < 'x'",
+        "variants~='x'",
+        "variants>='x'",
+        "'x'~=variants",
+        "'x'>   variants",
+        "'x'   >=variants",
     ],
 )
 def test_invalid_variant_requirements(env_spec: str) -> None:
