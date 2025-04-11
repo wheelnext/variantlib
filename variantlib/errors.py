@@ -4,3 +4,7 @@ class ValidationError(ValueError):
 
 class PluginError(RuntimeError):
     pass
+
+
+class InvalidVariantEnvSpecError(ValueError):
+    pass
