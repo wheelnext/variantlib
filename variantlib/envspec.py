@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from itertools import chain
 
-from packaging.requirements import Requirement
 from variantlib.errors import InvalidVariantEnvSpecError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -54,27 +53,21 @@ def evaluate_variant_requirements(
 
     new_requirements = []
     for req in requirements:
-        parsed_req = Requirement(req)
 
         def repl(match: re.Match) -> str:
             if (match.group("neg") is None) == (match.group("value") in all_values):
                 return TRUE_STR
             return FALSE_STR
 
-        if parsed_req.marker is not None:
+        base_req, sep, marker = req.partition(";")
+        if marker:
             for error_re in VARIANT_ERROR_RES:
-                if error_re.search(str(parsed_req.marker)) is not None:
+                if error_re.search(marker) is not None:
                     raise InvalidVariantEnvSpecError(
                         "'variants' marker can only be used in \"'foo' in variants\" "
                         "expressions"
                     )
-
-            new_marker = VARIANT_EXPR_RE.sub(repl, str(parsed_req.marker))
-            # alter the requirement only if we actually changed anything
-            if new_marker != str(parsed_req.marker):
-                parsed_req.marker = new_marker
-                new_requirements.append(str(parsed_req))
-                continue
-        new_requirements.append(req)
+            marker = VARIANT_EXPR_RE.sub(repl, marker)
+        new_requirements.append(base_req + sep + marker)
 
     return new_requirements

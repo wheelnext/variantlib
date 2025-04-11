@@ -44,7 +44,7 @@ def test_evaluate_variant_requirements(
         f"variant-cuda; {TRUE_STR if expected[0] else FALSE_STR}",
         f"variant-x86-64; {TRUE_STR if expected[1] else FALSE_STR}",
         f"variant-cuda-extra; {TRUE_STR if expected[2] else FALSE_STR} "
-        'and python_version >= "3.11"',
+        "and python_version >= '3.11'",
         f"no-cuda; {TRUE_STR if not expected[2] else FALSE_STR}",
     ]
 

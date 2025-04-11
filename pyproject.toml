@@ -30,7 +30,6 @@ maintainers = [
 ]
 dependencies = [
     "importlib-metadata; python_version < '3.10'",
-    "packaging",
     "typing-extensions; python_version < '3.11'",
 ]
 
