@@ -18,14 +18,15 @@ VARIANT_EXPR_RE = re.compile(
     re.VERBOSE,
 )
 
-VARIANT_ERROR_RES = [
+VARIANT_ERROR_RE = re.compile(
+    r"("
     # variants OP ...
-    re.compile(r"\bvariants \s* [=!<>]", re.VERBOSE),
-    # variants [not] in ...
-    re.compile(r"\bvariants \s+ (not \s+)? in", re.VERBOSE),
+    r"\b variants \s* ([=!<>] | \s (not \s+)? in) |"
     # ... OP variants ; where OP != "in"
-    re.compile(r"[=!<>] \s* variants", re.VERBOSE),
-]
+    r"[=!<>] \s* variants\b"
+    r")",
+    re.VERBOSE,
+)
 
 
 def evaluate_variant_requirements(
@@ -61,12 +62,11 @@ def evaluate_variant_requirements(
 
         base_req, sep, marker = req.partition(";")
         if marker:
-            for error_re in VARIANT_ERROR_RES:
-                if error_re.search(marker) is not None:
-                    raise InvalidVariantEnvSpecError(
-                        "'variants' marker can only be used in \"'foo' in variants\" "
-                        "expressions"
-                    )
+            if VARIANT_ERROR_RE.search(marker) is not None:
+                raise InvalidVariantEnvSpecError(
+                    "'variants' marker can only be used in \"'foo' in variants\" "
+                    "expressions"
+                )
             marker = VARIANT_EXPR_RE.sub(repl, marker)
         new_requirements.append(base_req + sep + marker)
 
