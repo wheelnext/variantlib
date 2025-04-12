@@ -4,7 +4,6 @@ from variantlib.envspec import FALSE_STR
 from variantlib.envspec import TRUE_STR
 from variantlib.envspec import evaluate_variant_requirements
 from variantlib.errors import InvalidVariantEnvSpecError
-from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 
@@ -23,6 +22,7 @@ from variantlib.models.variant import VariantProperty
             ],
             [True, True, True],
         ),
+        ([], [False, False, False]),
     ],
 )
 def test_evaluate_variant_requirements(
@@ -36,9 +36,8 @@ def test_evaluate_variant_requirements(
         "variant-cuda-extra; 'cuda' in variants and python_version >= '3.11'",
         "no-cuda; 'cuda' not in variants",
     ]
-    variant_desc = VariantDescription(properties)
 
-    assert evaluate_variant_requirements(requirements, variant_desc) == [
+    assert evaluate_variant_requirements(requirements, properties) == [
         "setuptools",
         "typing-extensions; python_version < '3.11'",
         f"variant-cuda; {TRUE_STR if expected[0] else FALSE_STR}",
@@ -72,5 +71,5 @@ def test_invalid_variant_requirements(env_spec: str) -> None:
     with pytest.raises(InvalidVariantEnvSpecError):
         evaluate_variant_requirements(
             [f"variant-test; {env_spec}"],
-            VariantDescription([VariantProperty("x", "y", "z")]),
+            [VariantProperty("x", "y", "z")],
         )

@@ -6,8 +6,8 @@ import re
 from itertools import chain
 
 from variantlib.errors import InvalidVariantEnvSpecError
-from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
+from variantlib.models.variant import VariantProperty
 
 TRUE_STR = "python_version != '0'"
 FALSE_STR = "python_version == '0'"
@@ -30,7 +30,7 @@ VARIANT_ERROR_RE = re.compile(
 
 
 def evaluate_variant_requirements(
-    requirements: list[str], variant_desc: VariantDescription
+    requirements: list[str], variant_properties: list[VariantProperty]
 ) -> list[str]:
     """
     Evaluate variant requirements in specified requirement strings
@@ -48,7 +48,7 @@ def evaluate_variant_requirements(
                 VariantFeature(x.namespace, x.feature).to_str(),
                 x.namespace,
             )
-            for x in variant_desc.properties
+            for x in variant_properties
         )
     )
 
