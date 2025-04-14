@@ -4,8 +4,7 @@ import logging
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from variantlib.models.validators import validate_instance_of
-from variantlib.models.validators import validate_list_of
+from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -20,7 +19,7 @@ def remove_duplicates(
     vdescs: Iterable[VariantDescription],
 ) -> Generator[VariantDescription]:
     # Input validation
-    validate_instance_of(vdescs, Iterable)
+    validate_type(vdescs, Iterable)
 
     seen = set()
 
@@ -28,7 +27,7 @@ def remove_duplicates(
         """
         Check if any of the namespaces in the variant description are not allowed.
         """
-        validate_instance_of(vdesc, VariantDescription)
+        validate_type(vdesc, VariantDescription)
 
         if vdesc.hexdigest in seen:
             logger.info(
@@ -55,9 +54,8 @@ def filter_variants_by_namespaces(
     """
 
     # Input validation
-    validate_instance_of(vdescs, Iterable)
-    validate_instance_of(allowed_namespaces, list)
-    validate_list_of(allowed_namespaces, str)
+    validate_type(vdescs, Iterable)
+    validate_type(allowed_namespaces, list[str])
 
     # Note: for performance reasons we convert the list to a set to avoid O(n) lookups
     _allowed_namespaces = set(allowed_namespaces)
@@ -66,7 +64,7 @@ def filter_variants_by_namespaces(
         """
         Check if any of the namespaces in the variant description are not allowed.
         """
-        validate_instance_of(vdesc, VariantDescription)
+        validate_type(vdesc, VariantDescription)
 
         if any(
             vprop.namespace not in _allowed_namespaces for vprop in vdesc.properties
@@ -102,9 +100,8 @@ def filter_variants_by_features(
     """
 
     # Input validation
-    validate_instance_of(vdescs, Iterable)
-    validate_instance_of(allowed_features, list)
-    validate_list_of(allowed_features, VariantFeature)
+    validate_type(vdescs, Iterable)
+    validate_type(allowed_features, list[VariantFeature])
 
     # for performance reasons we convert the list to a set to avoid O(n) lookups
     allowed_feature_hexs = {vfeat.feature_hash for vfeat in allowed_features}
@@ -113,7 +110,7 @@ def filter_variants_by_features(
         """
         Check if any of the namespaces in the variant description are not allowed.
         """
-        validate_instance_of(vdesc, VariantDescription)
+        validate_type(vdesc, VariantDescription)
 
         if forbidden_vprops := [
             vprop
@@ -147,9 +144,8 @@ def filter_variants_by_property(
     """
 
     # Input validation
-    validate_instance_of(vdescs, Iterable)
-    validate_instance_of(allowed_properties, list)
-    validate_list_of(allowed_properties, VariantProperty)
+    validate_type(vdescs, Iterable)
+    validate_type(allowed_properties, list[VariantProperty])
 
     # for performance reasons we convert the list to a set to avoid O(n) lookups
     allowed_properties_hexs = {vfeat.property_hash for vfeat in allowed_properties}
@@ -158,7 +154,7 @@ def filter_variants_by_property(
         """
         Check if any of the namespaces in the variant description are not allowed.
         """
-        validate_instance_of(vdesc, VariantDescription)
+        validate_type(vdesc, VariantDescription)
 
         if forbidden_vprops := [
             vprop

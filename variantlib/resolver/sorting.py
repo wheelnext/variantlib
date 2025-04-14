@@ -4,8 +4,7 @@ import logging
 import sys
 
 from variantlib.errors import ValidationError
-from variantlib.models.validators import validate_instance_of
-from variantlib.models.validators import validate_list_of
+from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -24,12 +23,11 @@ def get_property_priority(
     :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Property priority of the `VariantProperty` object.
     """
-    validate_instance_of(vprop, VariantProperty)
+    validate_type(vprop, VariantProperty)
 
     if property_priorities is None:
         return sys.maxsize
-    validate_instance_of(property_priorities, list)
-    validate_list_of(property_priorities, VariantProperty)
+    validate_type(property_priorities, list[VariantProperty])
 
     _property_priorities = [vprop.property_hash for vprop in property_priorities]
 
@@ -51,12 +49,11 @@ def get_feature_priority(
     :param feature_priorities: ordered list of `VariantFeature` objects.
     :return: Feature priority of the `VariantProperty` object.
     """
-    validate_instance_of(vprop, VariantProperty)
+    validate_type(vprop, VariantProperty)
 
     if feature_priorities is None:
         return sys.maxsize
-    validate_instance_of(feature_priorities, list)
-    validate_list_of(feature_priorities, VariantFeature)
+    validate_type(feature_priorities, list[VariantFeature])
 
     _feature_priorities = [vfeat.feature_hash for vfeat in feature_priorities]
 
@@ -78,12 +75,11 @@ def get_namespace_priority(
     :param namespace_priorities: ordered list of `str` objects.
     :return: Namespace priority of the `VariantProperty` object.
     """
-    validate_instance_of(vprop, VariantProperty)
+    validate_type(vprop, VariantProperty)
 
     if namespace_priorities is None:
         return sys.maxsize
-    validate_instance_of(namespace_priorities, list)
-    validate_list_of(namespace_priorities, str)
+    validate_type(namespace_priorities, list[str])
 
     # if not present push at the end
     try:
@@ -107,7 +103,7 @@ def get_variant_property_priority_tuple(
     :param namespace_priorities: ordered list of `str` objects.
     :return: Variant property priority of the `VariantProperty` object.
     """
-    validate_instance_of(vprop, VariantProperty)
+    validate_type(vprop, VariantProperty)
 
     ranking_tuple = (
         # First Priority
@@ -141,8 +137,7 @@ def sort_variant_properties(
     :param namespace_priorities: ordered list of `str` objects.
     :return: Sorted list of `VariantProperty` objects.
     """
-    validate_instance_of(vprops, list)
-    validate_list_of(vprops, VariantProperty)
+    validate_type(vprops, list[VariantProperty])
 
     return sorted(
         vprops,
@@ -162,11 +157,8 @@ def sort_variants_descriptions(
     :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Sorted list of `VariantDescription` objects.
     """
-    validate_instance_of(vdescs, list)
-    validate_list_of(vdescs, VariantDescription)
-
-    validate_instance_of(property_priorities, list)
-    validate_list_of(property_priorities, VariantProperty)
+    validate_type(vdescs, list[VariantDescription])
+    validate_type(property_priorities, list[VariantProperty])
 
     # Pre-compute the property hash for the property priorities
     # This is used to speed up the sorting process.

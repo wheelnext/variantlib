@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from variantlib.models.validators import validate_instance_of
-from variantlib.models.validators import validate_list_of
+from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.resolver.filtering import filter_variants_by_features
@@ -108,15 +107,13 @@ def sort_and_filter_supported_variants(
     :param namespace_priorities: Ordered list of `str` objects.
     :return: Sorted and filtered list of `VariantDescription` objects.
     """
-    validate_instance_of(vdescs, list)
-    validate_list_of(vdescs, VariantDescription)
+    validate_type(vdescs, list[VariantDescription])
 
     if supported_vprops is None:
         """No sdupported properties provided, return no variants."""
         return []
 
-    validate_instance_of(supported_vprops, list)
-    validate_list_of(supported_vprops, VariantProperty)
+    validate_type(supported_vprops, list[VariantProperty])
 
     # Step 1: we remove any duplicate, or unsupported `VariantDescription` on
     #         this platform.

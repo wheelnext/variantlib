@@ -7,9 +7,8 @@ from dataclasses import field
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_instance_of
 from variantlib.models.validators import validate_list_matches_re
-from variantlib.models.validators import validate_list_of
+from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
@@ -40,8 +39,7 @@ class VariantConfiguration(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, str),
+                    lambda v: validate_type(v, list[str]),
                     lambda v: validate_list_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
@@ -53,8 +51,7 @@ class VariantConfiguration(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantFeature),
+                    lambda v: validate_type(v, list[VariantFeature]),
                 ],
                 value=val,
             )
@@ -66,8 +63,7 @@ class VariantConfiguration(BaseModel):
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_instance_of(v, list),
-                    lambda v: validate_list_of(v, VariantProperty),
+                    lambda v: validate_type(v, list[VariantProperty]),
                 ],
                 value=val,
             )
@@ -110,14 +106,14 @@ class VariantConfiguration(BaseModel):
         _features_priority: list[VariantFeature] = []
         if features_priority is not None:
             for vfeat in features_priority:
-                validate_instance_of(vfeat, str)
+                validate_type(vfeat, str)
                 _features_priority.append(VariantFeature.from_str(vfeat))
 
         # Convert the `property_priority: list[str]` into `list[VariantProperty]`
         _property_priority: list[VariantProperty] = []
         if property_priority is not None:
             for vprop in property_priority:
-                validate_instance_of(vprop, str)
+                validate_type(vprop, str)
                 _property_priority.append(VariantProperty.from_str(vprop))
 
         return cls(
