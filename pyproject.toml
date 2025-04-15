@@ -65,6 +65,12 @@ analyze_wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
 analyze_platform = "variantlib.commands.analyze_platform:analyze_platform"
 generate_index_json = "variantlib.commands.generate_index_json:generate_index_json"
 make_variant = "variantlib.commands.make_variant:make_variant"
+plugins = "variantlib.commands.plugins.main:main"
+
+[project.entry-points."variantlib.actions.plugins"]
+list = "variantlib.commands.plugins.list_plugins:list_plugins"
+get-all-configs = "variantlib.commands.plugins.get_all_configs:get_all_configs"
+get-supported-configs = "variantlib.commands.plugins.get_all_configs:get_all_configs"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
