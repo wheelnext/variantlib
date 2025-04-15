@@ -158,7 +158,7 @@ def make_variant(args: list[str]) -> None:
     # Input Validation - Wheel Filename is valid and non variant already.
     wheel_info = wheel_file_re.match(input_filepath.name)
     if not wheel_info:
-        raise ValueError(f"`{input_filepath.name}` is not a valid wheel filename.")
+        raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 
     # Transform properties into a VariantDescription
     properties_args: list[str] | None = parsed_args.properties
