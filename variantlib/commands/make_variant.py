@@ -161,12 +161,7 @@ def make_variant(args: list[str]) -> None:
         raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 
     # Transform properties into a VariantDescription
-    properties_args: list[str] | None = parsed_args.properties
-    if properties_args is None or len(properties_args) == 0:
-        raise ValueError("At least one Variant Property is required.")
-
-    vprops = [VariantProperty.from_str(vprop) for vprop in properties_args]
-    vdesc = VariantDescription(properties=vprops)
+    vdesc = VariantDescription(properties=parsed_args.properties)
 
     with tempfile.TemporaryDirectory() as _tmpdir:
         tempdir = pathlib.Path(_tmpdir)
