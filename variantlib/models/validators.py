@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from operator import attrgetter
 from types import GenericAlias
 from typing import Any
 from typing import Callable
@@ -44,7 +43,7 @@ def validate_list_all_unique(values: list[Any], keys: list[str] | None = None) -
         _value = value
 
         if keys is not None:
-            _value = tuple([attrgetter(key)(value) for key in keys])
+            _value = tuple([getattr(value, key) for key in keys])
             if len(_value) == 1:
                 _value = _value[0]
 
