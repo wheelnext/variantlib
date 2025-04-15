@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
-from operator import attrgetter
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -67,7 +66,7 @@ class ProviderConfig(BaseModel):
                 [
                     lambda v: validate_type(v, list[VariantFeatureConfig]),
                     lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v, key=attrgetter("name")),
+                    lambda v: validate_list_all_unique(v, keys=["name"]),
                 ],
                 value=val,
             ),

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
+from operator import attrgetter
 from types import GenericAlias
 from typing import Any
 from typing import Callable
@@ -32,7 +33,7 @@ def validate_list_min_len(values: list, min_length: int) -> None:
         )
 
 
-def validate_list_all_unique(values: list[Any], key: None | Callable = None) -> None:
+def validate_list_all_unique(values: list[Any], keys: list[str] | None = None) -> None:
     """
     Validate that all elements in the list are unique.
     Raises a ValueError if duplicates are found.
@@ -40,13 +41,17 @@ def validate_list_all_unique(values: list[Any], key: None | Callable = None) -> 
     seen = set()
 
     for value in values:
-        if key is not None:
-            value = key(value)  # noqa: PLW2901
+        _value = value
 
-        if value in seen:
-            raise ValidationError(f"Duplicate value found: '{value}' in list.")
+        if keys is not None:
+            _value = tuple([attrgetter(key)(value) for key in keys])
+            if len(_value) == 1:
+                _value = _value[0]
 
-        seen.add(value)
+        if _value in seen:
+            raise ValidationError(f"Duplicate value found: '{_value}' in list.")
+
+        seen.add(_value)
 
 
 def validate_or(validators: list[Callable], value: Any) -> None:
