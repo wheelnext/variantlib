@@ -12,7 +12,10 @@ from wheel.cli.unpack import unpack as wheel_unpack
 
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -140,25 +143,20 @@ def make_variant(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    wheel_file_re = re.compile(
-        r"""^(?P<namever>(?P<name>[^\s-]+?)-(?P<ver>[^\s-]*?))
-        ((-(?P<build>\d[^-]*?))?-(?P<pyver>[^\s-]+?)-(?P<abi>[^\s-]+?)-(?P<plat>[^\s-]+?)
-        \.whl|\.dist-info)$""",
-        re.VERBOSE,
-    )
-
     input_filepath: pathlib.Path = parsed_args.input_filepath
     output_directory: pathlib.Path = parsed_args.output_directory
 
     # Input Validation
     if not input_filepath.is_file():
-        raise FileExistsError(f"Input Wheel File `{input_filepath}` does not exists.")
+        raise FileNotFoundError(f"Input Wheel File `{input_filepath}` does not exists.")
 
     if not output_directory.is_dir():
-        raise FileExistsError(f"Output Directory `{output_directory}` does not exists.")
+        raise FileNotFoundError(
+            f"Output Directory `{output_directory}` does not exists."
+        )
 
     # Input Validation - Wheel Filename is valid and non variant already.
-    wheel_info = wheel_file_re.match(input_filepath.name)
+    wheel_info = WHEEL_NAME_VALIDATION_REGEX.match(input_filepath.name)
     if not wheel_info:
         raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 
@@ -169,20 +167,16 @@ def make_variant(args: list[str]) -> None:
         tempdir = pathlib.Path(_tmpdir)
         wheel_unpack(input_filepath, tempdir)
 
-        dirname = input_filepath.name.split("-py3")[0]
-        wheel_dir = tempdir / dirname
+        wheel_dir = next(tempdir.iterdir())
 
-        if not wheel_dir.exists():
-            raise FileNotFoundError(wheel_dir)
+        for _dir in wheel_dir.iterdir():
+            if _dir.is_dir() and _dir.name.endswith(".dist-info"):
+                distinfo_dir = _dir
+                break
+        else:
+            raise FileNotFoundError("Impossible to find the .dist-info directory.")
 
-        distinfo_dir = wheel_dir / f"{dirname}.dist-info"
-
-        if not distinfo_dir.exists():
-            raise FileNotFoundError(distinfo_dir)
-
-        metadata_f = distinfo_dir / "METADATA"
-
-        if not metadata_f.exists():
+        if not (metadata_f := distinfo_dir / "METADATA").exists():
             raise FileNotFoundError(metadata_f)
 
         with metadata_f.open(mode="r+") as file:
@@ -202,11 +196,10 @@ def make_variant(args: list[str]) -> None:
             # Truncate the file to remove any remaining old content
             file.truncate()
 
-            file.write(f"Variant-hash: {vdesc.hexdigest}\n")
+            file.write(f"{METADATA_VARIANT_HASH_HEADER}: {vdesc.hexdigest}\n")
 
             for vprop in vdesc.properties:
-                # Variant: <provider> :: <key> :: <val>
-                file.write(f"Variant: {vprop.to_str()}\n")
+                file.write(f"{METADATA_VARIANT_PROPERTY_HEADER}: {vprop.to_str()}\n")
 
         dest_whl_path = wheel_variant_pack(
             directory=wheel_dir,
