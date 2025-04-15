@@ -111,6 +111,8 @@ def make_variant(args: list[str]) -> None:
         "-p",
         "--property",
         dest="properties",
+        type=VariantProperty.from_str,
+        required=True,
         action="extend",
         nargs="+",
         help=(
