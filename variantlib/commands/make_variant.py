@@ -130,7 +130,7 @@ def make_variant(args: list[str]) -> None:
 
     parser.add_argument(
         "-o",
-        "--output_directory",
+        "--output-directory",
         type=pathlib.Path,
         required=True,
         help="Output Directory to use to store the Wheel Variant",
