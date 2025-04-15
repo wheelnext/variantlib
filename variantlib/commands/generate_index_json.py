@@ -8,7 +8,6 @@ import logging
 import pathlib
 import zipfile
 
-from variantlib.loader import PluginLoader
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ def generate_index_json(args: list[str]) -> None:
                 continue
 
             if (variant_hash := wheel_metadata.get("Variant-hash")) is None:
-                logger.info("%s: no Variant-hash", wheel)
+                logger.info("`%s`: not a Wheel Variant - Skipping ...", wheel)
                 continue
             if (variant_entries := wheel_metadata.get_all("Variant")) is None:
                 logger.warning(
@@ -84,24 +83,5 @@ def generate_index_json(args: list[str]) -> None:
                     f"{wheel}: different property assigned to {variant_hash}"
                 )
 
-    all_plugins = PluginLoader.distribution_names
-    provider_requires = set()
-    for namespace in known_namespaces:
-        if (plugin := all_plugins.get(namespace)) is not None:
-            provider_requires.add(plugin)
-        else:
-            logger.warning("No known plugin matches variant namespace: %s", namespace)
-    provider_requires = {
-        plugin
-        for provider in known_namespaces
-        if (plugin := all_plugins.get(provider)) is not None
-    }
-
     with directory.joinpath("variants.json").open("w") as f:
-        json.dump(
-            {
-                "provider-requires": sorted(provider_requires),
-                "variants": known_variants,
-            },
-            f,
-        )
+        json.dump({"variants": known_variants}, f, indent=4, sort_keys=True)
