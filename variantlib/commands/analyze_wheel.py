@@ -6,6 +6,7 @@ import pathlib
 import re
 import zipfile
 
+from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
@@ -36,15 +37,7 @@ def analyze_wheel(args: list[str]) -> None:
         raise TypeError(f"File must have a `.whl` extension: `{input_file.name}`")
 
     # Checking if the wheel file is a valid wheel file
-    wheel_file_re = re.compile(
-        r"""^(?P<namever>(?P<name>[^\s-]+?)-(?P<ver>[^\s-]*?))
-        ((-(?P<build>\d[^-]*?))?-(?P<pyver>[^\s-]+?)-(?P<abi>[^\s-]+?)-(?P<plat>[^\s-]+?)
-        (-(?P<variant_hash>[0-9a-f]{8})([+][^\s-]*)?)?
-        \.whl|\.dist-info)$""",
-        re.VERBOSE,
-    )
-
-    if (wheel_info := wheel_file_re.match(input_file.name)) is None:
+    if (wheel_info := WHEEL_NAME_VALIDATION_REGEX.match(input_file.name)) is None:
         raise TypeError(
             f"The file is not a valid python wheel filename: `{input_file.name}`"
         )
