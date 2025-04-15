@@ -5,28 +5,22 @@ from __future__ import annotations
 import argparse
 import sys
 
-import variantlib
-
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
 else:
     from importlib_metadata import entry_points
 
 
-def main() -> None:
-    registered_commands = entry_points(group="variantlib.actions")
+def main(args: list[str]) -> None:
+    registered_commands = entry_points(group="variantlib.actions.plugins")
 
-    parser = argparse.ArgumentParser(prog="variantlib")
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=f"%(prog)s version: {variantlib.__version__}",
-    )
+    parser = argparse.ArgumentParser(prog="variantlib plugins")
+
     parser.add_argument(
         "command",
         choices=registered_commands.names,
     )
+
     parser.add_argument(
         "args",
         help=argparse.SUPPRESS,
@@ -34,7 +28,7 @@ def main() -> None:
     )
 
     namespace = argparse.Namespace()
-    parser.parse_args(namespace=namespace)
+    parser.parse_args(args=args, namespace=namespace)
 
     main_fn = registered_commands[namespace.command].load()
     return main_fn(namespace.args)
