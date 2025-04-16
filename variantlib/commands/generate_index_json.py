@@ -8,6 +8,8 @@ import logging
 import pathlib
 import zipfile
 
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.loader import PluginLoader
 from variantlib.models.variant import VariantProperty
 
@@ -52,10 +54,16 @@ def generate_index_json(args: list[str]) -> None:
                 logger.warning("%s: no METADATA file found", wheel)
                 continue
 
-            if (variant_hash := wheel_metadata.get("Variant-hash")) is None:
+            if (
+                variant_hash := wheel_metadata.get(METADATA_VARIANT_HASH_HEADER)
+            ) is None:
                 logger.info("%s: no Variant-hash", wheel)
                 continue
-            if (variant_entries := wheel_metadata.get_all("Variant")) is None:
+            if (
+                variant_entries := wheel_metadata.get_all(
+                    METADATA_VARIANT_PROPERTY_HEADER
+                )
+            ) is None:
                 logger.warning(
                     "%s: Variant-hash present but no Variant property", wheel
                 )

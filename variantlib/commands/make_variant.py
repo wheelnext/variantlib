@@ -15,6 +15,8 @@ from wheel.cli.unpack import unpack as wheel_unpack
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.api import validate_variant
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.errors import ValidationError
@@ -111,7 +113,7 @@ def wheel_variant_pack(
     return wheel_path
 
 
-def make_variant(args: list[str]) -> None:  # noqa: C901
+def make_variant(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="make_variant",
         description="Transform a normal Wheel into a Wheel Variant.",
@@ -205,12 +207,14 @@ def make_variant(args: list[str]) -> None:  # noqa: C901
             metadata_parser = email.parser.BytesParser()
             metadata = metadata_parser.parse(file)
 
-            # Replace the variant headers
-            del metadata["Variant"]
-            del metadata["Variant-hash"]
+            # Remove old VariantProperties & Variant-Hash
+            del metadata[METADATA_VARIANT_PROPERTY_HEADER]
+            del metadata[METADATA_VARIANT_HASH_HEADER]
+
+            # Add new VariantProperties & Variant-Hash
             for vprop in vdesc.properties:
-                metadata["Variant"] = vprop.to_str()
-            metadata["Variant-hash"] = vdesc.hexdigest
+                metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
+            metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
 
             # Move the file pointer to the beginning
             file.seek(0)
