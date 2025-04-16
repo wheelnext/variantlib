@@ -12,6 +12,7 @@ from wheel.cli.unpack import unpack as wheel_unpack
 
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.api import validate_variant
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
@@ -104,7 +105,7 @@ def wheel_variant_pack(
     return wheel_path
 
 
-def make_variant(args: list[str]) -> None:
+def make_variant(args: list[str]) -> None:  # noqa: C901
     parser = argparse.ArgumentParser(
         prog="make_variant",
         description="Transform a normal Wheel into a Wheel Variant.",
@@ -162,6 +163,20 @@ def make_variant(args: list[str]) -> None:
 
     # Transform properties into a VariantDescription
     vdesc = VariantDescription(properties=parsed_args.properties)
+
+    # Verify whether the variant properties are valid
+    vdesc_valid = validate_variant(vdesc)
+    if vdesc_valid.invalid_properties:
+        raise ValidationError(
+            "The following variant properties are invalid according to the plugins: "
+            f"{', '.join(x.to_str() for x in vdesc_valid.invalid_properties)}"
+        )
+    if vdesc_valid.unknown_properties:
+        raise ValidationError(
+            "The following variant properties use namespaces that are not provided "
+            "by any installed plugin: "
+            f"{', '.join(x.to_str() for x in vdesc_valid.unknown_properties)}"
+        )
 
     with tempfile.TemporaryDirectory() as _tmpdir:
         tempdir = pathlib.Path(_tmpdir)
