@@ -7,6 +7,9 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from variantlib.combination import filtered_sorted_variants
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
@@ -17,6 +20,7 @@ from variantlib.models.variant import VariantValidationResult
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from email.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +31,7 @@ __all__ = [
     "VariantFeatureConfig",
     "VariantProperty",
     "get_variant_hashes_by_priority",
+    "set_variant_metadata",
     "validate_variant",
 ]
 
@@ -125,3 +130,28 @@ def validate_variant(
     return VariantValidationResult(
         {vprop: _validate_variant(vprop) for vprop in variant_desc.properties}
     )
+
+
+def set_variant_metadata(
+    metadata: Message,
+    vdesc: VariantDescription,
+) -> None:
+    """Set metadata-related keys in metadata email-dict"""
+
+    # Match namespaces to plugins
+    namespaces = {vprop.namespace for vprop in vdesc.properties}
+    providers = {ns: PluginLoader.distribution_names[ns] for ns in namespaces}
+
+    # Remove old metadata
+    del metadata[METADATA_VARIANT_PROPERTY_HEADER]
+    del metadata[METADATA_VARIANT_HASH_HEADER]
+    del metadata[METADATA_VARIANT_PROVIDER_HEADER]
+
+    # Add new metadata
+    for vprop in vdesc.properties:
+        metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
+    metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
+    for ns, provider in sorted(providers.items()):
+        # Follow the "<key>, <value>" format used in metadata already:
+        # https://packaging.python.org/en/latest/specifications/core-metadata/#project-url-multiple-use
+        metadata[METADATA_VARIANT_PROVIDER_HEADER] = f"{ns}, {provider}"
