@@ -14,9 +14,8 @@ from wheel.cli.unpack import unpack as wheel_unpack
 
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.errors import ValidationError
@@ -207,18 +206,8 @@ def make_variant(args: list[str]) -> None:
             metadata_parser = email.parser.BytesParser()
             metadata = metadata_parser.parse(file)
 
-            # Remove old VariantProperties & Variant-Hash
-            #
-            # https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.__delitem__
-            # Delete all occurrences of the field with name name from the message's headers.  # noqa: E501
-            # No exception is raised if the named field isn't present in the headers.
-            del metadata[METADATA_VARIANT_PROPERTY_HEADER]
-            del metadata[METADATA_VARIANT_HASH_HEADER]
-
-            # Add new VariantProperties & Variant-Hash
-            for vprop in vdesc.properties:
-                metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
-            metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
+            # Update the metadata
+            set_variant_metadata(metadata, vdesc)
 
             # Move the file pointer to the beginning
             file.seek(0)

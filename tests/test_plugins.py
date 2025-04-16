@@ -26,7 +26,7 @@ else:
 
 
 class MockedPluginA(PluginType):
-    namespace = "test_plugin"
+    namespace = "test_namespace"
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
@@ -60,7 +60,7 @@ MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values")
 # NB: this plugin deliberately does not inherit from PluginType
 # to test that we don't rely on that inheritance
 class MockedPluginB:
-    namespace = "second_plugin"
+    namespace = "second_namespace"
 
     def get_all_configs(self) -> list[MyVariantFeatureConfig]:
         return [
@@ -83,7 +83,7 @@ class MyFlag:
 
 
 class MockedPluginC(PluginType):
-    namespace = "incompatible_plugin"
+    namespace = "incompatible_namespace"
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
@@ -113,7 +113,7 @@ class MockedPluginC(PluginType):
 
 
 class ClashingPlugin(PluginType):
-    namespace = "test_plugin"
+    namespace = "test_namespace"
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
@@ -163,19 +163,19 @@ class MockedEntryPoint:
 def mocked_plugin_loader(session_mocker):
     session_mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
-            name="test_plugin",
+            name="test_namespace",
             value="tests.test_plugins:MockedPluginA",
             dist=MockedDistribution(name="test-plugin", version="1.2.3"),
             plugin=MockedPluginA,
         ),
         MockedEntryPoint(
-            name="second_plugin",
+            name="second_namespace",
             value="tests.test_plugins:MockedPluginB",
             dist=MockedDistribution(name="second-plugin", version="4.5.6"),
             plugin=MockedPluginB,
         ),
         MockedEntryPoint(
-            name="incompatible_plugin",
+            name="incompatible_namespace",
             value="tests.test_plugins:MockedPluginC",
             plugin=MockedPluginC,
         ),
@@ -186,8 +186,8 @@ def mocked_plugin_loader(session_mocker):
 
 def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
     assert mocked_plugin_loader.get_all_configs() == {
-        "incompatible_plugin": ProviderConfig(
-            namespace="incompatible_plugin",
+        "incompatible_namespace": ProviderConfig(
+            namespace="incompatible_namespace",
             configs=[
                 VariantFeatureConfig("flag1", ["on"]),
                 VariantFeatureConfig("flag2", ["on"]),
@@ -195,14 +195,14 @@ def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
                 VariantFeatureConfig("flag4", ["on"]),
             ],
         ),
-        "second_plugin": ProviderConfig(
-            namespace="second_plugin",
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
             configs=[
                 VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
             ],
         ),
-        "test_plugin": ProviderConfig(
-            namespace="test_plugin",
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
             configs=[
                 VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
                 VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
@@ -213,14 +213,14 @@ def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
 
 def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
     assert mocked_plugin_loader.get_supported_configs() == {
-        "second_plugin": ProviderConfig(
-            namespace="second_plugin",
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
             configs=[
                 VariantFeatureConfig("name3", ["val3a"]),
             ],
         ),
-        "test_plugin": ProviderConfig(
-            namespace="test_plugin",
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
             configs=[
                 VariantFeatureConfig("name1", ["val1a", "val1b"]),
                 VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
@@ -231,15 +231,15 @@ def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
 
 def test_get_dist_name_mapping(mocked_plugin_loader: type[PluginLoader]):
     assert mocked_plugin_loader.distribution_names == {
-        "second_plugin": "second-plugin",
-        "test_plugin": "test-plugin",
+        "second_namespace": "second-plugin",
+        "test_namespace": "test-plugin",
     }
 
 
 def test_namespace_clash(mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
-            name="test_plugin",
+            name="test_namespace",
             value="tests.test_plugins:MockedPluginA",
             dist=MockedDistribution(name="test-plugin", version="1.2.3"),
             plugin=MockedPluginA,
@@ -253,7 +253,7 @@ def test_namespace_clash(mocker):
     ]
     with pytest.raises(
         RuntimeError,
-        match="Two plugins found using the same namespace test_plugin. Refusing to "
+        match="Two plugins found using the same namespace test_namespace. Refusing to "
         "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
     ):
         PluginLoader.load_plugins()
@@ -318,7 +318,7 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         getattr(PluginLoader, method)()
 
 
-def test_plugin_missing_module(mocker):
+def test_namespace_missing_module(mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         EntryPoint(
             name="exception_test",
@@ -335,7 +335,7 @@ def test_plugin_missing_module(mocker):
         PluginLoader.load_plugins()
 
 
-def test_plugin_incorrect_name(mocker):
+def test_namespace_incorrect_name(mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         EntryPoint(
             name="exception_test",
@@ -360,7 +360,7 @@ class IncompletePlugin:
 
 
 @pytest.mark.parametrize("val", [None, 42, "a-string", {}])
-def test_plugin_incorrect_type(val: Any, mocker):
+def test_namespace_incorrect_type(val: Any, mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="exception_test",
@@ -390,7 +390,7 @@ class RaisingInstantiationPlugin:
         return []
 
 
-def test_plugin_instantiation_raises(mocker):
+def test_namespace_instantiation_raises(mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="exception_test",
@@ -421,7 +421,7 @@ class CrossTypeInstantiationPlugin:
 
 
 @pytest.mark.parametrize("cls", [IncompletePlugin, CrossTypeInstantiationPlugin])
-def test_plugin_instantiation_returns_incorrect_type(cls: type, mocker):
+def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
             name="exception_test",
@@ -443,10 +443,10 @@ def test_plugin_instantiation_returns_incorrect_type(cls: type, mocker):
 def test_get_build_setup(mocked_plugin_loader):
     variant_desc = VariantDescription(
         [
-            VariantProperty("test_plugin", "name1", "val1b"),
-            VariantProperty("second_plugin", "name3", "val3c"),
-            VariantProperty("incompatible_plugin", "flag1", "on"),
-            VariantProperty("incompatible_plugin", "flag4", "on"),
+            VariantProperty("test_namespace", "name1", "val1b"),
+            VariantProperty("second_namespace", "name3", "val3c"),
+            VariantProperty("incompatible_namespace", "flag1", "on"),
+            VariantProperty("incompatible_namespace", "flag4", "on"),
         ]
     )
 
@@ -460,7 +460,7 @@ def test_get_build_setup(mocked_plugin_loader):
 def test_get_build_setup_missing_plugin(mocked_plugin_loader):
     variant_desc = VariantDescription(
         [
-            VariantProperty("test_plugin", "name1", "val1b"),
+            VariantProperty("test_namespace", "name1", "val1b"),
             VariantProperty("missing_plugin", "name", "val"),
         ]
     )

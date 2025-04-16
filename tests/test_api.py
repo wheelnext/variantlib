@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from email.message import EmailMessage
 from string import ascii_lowercase
 from typing import TYPE_CHECKING
 
@@ -12,6 +13,7 @@ from variantlib.api import VariantFeatureConfig
 from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
+from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
@@ -90,14 +92,14 @@ def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F8
     res = validate_variant(
         VariantDescription(
             [
-                VariantProperty("test_plugin", "name1", "val1d"),
-                VariantProperty("test_plugin", "name2", "val2d"),
-                VariantProperty("test_plugin", "name3", "val3a"),
-                VariantProperty("second_plugin", "name3", "val3a"),
-                VariantProperty("incompatible_plugin", "flag1", "on"),
-                VariantProperty("incompatible_plugin", "flag2", "off"),
-                VariantProperty("incompatible_plugin", "flag5", "on"),
-                VariantProperty("missing_plugin", "name", "val"),
+                VariantProperty("test_namespace", "name1", "val1d"),
+                VariantProperty("test_namespace", "name2", "val2d"),
+                VariantProperty("test_namespace", "name3", "val3a"),
+                VariantProperty("second_namespace", "name3", "val3a"),
+                VariantProperty("incompatible_namespace", "flag1", "on"),
+                VariantProperty("incompatible_namespace", "flag2", "off"),
+                VariantProperty("incompatible_namespace", "flag5", "on"),
+                VariantProperty("missing_namespace", "name", "val"),
                 VariantProperty("private", "build_type", "debug"),
             ]
         )
@@ -105,15 +107,67 @@ def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F8
 
     assert res == VariantValidationResult(
         {
-            VariantProperty("test_plugin", "name1", "val1d"): True,
-            VariantProperty("test_plugin", "name2", "val2d"): False,
-            VariantProperty("test_plugin", "name3", "val3a"): False,
-            VariantProperty("second_plugin", "name3", "val3a"): True,
-            VariantProperty("incompatible_plugin", "flag1", "on"): True,
-            VariantProperty("incompatible_plugin", "flag2", "off"): False,
-            VariantProperty("incompatible_plugin", "flag5", "on"): False,
-            VariantProperty("missing_plugin", "name", "val"): None,
+            VariantProperty("test_namespace", "name1", "val1d"): True,
+            VariantProperty("test_namespace", "name2", "val2d"): False,
+            VariantProperty("test_namespace", "name3", "val3a"): False,
+            VariantProperty("second_namespace", "name3", "val3a"): True,
+            VariantProperty("incompatible_namespace", "flag1", "on"): True,
+            VariantProperty("incompatible_namespace", "flag2", "off"): False,
+            VariantProperty("incompatible_namespace", "flag5", "on"): False,
+            VariantProperty("missing_namespace", "name", "val"): None,
             VariantProperty("private", "build_type", "debug"): None,
         }
     )
     assert not res.is_valid()
+
+
+@pytest.fixture
+def metadata() -> EmailMessage:
+    metadata = EmailMessage()
+    metadata.set_content("long description\nof a package")
+    # remove implicitly added Content-* headers to match Python metadata
+    for key in metadata:
+        del metadata[key]
+    metadata["Metadata-Version"] = "2.1"
+    metadata["Name"] = "test-package"
+    metadata["Version"] = "1.2.3"
+    return metadata
+
+
+@pytest.mark.parametrize("replace", [False, True])
+def test_set_variant_metadata(
+    mocked_plugin_loader: type[PluginLoader],  # noqa: F811
+    metadata: EmailMessage,
+    replace: bool,
+):
+    if replace:
+        # deliberately using different case
+        metadata["Variant-Hash"] = "12345678"
+        metadata["variant"] = "a :: b :: c"
+        metadata["variant"] = "d :: e :: f"
+        metadata["variant-Provider"] = "a, frobnicate"
+
+    set_variant_metadata(
+        metadata,
+        VariantDescription(
+            [
+                VariantProperty("test_namespace", "name1", "val1d"),
+                VariantProperty("test_namespace", "name2", "val2a"),
+                VariantProperty("second_namespace", "name3", "val3a"),
+            ]
+        ),
+    )
+    assert metadata.as_string() == (
+        "Metadata-Version: 2.1\n"
+        "Name: test-package\n"
+        "Version: 1.2.3\n"
+        "Variant: second_namespace :: name3 :: val3a\n"
+        "Variant: test_namespace :: name1 :: val1d\n"
+        "Variant: test_namespace :: name2 :: val2a\n"
+        "Variant-hash: c105e82f\n"
+        "Variant-provider: second_namespace, second-plugin\n"
+        "Variant-provider: test_namespace, test-plugin\n"
+        "\n"
+        "long description\n"
+        "of a package\n"
+    )

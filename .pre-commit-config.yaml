@@ -1,4 +1,4 @@
-exclude: "^docs/|/migrations/|devcontainer.json|.*.html|.*.css|.*.js|.*.svg|.*.dist"
+exclude: "^docs/|/migrations/|devcontainer[.]json$|.*[.]html$|.*[.]css$|.*[.]js$|.*[.]svg$|.*[.]dist$"
 
 default_language_version:
   python: python3.13
