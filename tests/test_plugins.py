@@ -49,6 +49,7 @@ class MockedPluginA(PluginType):
                 return {
                     "cflags": [f"-march={prop.value}"],
                     "cxxflags": [f"-march={prop.value}"],
+                    "ldflags": ["-Wl,--test-flag"],
                 }
         return {}
 
@@ -452,6 +453,7 @@ def test_get_build_setup(mocked_plugin_loader):
     assert mocked_plugin_loader.get_build_setup(variant_desc) == {
         "cflags": ["-mflag1", "-mflag4", "-march=val1b"],
         "cxxflags": ["-mflag1", "-mflag4", "-march=val1b"],
+        "ldflags": ["-Wl,--test-flag"],
     }
 
 
