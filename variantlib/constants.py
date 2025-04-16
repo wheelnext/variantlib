@@ -13,19 +13,22 @@ METADATA_VARIANT_HASH_HEADER = "Variant-hash"
 METADATA_VARIANT_PROPERTY_HEADER = "Variant"
 
 WHEEL_NAME_VALIDATION_REGEX = re.compile(
-    r"^                                       "
-    r"(?P<namever>                            "  # "namever" group contains <name>-<ver>
-    r"  (?P<name>[^\s-]+?) - (?P<ver>[^\s-]*?)"  # <name> "-" <ver>
-    r")                                       "  # close "namever" group
-    r"( - (?P<build>\d[^-]*?) )?              "  # optional "-" <build>
-    r"- (?P<pyver>[^\s-]+?)                   "  # "-" <pyver> tag
-    r"- (?P<abi>[^\s-]+?)                     "  # "-" <abi> tag
-    r"- (?P<plat>[^\s-]+?)                    "  # "-" <plat> tag
-    r"( - (?P<variant_hash>                   "  # optional <variant_hash>
-    rf"    [0-9a-f]{{{VARIANT_HASH_LEN}}}     "
-    r"    )                                   "
-    r")?                                      "
-    r"\.whl                                   "  # ".whl" suffix
-    r"$                                       ",
+    r"^                                   "
+    r"(?P<base_wheel_name>                "  # <base_wheel_name> group (without variant)
+    r"  (?P<namever>                      "  # "namever" group contains <name>-<ver>
+    r"    (?P<name>[^\s-]+?)              "  # <name>
+    r"    - (?P<ver>[^\s-]*?)             "  # "-" <ver>
+    r"  )                                 "  # close "namever" group
+    r"  ( - (?P<build>\d[^-]*?) )?        "  # optional "-" <build>
+    r"  - (?P<pyver>[^\s-]+?)             "  # "-" <pyver> tag
+    r"  - (?P<abi>[^\s-]+?)               "  # "-" <abi> tag
+    r"  - (?P<plat>[^\s-]+?)              "  # "-" <plat> tag
+    r")                                   "  # end of <base_wheel_name> group
+    r"( - (?P<variant_hash>               "  # optional <variant_hash>
+    rf"    [0-9a-f]{{{VARIANT_HASH_LEN}}} "
+    r"    )                               "
+    r")?                                  "
+    r"\.whl                               "  # ".whl" suffix
+    r"$                                   ",
     re.VERBOSE,
 )
