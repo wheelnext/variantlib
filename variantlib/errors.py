@@ -3,7 +3,11 @@ class ValidationError(ValueError):
 
 
 class PluginError(RuntimeError):
-    pass
+    """Incorrect plugin implementation"""
+
+
+class PluginMissingError(RuntimeError):
+    """A required plugin is missing"""
 
 
 class InvalidVariantEnvSpecError(ValueError):

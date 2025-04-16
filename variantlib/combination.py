@@ -58,7 +58,7 @@ def unpack_variants_from_json(
         yield vdesc
 
 
-def filtered_sorted_variants(  # noqa: C901
+def filtered_sorted_variants(
     variants_from_json: dict, provider_configs: list[ProviderConfig]
 ) -> list[VariantDescription]:
     namespaces = {}

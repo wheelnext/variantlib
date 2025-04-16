@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def generate_index_json(args: list[str]) -> None:  # noqa: C901, PLR0912
+def generate_index_json(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="generate_index_json",
         description="Generate a JSON index of all package variants",
