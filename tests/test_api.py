@@ -151,9 +151,9 @@ def test_set_variant_metadata(
         metadata,
         VariantDescription(
             [
-                VariantProperty("test_plugin", "name1", "val1d"),
-                VariantProperty("test_plugin", "name2", "val2a"),
-                VariantProperty("second_plugin", "name3", "val3a"),
+                VariantProperty("test_namespace", "name1", "val1d"),
+                VariantProperty("test_namespace", "name2", "val2a"),
+                VariantProperty("second_namespace", "name3", "val3a"),
             ]
         ),
     )
@@ -161,12 +161,12 @@ def test_set_variant_metadata(
         "Metadata-Version: 2.1\n"
         "Name: test-package\n"
         "Version: 1.2.3\n"
-        "Variant: second_plugin :: name3 :: val3a\n"
-        "Variant: test_plugin :: name1 :: val1d\n"
-        "Variant: test_plugin :: name2 :: val2a\n"
+        "Variant: second_namespace :: name3 :: val3a\n"
+        "Variant: test_namespace :: name1 :: val1d\n"
+        "Variant: test_namespace :: name2 :: val2a\n"
         "Variant-hash: 9c796125\n"
-        "Variant-provider: second_plugin, second-plugin\n"
-        "Variant-provider: test_plugin, test-plugin\n"
+        "Variant-provider: second_namespace, second-plugin\n"
+        "Variant-provider: test_namespace, test-plugin\n"
         "\n"
         "long description\n"
         "of a package\n"
