@@ -11,6 +11,7 @@ VALIDATION_VALUE_REGEX = r"^[A-Za-z0-9_.]+$"
 
 METADATA_VARIANT_HASH_HEADER = "Variant-hash"
 METADATA_VARIANT_PROPERTY_HEADER = "Variant"
+METADATA_VARIANT_PROVIDER_HEADER = "Variant-provider"
 
 WHEEL_NAME_VALIDATION_REGEX = re.compile(
     r"^                                   "
