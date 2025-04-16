@@ -21,8 +21,11 @@ if TYPE_CHECKING:
 def filter_variants(
     vdescs: list[VariantDescription],
     allowed_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[str] | None = None,
     allowed_features: list[VariantFeature] | None = None,
+    forbidden_features: list[VariantFeature] | None = None,
     allowed_properties: list[VariantProperty] | None = None,
+    forbidden_properties: list[VariantProperty] | None = None,
 ) -> Generator[VariantDescription]:
     """
     Filters out a `list` of `VariantDescription` with the following filters:
@@ -33,8 +36,11 @@ def filter_variants(
 
     :param vdescs: list of `VariantDescription` to filter.
     :param allowed_namespaces: List of allowed variant namespaces as `str`.
+    :param forbidden_namespaces: List of forbidden variant namespaces as `str`.
     :param allowed_features: List of allowed `VariantFeature`.
+    :param forbidden_features: List of forbidden `VariantFeature`.
     :param allowed_properties: List of allowed `VariantProperty`.
+    :param forbidden_properties: List of forbidden `VariantProperty`.
     :return: Filtered list of `VariantDescription`.
     """
 
@@ -70,20 +76,37 @@ def filter_variants(
         result = filter_variants_by_namespaces(
             vdescs=result,
             allowed_namespaces=allowed_namespaces,
+            forbidden_namespaces=forbidden_namespaces,
+        )
+    elif forbidden_namespaces is not None:
+        raise ValueError(
+            "`forbidden_namespaces` without `allowed_namespaces` is not supported."
         )
 
     # Step 3: Remove any `VariantDescription` which declare any `VariantProperty` with
     # `namespace :: feature` (aka. `VariantFeature`) unsupported on this platform.
     if allowed_features is not None:
         result = filter_variants_by_features(
-            vdescs=result, allowed_features=allowed_features
+            vdescs=result,
+            allowed_features=allowed_features,
+            forbidden_features=forbidden_features,
+        )
+    elif forbidden_features is not None:
+        raise ValueError(
+            "`forbidden_features` without `allowed_features` is not supported."
         )
 
     # Step 4: Remove any `VariantDescription` which declare any `VariantProperty`
     # `namespace :: feature :: value` unsupported on this platform.
     if allowed_properties is not None:
         result = filter_variants_by_property(
-            vdescs=result, allowed_properties=allowed_properties
+            vdescs=result,
+            allowed_properties=allowed_properties,
+            forbidden_properties=forbidden_properties,
+        )
+    elif forbidden_properties is not None:
+        raise ValueError(
+            "`forbidden_properties` without `allowed_properties` is not supported."
         )
 
     yield from result
@@ -121,6 +144,8 @@ def sort_and_filter_supported_variants(
         filter_variants(
             vdescs=vdescs,
             allowed_namespaces=namespace_priorities,
+            allowed_features=[vprop.feature_object for vprop in supported_vprops],
+            allowed_properties=supported_vprops,
         )
     )
 

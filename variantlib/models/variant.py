@@ -7,6 +7,7 @@ import sys
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from functools import cached_property
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -51,7 +52,7 @@ class VariantFeature(BaseModel):
         }
     )
 
-    @property
+    @cached_property
     def feature_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         # note: can't use `self.__class__` because of inheritance
@@ -110,10 +111,14 @@ class VariantProperty(VariantFeature):
         }
     )
 
-    @property
+    @cached_property
     def property_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         return hash((self.__class__, self.namespace, self.feature, self.value))
+
+    @cached_property
+    def feature_object(self) -> VariantFeature:
+        return VariantFeature(namespace=self.namespace, feature=self.feature)
 
     def to_str(self) -> str:
         # Variant: <namespace> :: <feature> :: <val>
@@ -184,7 +189,7 @@ class VariantDescription(BaseModel):
         # Execute the validator
         super().__post_init__()
 
-    @property
+    @cached_property
     def hexdigest(self) -> str:
         """
         Compute the hash of the object.
@@ -225,12 +230,12 @@ class VariantValidationResult:
             allow_unknown_plugins or None not in self.results.values()
         )
 
-    @property
+    @cached_property
     def invalid_properties(self) -> list[VariantProperty]:
         """List of properties declared invalid by plugins"""
         return [x for x, y in self.results.items() if y is False]
 
-    @property
+    @cached_property
     def unknown_properties(self) -> list[VariantProperty]:
         """List of properties not in any recognized namespace"""
         return [x for x, y in self.results.items() if y is None]
