@@ -10,14 +10,14 @@ import zipfile
 
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.loader import PluginLoader
+from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def generate_index_json(args: list[str]) -> None:
+def generate_index_json(args: list[str]) -> None:  # noqa: PLR0912
     parser = argparse.ArgumentParser(
         prog="generate_index_json",
         description="Generate a JSON index of all package variants",
@@ -42,6 +42,7 @@ def generate_index_json(args: list[str]) -> None:
     vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
     known_variants: dict[str, dict[str, dict[str, str]]] = {}
     known_namespaces = set()
+    providers: dict[str, str] = {}
 
     for wheel in directory.glob("*.whl"):
         with zipfile.ZipFile(wheel, "r") as zip_file:
@@ -68,6 +69,27 @@ def generate_index_json(args: list[str]) -> None:
                     "%s: Variant-hash present but no Variant property", wheel
                 )
                 continue
+            if (
+                wheel_providers := wheel_metadata.get_all(
+                    METADATA_VARIANT_PROVIDER_HEADER
+                )
+            ) is None:
+                logger.info("%s: no Variant-provider", wheel)
+            else:
+                for wheel_provider in wheel_providers:
+                    ns, _, provider = wheel_provider.partition(",")
+                    ns = ns.strip()
+                    provider = provider.strip()
+                    if not ns or not provider:
+                        raise ValueError(
+                            f"{wheel}: Invalid {METADATA_VARIANT_PROVIDER_HEADER}: "
+                            f"{wheel_provider}"
+                        )
+                    if providers.setdefault(ns, provider) != provider:
+                        raise KeyError(
+                            f"Conflicting providers found for namespace {ns}: "
+                            f"{providers[ns]} and {provider}"
+                        )
 
             variant_dict: dict[str, dict[str, str]] = {}
             for variant_entry in variant_entries:
@@ -92,23 +114,10 @@ def generate_index_json(args: list[str]) -> None:
                     f"{wheel}: different property assigned to {variant_hash}"
                 )
 
-    all_plugins = PluginLoader.distribution_names
-    provider_requires = set()
-    for namespace in known_namespaces:
-        if (plugin := all_plugins.get(namespace)) is not None:
-            provider_requires.add(plugin)
-        else:
-            logger.warning("No known plugin matches variant namespace: %s", namespace)
-    provider_requires = {
-        plugin
-        for provider in known_namespaces
-        if (plugin := all_plugins.get(provider)) is not None
-    }
-
     with directory.joinpath("variants.json").open("w") as f:
         json.dump(
             {
-                "provider-requires": sorted(provider_requires),
+                "providers": providers,
                 "variants": known_variants,
             },
             f,
