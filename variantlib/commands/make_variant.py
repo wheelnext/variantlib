@@ -208,6 +208,10 @@ def make_variant(args: list[str]) -> None:
             metadata = metadata_parser.parse(file)
 
             # Remove old VariantProperties & Variant-Hash
+            #
+            # https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.__delitem__
+            # Delete all occurrences of the field with name name from the message's headers.  # noqa: E501
+            # No exception is raised if the named field isn't present in the headers.
             del metadata[METADATA_VARIANT_PROPERTY_HEADER]
             del metadata[METADATA_VARIANT_HASH_HEADER]
 
