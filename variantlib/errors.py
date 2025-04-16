@@ -11,4 +11,4 @@ class PluginMissingError(RuntimeError):
 
 
 class InvalidVariantEnvSpecError(ValueError):
-    pass
+    """Environment specifier for variants is invalid"""
