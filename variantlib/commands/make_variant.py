@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import email.parser
+import email.policy
 import logging
 import os
 import pathlib
@@ -12,14 +14,18 @@ from wheel.cli.unpack import unpack as wheel_unpack
 
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+METADATA_POLICY = email.policy.EmailPolicy(
+    utf8=True,
+    mangle_from_=False,
+    refold_source="none",
+)
 
 
 def wheel_variant_pack(
@@ -179,27 +185,26 @@ def make_variant(args: list[str]) -> None:
         if not (metadata_f := distinfo_dir / "METADATA").exists():
             raise FileNotFoundError(metadata_f)
 
-        with metadata_f.open(mode="r+") as file:
-            # Read all lines
-            lines = file.readlines()
+        with metadata_f.open(mode="r+b") as file:
+            # Parse the metadata
+            metadata_parser = email.parser.BytesParser()
+            metadata = metadata_parser.parse(file)
 
-            # Remove trailing empty lines
-            while lines and lines[-1].strip() == "":
-                lines.pop()
+            # Replace the variant headers
+            del metadata["Variant"]
+            del metadata["Variant-hash"]
+            for vprop in vdesc.properties:
+                metadata["Variant"] = vprop.to_str()
+            metadata["Variant-hash"] = vdesc.hexdigest
 
             # Move the file pointer to the beginning
             file.seek(0)
 
-            # Write back the non-empty content
-            file.writelines(lines)
+            # Write back the serialized metadata
+            file.write(metadata.as_bytes(policy=METADATA_POLICY))
 
             # Truncate the file to remove any remaining old content
             file.truncate()
-
-            file.write(f"{METADATA_VARIANT_HASH_HEADER}: {vdesc.hexdigest}\n")
-
-            for vprop in vdesc.properties:
-                file.write(f"{METADATA_VARIANT_PROPERTY_HEADER}: {vprop.to_str()}\n")
 
         dest_whl_path = wheel_variant_pack(
             directory=wheel_dir,
