@@ -136,7 +136,7 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
                 return list_type[ored]  # type: ignore[index]
 
     # Protocols and Iterable must enable subclassing to pass
-    elif issubclass(expected_type, (Protocol, Iterable)):
+    elif issubclass(expected_type, (Protocol, Iterable)):  # type: ignore[arg-type]
         if not isinstance(value, expected_type):
             return type(value)
 

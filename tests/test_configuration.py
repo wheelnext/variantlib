@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import platformdirs
+import tomli_w
 
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import VariantConfiguration
@@ -14,22 +15,6 @@ from variantlib.constants import CONFIG_FILENAME
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-
-
-def dict_to_toml(d: dict, indent: int = 0) -> str:
-    lines = []
-    for key, value in d.items():
-        if isinstance(value, dict):
-            lines.append(f"\n{' ' * indent}[{key}]")
-            lines.append(dict_to_toml(value, indent))
-        elif isinstance(value, list):
-            items = ", ".join(f'"{v}"' if isinstance(v, str) else str(v) for v in value)
-            lines.append(f"{' ' * indent}{key} = [{items}]")
-        elif isinstance(value, str):
-            lines.append(f'{" " * indent}{key} = "{value}"')
-        else:
-            raise TypeError(f"Unsupported type for key '{key}': {type(value)}")
-    return "\n".join(lines)
 
 
 def test_reset():
@@ -104,7 +89,7 @@ def test_get_config_from_file(mock_get_config_files):
         ],
     }
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".toml") as temp_file:
-        temp_file.write(dict_to_toml(data))
+        temp_file.write(tomli_w.dumps(data))
         temp_file.flush()
 
         def _get_config_files() -> dict[ConfigEnvironments, Path]:

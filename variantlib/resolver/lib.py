@@ -115,9 +115,9 @@ def filter_variants(
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty] | None = None,
-    property_priorities: list[VariantProperty] | None = None,
-    feature_priorities: list[VariantFeature] | None = None,
     namespace_priorities: list[str] | None = None,
+    feature_priorities: list[VariantFeature] | None = None,
+    property_priorities: list[VariantProperty] | None = None,
 ) -> list[VariantDescription]:
     """
     Sort and filter a list of `VariantDescription` objects based on their
@@ -125,9 +125,9 @@ def sort_and_filter_supported_variants(
 
     :param vdescs: List of `VariantDescription` objects.
     :param supported_vprops: List of `VariantProperty` objects supported on the platform
-    :param property_priorities: Ordered list of `VariantProperty` objects.
-    :param feature_priorities: Ordered list of `VariantFeature` objects.
     :param namespace_priorities: Ordered list of `str` objects.
+    :param feature_priorities: Ordered list of `VariantFeature` objects.
+    :param property_priorities: Ordered list of `VariantProperty` objects.
     :return: Sorted and filtered list of `VariantDescription` objects.
     """
     validate_type(vdescs, list[VariantDescription])
