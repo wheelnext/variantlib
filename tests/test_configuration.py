@@ -46,18 +46,6 @@ def test_get_configuration_files():
 
 
 @patch("variantlib.configuration.get_configuration_files")
-def test_get_config_no_files(mock_get_config_files):
-    mock_get_config_files.return_value = {
-        ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
-        ConfigEnvironments.VIRTUALENV: Path("/nonexistent/config.toml"),
-        ConfigEnvironments.USER: Path("/nonexistent/config.toml"),
-        ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
-    }
-    config = VariantConfiguration.get_config()
-    assert config == ConfigurationModel.default()
-
-
-@patch("variantlib.configuration.get_configuration_files")
 def test_get_default_config_with_no_file(mock_get_config_files):
     mock_get_config_files.return_value = {
         ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
