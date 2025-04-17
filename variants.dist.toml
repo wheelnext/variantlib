@@ -35,7 +35,7 @@ features_priority = [
 
 # 3. Define the priority of variant namespaces
 #    => Expected format: "namespace"
-
+#
 # MANDATORY AND IMPORTANT - PLEASE READ !
 #    - As long as there is more than 1 variant plugin installed. This field must be specified.
 #      => no default ordering is assumed.

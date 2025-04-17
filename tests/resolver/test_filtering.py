@@ -270,6 +270,15 @@ def test_filter_variants_by_features_validation_error(
     with pytest.raises(ValidationError):
         deque(
             filter_variants_by_features(
+                vdescs=vdescs,
+                allowed_features=[VariantProperty("not", "a", "feature")],  # type: ignore[list-item]
+            ),
+            maxlen=0,
+        )
+
+    with pytest.raises(ValidationError):
+        deque(
+            filter_variants_by_features(
                 vdescs="not a list",  # type: ignore[arg-type]
                 allowed_features=[vfeat],
             ),
@@ -381,7 +390,16 @@ def test_filter_variants_by_property_validation_error(
         deque(
             filter_variants_by_property(
                 vdescs=vdescs,
-                allowed_properties=["not a `VariantFeature`"],  # type: ignore[list-item]
+                allowed_properties=["not a `VariantProperty`"],  # type: ignore[list-item]
+            ),
+            maxlen=0,
+        )
+
+    with pytest.raises(ValidationError):
+        deque(
+            filter_variants_by_property(
+                vdescs=vdescs,
+                allowed_properties=[VariantFeature("not_a", "property")],  # type: ignore[list-item]
             ),
             maxlen=0,
         )
