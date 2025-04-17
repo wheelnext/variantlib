@@ -8,3 +8,7 @@ class PluginError(RuntimeError):
 
 class PluginMissingError(RuntimeError):
     """A required plugin is missing"""
+
+
+class InvalidVariantEnvSpecError(ValueError):
+    """Environment specifier for variants is invalid"""
