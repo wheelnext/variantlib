@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import email.parser
 import email.policy
+import hashlib
 import logging
 import pathlib
 import shutil
@@ -104,22 +106,17 @@ def make_variant(args: list[str]) -> None:
         / f"{wheel_info.group('base_wheel_name')}-{vdesc.hexdigest}.whl"
     )
 
-    with (
-        zipfile.ZipFile(input_filepath, "r") as input_zip,
-        zipfile.ZipFile(output_filepath, "w") as output_zip,
-    ):
-        metadata_found = False
-        for file_info in input_zip.infolist():
-            components = file_info.filename.split("/", 2)
-            with (
-                input_zip.open(file_info, "r") as input_file,
-                output_zip.open(file_info, "w") as output_file,
+    with zipfile.ZipFile(input_filepath, "r") as input_zip:
+        # First, find METADATA file
+        for filename in input_zip.namelist():
+            components = filename.split("/", 2)
+            if (
+                len(components) == 2
+                and components[0].endswith(".dist-info")
+                and components[1] == "METADATA"
             ):
-                if (
-                    len(components) == 2
-                    and components[0].endswith(".dist-info")
-                    and components[1] == "METADATA"
-                ):
+                metadata_filename = filename.encode()
+                with input_zip.open(filename, "r") as input_file:
                     # Parse the metadata
                     metadata_parser = email.parser.BytesParser()
                     metadata = metadata_parser.parse(input_file)
@@ -128,12 +125,41 @@ def make_variant(args: list[str]) -> None:
                     set_variant_metadata(metadata, vdesc)
 
                     # Write the serialized metadata
-                    output_file.write(metadata.as_bytes(policy=METADATA_POLICY))
-                    metadata_found = True
-                else:
-                    shutil.copyfileobj(input_file, output_file)
-
-        if not metadata_found:
+                    new_metadata = metadata.as_bytes(policy=METADATA_POLICY)
+                    break
+        else:
             raise FileNotFoundError("No *.dist-info/METADATA file found in wheel")
+
+        with zipfile.ZipFile(output_filepath, "w") as output_zip:
+            for file_info in input_zip.infolist():
+                components = file_info.filename.split("/", 2)
+                with (
+                    input_zip.open(file_info, "r") as input_file,
+                    output_zip.open(file_info, "w") as output_file,
+                ):
+                    if (
+                        len(components) != 2
+                        or not components[0].endswith(".dist-info")
+                        or components[1] not in ("METADATA", "RECORD")
+                    ):
+                        shutil.copyfileobj(input_file, output_file)
+                    elif components[1] == "METADATA":
+                        # Write the new metadata
+                        output_file.write(new_metadata)
+                    else:
+                        # Update RECORD for the new metadata checksum
+                        for line in input_file:
+                            new_line = line
+                            rec_filename, sha256, size = line.split(b",")
+                            if rec_filename == metadata_filename:
+                                new_sha256 = base64.urlsafe_b64encode(
+                                    hashlib.sha256(new_metadata).digest()
+                                ).rstrip(b"=")
+                                new_line = (
+                                    f"{rec_filename.decode()},"
+                                    f"sha256={new_sha256.decode()},"
+                                    f"{len(new_metadata)}\n"
+                                ).encode()
+                            output_file.write(new_line)
 
         logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())
