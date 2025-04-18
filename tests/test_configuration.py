@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import platformdirs
+import pytest
 import tomli_w
 
 from variantlib.configuration import ConfigEnvironments
@@ -14,9 +14,6 @@ from variantlib.constants import CONFIG_FILENAME
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def test_reset():
@@ -48,6 +45,7 @@ def test_get_configuration_files():
     )
 
 
+@pytest.mark.skipif(sys.platform in ("darwin", "win32"))
 def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
@@ -63,6 +61,7 @@ def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyP
     }
 
 
+@pytest.mark.skipif(sys.platform in ("darwin", "win32"))
 def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
