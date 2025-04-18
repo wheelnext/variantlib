@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 import random
 import string
 from typing import TYPE_CHECKING
@@ -51,24 +50,25 @@ def get_combinations(
     assert len(provider_cfgs) > 0
     assert all(isinstance(config, ProviderConfig) for config in provider_cfgs)
 
-    vprop_lists = [
-        [
-            VariantProperty(
-                namespace=provider_cfg.namespace,
-                feature=vfeat_config.name,
-                value=vprop_value,
-            )
-            for vprop_value in vfeat_config.values
-        ]
+    all_properties = [
+        (provider_cfg.namespace, feature_cfg.name, feature_cfg.values)
         for provider_cfg in provider_cfgs
-        for vfeat_config in provider_cfg.configs
+        for feature_cfg in provider_cfg.configs
     ]
 
-    # Generate all possible combinations, including optional elements
-    for r in range(len(vprop_lists), 0, -1):
-        for combo in itertools.combinations(vprop_lists, r):
-            for vprops in itertools.product(*combo):
-                yield VariantDescription(properties=list(vprops))
+    def yield_all_values(
+        remaining_properties: list[tuple[str, str, list[str]]],
+    ) -> Generator[list[VariantProperty]]:
+        namespace, feature, values = remaining_properties[0]
+        for value in values:
+            for start in range(1, len(remaining_properties)):
+                for other_values in yield_all_values(remaining_properties[start:]):
+                    yield [VariantProperty(namespace, feature, value), *other_values]
+            yield [VariantProperty(namespace, feature, value)]
+
+    for start in range(len(all_properties)):
+        for properties in yield_all_values(all_properties[start:]):
+            yield VariantDescription(properties)
 
 
 def test_get_combinations(configs):
@@ -85,30 +85,30 @@ def test_get_combinations(configs):
         VariantDescription([cuda122, aesni, x8664v3]),
         VariantDescription([cuda122, aesni, x8664v2]),
         VariantDescription([cuda122, aesni, x8664v1]),
-        VariantDescription([cuda121, aesni, x8664v3]),
-        VariantDescription([cuda121, aesni, x8664v2]),
-        VariantDescription([cuda121, aesni, x8664v1]),
-        VariantDescription([cuda120, aesni, x8664v3]),
-        VariantDescription([cuda120, aesni, x8664v2]),
-        VariantDescription([cuda120, aesni, x8664v1]),
         VariantDescription([cuda122, aesni]),
-        VariantDescription([cuda121, aesni]),
-        VariantDescription([cuda120, aesni]),
         VariantDescription([cuda122, x8664v3]),
         VariantDescription([cuda122, x8664v2]),
         VariantDescription([cuda122, x8664v1]),
+        VariantDescription([cuda122]),
+        VariantDescription([cuda121, aesni, x8664v3]),
+        VariantDescription([cuda121, aesni, x8664v2]),
+        VariantDescription([cuda121, aesni, x8664v1]),
+        VariantDescription([cuda121, aesni]),
         VariantDescription([cuda121, x8664v3]),
         VariantDescription([cuda121, x8664v2]),
         VariantDescription([cuda121, x8664v1]),
+        VariantDescription([cuda121]),
+        VariantDescription([cuda120, aesni, x8664v3]),
+        VariantDescription([cuda120, aesni, x8664v2]),
+        VariantDescription([cuda120, aesni, x8664v1]),
+        VariantDescription([cuda120, aesni]),
         VariantDescription([cuda120, x8664v3]),
         VariantDescription([cuda120, x8664v2]),
         VariantDescription([cuda120, x8664v1]),
+        VariantDescription([cuda120]),
         VariantDescription([aesni, x8664v3]),
         VariantDescription([aesni, x8664v2]),
         VariantDescription([aesni, x8664v1]),
-        VariantDescription([cuda122]),
-        VariantDescription([cuda121]),
-        VariantDescription([cuda120]),
         VariantDescription([aesni]),
         VariantDescription([x8664v3]),
         VariantDescription([x8664v2]),
