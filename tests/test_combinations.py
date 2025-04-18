@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import json
 import random
 import string
@@ -15,14 +16,13 @@ from hypothesis import settings
 from hypothesis import strategies as st
 
 from variantlib.combination import filtered_sorted_variants
-from variantlib.combination import get_combinations
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from variantlib.models.variant import VariantDescription
 
 
 @pytest.fixture(scope="session")
@@ -45,6 +45,36 @@ def configs():
     )
 
     return [config_custom_hw, config_networking]
+
+
+def get_combinations(
+    provider_cfgs: list[ProviderConfig],
+) -> Generator[VariantDescription]:
+    """Generate all possible combinations of `VariantProperty` given a list of
+    `ProviderConfig`. This function respects ordering and priority provided."""
+
+    assert isinstance(provider_cfgs, (list, tuple))
+    assert len(provider_cfgs) > 0
+    assert all(isinstance(config, ProviderConfig) for config in provider_cfgs)
+
+    vprop_lists = [
+        [
+            VariantProperty(
+                namespace=provider_cfg.namespace,
+                feature=vfeat_config.name,
+                value=vprop_value,
+            )
+            for vprop_value in vfeat_config.values
+        ]
+        for provider_cfg in provider_cfgs
+        for vfeat_config in provider_cfg.configs
+    ]
+
+    # Generate all possible combinations, including optional elements
+    for r in range(len(vprop_lists), 0, -1):
+        for combo in itertools.combinations(vprop_lists, r):
+            for vprops in itertools.product(*combo):
+                yield VariantDescription(properties=list(vprops))
 
 
 def test_get_combinations(configs):
