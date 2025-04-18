@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -58,7 +57,7 @@ def test_get_default_config_with_no_file(mock_get_config_files):
 
 
 @patch("variantlib.configuration.get_configuration_files")
-def test_get_config_from_file(mock_get_config_files):
+def test_get_config_from_file(mock_get_config_files, tmp_path: Path):
     data = {
         "property_priority": [
             "fictional_hw::architecture::mother",
@@ -76,38 +75,31 @@ def test_get_config_from_file(mock_get_config_files):
             "non_existent_provider",
         ],
     }
-    # NamedTemporaryFile cannot be easily reopened on Windows,
-    # so use TemporaryDirectory instead
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir) / "config.toml"
-        with temp_path.open("wb") as temp_file:
-            tomli_w.dump(data, temp_file)
+    config_path = Path(tmp_path) / "config.toml"
+    with config_path.open("wb") as config_file:
+        tomli_w.dump(data, config_file)
 
-        def _get_config_files() -> dict[ConfigEnvironments, Path]:
-            return {
-                ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
-                ConfigEnvironments.VIRTUALENV: Path("/nonexistent/config.toml"),
-                ConfigEnvironments.USER: Path("/nonexistent/config.toml"),
-                ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
-            }
+    def _get_config_files() -> dict[ConfigEnvironments, Path]:
+        return {
+            ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
+            ConfigEnvironments.VIRTUALENV: Path("/nonexistent/config.toml"),
+            ConfigEnvironments.USER: Path("/nonexistent/config.toml"),
+            ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
+        }
 
-        features_priority = [
-            VariantFeature.from_str(f) for f in data["features_priority"]
-        ]
+    features_priority = [VariantFeature.from_str(f) for f in data["features_priority"]]
 
-        property_priority = [
-            VariantProperty.from_str(f) for f in data["property_priority"]
-        ]
+    property_priority = [VariantProperty.from_str(f) for f in data["property_priority"]]
 
-        for env in ConfigEnvironments:
-            config_files = _get_config_files()
-            config_files[env] = Path(temp_path)
-            mock_get_config_files.return_value = config_files
+    for env in ConfigEnvironments:
+        config_files = _get_config_files()
+        config_files[env] = config_path
+        mock_get_config_files.return_value = config_files
 
-            config = VariantConfiguration.get_config()
-            assert config.features_priority == features_priority
-            assert config.property_priority == property_priority
-            assert config.namespaces_priority == data["namespaces_priority"]
+        config = VariantConfiguration.get_config()
+        assert config.features_priority == features_priority
+        assert config.property_priority == property_priority
+        assert config.namespaces_priority == data["namespaces_priority"]
 
 
 def test_class_properties_with_default():
