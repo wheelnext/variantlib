@@ -5,6 +5,7 @@ import pytest
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.variant import VariantProperty
 
 
 def test_vfeat_config_creation_valid():
@@ -196,3 +197,24 @@ def test_failing_regex_value():
     for c in "@#$%&*^()[]?!-{}[]\\/ ":
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantFeatureConfig(name="name", values=[f"val{c}ue"])
+
+
+def test_to_list_of_properties():
+    provider_cfg = ProviderConfig(
+        namespace="ns",
+        configs=[
+            VariantFeatureConfig("a", ["a1", "a2", "a3"]),
+            VariantFeatureConfig("c", ["c3", "c2", "c1"]),
+            VariantFeatureConfig("b", ["b1"]),
+        ],
+    )
+
+    assert list(provider_cfg.to_list_of_properties()) == [
+        VariantProperty("ns", "a", "a1"),
+        VariantProperty("ns", "a", "a2"),
+        VariantProperty("ns", "a", "a3"),
+        VariantProperty("ns", "c", "c3"),
+        VariantProperty("ns", "c", "c2"),
+        VariantProperty("ns", "c", "c1"),
+        VariantProperty("ns", "b", "b1"),
+    ]
