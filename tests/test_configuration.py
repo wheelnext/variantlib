@@ -45,7 +45,7 @@ def test_get_configuration_files():
     )
 
 
-@pytest.mark.skipif(sys.platform in ("darwin", "win32"))
+@pytest.mark.skipif(sys.platform in ("darwin", "win32"), reason="unix-specific")
 def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
@@ -61,7 +61,7 @@ def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyP
     }
 
 
-@pytest.mark.skipif(sys.platform in ("darwin", "win32"))
+@pytest.mark.skipif(sys.platform in ("darwin", "win32"), reason="unix-specific")
 def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
@@ -77,6 +77,42 @@ def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.Monkey
             "/home/mocked-user/.config/variantlib/variants.toml"
         ),
         ConfigEnvironments.GLOBAL: Path("/etc/xdg/variantlib/variants.toml"),
+    }
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific")
+def test_get_configuration_files_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "prefix", "/virtual-env")
+    monkeypatch.setenv("HOME", "/home/mocked-user")
+
+    get_configuration_files.cache_clear()
+    assert get_configuration_files() == {
+        ConfigEnvironments.LOCAL: tmp_path / "variants.toml",
+        ConfigEnvironments.VIRTUALENV: Path("/virtual-env/variants.toml"),
+        ConfigEnvironments.USER: Path(
+            "/home/mocked-user/Library/Application Support/variantlib/variants.toml"
+        ),
+        ConfigEnvironments.GLOBAL: Path(
+            "/Library/Application Support/variantlib/variants.toml"
+        ),
+    }
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific")
+def test_get_configuration_files_win32(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "prefix", "c:\\virtual-env")
+    monkeypatch.setenv("USERPROFILE", "c:\\users\\mocked-user")
+
+    get_configuration_files.cache_clear()
+    assert get_configuration_files() == {
+        ConfigEnvironments.LOCAL: tmp_path / "variants.toml",
+        ConfigEnvironments.VIRTUALENV: Path("c:/virtual-env/variants.toml"),
+        ConfigEnvironments.USER: Path(
+            "c:/users/mocked-user/AppData/Roaming/variantlib/variants.toml"
+        ),
+        ConfigEnvironments.GLOBAL: Path("c:/ProgramData/variantlib/variants.toml"),
     }
 
 
