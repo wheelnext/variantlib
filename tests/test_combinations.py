@@ -25,15 +25,15 @@ if TYPE_CHECKING:
 def configs():
     return [
         ProviderConfig(
-            namespace="cuda",
+            namespace="gpu",
             configs=[
-                VariantFeatureConfig(name="driver", values=["12.2", "12.1", "12.0"]),
+                VariantFeatureConfig(name="driver", values=["66.2", "66.1", "66.0"]),
             ],
         ),
         ProviderConfig(
-            namespace="x86_64",
+            namespace="cpu",
             configs=[
-                VariantFeatureConfig(name="aes_ni", values=["on"]),
+                VariantFeatureConfig(name="crypt", values=["on"]),
                 VariantFeatureConfig(name="level", values=["v3", "v2", "v1"]),
             ],
         ),
@@ -73,46 +73,46 @@ def get_combinations(
 
 def test_get_combinations(configs):
     """Test `get_combinations` yields the expected result in the right order."""
-    cuda122 = VariantProperty("cuda", "driver", "12.2")
-    cuda121 = VariantProperty("cuda", "driver", "12.1")
-    cuda120 = VariantProperty("cuda", "driver", "12.0")
-    aesni = VariantProperty("x86_64", "aes_ni", "on")
-    x8664v3 = VariantProperty("x86_64", "level", "v3")
-    x8664v2 = VariantProperty("x86_64", "level", "v2")
-    x8664v1 = VariantProperty("x86_64", "level", "v1")
+    gpu662 = VariantProperty("gpu", "driver", "66.2")
+    gpu661 = VariantProperty("gpu", "driver", "66.1")
+    gpu660 = VariantProperty("gpu", "driver", "66.0")
+    crypt = VariantProperty("cpu", "crypt", "on")
+    cpuv3 = VariantProperty("cpu", "level", "v3")
+    cpuv2 = VariantProperty("cpu", "level", "v2")
+    cpuv1 = VariantProperty("cpu", "level", "v1")
 
     assert list(get_combinations(configs)) == [
-        VariantDescription([cuda122, aesni, x8664v3]),
-        VariantDescription([cuda122, aesni, x8664v2]),
-        VariantDescription([cuda122, aesni, x8664v1]),
-        VariantDescription([cuda122, aesni]),
-        VariantDescription([cuda122, x8664v3]),
-        VariantDescription([cuda122, x8664v2]),
-        VariantDescription([cuda122, x8664v1]),
-        VariantDescription([cuda122]),
-        VariantDescription([cuda121, aesni, x8664v3]),
-        VariantDescription([cuda121, aesni, x8664v2]),
-        VariantDescription([cuda121, aesni, x8664v1]),
-        VariantDescription([cuda121, aesni]),
-        VariantDescription([cuda121, x8664v3]),
-        VariantDescription([cuda121, x8664v2]),
-        VariantDescription([cuda121, x8664v1]),
-        VariantDescription([cuda121]),
-        VariantDescription([cuda120, aesni, x8664v3]),
-        VariantDescription([cuda120, aesni, x8664v2]),
-        VariantDescription([cuda120, aesni, x8664v1]),
-        VariantDescription([cuda120, aesni]),
-        VariantDescription([cuda120, x8664v3]),
-        VariantDescription([cuda120, x8664v2]),
-        VariantDescription([cuda120, x8664v1]),
-        VariantDescription([cuda120]),
-        VariantDescription([aesni, x8664v3]),
-        VariantDescription([aesni, x8664v2]),
-        VariantDescription([aesni, x8664v1]),
-        VariantDescription([aesni]),
-        VariantDescription([x8664v3]),
-        VariantDescription([x8664v2]),
-        VariantDescription([x8664v1]),
+        VariantDescription([gpu662, crypt, cpuv3]),
+        VariantDescription([gpu662, crypt, cpuv2]),
+        VariantDescription([gpu662, crypt, cpuv1]),
+        VariantDescription([gpu662, crypt]),
+        VariantDescription([gpu662, cpuv3]),
+        VariantDescription([gpu662, cpuv2]),
+        VariantDescription([gpu662, cpuv1]),
+        VariantDescription([gpu662]),
+        VariantDescription([gpu661, crypt, cpuv3]),
+        VariantDescription([gpu661, crypt, cpuv2]),
+        VariantDescription([gpu661, crypt, cpuv1]),
+        VariantDescription([gpu661, crypt]),
+        VariantDescription([gpu661, cpuv3]),
+        VariantDescription([gpu661, cpuv2]),
+        VariantDescription([gpu661, cpuv1]),
+        VariantDescription([gpu661]),
+        VariantDescription([gpu660, crypt, cpuv3]),
+        VariantDescription([gpu660, crypt, cpuv2]),
+        VariantDescription([gpu660, crypt, cpuv1]),
+        VariantDescription([gpu660, crypt]),
+        VariantDescription([gpu660, cpuv3]),
+        VariantDescription([gpu660, cpuv2]),
+        VariantDescription([gpu660, cpuv1]),
+        VariantDescription([gpu660]),
+        VariantDescription([crypt, cpuv3]),
+        VariantDescription([crypt, cpuv2]),
+        VariantDescription([crypt, cpuv1]),
+        VariantDescription([crypt]),
+        VariantDescription([cpuv3]),
+        VariantDescription([cpuv2]),
+        VariantDescription([cpuv1]),
     ]
 
 
