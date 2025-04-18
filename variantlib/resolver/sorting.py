@@ -4,10 +4,10 @@ import logging
 import sys
 
 from variantlib.errors import ValidationError
-from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.validators import validate_type
 
 logger = logging.getLogger(__name__)
 

@@ -11,6 +11,11 @@ from typing import Union
 from typing import get_args
 from typing import get_origin
 
+from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -49,7 +54,7 @@ def validate_list_all_unique(values: list[Any], keys: list[str] | None = None) -
                 _value = _value[0]
 
         if _value in seen:
-            raise ValidationError(f"Duplicate value found: '{_value}' in list.")
+            raise ValidationError(f"Duplicate value found: `{_value}` in list.")
 
         seen.add(_value)
 
@@ -153,3 +158,96 @@ def validate_type(value: Any, expected_type: type) -> None:
     wrong_type = _validate_type(value, expected_type)
     if wrong_type is not None:
         raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
+
+
+def validate_variant_json(data: dict) -> None:
+    """
+    Validate the variant JSON data structure.
+    """
+
+    if not isinstance(data, dict):
+        raise ValidationError(f"Expected a dictionary for data, got {type(data)}")
+
+    if VARIANTS_JSON_VARIANT_DATA_KEY not in data:
+        raise ValidationError(f"Key `variants` is missing in data: {list(data.keys())}")
+
+    variant_data = data[VARIANTS_JSON_VARIANT_DATA_KEY]
+
+    if not isinstance(variant_data, dict):
+        raise ValidationError(
+            f"Expected a dictionary for `data['variants']`, got `{type(variant_data)}`."
+        )
+
+    hash_re = re.compile(rf"^[0-9a-f]{{{VARIANT_HASH_LEN}}}$")
+    namespace_re = re.compile(VALIDATION_NAMESPACE_REGEX)
+    feature_re = re.compile(VALIDATION_FEATURE_REGEX)
+    value_re = re.compile(VALIDATION_VALUE_REGEX)
+
+    for variant_hash, vdata in variant_data.items():
+        # Check if variant_hash is a string and matches the regex
+        if not isinstance(variant_hash, str):
+            raise ValidationError(
+                f"Invalid `variant_hash` type: `{variant_hash}` in data (expected str)"
+            )
+        if re.match(hash_re, variant_hash) is None:
+            raise ValidationError(f"Invalid variant hash `{variant_hash}` in data")
+
+        # Check the Variant Data
+        if not isinstance(vdata, dict):
+            raise ValidationError(
+                f"Invalid variant data for hash `{variant_hash}`: {type(vdata)}"
+            )
+
+        if len(vdata) == 0:
+            raise ValidationError(
+                f"Invalid no variant properties declared for `{variant_hash}`"
+            )
+
+        for namespace, vprop_data in vdata.items():
+            # Check if namespace is a string and matches the regex
+            if not isinstance(namespace, str):
+                raise ValidationError(
+                    f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
+                )
+            if re.match(namespace_re, namespace) is None:
+                raise ValidationError(
+                    f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
+                )
+
+            # Check the VariantProperties Data
+            if not isinstance(vprop_data, dict):
+                raise ValidationError(
+                    f"Invalid variant property data for hash `{variant_hash}`: "
+                    f"{type(vprop_data)}"
+                )
+
+            if len(vprop_data) == 0:
+                raise ValidationError(
+                    f"Invalid no variant properties declared for `{variant_hash}` in "
+                    f"namespace: `{namespace}`"
+                )
+
+            for feature_name, feature_value in vprop_data.items():
+                # Check if feature_name is a string and matches the regex
+                if not isinstance(feature_name, str):
+                    raise ValidationError(
+                        f"Invalid variant feature name `{feature_name}` for hash "
+                        f"`{variant_hash}`"
+                    )
+                if re.match(feature_re, feature_name) is None:
+                    raise ValidationError(
+                        f"Invalid variant feature name`{feature_name}` for hash "
+                        f"`{variant_hash}`"
+                    )
+
+                # Check if feature_value is a string and matches the regex
+                if not isinstance(feature_value, str):
+                    raise ValidationError(
+                        f"Invalid variant feature value `{feature_value}` for hash "
+                        f"`{variant_hash}`"
+                    )
+                if re.match(value_re, feature_value) is None:
+                    raise ValidationError(
+                        f"Invalid variant value `{feature_value}` for hash "
+                        f"`{variant_hash}`"
+                    )

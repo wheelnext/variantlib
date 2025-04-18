@@ -4,10 +4,10 @@ import logging
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.validators import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
