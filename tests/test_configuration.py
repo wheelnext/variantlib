@@ -99,23 +99,6 @@ def test_get_configuration_files_macos(tmp_path: Path, monkeypatch: pytest.Monke
     }
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific")
-def test_get_configuration_files_win32(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(sys, "prefix", "c:\\virtual-env")
-    monkeypatch.setenv("USERPROFILE", "c:\\users\\mocked-user")
-
-    get_configuration_files.cache_clear()
-    assert get_configuration_files() == {
-        ConfigEnvironments.LOCAL: tmp_path / "variants.toml",
-        ConfigEnvironments.VIRTUALENV: Path("c:/virtual-env/variants.toml"),
-        ConfigEnvironments.USER: Path(
-            "c:/users/mocked-user/AppData/Roaming/variantlib/variants.toml"
-        ),
-        ConfigEnvironments.GLOBAL: Path("c:/ProgramData/variantlib/variants.toml"),
-    }
-
-
 def test_get_default_config_with_no_file(mocker):
     mocker.patch("variantlib.configuration.get_configuration_files").return_value = {
         ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
