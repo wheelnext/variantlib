@@ -1,0 +1,52 @@
+# ======================= EXAMPLE `variants.toml` FILE ====================== #
+
+# ============= Top-Most Priority ============= #
+
+# 1. Define the priority of variant properties - 1st order priority.
+#    => Expected format: "namespace::feature::value"
+#
+# OPTIONAL: In most cases - users will not specify the following. Only used when the user wants
+#           to modify the default VariantProperty priority ordering.
+#
+# Note: This is a lazy-list: Only specify the ones you want to "bump up" to the top of the list
+
+property_priority = [
+    "fictional_hw::architecture::mother",
+    "fictional_tech::risk_exposure:25",
+]
+
+# ============= Second-Most Priority ============= #
+
+# 2. Define the priority of variant features - 2nd order priority under the variant properties.
+#    => Expected format: "namespace::feature"
+#
+# OPTIONAL: In most cases - users will not specify the following. Only used when the user wants
+#           to modify the default VariantFeature priority ordering.
+#
+# Note: This is a lazy-list: Only specify the ones you want to "bump up" to the top of the list
+
+features_priority = [
+    "fictional_hw::architecture",
+    "fictional_tech::risk_exposure",
+    "simd_x86_64::feature3",
+]
+
+# ============= Default Priority Ordering ============= #
+
+# 3. Define the priority of variant namespaces
+#    => Expected format: "namespace"
+#
+# MANDATORY AND IMPORTANT - PLEASE READ !
+#    - As long as there is more than 1 variant plugin installed. This field must be specified.
+#      => no default ordering is assumed.
+#
+#    - If len(plugins) > 1 and an installed plugin is missing in the priority list => raise ConfigurationError
+#
+#    - If namespaces is specified by no plugin uses it => warning issued.
+
+namespaces_priority = [
+    "fictional_hw",
+    "fictional_tech",
+    "simd_x86_64",
+    "non_existent_provider",
+]

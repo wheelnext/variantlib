@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from types import GenericAlias
 from typing import Any
 from typing import Callable
+from typing import Protocol
 from typing import Union
 from typing import get_args
 from typing import get_origin
@@ -107,8 +108,10 @@ def validate_and(validators: list[Callable], value: Any) -> None:
 def _validate_type(value: Any, expected_type: type) -> type | None:
     if isinstance(expected_type, GenericAlias):
         list_type = get_origin(expected_type)
+
         if not isinstance(value, list_type):
             return type(value)
+
         if list_type is dict:
             assert isinstance(value, dict)
             key_type, value_type = get_args(expected_type)
@@ -122,6 +125,7 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
                 key_ored = Union.__getitem__((key_type, *incorrect_key_types))
                 value_ored = Union.__getitem__((value_type, *incorrect_value_types))
                 return list_type[key_ored, value_ored]  # type: ignore[index]
+
         else:
             (item_type,) = get_args(expected_type)
             assert isinstance(value, Iterable)
@@ -130,8 +134,16 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
             if incorrect_types:
                 ored = Union.__getitem__((item_type, *incorrect_types))
                 return list_type[ored]  # type: ignore[index]
-    elif not isinstance(value, expected_type):
+
+    # Protocols and Iterable must enable subclassing to pass
+    elif issubclass(expected_type, (Protocol, Iterable)):  # type: ignore[arg-type]
+        if not isinstance(value, expected_type):
+            return type(value)
+
+    # Do not use isinstance here - we want to reject subclasses
+    elif type(value) is not expected_type:
         return type(value)
+
     return None
 
 
