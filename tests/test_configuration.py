@@ -67,8 +67,8 @@ def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
     monkeypatch.setenv("HOME", "/home/mocked-user")
-    monkeypatch.delenv("XDG_CONFIG_DIRS")
-    monkeypatch.delenv("XDG_CONFIG_HOME")
+    monkeypatch.delenv("XDG_CONFIG_DIRS", raising=False)
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
 
     get_configuration_files.cache_clear()
     assert get_configuration_files() == {
