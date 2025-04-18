@@ -11,7 +11,9 @@ from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
 
+from tests.test_plugins import mocked_plugin_loader  # noqa: F401
 from variantlib.combination import filtered_sorted_variants
+from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -21,23 +23,9 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 
-@pytest.fixture(scope="session")
-def configs():
-    return [
-        ProviderConfig(
-            namespace="gpu",
-            configs=[
-                VariantFeatureConfig(name="driver", values=["66.2", "66.1", "66.0"]),
-            ],
-        ),
-        ProviderConfig(
-            namespace="cpu",
-            configs=[
-                VariantFeatureConfig(name="crypt", values=["on"]),
-                VariantFeatureConfig(name="level", values=["v3", "v2", "v1"]),
-            ],
-        ),
-    ]
+@pytest.fixture
+def configs(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
+    return list(PluginLoader.get_supported_configs().values())
 
 
 def get_combinations(
@@ -73,46 +61,37 @@ def get_combinations(
 
 def test_get_combinations(configs):
     """Test `get_combinations` yields the expected result in the right order."""
-    gpu662 = VariantProperty("gpu", "driver", "66.2")
-    gpu661 = VariantProperty("gpu", "driver", "66.1")
-    gpu660 = VariantProperty("gpu", "driver", "66.0")
-    crypt = VariantProperty("cpu", "crypt", "on")
-    cpuv3 = VariantProperty("cpu", "level", "v3")
-    cpuv2 = VariantProperty("cpu", "level", "v2")
-    cpuv1 = VariantProperty("cpu", "level", "v1")
+    val1a = VariantProperty("test_namespace", "name1", "val1a")
+    val1b = VariantProperty("test_namespace", "name1", "val1b")
+    val2a = VariantProperty("test_namespace", "name2", "val2a")
+    val2b = VariantProperty("test_namespace", "name2", "val2b")
+    val2c = VariantProperty("test_namespace", "name2", "val2c")
+    val3a = VariantProperty("second_namespace", "name3", "val3a")
 
     assert list(get_combinations(configs)) == [
-        VariantDescription([gpu662, crypt, cpuv3]),
-        VariantDescription([gpu662, crypt, cpuv2]),
-        VariantDescription([gpu662, crypt, cpuv1]),
-        VariantDescription([gpu662, crypt]),
-        VariantDescription([gpu662, cpuv3]),
-        VariantDescription([gpu662, cpuv2]),
-        VariantDescription([gpu662, cpuv1]),
-        VariantDescription([gpu662]),
-        VariantDescription([gpu661, crypt, cpuv3]),
-        VariantDescription([gpu661, crypt, cpuv2]),
-        VariantDescription([gpu661, crypt, cpuv1]),
-        VariantDescription([gpu661, crypt]),
-        VariantDescription([gpu661, cpuv3]),
-        VariantDescription([gpu661, cpuv2]),
-        VariantDescription([gpu661, cpuv1]),
-        VariantDescription([gpu661]),
-        VariantDescription([gpu660, crypt, cpuv3]),
-        VariantDescription([gpu660, crypt, cpuv2]),
-        VariantDescription([gpu660, crypt, cpuv1]),
-        VariantDescription([gpu660, crypt]),
-        VariantDescription([gpu660, cpuv3]),
-        VariantDescription([gpu660, cpuv2]),
-        VariantDescription([gpu660, cpuv1]),
-        VariantDescription([gpu660]),
-        VariantDescription([crypt, cpuv3]),
-        VariantDescription([crypt, cpuv2]),
-        VariantDescription([crypt, cpuv1]),
-        VariantDescription([crypt]),
-        VariantDescription([cpuv3]),
-        VariantDescription([cpuv2]),
-        VariantDescription([cpuv1]),
+        VariantDescription([val1a, val2a, val3a]),
+        VariantDescription([val1a, val2a]),
+        VariantDescription([val1a, val2b, val3a]),
+        VariantDescription([val1a, val2b]),
+        VariantDescription([val1a, val2c, val3a]),
+        VariantDescription([val1a, val2c]),
+        VariantDescription([val1a, val3a]),
+        VariantDescription([val1a]),
+        VariantDescription([val1b, val2a, val3a]),
+        VariantDescription([val1b, val2a]),
+        VariantDescription([val1b, val2b, val3a]),
+        VariantDescription([val1b, val2b]),
+        VariantDescription([val1b, val2c, val3a]),
+        VariantDescription([val1b, val2c]),
+        VariantDescription([val1b, val3a]),
+        VariantDescription([val1b]),
+        VariantDescription([val2a, val3a]),
+        VariantDescription([val2a]),
+        VariantDescription([val2b, val3a]),
+        VariantDescription([val2b]),
+        VariantDescription([val2c, val3a]),
+        VariantDescription([val2c]),
+        VariantDescription([val3a]),
     ]
 
 
