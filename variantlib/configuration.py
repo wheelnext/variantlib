@@ -46,15 +46,11 @@ def get_configuration_files() -> dict[ConfigEnvironments, Path]:
         ConfigEnvironments.LOCAL: Path.cwd() / CONFIG_FILENAME,
         ConfigEnvironments.VIRTUALENV: Path(sys.prefix) / CONFIG_FILENAME,
         ConfigEnvironments.USER: (
-            Path(
-                platformdirs.user_config_dir(
-                    "variantlib", appauthor=False, roaming=True
-                )
-            )
+            platformdirs.user_config_path("variantlib", appauthor=False, roaming=True)
             / CONFIG_FILENAME
         ),
         ConfigEnvironments.GLOBAL: (
-            Path(platformdirs.site_config_dir("variantlib", appauthor=False))
+            platformdirs.site_config_path("variantlib", appauthor=False)
             / CONFIG_FILENAME
         ),
     }
