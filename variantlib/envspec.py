@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import re
 from itertools import chain
+from typing import TYPE_CHECKING
 
 from variantlib.errors import InvalidVariantEnvSpecError
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
+
+if TYPE_CHECKING:
+    from variantlib.models.variant import VariantProperty
+
 
 TRUE_STR = "python_version != '0'"
 FALSE_STR = "python_version == '0'"
@@ -45,7 +48,7 @@ def evaluate_variant_requirements(
         chain.from_iterable(
             (
                 x.to_str(),
-                VariantFeature(x.namespace, x.feature).to_str(),
+                x.feature_object.to_str(),
                 x.namespace,
             )
             for x in variant_properties
