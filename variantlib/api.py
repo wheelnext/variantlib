@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import itertools
 import logging
 from typing import TYPE_CHECKING
 
-from variantlib.combination import filtered_sorted_variants
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
@@ -16,6 +16,7 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.resolver.lib import sort_and_filter_supported_variants
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -35,13 +36,37 @@ __all__ = [
 ]
 
 
+def _unpack_variants_json(
+    variants_json: dict,
+) -> Generator[VariantDescription]:
+    def variant_to_vprops(namespaces: dict) -> Generator[VariantProperty]:
+        for namespace, keys in namespaces.items():
+            for key, value in keys.items():
+                yield VariantProperty(namespace=namespace, feature=key, value=value)
+
+    for vhash, namespaces in variants_json["variants"].items():
+        vdesc = VariantDescription(list(variant_to_vprops(namespaces)))
+        assert vhash == vdesc.hexdigest
+        yield vdesc
+
+
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
 ) -> Generator[str]:
-    provider_cfgs = list(PluginLoader.get_supported_configs().values())
+    provider_configs = list(PluginLoader.get_supported_configs().values())
+    vdescs = list(_unpack_variants_json(variants_json))
+    supported_vprops = list(
+        itertools.chain.from_iterable(
+            provider_cfg.to_list_of_properties() for provider_cfg in provider_configs
+        )
+    )
 
-    for vdesc in filtered_sorted_variants(variants_json["variants"], provider_cfgs):
+    for vdesc in sort_and_filter_supported_variants(
+        vdescs,
+        supported_vprops,
+        namespace_priorities=[x.namespace for x in provider_configs],
+    ):
         yield vdesc.hexdigest
 
 
