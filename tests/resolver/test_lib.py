@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import random
 
 import pytest
@@ -169,44 +170,58 @@ def test_filter_variants_only_one_prop_allowed(
 
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
-    assert list(
-        filter_variants(
-            vdescs=inputs_vdescs,
-            allowed_namespaces=["TyrellCorp"],
-            allowed_features=[vprop4.feature_object],
-            allowed_properties=[vprop4],
+    assert (
+        list(
+            filter_variants(
+                vdescs=inputs_vdescs,
+                allowed_properties=[],
+            )
         )
-    ) == [VariantDescription([vprop4])]
-
-    assert list(
-        filter_variants(
-            vdescs=inputs_vdescs,
-            allowed_namespaces=None,
-            allowed_features=[vprop4.feature_object],
-            allowed_properties=[vprop4],
-        )
-    ) == [VariantDescription([vprop4])]
+        == []
+    )
 
     assert list(
         filter_variants(
             vdescs=inputs_vdescs,
-            allowed_namespaces=["TyrellCorp"],
-            allowed_features=None,
             allowed_properties=[vprop4],
         )
     ) == [VariantDescription([vprop4])]
 
-    assert list(
-        filter_variants(
-            vdescs=inputs_vdescs,
-            allowed_namespaces=None,
-            allowed_features=None,
-            allowed_properties=[vprop4],
+    assert (
+        list(
+            filter_variants(
+                vdescs=inputs_vdescs,
+                allowed_properties=[vprop4],
+                forbidden_namespaces=[vprop4.namespace],
+            )
         )
-    ) == [VariantDescription([vprop4])]
+        == []
+    )
+
+    assert (
+        list(
+            filter_variants(
+                vdescs=inputs_vdescs,
+                allowed_properties=[vprop4],
+                forbidden_features=[vprop4.feature_object],
+            )
+        )
+        == []
+    )
+
+    assert (
+        list(
+            filter_variants(
+                vdescs=inputs_vdescs,
+                allowed_properties=[vprop4],
+                forbidden_properties=[vprop4],
+            )
+        )
+        == []
+    )
 
 
-def test_filter_variants_disallowed_feature_allowed_prop(
+def test_filter_variants_forbidden_feature_allowed_prop(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
     assert len(vprops) == 6
@@ -214,45 +229,51 @@ def test_filter_variants_disallowed_feature_allowed_prop(
 
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
-    assert (
-        list(
-            filter_variants(
-                vdescs=inputs_vdescs,
-                allowed_namespaces=None,
-                allowed_features=[vprop2.feature_object],
-                allowed_properties=[vprop4],
-            )
+    assert list(
+        filter_variants(
+            vdescs=inputs_vdescs,
+            allowed_properties=[vprop4],
+            forbidden_features=[vprop2.feature_object],
         )
-        == []
-    )
+    ) == [VariantDescription([vprop4])]
 
 
-def test_filter_variants_disallowed_namespace_allowed_prop(
+def test_filter_variants_forbidden_namespace_allowed_prop(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
     assert len(vprops) == 6
-    _, _, _, vprop4, _, _ = vprops
+    vprop1, _, _, vprop4, _, _ = vprops
 
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
-    assert (
-        list(
-            filter_variants(
-                vdescs=inputs_vdescs,
-                allowed_namespaces=["NotExisting"],
-                allowed_features=None,
-                allowed_properties=[vprop4],
-            )
+    assert list(
+        filter_variants(
+            vdescs=inputs_vdescs,
+            allowed_properties=[vprop4],
+            forbidden_namespaces=["NotExisting"],
         )
-        == []
-    )
+    ) == [VariantDescription([vprop4])]
+
+    assert list(
+        filter_variants(
+            vdescs=inputs_vdescs,
+            allowed_properties=[vprop4],
+            forbidden_namespaces=[vprop1.namespace],
+        )
+    ) == [VariantDescription([vprop4])]
 
 
-def test_filter_variants_only_remove_duplicates(vdescs: list[VariantDescription]):
+def test_filter_variants_only_remove_duplicates(
+    vdescs: list[VariantDescription], vprops: list[VariantProperty]
+):
+    assert len(vprops) == 6
+
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     ddiff = deep_diff(
-        list(filter_variants(vdescs=inputs_vdescs)), vdescs, ignore_ordering=True
+        list(filter_variants(vdescs=inputs_vdescs, allowed_properties=vprops)),
+        vdescs,
+        ignore_ordering=True,
     )
     assert ddiff == {}, ddiff
 
@@ -294,7 +315,8 @@ def test_filter_variants_remove_duplicates_and_namespaces(
         list(
             filter_variants(
                 vdescs=inputs_vdescs,
-                allowed_namespaces=["TyrellCorp"],
+                allowed_properties=vprops,
+                forbidden_namespaces=["OmniCorp"],
             )
         ),
         expected_vdescs,
@@ -306,7 +328,7 @@ def test_filter_variants_remove_duplicates_and_namespaces(
         list(
             filter_variants_by_namespaces(
                 remove_duplicates(vdescs=inputs_vdescs),
-                allowed_namespaces=["TyrellCorp"],
+                forbidden_namespaces=["OmniCorp"],
             )
         ),
         expected_vdescs,
@@ -319,7 +341,7 @@ def test_filter_variants_remove_duplicates_and_features(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
     assert len(vprops) == 6
-    vprop1, _, _, vprop4, vprop5, _ = vprops
+    vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
 
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
@@ -334,13 +356,18 @@ def test_filter_variants_remove_duplicates_and_features(
         VariantDescription([vprop5]),
     ]
 
-    allowed_features = [vprop1.feature_object, vprop4.feature_object]
+    forbidden_features = [
+        vprop2.feature_object,
+        vprop3.feature_object,
+        vprop6.feature_object,
+    ]
 
     ddiff = deep_diff(
         list(
             filter_variants(
                 vdescs=inputs_vdescs,
-                allowed_features=allowed_features,
+                allowed_properties=vprops,
+                forbidden_features=forbidden_features,
             )
         ),
         expected_vdescs,
@@ -352,7 +379,7 @@ def test_filter_variants_remove_duplicates_and_features(
         list(
             filter_variants_by_features(
                 remove_duplicates(vdescs=inputs_vdescs),
-                allowed_features=allowed_features,
+                forbidden_features=forbidden_features,
             )
         ),
         expected_vdescs,
@@ -365,7 +392,7 @@ def test_filter_variants_remove_duplicates_and_properties(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
     assert len(vprops) == 6
-    vprop1, _, _, vprop4, vprop5, _ = vprops
+    vprop1, vprop2, _, vprop4, vprop5, _ = vprops
 
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
@@ -380,13 +407,14 @@ def test_filter_variants_remove_duplicates_and_properties(
         VariantDescription([vprop5]),
     ]
 
-    allowed_properties = [vprop1, vprop4, vprop5]
+    allowed_properties = [vprop1, vprop2, vprop4, vprop5]
 
     ddiff = deep_diff(
         list(
             filter_variants(
                 vdescs=inputs_vdescs,
                 allowed_properties=allowed_properties,
+                forbidden_properties=[vprop2],
             )
         ),
         expected_vdescs,
@@ -399,6 +427,7 @@ def test_filter_variants_remove_duplicates_and_properties(
             filter_variants_by_property(
                 remove_duplicates(vdescs=inputs_vdescs),
                 allowed_properties=allowed_properties,
+                forbidden_properties=[vprop2],
             )
         ),
         expected_vdescs,
@@ -494,36 +523,42 @@ def test_sort_and_filter_supported_variants(
     assert ddiff == {}, ddiff
 
 
-# =================== `Validation Testing` ================== #
+# # =================== `Validation Testing` ================== #
 
 
+@pytest.mark.parametrize(
+    ("vdescs", "vprops"),
+    [
+        (
+            [VariantDescription([VariantProperty("a", "b", "c")])],
+            "not a list",
+        ),
+        (
+            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantFeature("not_a", "VariantProperty")],
+        ),
+        ("not a list", VariantProperty("a", "b", "c")),
+        (["not a `VariantDescription`"], VariantProperty("a", "b", "c")),
+    ],
+)
 def test_sort_and_filter_supported_variants_validation_errors(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
-    with pytest.raises(ValidationError):
-        sort_and_filter_supported_variants(
-            vdescs="not a list",  # type: ignore [arg-type]
-            supported_vprops=vprops,
-        )
-
-    with pytest.raises(ValidationError):
-        sort_and_filter_supported_variants(
-            vdescs=["not a VariantDescription"],  # type: ignore [list-item]
-            supported_vprops=vprops,
-        )
+    feature_priorities = []
+    with contextlib.suppress(TypeError, AttributeError):
+        feature_priorities = list({vprop.feature_object for vprop in vprops})
 
     with pytest.raises(ValidationError):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
-            supported_vprops="not a list",  # type: ignore [arg-type]
+            supported_vprops=vprops,
+            feature_priorities=feature_priorities,
         )
 
-    with pytest.raises(ValidationError):
-        sort_and_filter_supported_variants(
-            vdescs=vdescs,
-            supported_vprops=["not a VariantProperty"],  # type: ignore [list-item]
-        )
 
+def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
+    vdescs: list[VariantDescription], vprops: list[VariantProperty]
+):
     # This one specifies no ordering/priority => can't sort
     with pytest.raises(ValidationError, match="has no priority"):
         sort_and_filter_supported_variants(

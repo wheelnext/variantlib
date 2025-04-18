@@ -44,21 +44,15 @@ def remove_duplicates(
 
 def filter_variants_by_namespaces(
     vdescs: Iterable[VariantDescription],
-    allowed_namespaces: list[str],
-    forbidden_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[str],
 ) -> Generator[VariantDescription]:
     """
     Filters out `VariantDescription` that contain any unsupported variant namespace.
 
     ** Implementation Note:**
-    - Installer will provide the list of allowed namespaces from variant provider
-      plugins.
-    - User can [optionally] provide a list of forbidden namespaces to be excluded.
-      Forbidden namespaces take precedence of "allowed namespaces" and will be excluded.
+    - Installer will provide a list of forbidden namespaces by the user.
 
     :param vdescs: list of `VariantDescription` to filter.
-    :param allowed_namespaces: List of allowed variant namespaces as `str`.
-                               Any variant namespace not explicitly allowed is forbidden
     :param forbidden_namespaces: List of forbidden variant namespaces as `str`.
     :return: Filtered list of `VariantDescription`.
     """
@@ -68,11 +62,10 @@ def filter_variants_by_namespaces(
 
     # Input validation
     validate_type(vdescs, Iterable)
-    validate_type(allowed_namespaces, list[str])
     validate_type(forbidden_namespaces, list[str])
 
     # Note: for performance reasons we convert the list to a set to avoid O(n) lookups
-    _allowed_namespaces = set(allowed_namespaces)
+    _forbidden_namespaces = set(forbidden_namespaces)
 
     def _should_include(vdesc: VariantDescription) -> bool:
         """
@@ -80,19 +73,17 @@ def filter_variants_by_namespaces(
         """
         validate_type(vdesc, VariantDescription)
 
-        if any(
-            vprop.namespace not in _allowed_namespaces for vprop in vdesc.properties
-        ):
+        if forbidden_vprops := [
+            vprop
+            for vprop in vdesc.properties
+            if vprop.namespace in _forbidden_namespaces
+        ]:
             logger.info(
-                "Variant `%(vhash)s` has been rejected because one of variant "
-                "namespaces `[%(namespaces)s]` is not allowed. Allowed: "
-                "`[%(allowed_namespaces)s]`.",
+                "Variant `%(vhash)s` has been rejected because one or many of the "
+                "variant namespaces `[%(vprops)s]` have been explicitly rejected.",
                 {
                     "vhash": vdesc.hexdigest,
-                    "namespaces": ", ".join(
-                        [vprop.namespace for vprop in vdesc.properties]
-                    ),
-                    "allowed_namespaces": ", ".join(_allowed_namespaces),
+                    "vprops": ", ".join([vprop.to_str() for vprop in forbidden_vprops]),
                 },
             )
             return False
@@ -104,19 +95,15 @@ def filter_variants_by_namespaces(
 
 def filter_variants_by_features(
     vdescs: Iterable[VariantDescription],
-    allowed_features: list[VariantFeature],
-    forbidden_features: list[VariantFeature] | None = None,
+    forbidden_features: list[VariantFeature],
 ) -> Generator[VariantDescription]:
     """
     Filters out `VariantDescription` that contain any unsupported variant feature.
 
     ** Implementation Note:**
-    - Installer will provide the list of allowed features from variant provider plugins.
-    - User can [optionally] provide a list of forbidden features to be excluded.
-      Forbidden features take precedence of "allowed features" and will be excluded.
+    - Installer will provide a list of forbidden VariantFeature by the user.
 
     :param vdescs: list of `VariantDescription` to filter.
-    :param allowed_features: List of allowed `VariantFeature`.
     :param forbidden_features: List of forbidden `VariantFeature`.
     :return: Filtered list of `VariantDescription`.
     """
@@ -126,11 +113,9 @@ def filter_variants_by_features(
 
     # Input validation
     validate_type(vdescs, Iterable)
-    validate_type(allowed_features, list[VariantFeature])
     validate_type(forbidden_features, list[VariantFeature])
 
     # for performance reasons we convert the list to a set to avoid O(n) lookups
-    allowed_feature_hexs = {vfeat.feature_hash for vfeat in allowed_features}
     forbidden_feature_hexs = {vfeat.feature_hash for vfeat in forbidden_features}
 
     def _should_include(vdesc: VariantDescription) -> bool:
@@ -142,14 +127,11 @@ def filter_variants_by_features(
         if forbidden_vprops := [
             vprop
             for vprop in vdesc.properties
-            if (
-                vprop.feature_hash not in allowed_feature_hexs
-                or vprop.feature_hash in forbidden_feature_hexs
-            )
+            if vprop.feature_hash in forbidden_feature_hexs
         ]:
             logger.info(
                 "Variant `%(vhash)s` has been rejected because one or many of the "
-                "variant features `[%(vprops)s]` is not supported on this platform.",
+                "variant features `[%(vprops)s]` have been explicitly rejected.",
                 {
                     "vhash": vdesc.hexdigest,
                     "vprops": ", ".join([vprop.to_str() for vprop in forbidden_vprops]),
@@ -209,8 +191,9 @@ def filter_variants_by_property(
             )
         ]:
             logger.info(
-                "Variant `%(vhash)s` has been rejected because one of the variant "
-                "features `[%(vprops)s]` is not supported on this platform.",
+                "Variant `%(vhash)s` has been rejected because one or many of the "
+                "variant properties `[%(vprops)s]` are not supported or have been "
+                "explicitly rejected.",
                 {
                     "vhash": vdesc.hexdigest,
                     "vprops": ", ".join([vprop.to_str() for vprop in forbidden_vprops]),

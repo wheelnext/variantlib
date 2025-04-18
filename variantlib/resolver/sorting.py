@@ -90,17 +90,17 @@ def get_namespace_priority(
 
 def get_variant_property_priority_tuple(
     vprop: VariantProperty,
-    property_priorities: list[VariantProperty] | None,
-    feature_priorities: list[VariantFeature] | None,
     namespace_priorities: list[str] | None,
+    feature_priorities: list[VariantFeature] | None,
+    property_priorities: list[VariantProperty] | None,
 ) -> tuple[int, int, int]:
     """
     Get the variant property priority of a `VariantProperty` object.
 
     :param vprop: `VariantProperty` object.
-    :param property_priorities: ordered list of `VariantProperty` objects.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
     :param namespace_priorities: ordered list of `str` objects.
+    :param feature_priorities: ordered list of `VariantFeature` objects.
+    :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Variant property priority of the `VariantProperty` object.
     """
     validate_type(vprop, VariantProperty)
@@ -124,17 +124,17 @@ def get_variant_property_priority_tuple(
 
 def sort_variant_properties(
     vprops: list[VariantProperty],
-    property_priorities: list[VariantProperty] | None,
-    feature_priorities: list[VariantFeature] | None,
     namespace_priorities: list[str] | None,
+    feature_priorities: list[VariantFeature] | None,
+    property_priorities: list[VariantProperty] | None,
 ) -> list[VariantProperty]:
     """
     Sort a list of `VariantProperty` objects based on their priority.
 
     :param vprops: List of `VariantProperty` objects.
-    :param property_priorities: ordered list of `VariantProperty` objects.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
     :param namespace_priorities: ordered list of `str` objects.
+    :param feature_priorities: ordered list of `VariantFeature` objects.
+    :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Sorted list of `VariantProperty` objects.
     """
     validate_type(vprops, list[VariantProperty])
@@ -142,7 +142,7 @@ def sort_variant_properties(
     return sorted(
         vprops,
         key=lambda x: get_variant_property_priority_tuple(
-            x, property_priorities, feature_priorities, namespace_priorities
+            x, namespace_priorities, feature_priorities, property_priorities
         ),
     )
 

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.resolver.filtering import filter_variants_by_features
 from variantlib.resolver.filtering import filter_variants_by_namespaces
@@ -15,98 +16,81 @@ from variantlib.resolver.sorting import sort_variants_descriptions
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from variantlib.models.variant import VariantFeature
-
 
 def filter_variants(
     vdescs: list[VariantDescription],
-    allowed_namespaces: list[str] | None = None,
+    allowed_properties: list[VariantProperty],
     forbidden_namespaces: list[str] | None = None,
-    allowed_features: list[VariantFeature] | None = None,
     forbidden_features: list[VariantFeature] | None = None,
-    allowed_properties: list[VariantProperty] | None = None,
     forbidden_properties: list[VariantProperty] | None = None,
 ) -> Generator[VariantDescription]:
     """
     Filters out a `list` of `VariantDescription` with the following filters:
     - Duplicates removed
-    - Unsupported `variant namespaces` removed - if `allowed_namespaces` is not None
-    - Unsupported `variant features` removed - if `allowed_features` is not None
-    - Unsupported `variant feature values` removed - if `allowed_properties` is not None
+    - Only allowed `variant properties` kept
+
+    # Optionally:
+    - Forbidden `variant namespaces` removed - if `forbidden_namespaces` is not None
+    - Forbidden `variant features` removed - if `forbidden_features` is not None
+    - Forbidden `variant properties` removed - if `forbidden_properties` is not None
 
     :param vdescs: list of `VariantDescription` to filter.
-    :param allowed_namespaces: List of allowed variant namespaces as `str`.
-    :param forbidden_namespaces: List of forbidden variant namespaces as `str`.
-    :param allowed_features: List of allowed `VariantFeature`.
-    :param forbidden_features: List of forbidden `VariantFeature`.
     :param allowed_properties: List of allowed `VariantProperty`.
+    :param forbidden_namespaces: List of forbidden variant namespaces as `str`.
+    :param forbidden_features: List of forbidden `VariantFeature`.
     :param forbidden_properties: List of forbidden `VariantProperty`.
     :return: Filtered list of `VariantDescription`.
     """
 
-    # ========================= IMPLEMENTATION NOTE ========================= #
-    # Technically, only step 4 is absolutely necessary to filter out the
-    # `VariantDescription` that are not supported on this platform.
-    # 1. There should never be any duplicates on the index
+    # Input validation
+    validate_type(vdescs, list[VariantDescription])
+    validate_type(allowed_properties, list[VariantProperty])
+
+    if forbidden_namespaces is not None:
+        validate_type(forbidden_namespaces, list[str])
+
+    if forbidden_features is not None:
+        validate_type(forbidden_features, list[VariantFeature])
+
+    if forbidden_properties is not None:
+        validate_type(forbidden_properties, list[VariantProperty])
+
+    # Step 1
+    # Remove duplicates - There should never be any duplicates on the index
     #     - filename collision (same filename & same hash)
     #     - hash collision inside `variants.json`
     #     => Added for safety and to avoid any potential bugs
     #     (Note: In all fairness, even if it was to happen, it would most
-    #            likely not be a problem given that we just pick the best match
-    # 2. namespaces are included inside the `VariantProperty` of step 4
-    # 3. features are included inside the `VariantProperty` of step 4
-    #
-    # However, I (Jonathan Dekhtiar) strongly recommend to keep all of them:
-    # - Easier to read and understand
-    # - Easier to debug
-    # - Easier to maintain
-    # - Easier to extend
-    # - Easier to test
-    # - Allows `tooling` to provide CLI/configuration flags to explicitly
-    #   reject a `namespace` or `namespace::feature` without complex
-    #   processing.
-    # ======================================================================= #
-
-    # Step 1: Remove duplicates - should never happen, but just in case
+    #            likely not be a problem given that we just pick the best match)
     result = remove_duplicates(vdescs)
 
-    # Step 2: Remove any `VariantDescription` which declare any `VariantProperty` with
-    # a variant namespace unsupported on this platform.
-    if allowed_namespaces is not None:
+    # Step 2 [Optional]
+    # Remove any `VariantDescription` which declares any `VariantProperty` with
+    # a variant namespace explicitly forbidden by the user.
+    if forbidden_namespaces is not None:
         result = filter_variants_by_namespaces(
             vdescs=result,
-            allowed_namespaces=allowed_namespaces,
             forbidden_namespaces=forbidden_namespaces,
         )
-    elif forbidden_namespaces is not None:
-        raise ValueError(
-            "`forbidden_namespaces` without `allowed_namespaces` is not supported."
-        )
 
-    # Step 3: Remove any `VariantDescription` which declare any `VariantProperty` with
-    # `namespace :: feature` (aka. `VariantFeature`) unsupported on this platform.
-    if allowed_features is not None:
+    # Step 3 [Optional]
+    # Remove any `VariantDescription` which declares any `VariantProperty` with
+    # `namespace :: feature` (aka. `VariantFeature`) explicitly forbidden by the user.
+    if forbidden_features is not None:
         result = filter_variants_by_features(
             vdescs=result,
-            allowed_features=allowed_features,
             forbidden_features=forbidden_features,
         )
-    elif forbidden_features is not None:
-        raise ValueError(
-            "`forbidden_features` without `allowed_features` is not supported."
-        )
 
-    # Step 4: Remove any `VariantDescription` which declare any `VariantProperty`
-    # `namespace :: feature :: value` unsupported on this platform.
+    # Step 4 [Optional]
+    # Remove any `VariantDescription` which declare any `VariantProperty`
+    # `namespace :: feature :: value` unsupported on this platform or  explicitly
+    #  forbidden by the user.
     if allowed_properties is not None:
         result = filter_variants_by_property(
             vdescs=result,
             allowed_properties=allowed_properties,
             forbidden_properties=forbidden_properties,
-        )
-    elif forbidden_properties is not None:
-        raise ValueError(
-            "`forbidden_properties` without `allowed_properties` is not supported."
         )
 
     yield from result
@@ -114,7 +98,10 @@ def filter_variants(
 
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
-    supported_vprops: list[VariantProperty] | None = None,
+    supported_vprops: list[VariantProperty],
+    forbidden_namespaces: list[str] | None = None,
+    forbidden_features: list[VariantFeature] | None = None,
+    forbidden_properties: list[VariantProperty] | None = None,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[VariantFeature] | None = None,
     property_priorities: list[VariantProperty] | None = None,
@@ -133,7 +120,7 @@ def sort_and_filter_supported_variants(
     validate_type(vdescs, list[VariantDescription])
 
     if supported_vprops is None:
-        """No sdupported properties provided, return no variants."""
+        """No supported properties provided, return no variants."""
         return []
 
     validate_type(supported_vprops, list[VariantProperty])
@@ -143,9 +130,10 @@ def sort_and_filter_supported_variants(
     filtered_vdescs = list(
         filter_variants(
             vdescs=vdescs,
-            allowed_namespaces=namespace_priorities,
-            allowed_features=[vprop.feature_object for vprop in supported_vprops],
             allowed_properties=supported_vprops,
+            forbidden_namespaces=forbidden_namespaces,
+            forbidden_features=forbidden_features,
+            forbidden_properties=forbidden_properties,
         )
     )
 
