@@ -76,9 +76,12 @@ def test_get_config_from_file(mock_get_config_files):
             "non_existent_provider",
         ],
     }
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".toml") as temp_file:
-        temp_file.write(tomli_w.dumps(data))
-        temp_file.flush()
+    # NamedTemporaryFile cannot be easily reopened on Windows,
+    # so use TemporaryDirectory instead
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir) / "config.toml"
+        with temp_path.open("wb") as temp_file:
+            tomli_w.dump(data, temp_file)
 
         def _get_config_files() -> dict[ConfigEnvironments, Path]:
             return {
@@ -98,7 +101,7 @@ def test_get_config_from_file(mock_get_config_files):
 
         for env in ConfigEnvironments:
             config_files = _get_config_files()
-            config_files[env] = Path(temp_file.name)
+            config_files[env] = Path(temp_path)
             mock_get_config_files.return_value = config_files
 
             config = VariantConfiguration.get_config()
