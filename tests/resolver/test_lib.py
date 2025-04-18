@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import contextlib
 import random
+from functools import cached_property
 
 import pytest
 from deepdiff import DeepDiff
+from deepdiff.operator import BaseOperator
 
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -27,10 +29,25 @@ def deep_diff(
     assert all(isinstance(vdesc, VariantDescription) for vdesc in a)
     assert all(isinstance(vdesc, VariantDescription) for vdesc in b)
 
+    class HexDigestOperator(BaseOperator):
+        def normalize_value_for_hashing(self, parent, obj: VariantDescription) -> str:
+            """Required for ignore_order=True compatibility"""
+            if isinstance(obj, VariantDescription):
+                return obj.hexdigest
+
+            return obj
+
     return DeepDiff(
-        [vdesc.hexdigest for vdesc in a],
-        [vdesc.hexdigest for vdesc in b],
+        a,
+        b,
         ignore_order=ignore_ordering,
+        custom_operators=[HexDigestOperator()],
+        exclude_types=[property, cached_property],
+        exclude_regex_paths=[
+            r"root\[\d+\].properties\[\d+\].feature_hash",
+            r"root\[\d+\].properties\[\d+\].property_hash",
+            r"root\[\d+\].properties\[\d+\].feature_object",
+        ],
     )
 
 
