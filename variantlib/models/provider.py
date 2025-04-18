@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -13,6 +14,10 @@ from variantlib.models.validators import validate_list_matches_re
 from variantlib.models.validators import validate_list_min_len
 from variantlib.models.validators import validate_matches_re
 from variantlib.models.validators import validate_type
+from variantlib.models.variant import VariantProperty
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @dataclass(frozen=True)
@@ -82,3 +87,9 @@ class ProviderConfig(BaseModel):
             )
         result_str += f"\n{'#' * 80}\n"
         return result_str
+
+    def to_list_of_properties(self) -> Generator[VariantProperty]:
+        """Flatten the config into a list of ordered properties"""
+        for feat_cfg in self.configs:
+            for value in feat_cfg.values:
+                yield VariantProperty(self.namespace, feat_cfg.name, value)
