@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from unittest.mock import patch
 
 import platformdirs
 import tomli_w
@@ -44,9 +43,8 @@ def test_get_configuration_files():
     )
 
 
-@patch("variantlib.configuration.get_configuration_files")
-def test_get_default_config_with_no_file(mock_get_config_files):
-    mock_get_config_files.return_value = {
+def test_get_default_config_with_no_file(mocker):
+    mocker.patch("variantlib.configuration.get_configuration_files").return_value = {
         ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
         ConfigEnvironments.VIRTUALENV: Path("/nonexistent/config.toml"),
         ConfigEnvironments.USER: Path("/nonexistent/config.toml"),
@@ -56,8 +54,7 @@ def test_get_default_config_with_no_file(mock_get_config_files):
     assert config == ConfigurationModel.default()
 
 
-@patch("variantlib.configuration.get_configuration_files")
-def test_get_config_from_file(mock_get_config_files, tmp_path: Path):
+def test_get_config_from_file(mocker, tmp_path: Path):
     data = {
         "property_priority": [
             "fictional_hw::architecture::mother",
@@ -94,7 +91,9 @@ def test_get_config_from_file(mock_get_config_files, tmp_path: Path):
     for env in ConfigEnvironments:
         config_files = _get_config_files()
         config_files[env] = config_path
-        mock_get_config_files.return_value = config_files
+        mocker.patch(
+            "variantlib.configuration.get_configuration_files"
+        ).return_value = config_files
 
         config = VariantConfiguration.get_config()
         assert config.features_priority == features_priority
