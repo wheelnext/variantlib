@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import itertools
-import json
 import random
 import string
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-import jsondiff
 import pytest
 from hypothesis import assume
 from hypothesis import example
@@ -27,24 +24,21 @@ if TYPE_CHECKING:
 
 @pytest.fixture(scope="session")
 def configs():
-    config_custom_hw = ProviderConfig(
-        namespace="custom_hw",
-        configs=[
-            VariantFeatureConfig(
-                name="driver_version", values=["1.3", "1.2", "1.1", "1"]
-            ),
-            VariantFeatureConfig(name="hw_architecture", values=["3.4", "3"]),
-        ],
-    )
-
-    config_networking = ProviderConfig(
-        namespace="networking",
-        configs=[
-            VariantFeatureConfig(name="speed", values=["10GBPS", "1GBPS", "100MBPS"]),
-        ],
-    )
-
-    return [config_custom_hw, config_networking]
+    return [
+        ProviderConfig(
+            namespace="cuda",
+            configs=[
+                VariantFeatureConfig(name="driver", values=["12.2", "12.1", "12.0"]),
+            ],
+        ),
+        ProviderConfig(
+            namespace="x86_64",
+            configs=[
+                VariantFeatureConfig(name="aes_ni", values=["on"]),
+                VariantFeatureConfig(name="level", values=["v3", "v2", "v1"]),
+            ],
+        ),
+    ]
 
 
 def get_combinations(
@@ -79,17 +73,47 @@ def get_combinations(
 
 def test_get_combinations(configs):
     """Test `get_combinations` yields the expected result in the right order."""
-    result = [vdesc.serialize() for vdesc in get_combinations(configs)]
+    cuda122 = VariantProperty("cuda", "driver", "12.2")
+    cuda121 = VariantProperty("cuda", "driver", "12.1")
+    cuda120 = VariantProperty("cuda", "driver", "12.0")
+    aesni = VariantProperty("x86_64", "aes_ni", "on")
+    x8664v3 = VariantProperty("x86_64", "level", "v3")
+    x8664v2 = VariantProperty("x86_64", "level", "v2")
+    x8664v1 = VariantProperty("x86_64", "level", "v1")
 
-    json_file = Path("tests/artifacts/expected.json")
-    assert json_file.exists(), "Expected JSON file does not exist"
-
-    # Read the JSON file
-    with json_file.open() as f:
-        expected = json.load(f)
-
-    differences = jsondiff.diff(result, expected)
-    assert not differences, f"Serialization altered JSON: {differences}"
+    assert list(get_combinations(configs)) == [
+        VariantDescription([cuda122, aesni, x8664v3]),
+        VariantDescription([cuda122, aesni, x8664v2]),
+        VariantDescription([cuda122, aesni, x8664v1]),
+        VariantDescription([cuda121, aesni, x8664v3]),
+        VariantDescription([cuda121, aesni, x8664v2]),
+        VariantDescription([cuda121, aesni, x8664v1]),
+        VariantDescription([cuda120, aesni, x8664v3]),
+        VariantDescription([cuda120, aesni, x8664v2]),
+        VariantDescription([cuda120, aesni, x8664v1]),
+        VariantDescription([cuda122, aesni]),
+        VariantDescription([cuda121, aesni]),
+        VariantDescription([cuda120, aesni]),
+        VariantDescription([cuda122, x8664v3]),
+        VariantDescription([cuda122, x8664v2]),
+        VariantDescription([cuda122, x8664v1]),
+        VariantDescription([cuda121, x8664v3]),
+        VariantDescription([cuda121, x8664v2]),
+        VariantDescription([cuda121, x8664v1]),
+        VariantDescription([cuda120, x8664v3]),
+        VariantDescription([cuda120, x8664v2]),
+        VariantDescription([cuda120, x8664v1]),
+        VariantDescription([aesni, x8664v3]),
+        VariantDescription([aesni, x8664v2]),
+        VariantDescription([aesni, x8664v1]),
+        VariantDescription([cuda122]),
+        VariantDescription([cuda121]),
+        VariantDescription([cuda120]),
+        VariantDescription([aesni]),
+        VariantDescription([x8664v3]),
+        VariantDescription([x8664v2]),
+        VariantDescription([x8664v1]),
+    ]
 
 
 def vdescs_to_json(vdescs: list[VariantDescription]) -> Generator:
