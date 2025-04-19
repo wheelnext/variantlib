@@ -200,7 +200,7 @@ def validate_variant_json(data: dict) -> None:
 
         if len(vdata) == 0:
             raise ValidationError(
-                f"Invalid no variant properties declared for `{variant_hash}`"
+                f"No variant properties declared for `{variant_hash}`"
             )
 
         for namespace, vprop_data in vdata.items():
