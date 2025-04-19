@@ -14,19 +14,19 @@ from typing import get_origin
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
 
-def validate_matches_re(value: str, pattern: str) -> None:
+def validate_matches_re(value: str, pattern: str | re.Pattern) -> None:
     if not re.match(pattern, value):
         raise ValidationError(f"Value `{value}` must match regex {pattern}")
 
 
-def validate_list_matches_re(values: list[str], pattern: str) -> None:
+def validate_list_matches_re(values: list[str], pattern: str | re.Pattern) -> None:
     for value in values:
         validate_matches_re(value, pattern)
 
@@ -160,7 +160,7 @@ def validate_type(value: Any, expected_type: type) -> None:
         raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
 
 
-def validate_variant_json(data: dict) -> None:
+def validate_variants_json(data: dict) -> None:
     """
     Validate the variant JSON data structure.
     """
@@ -178,18 +178,13 @@ def validate_variant_json(data: dict) -> None:
             f"Expected a dictionary for `data['variants']`, got `{type(variant_data)}`."
         )
 
-    hash_re = re.compile(rf"^[0-9a-f]{{{VARIANT_HASH_LEN}}}$")
-    namespace_re = re.compile(VALIDATION_NAMESPACE_REGEX)
-    feature_re = re.compile(VALIDATION_FEATURE_REGEX)
-    value_re = re.compile(VALIDATION_VALUE_REGEX)
-
     for variant_hash, vdata in variant_data.items():
         # Check if variant_hash is a string and matches the regex
         if not isinstance(variant_hash, str):
             raise ValidationError(
                 f"Invalid `variant_hash` type: `{variant_hash}` in data (expected str)"
             )
-        if re.match(hash_re, variant_hash) is None:
+        if VALIDATION_VARIANT_HASH_REGEX.match(variant_hash) is None:
             raise ValidationError(f"Invalid variant hash `{variant_hash}` in data")
 
         # Check the Variant Data
@@ -209,7 +204,7 @@ def validate_variant_json(data: dict) -> None:
                 raise ValidationError(
                     f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
                 )
-            if re.match(namespace_re, namespace) is None:
+            if VALIDATION_NAMESPACE_REGEX.match(namespace) is None:
                 raise ValidationError(
                     f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
                 )
@@ -234,7 +229,7 @@ def validate_variant_json(data: dict) -> None:
                         f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"
                     )
-                if re.match(feature_re, feature_name) is None:
+                if VALIDATION_FEATURE_REGEX.match(feature_name) is None:
                     raise ValidationError(
                         f"Invalid variant feature name`{feature_name}` for hash "
                         f"`{variant_hash}`"
@@ -244,9 +239,10 @@ def validate_variant_json(data: dict) -> None:
                 if not isinstance(feature_value, str):
                     raise ValidationError(
                         f"Invalid variant feature value `{feature_value}` for hash "
-                        f"`{variant_hash}`"
+                        f"`{variant_hash}` - Type received: `{type(feature_value)}`, "
+                        "expected: `str`."
                     )
-                if re.match(value_re, feature_value) is None:
+                if VALIDATION_VALUE_REGEX.match(feature_value) is None:
                     raise ValidationError(
                         f"Invalid variant value `{feature_value}` for hash "
                         f"`{variant_hash}`"

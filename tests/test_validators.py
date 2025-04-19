@@ -11,7 +11,7 @@ import pytest
 
 from variantlib.validators import ValidationError
 from variantlib.validators import validate_type
-from variantlib.validators import validate_variant_json
+from variantlib.validators import validate_variants_json
 
 
 @runtime_checkable
@@ -108,7 +108,7 @@ def test_validate_type_bad(value: Any, expected: type, have: type):
         validate_type(value, expected)
 
 
-def test_validate_variant_json():
+def test_validate_variants_json():
     json_file = pathlib.Path("tests/artifacts/variants.json")
     assert json_file.exists(), "Expected JSON file does not exist"
 
@@ -116,11 +116,11 @@ def test_validate_variant_json():
     with json_file.open() as f:
         data = json.load(f)
 
-    validate_variant_json(data)
+    validate_variants_json(data)
 
 
-def test_validate_variant_json_empty():
-    validate_variant_json({"variants": {}})
+def test_validate_variants_json_empty():
+    validate_variants_json({"variants": {}})
 
 
 @pytest.mark.parametrize(
@@ -137,6 +137,6 @@ def test_validate_variant_json_empty():
         {"variants": {"abcd1234": {"namesp@ce": {"feature": "value"}}}},
     ],
 )
-def test_validate_variant_json_incorrect_vhash(data: dict):
+def test_validate_variants_json_incorrect_vhash(data: dict):
     with pytest.raises(ValidationError):
-        validate_variant_json(data)
+        validate_variants_json(data)
