@@ -42,7 +42,7 @@ def test_duplicate_vfeat_config():
         name="attr_nameA", values=["7", "4", "8", "12"]
     )
 
-    with pytest.raises(ValidationError, match="Duplicate value found: 'attr_nameA'"):
+    with pytest.raises(ValidationError, match="Duplicate value found: `attr_nameA`"):
         ProviderConfig(
             namespace="provider_name", configs=[vfeat_config_1, vfeat_config_2]
         )
@@ -65,7 +65,7 @@ def test_single_item_values_list_in_vfeat_config():
 
 def test_duplicate_values_in_vfeat_config():
     """Test that duplicate values in VariantFeatureConfig do not raise an error."""
-    with pytest.raises(ValidationError, match="Duplicate value found: '7' in list"):
+    with pytest.raises(ValidationError, match="Duplicate value found: `7` in list"):
         _ = VariantFeatureConfig(name="attr_nameA", values=["7", "7", "8", "12"])
 
 

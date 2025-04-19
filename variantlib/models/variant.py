@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import re
 import sys
+from collections import defaultdict
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -15,11 +16,11 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
-from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_list_all_unique
-from variantlib.models.validators import validate_list_min_len
-from variantlib.models.validators import validate_matches_re
-from variantlib.models.validators import validate_type
+from variantlib.validators import validate_and
+from variantlib.validators import validate_list_all_unique
+from variantlib.validators import validate_list_min_len
+from variantlib.validators import validate_matches_re
+from variantlib.validators import validate_type
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -52,7 +53,7 @@ class VariantFeature(BaseModel):
         }
     )
 
-    @cached_property
+    @property
     def feature_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         # note: can't use `self.__class__` because of inheritance
@@ -75,13 +76,15 @@ class VariantFeature(BaseModel):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
+        pattern = re.compile(
+            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
+        )
 
         # Try matching the input string with the regex pattern
-        match = re.match(pattern, input_str.strip())
+        match = pattern.match(input_str.strip())
 
         if match is None:
             raise ValidationError(
@@ -111,12 +114,12 @@ class VariantProperty(VariantFeature):
         }
     )
 
-    @cached_property
+    @property
     def property_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         return hash((self.__class__, self.namespace, self.feature, self.value))
 
-    @cached_property
+    @property
     def feature_object(self) -> VariantFeature:
         return VariantFeature(namespace=self.namespace, feature=self.feature)
 
@@ -127,14 +130,16 @@ class VariantProperty(VariantFeature):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
-        pttn_value = VALIDATION_VALUE_REGEX[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
+        pttn_value = VALIDATION_VALUE_REGEX.pattern[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"  # noqa: E501
+        pattern = re.compile(
+            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"
+        )
 
         # Try matching the input string with the regex pattern
-        match = re.match(pattern, input_str.strip())
+        match = pattern.match(input_str.strip())
 
         if match is None:
             raise ValidationError(
@@ -213,6 +218,29 @@ class VariantDescription(BaseModel):
     def serialize(self) -> list[dict[str, str]]:
         return [vprop.serialize() for vprop in self.properties]
 
+    def to_dict(self) -> dict[str, dict[str, str]]:
+        data = asdict(self)
+
+        result: defaultdict[str, dict[str, str]] = defaultdict(dict)
+
+        for vprop in data["properties"]:
+            namespace = vprop["namespace"]
+            feature = vprop["feature"]
+            value = vprop["value"]
+            result[namespace][feature] = value
+
+        return dict(result)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, dict[str, str]]) -> Self:
+        vprops = [
+            VariantProperty(namespace=namespace, feature=key, value=value)
+            for namespace, vdata in data.items()
+            for key, value in vdata.items()
+        ]
+
+        return cls(vprops)
+
     def pretty_print(self) -> str:
         result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
         for vprop in self.properties:
@@ -230,12 +258,12 @@ class VariantValidationResult:
             allow_unknown_plugins or None not in self.results.values()
         )
 
-    @cached_property
+    @property
     def invalid_properties(self) -> list[VariantProperty]:
         """List of properties declared invalid by plugins"""
         return [x for x, y in self.results.items() if y is False]
 
-    @cached_property
+    @property
     def unknown_properties(self) -> list[VariantProperty]:
         """List of properties not in any recognized namespace"""
         return [x for x, y in self.results.items() if y is None]
