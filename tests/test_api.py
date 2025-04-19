@@ -50,7 +50,11 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
 
-    combinations: list[VariantDescription] = list(get_combinations(configs))
+    namespace_priorities = ["test_namespace", "second_namespace"]
+
+    combinations: list[VariantDescription] = list(
+        get_combinations(configs, namespace_priorities)
+    )
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
@@ -59,9 +63,7 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
 
     mocker.patch(
         "variantlib.configuration.VariantConfiguration.get_config"
-    ).return_value = VConfigurationModel(
-        namespace_priorities=["test_namespace", "second_namespace"]
-    )
+    ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
     result = set(get_variant_hashes_by_priority(variants_json=variants_json))
     combination_vhashs = {vdesc.hexdigest for vdesc in combinations}
@@ -131,7 +133,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
     ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
     def get_or_skip_combinations() -> Generator[VariantDescription]:
-        for i, x in enumerate(get_combinations(configs)):
+        for i, x in enumerate(get_combinations(configs, namespace_priorities)):
             assume(i < 65536)
             yield x
 
