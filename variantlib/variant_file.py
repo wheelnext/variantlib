@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def unpack_variants_json(
-    variants_json: dict[str, dict[str, dict]],
+    variants_json: dict[str, Any],
 ) -> list[VariantDescription]:
     # Input Validation
     validate_variants_json(variants_json)

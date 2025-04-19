@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from typing import Any
 from typing import TypeVar
 
@@ -22,9 +23,10 @@ def aggregate_user_and_default_lists(
     Otherwise, return the user-provided list.
     """
     if user_list is None:
-        return default_list
+        return copy.deepcopy(default_list)
 
+    result = copy.deepcopy(user_list)
     for item in default_list:
         if item not in user_list:
-            user_list.append(item)
-    return user_list
+            result.append(item)
+    return result

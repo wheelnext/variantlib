@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import HealthCheck
+from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
 from hypothesis import settings
@@ -49,13 +50,7 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
 
-    def get_or_skip_combinations() -> Generator[VariantDescription]:
-        for i, x in enumerate(get_combinations(configs)):
-            if i >= 65536:
-                pytest.skip("Too many combinations")
-            yield x
-
-    combinations: list[VariantDescription] = list(get_or_skip_combinations())
+    combinations: list[VariantDescription] = list(get_combinations(configs))
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
@@ -137,8 +132,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
 
     def get_or_skip_combinations() -> Generator[VariantDescription]:
         for i, x in enumerate(get_combinations(configs)):
-            if i >= 65536:
-                pytest.skip("Too many combinations")
+            assume(i < 65536)
             yield x
 
     combinations: list[VariantDescription] = list(get_or_skip_combinations())
