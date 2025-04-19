@@ -6,6 +6,7 @@ import itertools
 import logging
 from typing import TYPE_CHECKING
 
+from variantlib.configuration import VariantConfiguration
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
@@ -14,12 +15,14 @@ from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.resolver.lib import sort_and_filter_supported_variants
+from variantlib.utils import aggregate_user_and_default_lists
+from variantlib.variant_file import unpack_variants_json
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
     from email.message import Message
 
 logger = logging.getLogger(__name__)
@@ -36,38 +39,70 @@ __all__ = [
 ]
 
 
-def _unpack_variants_json(
-    variants_json: dict,
-) -> Generator[VariantDescription]:
-    def variant_to_vprops(namespaces: dict) -> Generator[VariantProperty]:
-        for namespace, keys in namespaces.items():
-            for key, value in keys.items():
-                yield VariantProperty(namespace=namespace, feature=key, value=value)
-
-    for vhash, namespaces in variants_json["variants"].items():
-        vdesc = VariantDescription(list(variant_to_vprops(namespaces)))
-        assert vhash == vdesc.hexdigest
-        yield vdesc
-
-
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-) -> Generator[str]:
-    provider_configs = list(PluginLoader.get_supported_configs().values())
-    vdescs = list(_unpack_variants_json(variants_json))
+    namespace_priorities: list[str] | None = None,
+    feature_priorities: list[str] | None = None,
+    property_priorities: list[str] | None = None,
+    forbidden_namespaces: list[str] | None = None,
+    forbidden_features: list[str] | None = None,
+    forbidden_properties: list[str] | None = None,
+) -> list[str]:
+    vdescs = unpack_variants_json(variants_json)
+
     supported_vprops = list(
         itertools.chain.from_iterable(
-            provider_cfg.to_list_of_properties() for provider_cfg in provider_configs
+            provider_cfg.to_list_of_properties()
+            for provider_cfg in PluginLoader.get_supported_configs().values()
         )
     )
 
-    for vdesc in sort_and_filter_supported_variants(
-        vdescs,
-        supported_vprops,
-        namespace_priorities=[x.namespace for x in provider_configs],
-    ):
-        yield vdesc.hexdigest
+    _feature_priorities = (
+        None
+        if feature_priorities is None
+        else [VariantFeature.from_str(vfeat) for vfeat in feature_priorities]
+    )
+
+    _property_priorities = (
+        None
+        if property_priorities is None
+        else [VariantProperty.from_str(vprop) for vprop in property_priorities]
+    )
+
+    _forbidden_features = (
+        None
+        if forbidden_features is None
+        else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
+    )
+
+    _forbidden_properties = (
+        None
+        if forbidden_properties is None
+        else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
+    )
+
+    config = VariantConfiguration.get_config()
+
+    return [
+        vdesc.hexdigest
+        for vdesc in sort_and_filter_supported_variants(
+            vdescs,
+            supported_vprops,
+            namespace_priorities=aggregate_user_and_default_lists(
+                namespace_priorities, config.namespace_priorities
+            ),
+            feature_priorities=aggregate_user_and_default_lists(
+                _feature_priorities, config.feature_priorities
+            ),
+            property_priorities=aggregate_user_and_default_lists(
+                _property_priorities, config.property_priorities
+            ),
+            forbidden_namespaces=forbidden_namespaces,
+            forbidden_features=_forbidden_features,
+            forbidden_properties=_forbidden_properties,
+        )
+    ]
 
 
 def validate_variant(

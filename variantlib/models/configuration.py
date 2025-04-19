@@ -30,12 +30,12 @@ class VariantConfiguration(BaseModel):
     # Sorting Note: First is best.
 
     Attributes:
-        namespaces_priority (list): Sorted list of "variant namespaces" by priority.
-        features_priority (list): Sorted list of `VariantFeature` by priority.
-        property_priority (list): Sorted list of `VariantProperty` by priority.
+        namespace_priorities (list): Sorted list of "variant namespaces" by priority.
+        feature_priorities (list): Sorted list of `VariantFeature` by priority.
+        property_priorities (list): Sorted list of `VariantProperty` by priority.
     """
 
-    namespaces_priority: list[str] = field(
+    namespace_priorities: list[str] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -47,7 +47,7 @@ class VariantConfiguration(BaseModel):
         }
     )
 
-    features_priority: list[VariantFeature] = field(
+    feature_priorities: list[VariantFeature] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -59,7 +59,7 @@ class VariantConfiguration(BaseModel):
         default_factory=list,
     )
 
-    property_priority: list[VariantProperty] = field(
+    property_priorities: list[VariantProperty] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -83,17 +83,17 @@ class VariantConfiguration(BaseModel):
         # TODO: Verify the default values make sense
 
         return cls(
-            namespaces_priority=[],
-            features_priority=[],
-            property_priority=[],
+            namespace_priorities=[],
+            feature_priorities=[],
+            property_priorities=[],
         )
 
     @classmethod
     def from_toml_config(
         cls,
-        namespaces_priority: list[str] | None = None,
-        features_priority: list[str] | None = None,
-        property_priority: list[str] | None = None,
+        namespace_priorities: list[str] | None = None,
+        feature_priorities: list[str] | None = None,
+        property_priorities: list[str] | None = None,
     ) -> Self:
         """
         Create a Configuration instance from TOML-based configuration.
@@ -102,22 +102,22 @@ class VariantConfiguration(BaseModel):
             Configuration: A new Configuration instance.
         """
 
-        # Convert the `features_priority: list[str]` into `list[VariantFeature]`
-        _features_priority: list[VariantFeature] = []
-        if features_priority is not None:
-            for vfeat in features_priority:
+        # Convert the `feature_priorities: list[str]` into `list[VariantFeature]`
+        _feature_priorities: list[VariantFeature] = []
+        if feature_priorities is not None:
+            for vfeat in feature_priorities:
                 validate_type(vfeat, str)
-                _features_priority.append(VariantFeature.from_str(vfeat))
+                _feature_priorities.append(VariantFeature.from_str(vfeat))
 
-        # Convert the `property_priority: list[str]` into `list[VariantProperty]`
-        _property_priority: list[VariantProperty] = []
-        if property_priority is not None:
-            for vprop in property_priority:
+        # Convert the `property_priorities: list[str]` into `list[VariantProperty]`
+        _property_priorities: list[VariantProperty] = []
+        if property_priorities is not None:
+            for vprop in property_priorities:
                 validate_type(vprop, str)
-                _property_priority.append(VariantProperty.from_str(vprop))
+                _property_priorities.append(VariantProperty.from_str(vprop))
 
         return cls(
-            namespaces_priority=namespaces_priority or [],
-            features_priority=_features_priority,
-            property_priority=_property_priority,
+            namespace_priorities=namespace_priorities or [],
+            feature_priorities=_feature_priorities,
+            property_priorities=_property_priorities,
         )

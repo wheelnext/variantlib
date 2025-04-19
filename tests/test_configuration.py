@@ -112,16 +112,16 @@ def test_get_default_config_with_no_file(mocker):
 
 def test_get_config_from_file(mocker, tmp_path: Path):
     data = {
-        "property_priority": [
+        "property_priorities": [
             "fictional_hw::architecture::mother",
             "fictional_tech::risk_exposure::25",
         ],
-        "features_priority": [
+        "feature_priorities": [
             "fictional_hw::architecture",
             "fictional_tech::risk_exposure",
             "simd_x86_64::feature3",
         ],
-        "namespaces_priority": [
+        "namespace_priorities": [
             "fictional_hw",
             "fictional_tech",
             "simd_x86_64",
@@ -140,9 +140,13 @@ def test_get_config_from_file(mocker, tmp_path: Path):
             ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
         }
 
-    features_priority = [VariantFeature.from_str(f) for f in data["features_priority"]]
+    feature_priorities = [
+        VariantFeature.from_str(f) for f in data["feature_priorities"]
+    ]
 
-    property_priority = [VariantProperty.from_str(f) for f in data["property_priority"]]
+    property_priorities = [
+        VariantProperty.from_str(f) for f in data["property_priorities"]
+    ]
 
     for env in ConfigEnvironments:
         config_files = _get_config_files()
@@ -152,23 +156,23 @@ def test_get_config_from_file(mocker, tmp_path: Path):
         ).return_value = config_files
 
         config = VariantConfiguration.get_config()
-        assert config.features_priority == features_priority
-        assert config.property_priority == property_priority
-        assert config.namespaces_priority == data["namespaces_priority"]
+        assert config.feature_priorities == feature_priorities
+        assert config.property_priorities == property_priorities
+        assert config.namespace_priorities == data["namespace_priorities"]
 
 
 def test_class_properties_with_default():
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
-    assert VariantConfiguration.namespaces_priority == []
+    assert VariantConfiguration.namespace_priorities == []
     assert VariantConfiguration._config is not None  # noqa: SLF001
 
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
-    assert VariantConfiguration.features_priority == []
+    assert VariantConfiguration.feature_priorities == []
     assert VariantConfiguration._config is not None  # noqa: SLF001
 
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
-    assert VariantConfiguration.property_priority == []
+    assert VariantConfiguration.property_priorities == []
     assert VariantConfiguration._config is not None  # noqa: SLF001

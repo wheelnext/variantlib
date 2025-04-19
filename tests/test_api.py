@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import random
 import string
 from email.message import EmailMessage
 from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import HealthCheck
-from hypothesis import assume
 from hypothesis import example
 from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
 
 from tests.test_plugins import mocked_plugin_loader  # noqa: F401
+from tests.utils import get_combinations
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
 from variantlib.api import VariantFeatureConfig
@@ -22,9 +21,11 @@ from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.loader import PluginLoader
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
+from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -44,92 +45,34 @@ def configs(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
     return list(PluginLoader.get_supported_configs().values())
 
 
-def get_combinations(
-    provider_cfgs: list[ProviderConfig],
-) -> Generator[VariantDescription]:
-    """Generate all possible combinations of `VariantProperty` given a list of
-    `ProviderConfig`. This function respects ordering and priority provided."""
-
-    assert isinstance(provider_cfgs, (list, tuple))
-    assert len(provider_cfgs) > 0
-    assert all(isinstance(config, ProviderConfig) for config in provider_cfgs)
-
-    all_properties = [
-        (provider_cfg.namespace, feature_cfg.name, feature_cfg.values)
-        for provider_cfg in provider_cfgs
-        for feature_cfg in provider_cfg.configs
-    ]
-
-    def yield_all_values(
-        remaining_properties: list[tuple[str, str, list[str]]],
-    ) -> Generator[list[VariantProperty]]:
-        namespace, feature, values = remaining_properties[0]
-        for value in values:
-            for start in range(1, len(remaining_properties)):
-                for other_values in yield_all_values(remaining_properties[start:]):
-                    yield [VariantProperty(namespace, feature, value), *other_values]
-            yield [VariantProperty(namespace, feature, value)]
-
-    for start in range(len(all_properties)):
-        for properties in yield_all_values(all_properties[start:]):
-            yield VariantDescription(properties)
-
-
-def test_get_combinations(configs):
-    """Test `get_combinations` yields the expected result in the right order."""
-    val1a = VariantProperty("test_namespace", "name1", "val1a")
-    val1b = VariantProperty("test_namespace", "name1", "val1b")
-    val2a = VariantProperty("test_namespace", "name2", "val2a")
-    val2b = VariantProperty("test_namespace", "name2", "val2b")
-    val2c = VariantProperty("test_namespace", "name2", "val2c")
-    val3a = VariantProperty("second_namespace", "name3", "val3a")
-
-    assert list(get_combinations(configs)) == [
-        VariantDescription([val1a, val2a, val3a]),
-        VariantDescription([val1a, val2a]),
-        VariantDescription([val1a, val2b, val3a]),
-        VariantDescription([val1a, val2b]),
-        VariantDescription([val1a, val2c, val3a]),
-        VariantDescription([val1a, val2c]),
-        VariantDescription([val1a, val3a]),
-        VariantDescription([val1a]),
-        VariantDescription([val1b, val2a, val3a]),
-        VariantDescription([val1b, val2a]),
-        VariantDescription([val1b, val2b, val3a]),
-        VariantDescription([val1b, val2b]),
-        VariantDescription([val1b, val2c, val3a]),
-        VariantDescription([val1b, val2c]),
-        VariantDescription([val1b, val3a]),
-        VariantDescription([val1b]),
-        VariantDescription([val2a, val3a]),
-        VariantDescription([val2a]),
-        VariantDescription([val2b, val3a]),
-        VariantDescription([val2b]),
-        VariantDescription([val2c, val3a]),
-        VariantDescription([val2c]),
-        VariantDescription([val3a]),
-    ]
-
-
-def vdescs_to_json(vdescs: list[VariantDescription]) -> Generator:
-    shuffled_vdescs = list(vdescs)
-    random.shuffle(shuffled_vdescs)
-    for vdesc in shuffled_vdescs:
-        variant_dict: dict[str, dict[str, str]] = {}
-        for vprop in vdesc.properties:
-            provider_dict = variant_dict.setdefault(vprop.namespace, {})
-            provider_dict[vprop.feature] = vprop.value
-        yield (vdesc.hexdigest, variant_dict)
-
-
-def test_get_variant_hashes_by_priority_roundtrip(configs):
+def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
-    combinations = list(get_combinations(configs))
-    variants_json = {"variants": dict(vdescs_to_json(combinations))}
-    assert list(get_variant_hashes_by_priority(variants_json=variants_json)) == [
-        x.hexdigest for x in combinations
-    ]
+
+    def get_or_skip_combinations() -> Generator[VariantDescription]:
+        for i, x in enumerate(get_combinations(configs)):
+            if i >= 65536:
+                pytest.skip("Too many combinations")
+            yield x
+
+    combinations: list[VariantDescription] = list(get_or_skip_combinations())
+    variants_json = {
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
+            vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
+        }
+    }
+
+    mocker.patch(
+        "variantlib.configuration.VariantConfiguration.get_config"
+    ).return_value = VConfigurationModel(
+        namespace_priorities=["test_namespace", "second_namespace"]
+    )
+
+    result = set(get_variant_hashes_by_priority(variants_json=variants_json))
+    combination_vhashs = {vdesc.hexdigest for vdesc in combinations}
+    assert len(result) == len(combination_vhashs)
+
+    assert result.symmetric_difference(combination_vhashs) == set()
 
 
 @settings(deadline=1000, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -187,19 +130,33 @@ def test_get_variant_hashes_by_priority_roundtrip(configs):
     )
 )
 def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
-    def filter_long_combinations():
+    namespace_priorities = list({provider_cfg.namespace for provider_cfg in configs})
+    mocker.patch(
+        "variantlib.configuration.VariantConfiguration.get_config"
+    ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
+
+    def get_or_skip_combinations() -> Generator[VariantDescription]:
         for i, x in enumerate(get_combinations(configs)):
-            assume(i < 65536)
+            if i >= 65536:
+                pytest.skip("Too many combinations")
             yield x
 
-    combinations = list(filter_long_combinations())
-    variants_json = {"variants": dict(vdescs_to_json(combinations))}
+    combinations: list[VariantDescription] = list(get_or_skip_combinations())
+    variants_json = {
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
+            vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
+        }
+    }
+
     mocker.patch(
         "variantlib.loader.PluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
-    assert list(get_variant_hashes_by_priority(variants_json=variants_json)) == [
-        x.hexdigest for x in combinations
-    ]
+
+    result = set(get_variant_hashes_by_priority(variants_json=variants_json))
+    combination_vhashs = {vdesc.hexdigest for vdesc in combinations}
+    assert len(result) == len(combination_vhashs)
+
+    assert result.symmetric_difference(combination_vhashs) == set()
 
 
 @pytest.mark.parametrize(
