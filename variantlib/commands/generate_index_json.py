@@ -11,6 +11,8 @@ import zipfile
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
+from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ def generate_index_json(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    directory = parsed_args.directory
+    directory: pathlib.Path = parsed_args.directory
 
     if not directory.exists():
         raise FileNotFoundError(f"Directory not found: `{directory}`")
@@ -117,8 +119,8 @@ def generate_index_json(args: list[str]) -> None:
     with directory.joinpath("variants.json").open("w") as f:
         json.dump(
             {
-                "providers": providers,
-                "variants": known_variants,
+                VARIANTS_JSON_PROVIDER_DATA_KEY: providers,
+                VARIANTS_JSON_VARIANT_DATA_KEY: known_variants,
             },
             f,
         )

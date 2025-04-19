@@ -15,11 +15,11 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
-from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_list_all_unique
-from variantlib.models.validators import validate_list_min_len
-from variantlib.models.validators import validate_matches_re
-from variantlib.models.validators import validate_type
+from variantlib.validators import validate_and
+from variantlib.validators import validate_list_all_unique
+from variantlib.validators import validate_list_min_len
+from variantlib.validators import validate_matches_re
+from variantlib.validators import validate_type
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -75,13 +75,15 @@ class VariantFeature(BaseModel):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
+        pattern = re.compile(
+            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
+        )
 
         # Try matching the input string with the regex pattern
-        match = re.match(pattern, input_str.strip())
+        match = pattern.match(input_str.strip())
 
         if match is None:
             raise ValidationError(
@@ -127,14 +129,16 @@ class VariantProperty(VariantFeature):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX[1:-1]
-        pttn_value = VALIDATION_VALUE_REGEX[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
+        pttn_value = VALIDATION_VALUE_REGEX.pattern[1:-1]
 
-        pattern = rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"  # noqa: E501
+        pattern = re.compile(
+            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"
+        )
 
         # Try matching the input string with the regex pattern
-        match = re.match(pattern, input_str.strip())
+        match = pattern.match(input_str.strip())
 
         if match is None:
             raise ValidationError(

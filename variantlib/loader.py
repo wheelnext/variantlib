@@ -13,9 +13,9 @@ from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.validators import ValidationError
-from variantlib.models.validators import validate_type
 from variantlib.utils import classproperty
+from variantlib.validators import ValidationError
+from variantlib.validators import validate_type
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points

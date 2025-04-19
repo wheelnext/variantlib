@@ -1,3 +1,5 @@
+import json
+import pathlib
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -7,8 +9,9 @@ from typing import runtime_checkable
 
 import pytest
 
-from variantlib.models.validators import ValidationError
-from variantlib.models.validators import validate_type
+from variantlib.validators import ValidationError
+from variantlib.validators import validate_type
+from variantlib.validators import validate_variants_json
 
 
 @runtime_checkable
@@ -103,3 +106,37 @@ def test_validate_type_bad(value: Any, expected: type, have: type):
         ValidationError, match=re.escape(f"Expected {expected}, got {have}")
     ):
         validate_type(value, expected)
+
+
+def test_validate_variants_json():
+    json_file = pathlib.Path("tests/artifacts/variants.json")
+    assert json_file.exists(), "Expected JSON file does not exist"
+
+    # Read the Variants JSON file
+    with json_file.open() as f:
+        data = json.load(f)
+
+    validate_variants_json(data)
+
+
+def test_validate_variants_json_empty():
+    validate_variants_json({"variants": {}})
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {},
+        {"variants": {"abcd12345": {}}},
+        {"variants": {"abcd1234": {}}},
+        {"variants": {"abcd1234": {"namespace": [{"feature": "value"}]}}},
+        {"variants": {"abcd1234": {"namespace": {}}}},
+        {"variants": {"abcd1234": {"namespace": {"feature": 1}}}},
+        {"variants": {"abcd1234": {"namespace": {"feature": "variant@python"}}}},
+        {"variants": {"abcd1234": {"namespace": {"feature@variant": "python"}}}},
+        {"variants": {"abcd1234": {"namesp@ce": {"feature": "value"}}}},
+    ],
+)
+def test_validate_variants_json_incorrect_vhash(data: dict):
+    with pytest.raises(ValidationError):
+        validate_variants_json(data)

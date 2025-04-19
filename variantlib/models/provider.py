@@ -8,13 +8,13 @@ from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
-from variantlib.models.validators import validate_and
-from variantlib.models.validators import validate_list_all_unique
-from variantlib.models.validators import validate_list_matches_re
-from variantlib.models.validators import validate_list_min_len
-from variantlib.models.validators import validate_matches_re
-from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantProperty
+from variantlib.validators import validate_and
+from variantlib.validators import validate_list_all_unique
+from variantlib.validators import validate_list_matches_re
+from variantlib.validators import validate_list_min_len
+from variantlib.validators import validate_matches_re
+from variantlib.validators import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
