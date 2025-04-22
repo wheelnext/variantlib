@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from variantlib.models.validators import validate_type
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -12,6 +11,7 @@ from variantlib.resolver.filtering import filter_variants_by_property
 from variantlib.resolver.filtering import remove_duplicates
 from variantlib.resolver.sorting import sort_variant_properties
 from variantlib.resolver.sorting import sort_variants_descriptions
+from variantlib.validators import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
