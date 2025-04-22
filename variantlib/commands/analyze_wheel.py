@@ -37,7 +37,7 @@ def analyze_wheel(args: list[str]) -> None:
         raise TypeError(f"File must have a `.whl` extension: `{input_file.name}`")
 
     # Checking if the wheel file is a valid wheel file
-    if (wheel_info := WHEEL_NAME_VALIDATION_REGEX.match(input_file.name)) is None:
+    if (wheel_info := WHEEL_NAME_VALIDATION_REGEX.fullmatch(input_file.name)) is None:
         raise TypeError(
             f"The file is not a valid python wheel filename: `{input_file.name}`"
         )

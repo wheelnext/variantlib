@@ -79,7 +79,7 @@ def make_variant(args: list[str]) -> None:
         )
 
     # Input Validation - Wheel Filename is valid and non variant already.
-    wheel_info = WHEEL_NAME_VALIDATION_REGEX.match(input_filepath.name)
+    wheel_info = WHEEL_NAME_VALIDATION_REGEX.fullmatch(input_filepath.name)
     if wheel_info is None:
         raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_matches_re(value: str, pattern: str | re.Pattern) -> None:
-    if not re.match(pattern, value):
+    if not re.fullmatch(pattern, value):
         raise ValidationError(f"Value `{value}` must match regex {pattern}")
 
 
@@ -184,7 +184,7 @@ def validate_variants_json(data: dict) -> None:
             raise ValidationError(
                 f"Invalid `variant_hash` type: `{variant_hash}` in data (expected str)"
             )
-        if VALIDATION_VARIANT_HASH_REGEX.match(variant_hash) is None:
+        if VALIDATION_VARIANT_HASH_REGEX.fullmatch(variant_hash) is None:
             raise ValidationError(f"Invalid variant hash `{variant_hash}` in data")
 
         # Check the Variant Data
@@ -204,7 +204,7 @@ def validate_variants_json(data: dict) -> None:
                 raise ValidationError(
                     f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
                 )
-            if VALIDATION_NAMESPACE_REGEX.match(namespace) is None:
+            if VALIDATION_NAMESPACE_REGEX.fullmatch(namespace) is None:
                 raise ValidationError(
                     f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
                 )
@@ -229,7 +229,7 @@ def validate_variants_json(data: dict) -> None:
                         f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"
                     )
-                if VALIDATION_FEATURE_REGEX.match(feature_name) is None:
+                if VALIDATION_FEATURE_REGEX.fullmatch(feature_name) is None:
                     raise ValidationError(
                         f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"
@@ -242,7 +242,7 @@ def validate_variants_json(data: dict) -> None:
                         f"`{variant_hash}` - Type received: `{type(feature_value)}`, "
                         "expected: `str`."
                     )
-                if VALIDATION_VALUE_REGEX.match(feature_value) is None:
+                if VALIDATION_VALUE_REGEX.fullmatch(feature_value) is None:
                     raise ValidationError(
                         f"Invalid variant value `{feature_value}` for hash "
                         f"`{variant_hash}`"
