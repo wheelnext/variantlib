@@ -65,11 +65,9 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
         "variantlib.configuration.VariantConfiguration.get_config"
     ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
-    result = set(get_variant_hashes_by_priority(variants_json=variants_json))
-    combination_vhashs = {vdesc.hexdigest for vdesc in combinations}
-    assert len(result) == len(combination_vhashs)
-
-    assert result.symmetric_difference(combination_vhashs) == set()
+    assert get_variant_hashes_by_priority(variants_json=variants_json) == [
+        vdesc.hexdigest for vdesc in combinations
+    ]
 
 
 @settings(deadline=1000, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -148,11 +146,9 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
         "variantlib.loader.PluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
-    result = set(get_variant_hashes_by_priority(variants_json=variants_json))
-    combination_vhashs = {vdesc.hexdigest for vdesc in combinations}
-    assert len(result) == len(combination_vhashs)
-
-    assert result.symmetric_difference(combination_vhashs) == set()
+    assert get_variant_hashes_by_priority(variants_json=variants_json) == [
+        vdesc.hexdigest for vdesc in combinations
+    ]
 
 
 @pytest.mark.parametrize(
