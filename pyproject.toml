@@ -88,3 +88,14 @@ no_implicit_optional = true
 module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = true
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9", "pypy3.10", "pypy3.11"]
+
+[tool.tox.env_run_base]
+description = "Run tests under {base_python}"
+extras = ["test"]
+commands = [
+    ["pytest"],
+]
