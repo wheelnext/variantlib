@@ -1,5 +1,10 @@
 import pytest
 
+from tests.mocked_plugins import MockedDistribution
+from tests.mocked_plugins import MockedEntryPoint
+from tests.mocked_plugins import MockedPluginA
+from tests.mocked_plugins import MockedPluginB
+from tests.mocked_plugins import MockedPluginC
 from variantlib.loader import PluginLoader
 
 
@@ -7,3 +12,28 @@ from variantlib.loader import PluginLoader
 def flush_caches():
     yield
     PluginLoader.flush_cache()
+
+
+@pytest.fixture
+def mocked_plugin_loader(session_mocker):
+    session_mocker.patch("variantlib.loader.entry_points")().select.return_value = [
+        MockedEntryPoint(
+            name="test_namespace",
+            value="tests.test_plugins:MockedPluginA",
+            dist=MockedDistribution(name="test-plugin", version="1.2.3"),
+            plugin=MockedPluginA,
+        ),
+        MockedEntryPoint(
+            name="second_namespace",
+            value="tests.test_plugins:MockedPluginB",
+            dist=MockedDistribution(name="second-plugin", version="4.5.6"),
+            plugin=MockedPluginB,
+        ),
+        MockedEntryPoint(
+            name="incompatible_namespace",
+            value="tests.test_plugins:MockedPluginC",
+            plugin=MockedPluginC,
+        ),
+    ]
+
+    return PluginLoader

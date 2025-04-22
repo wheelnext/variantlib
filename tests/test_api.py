@@ -12,7 +12,6 @@ from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
 
-from tests.test_plugins import mocked_plugin_loader  # noqa: F401
 from tests.utils import get_combinations
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
@@ -42,7 +41,7 @@ def test_api_accessible():
 
 
 @pytest.fixture
-def configs(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
+def configs(mocked_plugin_loader: type[PluginLoader]):
     return list(PluginLoader.get_supported_configs().values())
 
 
@@ -205,7 +204,7 @@ def test_validation_result_properties():
     ]
 
 
-def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
+def test_validate_variant(mocked_plugin_loader: type[PluginLoader]):
     res = validate_variant(
         VariantDescription(
             [
@@ -253,7 +252,7 @@ def metadata() -> EmailMessage:
 
 @pytest.mark.parametrize("replace", [False, True])
 def test_set_variant_metadata(
-    mocked_plugin_loader: type[PluginLoader],  # noqa: F811
+    mocked_plugin_loader: type[PluginLoader],
     metadata: EmailMessage,
     replace: bool,
 ):
