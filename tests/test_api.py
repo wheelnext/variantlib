@@ -22,6 +22,9 @@ from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
+from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.loader import PluginLoader
 from variantlib.models import provider as pconfig
@@ -95,29 +98,19 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
         unique_by=lambda provider_cfg: provider_cfg.namespace,
         elements=st.builds(
             ProviderConfig,
-            namespace=st.text(
-                string.ascii_letters + string.digits + "_", min_size=1, max_size=64
-            ),
+            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
             configs=st.lists(
                 min_size=1,
                 max_size=2,
                 unique_by=lambda vfeat_cfg: vfeat_cfg.name,
                 elements=st.builds(
                     VariantFeatureConfig,
-                    name=st.text(
-                        alphabet=string.ascii_letters + string.digits + "_",
-                        min_size=1,
-                        max_size=64,
-                    ),
+                    name=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
                     values=st.lists(
                         min_size=1,
                         max_size=3,
                         unique=True,
-                        elements=st.text(
-                            alphabet=string.ascii_letters + string.digits + "_.",
-                            min_size=1,
-                            max_size=64,
-                        ),
+                        elements=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
                     ),
                 ),
             ),
