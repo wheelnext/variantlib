@@ -127,8 +127,10 @@ def test_validate_variants_json_empty():
     "data",
     [
         {},
+        {"variants": ["abcd1234"]},
         {"variants": {"abcd12345": {}}},
         {"variants": {"abcd1234": {}}},
+        {"variants": {"abcd1234": ["namespace"]}},
         {"variants": {"abcd1234": {"namespace": [{"feature": "value"}]}}},
         {"variants": {"abcd1234": {"namespace": {}}}},
         {"variants": {"abcd1234": {"namespace": {"feature": 1}}}},
