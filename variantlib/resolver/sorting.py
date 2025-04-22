@@ -12,7 +12,7 @@ from variantlib.validators import validate_type
 logger = logging.getLogger(__name__)
 
 
-def get_property_priority(
+def get_property_priorities(
     vprop: VariantProperty,
     property_priorities: list[VariantProperty] | None,
 ) -> int:
@@ -38,7 +38,7 @@ def get_property_priority(
         return sys.maxsize
 
 
-def get_feature_priority(
+def get_feature_priorities(
     vprop: VariantProperty,
     feature_priorities: list[VariantFeature] | None,
 ) -> int:
@@ -64,7 +64,7 @@ def get_feature_priority(
         return sys.maxsize
 
 
-def get_namespace_priority(
+def get_namespace_priorities(
     vprop: VariantProperty,
     namespace_priorities: list[str] | None,
 ) -> int:
@@ -88,7 +88,7 @@ def get_namespace_priority(
         return sys.maxsize
 
 
-def get_variant_property_priority_tuple(
+def get_variant_property_priorities_tuple(
     vprop: VariantProperty,
     namespace_priorities: list[str] | None,
     feature_priorities: list[VariantFeature] | None,
@@ -107,11 +107,11 @@ def get_variant_property_priority_tuple(
 
     ranking_tuple = (
         # First Priority
-        get_property_priority(vprop, property_priorities),
+        get_property_priorities(vprop, property_priorities),
         # Second Priority
-        get_feature_priority(vprop, feature_priorities),
+        get_feature_priorities(vprop, feature_priorities),
         # Third Priority
-        get_namespace_priority(vprop, namespace_priorities),
+        get_namespace_priorities(vprop, namespace_priorities),
     )
 
     if all(x == sys.maxsize for x in ranking_tuple):
@@ -141,7 +141,7 @@ def sort_variant_properties(
 
     return sorted(
         vprops,
-        key=lambda x: get_variant_property_priority_tuple(
+        key=lambda x: get_variant_property_priorities_tuple(
             x, namespace_priorities, feature_priorities, property_priorities
         ),
     )

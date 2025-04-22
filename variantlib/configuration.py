@@ -105,15 +105,15 @@ class VariantConfiguration:
 
     @classproperty
     @check_initialized
-    def namespaces_priority(cls) -> list[str]:  # noqa: N805
-        return cls._config.namespaces_priority  # type: ignore[union-attr]
+    def namespace_priorities(cls) -> list[str]:  # noqa: N805
+        return cls._config.namespace_priorities  # type: ignore[union-attr]
 
     @classproperty
     @check_initialized
-    def features_priority(cls) -> list[VariantFeature]:  # noqa: N805
-        return cls._config.features_priority  # type: ignore[union-attr]
+    def feature_priorities(cls) -> list[VariantFeature]:  # noqa: N805
+        return cls._config.feature_priorities  # type: ignore[union-attr]
 
     @classproperty
     @check_initialized
-    def property_priority(cls) -> list[VariantProperty]:  # noqa: N805
-        return cls._config.property_priority  # type: ignore[union-attr]
+    def property_priorities(cls) -> list[VariantProperty]:  # noqa: N805
+        return cls._config.property_priorities  # type: ignore[union-attr]

@@ -13,6 +13,8 @@ from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.errors import ValidationError
+from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ def generate_index_json(args: list[str]) -> None:
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
-    known_variants: dict[str, dict[str, dict[str, str]]] = {}
+    known_variants: dict[str, VariantDescription] = {}
     known_namespaces = set()
     providers: dict[str, str] = {}
 
@@ -53,6 +55,7 @@ def generate_index_json(args: list[str]) -> None:
                     with zip_file.open(name) as f:
                         wheel_metadata = vprop_parser.parse(f, headersonly=True)
                     break
+
             else:
                 logger.warning("%s: no METADATA file found", wheel)
                 continue
@@ -60,8 +63,9 @@ def generate_index_json(args: list[str]) -> None:
             if (
                 variant_hash := wheel_metadata.get(METADATA_VARIANT_HASH_HEADER)
             ) is None:
-                logger.info("%s: no Variant-hash", wheel)
+                logger.debug("%s: not a Wheel Variant. Skipping ...", wheel)
                 continue
+
             if (
                 variant_entries := wheel_metadata.get_all(
                     METADATA_VARIANT_PROPERTY_HEADER
@@ -71,12 +75,14 @@ def generate_index_json(args: list[str]) -> None:
                     "%s: Variant-hash present but no Variant property", wheel
                 )
                 continue
+
             if (
                 wheel_providers := wheel_metadata.get_all(
                     METADATA_VARIANT_PROVIDER_HEADER
                 )
             ) is None:
                 logger.info("%s: no Variant-provider", wheel)
+
             else:
                 for wheel_provider in wheel_providers:
                     ns, _, provider = wheel_provider.partition(",")
@@ -93,34 +99,45 @@ def generate_index_json(args: list[str]) -> None:
                             f"{providers[ns]} and {provider}"
                         )
 
-            variant_dict: dict[str, dict[str, str]] = {}
-            for variant_entry in variant_entries:
-                vprop = VariantProperty.from_str(variant_entry)
-                namespace_dict = variant_dict.setdefault(vprop.namespace, {})
-                if vprop.feature in namespace_dict:
-                    logger.warning(
-                        "%(wheel)s: Duplicate feature: %(namespace)s :: %(feature)s",
-                        {
-                            "wheel": wheel,
-                            "namespace": vprop.namespace,
-                            "feature": vprop.feature,
-                        },
-                    )
-                namespace_dict[vprop.feature] = vprop.value
+            vprops = [VariantProperty.from_str(vprop) for vprop in variant_entries]
+            for vprop in vprops:
                 known_namespaces.add(vprop.namespace)
 
-            if (existing_entry := known_variants.get(variant_hash)) is None:
-                known_variants[variant_hash] = variant_dict
-            elif existing_entry != variant_dict:
-                raise ValueError(
-                    f"{wheel}: different property assigned to {variant_hash}"
+            try:
+                vdesc = VariantDescription(vprops)
+                if vdesc.hexdigest != variant_hash:
+                    logger.error(
+                        "%(wheel)s has been rejected due to a variant hash mismatch: "
+                        "Found: `%(vhash_found)s` != Calculated: `%(vhash_calc)s`. "
+                        "Will be ignored.",
+                        {
+                            "wheel": wheel,
+                            "vhash_found": variant_hash,
+                            "vhash_calc": vdesc.hexdigest,
+                        },
+                    )
+                    continue
+
+            except ValidationError:
+                logger.exception(
+                    "%(wheel)s has been rejected due to invalid properties. Will be "
+                    "ignored.",
+                    {"wheel": wheel},
                 )
+                continue
+
+            if vdesc.hexdigest not in known_variants:
+                known_variants[variant_hash] = vdesc
 
     with directory.joinpath("variants.json").open("w") as f:
         json.dump(
             {
                 VARIANTS_JSON_PROVIDER_DATA_KEY: providers,
-                VARIANTS_JSON_VARIANT_DATA_KEY: known_variants,
+                VARIANTS_JSON_VARIANT_DATA_KEY: {
+                    vhash: vdesc.to_dict() for vhash, vdesc in known_variants.items()
+                },
             },
             f,
+            indent=4,
+            sort_keys=True,
         )

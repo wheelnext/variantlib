@@ -99,12 +99,12 @@ def filter_variants(
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty],
-    forbidden_namespaces: list[str] | None = None,
-    forbidden_features: list[VariantFeature] | None = None,
-    forbidden_properties: list[VariantProperty] | None = None,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[VariantFeature] | None = None,
     property_priorities: list[VariantProperty] | None = None,
+    forbidden_namespaces: list[str] | None = None,
+    forbidden_features: list[VariantFeature] | None = None,
+    forbidden_properties: list[VariantProperty] | None = None,
 ) -> list[VariantDescription]:
     """
     Sort and filter a list of `VariantDescription` objects based on their

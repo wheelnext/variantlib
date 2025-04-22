@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import re
 import sys
+from collections import defaultdict
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -52,7 +53,7 @@ class VariantFeature(BaseModel):
         }
     )
 
-    @cached_property
+    @property
     def feature_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         # note: can't use `self.__class__` because of inheritance
@@ -113,12 +114,12 @@ class VariantProperty(VariantFeature):
         }
     )
 
-    @cached_property
+    @property
     def property_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
         return hash((self.__class__, self.namespace, self.feature, self.value))
 
-    @cached_property
+    @property
     def feature_object(self) -> VariantFeature:
         return VariantFeature(namespace=self.namespace, feature=self.feature)
 
@@ -217,6 +218,29 @@ class VariantDescription(BaseModel):
     def serialize(self) -> list[dict[str, str]]:
         return [vprop.serialize() for vprop in self.properties]
 
+    def to_dict(self) -> dict[str, dict[str, str]]:
+        data = asdict(self)
+
+        result: defaultdict[str, dict[str, str]] = defaultdict(dict)
+
+        for vprop in data["properties"]:
+            namespace = vprop["namespace"]
+            feature = vprop["feature"]
+            value = vprop["value"]
+            result[namespace][feature] = value
+
+        return dict(result)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, dict[str, str]]) -> Self:
+        vprops = [
+            VariantProperty(namespace=namespace, feature=key, value=value)
+            for namespace, vdata in data.items()
+            for key, value in vdata.items()
+        ]
+
+        return cls(vprops)
+
     def pretty_print(self) -> str:
         result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
         for vprop in self.properties:
@@ -234,12 +258,12 @@ class VariantValidationResult:
             allow_unknown_plugins or None not in self.results.values()
         )
 
-    @cached_property
+    @property
     def invalid_properties(self) -> list[VariantProperty]:
         """List of properties declared invalid by plugins"""
         return [x for x, y in self.results.items() if y is False]
 
-    @cached_property
+    @property
     def unknown_properties(self) -> list[VariantProperty]:
         """List of properties not in any recognized namespace"""
         return [x for x, y in self.results.items() if y is None]

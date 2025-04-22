@@ -10,7 +10,7 @@
 #
 # Note: This is a lazy-list: Only specify the ones you want to "bump up" to the top of the list
 
-property_priority = [
+property_priorities = [
     "fictional_hw::architecture::mother",
     "fictional_tech::risk_exposure:25",
 ]
@@ -25,7 +25,7 @@ property_priority = [
 #
 # Note: This is a lazy-list: Only specify the ones you want to "bump up" to the top of the list
 
-features_priority = [
+feature_priorities = [
     "fictional_hw::architecture",
     "fictional_tech::risk_exposure",
     "simd_x86_64::feature3",
@@ -44,7 +44,7 @@ features_priority = [
 #
 #    - If namespaces is specified by no plugin uses it => warning issued.
 
-namespaces_priority = [
+namespace_priorities = [
     "fictional_hw",
     "fictional_tech",
     "simd_x86_64",

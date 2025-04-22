@@ -14,9 +14,9 @@ from variantlib.models.variant import VariantProperty
 
 def test_default_configuration():
     config = VariantConfiguration.default()
-    assert config.namespaces_priority == []
-    assert config.features_priority == []
-    assert config.property_priority == []
+    assert config.namespace_priorities == []
+    assert config.feature_priorities == []
+    assert config.property_priorities == []
 
 
 @pytest.mark.parametrize(
@@ -45,16 +45,16 @@ def test_default_configuration():
 )
 def test_from_toml_config(config_params: dict[str, list[str]]):
     _ = VariantConfiguration.from_toml_config(
-        namespaces_priority=config_params["namespaces"],
-        features_priority=config_params["features"],
-        property_priority=config_params["properties"],
+        namespace_priorities=config_params["namespaces"],
+        feature_priorities=config_params["features"],
+        property_priorities=config_params["properties"],
     )
 
 
 @given(st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX)))
-def test_namespaces_priority_validation(namespaces: list[str]):
-    config = VariantConfiguration(namespaces_priority=namespaces)
-    assert config.namespaces_priority == namespaces
+def test_namespace_priorities_validation(namespaces: list[str]):
+    config = VariantConfiguration(namespace_priorities=namespaces)
+    assert config.namespace_priorities == namespaces
 
 
 @given(
@@ -67,13 +67,13 @@ def test_namespaces_priority_validation(namespaces: list[str]):
         )
     ),
 )
-def test_features_priority_validation(
+def test_feature_priorities_validation(
     namespaces: list[str], features: list[VariantFeature]
 ):
     config = VariantConfiguration(
-        namespaces_priority=namespaces, features_priority=features
+        namespace_priorities=namespaces, feature_priorities=features
     )
-    assert config.features_priority == features
+    assert config.feature_priorities == features
 
 
 @given(
@@ -94,14 +94,14 @@ def test_features_priority_validation(
         )
     ),
 )
-def test_property_priority_validation(
+def test_property_priorities_validation(
     namespaces: list[str],
     features: list[VariantFeature],
     properties: list[VariantProperty],
 ):
     config = VariantConfiguration(
-        namespaces_priority=namespaces,
-        features_priority=features,
-        property_priority=properties,
+        namespace_priorities=namespaces,
+        feature_priorities=features,
+        property_priorities=properties,
     )
-    assert config.property_priority == properties
+    assert config.property_priorities == properties
