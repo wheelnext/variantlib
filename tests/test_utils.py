@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from tests.test_plugins import mocked_plugin_loader  # noqa: F401
@@ -9,9 +11,12 @@ from variantlib.api import VariantProperty
 from variantlib.loader import PluginLoader
 from variantlib.utils import aggregate_user_and_default_lists
 
+if TYPE_CHECKING:
+    from variantlib.models.provider import ProviderConfig
+
 
 @pytest.fixture
-def configs(mocked_plugin_loader: type[PluginLoader]):  # noqa: F811
+def configs(mocked_plugin_loader: type[PluginLoader]) -> list[ProviderConfig]:  # noqa: F811
     return list(PluginLoader.get_supported_configs().values())
 
 
