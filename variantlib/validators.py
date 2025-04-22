@@ -231,7 +231,7 @@ def validate_variants_json(data: dict) -> None:
                     )
                 if VALIDATION_FEATURE_REGEX.match(feature_name) is None:
                     raise ValidationError(
-                        f"Invalid variant feature name`{feature_name}` for hash "
+                        f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"
                     )
 
