@@ -76,15 +76,15 @@ class VariantFeature(BaseModel):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern
 
         pattern = re.compile(
-            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})$"
+            rf"(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})"
         )
 
         # Try matching the input string with the regex pattern
-        match = pattern.match(input_str.strip())
+        match = pattern.fullmatch(input_str.strip())
 
         if match is None:
             raise ValidationError(
@@ -130,16 +130,16 @@ class VariantProperty(VariantFeature):
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern[1:-1]
-        pttn_feature = VALIDATION_FEATURE_REGEX.pattern[1:-1]
-        pttn_value = VALIDATION_VALUE_REGEX.pattern[1:-1]
+        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
+        pttn_feature = VALIDATION_FEATURE_REGEX.pattern
+        pttn_value = VALIDATION_VALUE_REGEX.pattern
 
         pattern = re.compile(
-            rf"^(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})$"
+            rf"(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})"
         )
 
         # Try matching the input string with the regex pattern
-        match = pattern.match(input_str.strip())
+        match = pattern.fullmatch(input_str.strip())
 
         if match is None:
             raise ValidationError(

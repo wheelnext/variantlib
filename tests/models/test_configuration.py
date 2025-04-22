@@ -51,19 +51,19 @@ def test_from_toml_config(config_params: dict[str, list[str]]):
     )
 
 
-@given(st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX)))
+@given(st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)))
 def test_namespace_priorities_validation(namespaces: list[str]):
     config = VariantConfiguration(namespace_priorities=namespaces)
     assert config.namespace_priorities == namespaces
 
 
 @given(
-    st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX)),
+    st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)),
     st.lists(
         st.builds(
             VariantFeature,
             namespace=st.just("OmniCorp"),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX),
+            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
         )
     ),
 )
@@ -77,20 +77,20 @@ def test_feature_priorities_validation(
 
 
 @given(
-    st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX)),
+    st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)),
     st.lists(
         st.builds(
             VariantFeature,
-            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX),
+            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
         )
     ),
     st.lists(
         st.builds(
             VariantProperty,
-            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX),
-            value=st.from_regex(VALIDATION_VALUE_REGEX),
+            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
+            value=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
         )
     ),
 )
