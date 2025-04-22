@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.test_plugins import mocked_plugin_loader  # noqa: F401
 from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def configs(mocked_plugin_loader: type[PluginLoader]) -> list[ProviderConfig]:  # noqa: F811
+def configs(mocked_plugin_loader: type[PluginLoader]) -> list[ProviderConfig]:
     return list(PluginLoader.get_supported_configs().values())
 
 
