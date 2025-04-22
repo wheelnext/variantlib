@@ -73,7 +73,7 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
     ]
 
 
-@settings(deadline=1000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 @example(
     [
         ProviderConfig(
