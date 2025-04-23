@@ -74,6 +74,7 @@ make_variant = "variantlib.commands.make_variant:make_variant"
 plugins = "variantlib.commands.plugins.main:main"
 
 [project.entry-points."variantlib.actions.configuration"]
+create = "variantlib.commands.configuration.create:create"
 list-paths = "variantlib.commands.configuration.list_paths:list_paths"
 
 [project.entry-points."variantlib.actions.plugins"]
