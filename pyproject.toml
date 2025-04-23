@@ -39,6 +39,7 @@ dependencies = [
 
 [project.optional-dependencies]
 cli = [
+    "tomlkit>=0.13,<0.14",
     "tzlocal>=3.0,<6",
 ]
 dev = [
@@ -76,6 +77,7 @@ plugins = "variantlib.commands.plugins.main:main"
 [project.entry-points."variantlib.actions.configuration"]
 create = "variantlib.commands.configuration.create:create"
 list-paths = "variantlib.commands.configuration.list_paths:list_paths"
+update = "variantlib.commands.configuration.update:update"
 
 [project.entry-points."variantlib.actions.plugins"]
 list = "variantlib.commands.plugins.list_plugins:list_plugins"
