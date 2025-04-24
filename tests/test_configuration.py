@@ -5,7 +5,7 @@ from pathlib import Path
 
 import platformdirs
 import pytest
-import tomli_w
+import tomlkit
 
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import VariantConfiguration
@@ -129,8 +129,8 @@ def test_get_config_from_file(mocker, tmp_path: Path):
         ],
     }
     config_path = Path(tmp_path) / "config.toml"
-    with config_path.open("wb") as config_file:
-        tomli_w.dump(data, config_file)
+    with config_path.open("w") as config_file:
+        tomlkit.dump(data, config_file)
 
     def _get_config_files() -> dict[ConfigEnvironments, Path]:
         return {
