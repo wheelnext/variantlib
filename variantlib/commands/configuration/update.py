@@ -6,7 +6,6 @@ import logging
 import sys
 from itertools import chain
 from pathlib import Path
-from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import tomlkit
@@ -64,6 +63,15 @@ INSTRUCTIONS = """
 
 """  # noqa: E501
 
+NAMESPACE_INSTRUCTIONS = """
+Namespace priorities
+====================
+
+Please specify a space-separated list of numbers corresponding to the following
+namespaces, in preference order, starting with the most preferred namespace.
+All namespaces listed as "known" must be included.
+"""
+
 
 def input_with_default(prompt: str, default: str) -> str:
     if readline is not None:
@@ -102,60 +110,57 @@ def index_string_to_values(
     return ret if valid else None
 
 
-def update_namespaces(tomldoc: TOMLDocument) -> None:
-    known_namespaces = sorted(PluginLoader.namespaces)
-    value = tomldoc.setdefault("namespace_priorities", [])
-    unknown_namespaces = sorted(set(value) - set(known_namespaces))
+def update_key(
+    tomldoc: TOMLDocument,
+    key: str,
+    instructions: str,
+    known_values: list[str],
+    known_values_required: bool,
+) -> None:
+    toml_values = tomldoc.setdefault(key, [])
+    unknown_values = sorted(set(toml_values) - set(known_values))
 
     index_map = {
-        index + 1: namespace
-        for index, namespace in enumerate(chain(known_namespaces, unknown_namespaces))
+        index + 1: value
+        for index, value in enumerate(chain(known_values, unknown_values))
     }
     reverse_map = {
-        namespace: index + 1
-        for index, namespace in enumerate(chain(known_namespaces, unknown_namespaces))
+        value: index + 1
+        for index, value in enumerate(chain(known_values, unknown_values))
     }
 
-    sys.stderr.write(
-        dedent("""\
-        Namespace priorities
-        ====================
+    sys.stderr.write(instructions)
+    sys.stderr.write("\nKnown values:\n")
 
-        Please specify a space-separated list of numbers corresponding to the following
-        namespaces, in preference order, starting with the most preferred namespace.
-        All namespaces listed as "required" must be included.
+    for index, value in index_map.items():
+        # Switching to optional values.
+        if index == len(known_values) + 1:
+            sys.stderr.write("\nUnrecognized values already in configuration:\n")
+        sys.stderr.write(f"{index:3}. {value}\n")
 
-        Required namespaces:\n""")
-    )
-
-    for index, namespace in index_map.items():
-        # Switching to optional namespaces.
-        if index == len(known_namespaces) + 1:
-            sys.stderr.write("\nOptional namespaces:\n")
-        sys.stderr.write(f"{index:3}. {namespace}\n")
-
-    value_str = " ".join(f"{reverse_map[namespace]}" for namespace in value)
+    value_str = " ".join(f"{reverse_map[value]}" for value in toml_values)
     while True:
-        value_str = input_with_default("\nnamespace_priorities", value_str)
-        value_list = index_string_to_values(index_map, value_str)
-        if value_list is None:
+        value_str = input_with_default(f"\n{key}", value_str)
+        new_values = index_string_to_values(index_map, value_str)
+        if new_values is None:
             continue
 
-        missing_namespaces = sorted(set(known_namespaces) - set(value_list))
-        if missing_namespaces:
-            sys.stderr.write(
-                "Not all required namespaces specified.\n"
-                "The following namespaces are missing:\n"
-            )
-            # Sort order is the same as index order.
-            for namespace in sorted(missing_namespaces):
-                sys.stderr.write(f"{reverse_map[namespace]:3}. {namespace}\n")
-            continue
+        if known_values_required:
+            missing_values = sorted(set(known_values) - set(new_values))
+            if missing_values:
+                sys.stderr.write(
+                    "Not all required values specified.\n"
+                    "The following values are missing:\n"
+                )
+                # Sort order is the same as index order.
+                for value in sorted(missing_values):
+                    sys.stderr.write(f"{reverse_map[value]:3}. {value}\n")
+                continue
 
         break
 
-    value.clear()
-    value.extend(value_list)
+    toml_values.clear()
+    toml_values.extend(new_values)
     sys.stderr.write("\n")
 
 
@@ -222,8 +227,10 @@ def update(args: list[str]) -> None:
             return
 
     if PluginLoader.plugins:
+        known_namespaces = sorted(PluginLoader.namespaces)
+
         if parsed_args.default:
-            toml_data["namespace_priorities"] = sorted(PluginLoader.namespaces)
+            toml_data["namespace_priorities"] = known_namespaces
             toml_data["feature_priorities"] = []
             toml_data["property_priorities"] = []
             sys.stdout.write(
@@ -231,7 +238,13 @@ def update(args: list[str]) -> None:
                 "priorities\n"
             )
         else:
-            update_namespaces(toml_data)
+            update_key(
+                toml_data,
+                "namespace_priorities",
+                NAMESPACE_INSTRUCTIONS,
+                known_namespaces,
+                known_values_required=True,
+            )
 
         for key in (
             "namespace_priorities",
