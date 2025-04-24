@@ -207,7 +207,7 @@ def update_key(
 
 def setup(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="list-paths",
+        prog="setup",
         description="CLI interface to interactively set configuration up",
     )
     parser.add_argument(
