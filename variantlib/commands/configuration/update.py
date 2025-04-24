@@ -34,36 +34,40 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 INSTRUCTIONS = """
------------------------------------------------------------------------------------------------------------------
-#                                                  INSTRUCTIONS                                                 #
-#                                                                                                               #
-# This command will set the variant configuration file for the requested environment. The configuration file is #
-# used to adjust the priority order of variants among the compatible variants on the system.                    #
-#                                                                                                               #
------------------------------------------------------------------------------------------------------------------
-- Namespace Priorities [REQUIRED]:  If more than one plugin is installed, this setting is mandatory to
-                                    understand which variant namespace goes first.
-                                    Example: `MPI` > `SIMD`
-                                    ~ Meaning that `variantlib` will prioritize MPI support over special
-                                    SIMD instructions. ~
------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------#
+#                                INSTRUCTIONS                               #
+#                                                                           #
+# This command will set the variant configuration file for the requested    #
+# environment. The configuration file is used to adjust the priority order  #
+# of variants among the compatible variants on the system.                  #
+#                                                                           #
+-----------------------------------------------------------------------------
+- Namespace Priorities [REQUIRED]:
+    If more than one plugin is installed, this setting is mandatory to
+    understand which variant namespace goes first.
+    Example: `MPI` > `SIMD`
+    ~ Meaning that `variantlib` will prioritize MPI support over special
+      SIMD instructions. ~
+-----------------------------------------------------------------------------
 - Feature Priorities [OPTIONAL]:    - EXPERT USERS ONLY -
-                                    For most users and usecases, this setting should stay empty & untouched.
-                                    This allows to override the default ordering provided by the Variant
-                                    Provider plugins.
-                                    Example: `SIMD :: AVX` > `SIMD :: SSE`
-                                    ~ Meaning that `variantlib` will force prioritization of AVX support over SSE
-                                    support no matter what the variant provider plugin `SIMD` is recommending. ~
------------------------------------------------------------------------------------------------------------------
+    For most users and usecases, this setting should stay empty & untouched.
+    This allows to override the default ordering provided by the Variant
+    Provider plugins.
+    Example: `SIMD :: AVX` > `SIMD :: SSE`
+    ~ Meaning that `variantlib` will force prioritization of AVX support
+      over SSE support no matter what the variant provider plugin `SIMD` is
+      recommending. ~
+-----------------------------------------------------------------------------
 - Property Priorities [OPTIONAL]:   - EXPERT USERS ONLY -
-                                    For most users and usecases, this setting should stay empty & untouched.
-                                    This allows to override the default ordering provided by the Variant
-                                    Provider plugins.
-                                    Example: `SIMD :: AVX :: 2` > `SIMD :: AVX :: 512`
-                                    ~ Meaning that `variantlib` will force prioritization of AVX2 support over AVX512
-                                    support no matter what the variant provider plugin `SIMD` is recommending. ~
+    For most users and usecases, this setting should stay empty & untouched.
+    This allows to override the default ordering provided by the Variant
+    Provider plugins.
+    Example: `SIMD :: AVX :: 2` > `SIMD :: AVX :: 512`
+    ~ Meaning that `variantlib` will force prioritization of AVX2 support
+      over AVX512 support no matter what the variant provider plugin `SIMD`
+      is recommending. ~
 
-"""  # noqa: E501
+"""
 
 NAMESPACE_INSTRUCTIONS = """
 Namespace priorities
