@@ -203,10 +203,10 @@ def update_key(
     sys.stderr.write("\n")
 
 
-def update(args: list[str]) -> None:
+def setup(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="list-paths",
-        description="CLI interface to interactively update configuration files",
+        description="CLI interface to interactively set configuration up",
     )
     parser.add_argument(
         "-d",
