@@ -4,10 +4,10 @@ from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any
 
-from variantlib.base import PluginType
-from variantlib.base import VariantFeatureConfigType
-from variantlib.base import VariantPropertyType
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
+from variantlib.protocols import VariantPropertyType
 
 
 @dataclass
