@@ -77,6 +77,7 @@ plugins = "variantlib.commands.plugins.main:main"
 [project.entry-points."variantlib.actions.config"]
 list-paths = "variantlib.commands.config.list_paths:list_paths"
 setup = "variantlib.commands.config.setup:setup"
+show = "variantlib.commands.config.show:show"
 
 [project.entry-points."variantlib.actions.plugins"]
 list = "variantlib.commands.plugins.list_plugins:list_plugins"

@@ -84,9 +84,6 @@ class VariantConfiguration:
     @classmethod
     def get_config(cls) -> ConfigurationModel:
         """Load the configuration from the configuration files"""
-        # TODO: Read namespace priority configuration
-        # TODO: Read namespace-feature prority configuration
-        # TODO: Read namespace-feature-value prority configuration
         config_files = get_configuration_files()
 
         for config_name in ConfigEnvironments:
