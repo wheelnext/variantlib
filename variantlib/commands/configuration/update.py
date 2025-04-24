@@ -108,6 +108,19 @@ def input_with_default(prompt: str, default: str) -> str:
     return ret
 
 
+def input_bool(prompt: str, default: bool) -> bool:
+    full_prompt = f"{prompt} [{'Y/n' if default else 'y/N'}] "
+    while True:
+        val = input(full_prompt)
+        if not val:
+            return default
+        if val.lower() in ("y", "yes"):
+            return True
+        if val.lower() in ("n", "no"):
+            return False
+        sys.stderr.write("Invalid reply!\n\n")
+
+
 def index_string_to_values(
     index_map: dict[int, str], value_str: str
 ) -> list[str] | None:
@@ -284,20 +297,22 @@ def update(args: list[str]) -> None:
                 known_namespaces,
                 known_values_required=True,
             )
-            update_key(
-                toml_data,
-                "feature_priorities",
-                FEATURE_INSTRUCTIONS,
-                known_features,
-                known_values_required=False,
-            )
-            update_key(
-                toml_data,
-                "property_priorities",
-                PROPERTY_INSTRUCTIONS,
-                known_properties,
-                known_values_required=False,
-            )
+            if input_bool("Do you want to adjust feature priorities?", default=False):
+                update_key(
+                    toml_data,
+                    "feature_priorities",
+                    FEATURE_INSTRUCTIONS,
+                    known_features,
+                    known_values_required=False,
+                )
+            if input_bool("Do you want to adjust property priorities?", default=False):
+                update_key(
+                    toml_data,
+                    "property_priorities",
+                    PROPERTY_INSTRUCTIONS,
+                    known_properties,
+                    known_values_required=False,
+                )
 
         for key in (
             "namespace_priorities",
