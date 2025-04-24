@@ -14,6 +14,8 @@ from tomlkit.toml_file import TOMLFile
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
 from variantlib.loader import PluginLoader
+from variantlib.models.variant import VariantFeature
+from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -70,6 +72,24 @@ Namespace priorities
 Please specify a space-separated list of numbers corresponding to the following
 namespaces, in preference order, starting with the most preferred namespace.
 All namespaces listed as "known" must be included.
+"""
+
+FEATURE_INSTRUCTIONS = """
+Feature priorities
+==================
+
+Please specify a space-separated list of numbers corresponding to the following
+features, in preference order, starting with the most preferred feature.
+All feature priorities are optional.
+"""
+
+PROPERTY_INSTRUCTIONS = """
+Property priorities
+===================
+
+Please specify a space-separated list of numbers corresponding to the following
+properties, in preference order, starting with the most preferred properties.
+All property priorities are optional.
 """
 
 
@@ -238,12 +258,45 @@ def update(args: list[str]) -> None:
                 "priorities\n"
             )
         else:
+            supported_configs = PluginLoader.get_supported_configs()
+            known_features = [
+                vfeat.to_str()
+                for vfeat in sorted(
+                    VariantFeature(namespace, config.name)
+                    for namespace, provider in supported_configs.items()
+                    for config in provider.configs
+                )
+            ]
+            known_properties = [
+                vprop.to_str()
+                for vprop in sorted(
+                    VariantProperty(namespace, config.name, value)
+                    for namespace, provider in supported_configs.items()
+                    for config in provider.configs
+                    for value in config.values
+                )
+            ]
+
             update_key(
                 toml_data,
                 "namespace_priorities",
                 NAMESPACE_INSTRUCTIONS,
                 known_namespaces,
                 known_values_required=True,
+            )
+            update_key(
+                toml_data,
+                "feature_priorities",
+                FEATURE_INSTRUCTIONS,
+                known_features,
+                known_values_required=False,
+            )
+            update_key(
+                toml_data,
+                "property_priorities",
+                PROPERTY_INSTRUCTIONS,
+                known_properties,
+                known_values_required=False,
             )
 
         for key in (
