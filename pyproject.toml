@@ -69,14 +69,14 @@ variantlib = "variantlib.commands.main:main"
 [project.entry-points."variantlib.actions"]
 analyze_wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
 analyze_platform = "variantlib.commands.analyze_platform:analyze_platform"
-configuration = "variantlib.commands.configuration.main:main"
+config = "variantlib.commands.config.main:main"
 generate_index_json = "variantlib.commands.generate_index_json:generate_index_json"
 make_variant = "variantlib.commands.make_variant:make_variant"
 plugins = "variantlib.commands.plugins.main:main"
 
-[project.entry-points."variantlib.actions.configuration"]
-list-paths = "variantlib.commands.configuration.list_paths:list_paths"
-setup = "variantlib.commands.configuration.setup:setup"
+[project.entry-points."variantlib.actions.config"]
+list-paths = "variantlib.commands.config.list_paths:list_paths"
+setup = "variantlib.commands.config.setup:setup"
 
 [project.entry-points."variantlib.actions.plugins"]
 list = "variantlib.commands.plugins.list_plugins:list_plugins"
