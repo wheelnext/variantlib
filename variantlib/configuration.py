@@ -13,6 +13,7 @@ from typing import TypeVar
 
 import platformdirs
 
+from variantlib import __package_name__
 from variantlib.constants import CONFIG_FILENAME
 from variantlib.errors import ConfigurationError
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
@@ -46,11 +47,13 @@ def get_configuration_files() -> dict[ConfigEnvironments, Path]:
         ConfigEnvironments.LOCAL: Path.cwd() / CONFIG_FILENAME,
         ConfigEnvironments.VIRTUALENV: Path(sys.prefix) / CONFIG_FILENAME,
         ConfigEnvironments.USER: (
-            platformdirs.user_config_path("variantlib", appauthor=False, roaming=True)
+            platformdirs.user_config_path(
+                __package_name__, appauthor=False, roaming=True
+            )
             / CONFIG_FILENAME
         ),
         ConfigEnvironments.GLOBAL: (
-            platformdirs.site_config_path("variantlib", appauthor=False)
+            platformdirs.site_config_path(__package_name__, appauthor=False)
             / CONFIG_FILENAME
         ),
     }
