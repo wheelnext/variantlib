@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import pathlib
 import re
 
 VARIANT_HASH_LEN = 8
 CONFIG_FILENAME = "variants.toml"
+CONFIG_EXAMPLE_FILEPATH = pathlib.Path(__file__).parent.parent / "variants.dist.toml"
+
+assert CONFIG_EXAMPLE_FILEPATH.exists(), (
+    f"Example configuration file not found: {CONFIG_EXAMPLE_FILEPATH}"
+)
 
 VARIANTS_JSON_PROVIDER_DATA_KEY = "providers"
 VARIANTS_JSON_VARIANT_DATA_KEY = "variants"
