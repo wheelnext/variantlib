@@ -84,9 +84,6 @@ def update_namespaces(tomldoc: TOMLDocument) -> None:
         for index, namespace in enumerate(chain(known_namespaces, unknown_namespaces))
     }
 
-    # Always use multiline output for readability.
-    value.multiline(multiline=True)
-
     sys.stderr.write(
         dedent("""\
         Namespace priorities
@@ -135,6 +132,12 @@ def update(args: list[str]) -> None:
         prog="list-paths",
         description="CLI interface to interactively update configuration files",
     )
+    parser.add_argument(
+        "-d",
+        "--default",
+        action="store_true",
+        help="Fill the config with defaults non-interactively",
+    )
 
     excl_group = parser.add_mutually_exclusive_group()
     excl_group.add_argument(
@@ -148,7 +151,7 @@ def update(args: list[str]) -> None:
         "-p",
         "--path",
         type=Path,
-        help="custom path to create at",
+        help="custom path to the config file",
     )
 
     parsed_args = parser.parse_args(args)
@@ -173,9 +176,26 @@ def update(args: list[str]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
 
     if PluginLoader.plugins:
-        update_namespaces(toml_data)
+        if parsed_args.default:
+            toml_data["namespace_priorities"] = sorted(PluginLoader.namespaces)
+            toml_data["feature_priorities"] = []
+            toml_data["property_priorities"] = []
+            sys.stdout.write(
+                "Configuration reset to defaults, please edit the file to adjust "
+                "priorities\n"
+            )
+        else:
+            update_namespaces(toml_data)
+
+        for key in (
+            "namespace_priorities",
+            "feature_priorities",
+            "property_priorities",
+        ):
+            # Always use multiline output for readability.
+            toml_data[key].multiline(multiline=True)
     else:
-        sys.stdout.write("No plugins found, empty configuration will be written")
+        sys.stdout.write("No plugins found, empty configuration will be written\n")
 
     toml_file.write(toml_data)
     sys.stdout.write(f"Configuration file written to {path}\n")
