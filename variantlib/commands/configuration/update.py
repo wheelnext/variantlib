@@ -71,7 +71,7 @@ def index_string_to_values(
 
 
 def update_namespaces(tomldoc: TOMLDocument) -> None:
-    known_namespaces = sorted(PluginLoader.plugins.keys())
+    known_namespaces = sorted(PluginLoader.namespaces)
     value = tomldoc.setdefault("namespace_priorities", [])
     unknown_namespaces = sorted(set(value) - set(known_namespaces))
 

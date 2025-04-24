@@ -340,3 +340,11 @@ def test_get_build_setup_missing_plugin(mocked_plugin_loader):
         match=r"No plugin found for namespace missing_plugin",
     ):
         assert mocked_plugin_loader.get_build_setup(variant_desc) == {}
+
+
+def test_namespaces(mocked_plugin_loader: type[PluginLoader]):
+    assert mocked_plugin_loader.namespaces == [
+        "test_namespace",
+        "second_namespace",
+        "incompatible_namespace",
+    ]
