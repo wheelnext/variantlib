@@ -323,6 +323,22 @@ def update(args: list[str]) -> None:
         ):
             # Always use multiline output for readability.
             toml_data[key].multiline(multiline=True)
+
+        sys.stderr.write(
+            "\n"
+            "Final configuration:\n"
+            "\n"
+            "```\n"
+            # unwrap() converts to base Python type, effectively losing comments.
+            f"{tomlkit.dumps(toml_data.unwrap())}"
+            "```\n"
+            "\n"
+        )
+        if not input_bool(
+            "Do you want to save the configuration changes?", default=True
+        ):
+            sys.stdout.write("Configuration changes discarded\n")
+            return
     else:
         sys.stdout.write("No plugins found, empty configuration will be written\n")
 
