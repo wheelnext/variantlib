@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import get_type_hints
 
-from variantlib.base import PluginType
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
+from variantlib.protocols import PluginType
 from variantlib.utils import classproperty
 from variantlib.validators import ValidationError
 from variantlib.validators import validate_type

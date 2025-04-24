@@ -9,8 +9,6 @@ import pytest
 from tests.mocked_plugins import MockedDistribution
 from tests.mocked_plugins import MockedEntryPoint
 from tests.mocked_plugins import MockedPluginA
-from variantlib.base import PluginType
-from variantlib.base import VariantFeatureConfigType
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.loader import PluginLoader
@@ -18,6 +16,8 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import EntryPoint
@@ -144,7 +144,7 @@ def test_get_configs_incorrect_list_type(method: str, mocker):
         TypeError,
         match=re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
-            "Expected list[variantlib.base.VariantFeatureConfigType], "
+            "Expected list[variantlib.protocols.VariantFeatureConfigType], "
             "got <class 'tuple'>"
         ),
     ):
@@ -180,8 +180,8 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         TypeError,
         match=re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
-            "Expected list[variantlib.base.VariantFeatureConfigType], "
-            "got list[typing.Union[variantlib.base.VariantFeatureConfigType, "
+            "Expected list[variantlib.protocols.VariantFeatureConfigType], "
+            "got list[typing.Union[variantlib.protocols.VariantFeatureConfigType, "
         )
         + r"(dict, int|int, dict)",
     ):
