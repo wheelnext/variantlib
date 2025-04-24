@@ -230,6 +230,11 @@ class PluginLoader:
         cls.load_plugins()
         return cls._plugins
 
+    @classproperty
+    def namespaces(cls) -> list[str]:  # noqa: N805
+        """Get the list of namespaces for loaded plugins"""
+        return list(cls.plugins)
+
 
 # cleanup - do not provide a public API for this classproperty
 del classproperty

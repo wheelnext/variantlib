@@ -12,7 +12,7 @@ else:
 
 
 def main(args: list[str]) -> None:
-    registered_commands = entry_points(group="variantlib.actions.configuration")
+    registered_commands = entry_points(group="variantlib.actions.config")
 
     parser = argparse.ArgumentParser(prog="variantlib configuration")
 
