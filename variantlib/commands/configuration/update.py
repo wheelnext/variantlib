@@ -97,7 +97,9 @@ def input_with_default(prompt: str, default: str) -> str:
     if readline is not None:
 
         def readline_hook() -> None:
-            readline.insert_text(f"{default.strip()} ")
+            readline.insert_text(default.strip())
+            if default.strip():
+                readline.insert_text(" ")
             readline.redisplay()
 
         readline.set_pre_input_hook(readline_hook)
