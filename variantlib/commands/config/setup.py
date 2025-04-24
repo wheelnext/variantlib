@@ -133,19 +133,21 @@ def index_string_to_values(
     ret = []
     valid = True
     for index in value_str.split():
-        try:
-            new_value = index_map[int(index, 10)]
-        except ValueError:  # noqa: PERF203
+        if not index.isdigit():
             sys.stderr.write(f"Value not a number: {index}\n")
             valid = False
-        except KeyError:
+            continue
+
+        new_value = index_map.get(int(index, 10))
+        if new_value is None:
             sys.stderr.write(f"Value out of range: {index}\n")
             valid = False
+            continue
+
+        if new_value in ret:
+            sys.stderr.write(f"Duplicate value ignored: {index}\n")
         else:
-            if new_value in ret:
-                sys.stderr.write(f"Duplicate value ignored: {index}\n")
-            else:
-                ret.append(new_value)
+            ret.append(new_value)
     return ret if valid else None
 
 
