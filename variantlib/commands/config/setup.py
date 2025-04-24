@@ -45,26 +45,26 @@ INSTRUCTIONS = """
 - Namespace Priorities [REQUIRED]:
     If more than one plugin is installed, this setting is mandatory to
     understand which variant namespace goes first.
-    Example: `MPI` > `SIMD`
+    Example: `MPI` > `x86_64`
     ~ Meaning that `variantlib` will prioritize MPI support over special
-      SIMD instructions. ~
+      x86_64 optimizations. ~
 -----------------------------------------------------------------------------
 - Feature Priorities [OPTIONAL]:    - EXPERT USERS ONLY -
     For most users and usecases, this setting should stay empty & untouched.
     This allows to override the default ordering provided by the Variant
     Provider plugins.
-    Example: `SIMD :: AVX` > `SIMD :: SSE`
-    ~ Meaning that `variantlib` will force prioritization of AVX support
-      over SSE support no matter what the variant provider plugin `SIMD` is
+    Example: `x86_64 :: aes` > `x86_64 :: sse3`
+    ~ Meaning that `variantlib` will force prioritization of AES intrinsics
+      over SSE3 support no matter what the variant provider plugin `x86_64` is
       recommending. ~
 -----------------------------------------------------------------------------
 - Property Priorities [OPTIONAL]:   - EXPERT USERS ONLY -
     For most users and usecases, this setting should stay empty & untouched.
     This allows to override the default ordering provided by the Variant
     Provider plugins.
-    Example: `SIMD :: AVX :: 2` > `SIMD :: AVX :: 512`
-    ~ Meaning that `variantlib` will force prioritization of AVX2 support
-      over AVX512 support no matter what the variant provider plugin `SIMD`
+    Example: `MPI :: Provider :: MPICH` > `MPI :: Provider :: OpenMPI`
+    ~ Meaning that `variantlib` will force prioritization of MPICH use
+      over OpenMPI use no matter what the variant provider plugin `MPI`
       is recommending. ~
 
 """
