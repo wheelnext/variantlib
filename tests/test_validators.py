@@ -9,6 +9,8 @@ from typing import runtime_checkable
 
 import pytest
 
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantProperty
 from variantlib.validators import ValidationError
 from variantlib.validators import validate_type
 from variantlib.validators import validate_variants_json
@@ -117,6 +119,25 @@ def test_validate_variants_json():
         data = json.load(f)
 
     validate_variants_json(data)
+
+    for vhash, vdata in data["variants"].items():
+        assert isinstance(vhash, str)
+        assert isinstance(vdata, dict)
+
+        vprops = []
+
+        for namespace, feature_data in vdata.items():
+            assert isinstance(namespace, str)
+            assert isinstance(feature_data, dict)
+
+            for feature_name, feature_value in feature_data.items():
+                assert isinstance(feature_name, str)
+                assert isinstance(feature_value, str)
+                vprops.append(VariantProperty(namespace, feature_name, feature_value))
+
+        assert VariantDescription(vprops).hexdigest == vhash, (
+            f"Found `{VariantDescription(vprops).hexdigest}` - Expected {vhash}"
+        )
 
 
 def test_validate_variants_json_empty():
