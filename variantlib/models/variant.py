@@ -199,7 +199,7 @@ class VariantDescription(BaseModel):
         """
         Compute the hash of the object.
         """
-        hash_object = hashlib.shake_128()
+        hash_object = hashlib.sha256()
         for vprop in self.properties:
             hash_object.update(vprop.to_str().encode("utf-8"))
 
@@ -207,7 +207,7 @@ class VariantDescription(BaseModel):
         # length, containing only hexadecimal digits. This may be used to exchange the
         # value safely in email or other non-binary environments.
         # Source: https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest
-        return hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
+        return hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
     @classmethod
     def deserialize(cls, properties: list[dict[str, str]]) -> Self:

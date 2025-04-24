@@ -273,7 +273,7 @@ def test_set_variant_metadata(
         "Variant: second_namespace :: name3 :: val3a\n"
         "Variant: test_namespace :: name1 :: val1d\n"
         "Variant: test_namespace :: name2 :: val2a\n"
-        "Variant-hash: c105e82f\n"
+        "Variant-hash: ece1285e\n"
         "Variant-provider: second_namespace, second-plugin\n"
         "Variant-provider: test_namespace, test-plugin\n"
         "\n"

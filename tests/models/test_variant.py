@@ -305,10 +305,10 @@ def test_variantdescription_hexdigest():
     vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
-    hash_object = hashlib.shake_128()
+    hash_object = hashlib.sha256()
     for vprop in vprops:
         hash_object.update(vprop.to_str().encode("utf-8"))
-    expected_hexdigest = hash_object.hexdigest(int(VARIANT_HASH_LEN / 2))
+    expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
     assert vdesc.hexdigest == expected_hexdigest
 
@@ -341,7 +341,7 @@ def test_variantdescription_deserialization():
     assert vdesc.properties[0].namespace == "provider"
     assert vdesc.properties[0].feature == "feature"
     assert vdesc.properties[0].value == "value"
-    assert vdesc.hexdigest == "fafeda9c"
+    assert vdesc.hexdigest == "e4be6b4d"
 
 
 # -----------------------------------------------
