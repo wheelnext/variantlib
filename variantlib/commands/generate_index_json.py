@@ -125,13 +125,14 @@ def generate_index_json(args: list[str]) -> None:
                     )
                 providers[ns].add(provider)
 
+    sorted_providers = {}
     for key, values in providers.items():
-        providers[key] = sorted(values)
+        sorted_providers[key] = sorted(values)
 
     with (directory / "variants.json").open(mode="w") as f:
         json.dump(
             {
-                VARIANTS_JSON_PROVIDER_DATA_KEY: providers,
+                VARIANTS_JSON_PROVIDER_DATA_KEY: sorted_providers,
                 VARIANTS_JSON_VARIANT_DATA_KEY: {
                     vhash: vdesc.to_dict() for vhash, vdesc in known_variants.items()
                 },
