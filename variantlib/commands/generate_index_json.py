@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import email.parser
 import email.policy
 import json
@@ -52,9 +53,11 @@ def generate_index_json(args: list[str]) -> None:
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
         if (wheel_info := VALIDATION_WHEEL_NAME_REGEX.fullmatch(wheel.name)) is None:
-            raise TypeError(
-                f"The file is not a valid python wheel filename: `{wheel.name}`"
+            logger.exception(
+                "The file is not a valid python wheel filename: `%(wheel)s`. Skipped",
+                {"wheel": wheel.name},
             )
+            continue
 
         if wheel_info.group("variant_hash") is None:
             logger.debug(
@@ -89,9 +92,8 @@ def generate_index_json(args: list[str]) -> None:
 
             # ============== Variant Properties Processing ================ #
 
-            vprops = [VariantProperty.from_str(vprop) for vprop in variant_entries]
-
             try:
+                vprops = [VariantProperty.from_str(vprop) for vprop in variant_entries]
                 vdesc = VariantDescription(vprops)
             except ValidationError:
                 logger.exception(
@@ -116,7 +118,9 @@ def generate_index_json(args: list[str]) -> None:
                 )
 
             for wheel_provider in wheel_providers:
-                known_providers.add(ProviderPackage.from_str(wheel_provider))
+                with contextlib.suppress(ValidationError):
+                    # If the following fails, the provider will be ignored.
+                    known_providers.add(ProviderPackage.from_str(wheel_provider))
 
     sorted_providers = defaultdict(list)
     for provider in known_providers:
