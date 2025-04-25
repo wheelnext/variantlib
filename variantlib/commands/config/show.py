@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import sys
 
 import tomlkit
-import tomllib
 
 from variantlib.configuration import ConfigEnvironments
-from variantlib.configuration import ConfigurationModel
 from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
-from variantlib.errors import ConfigurationError
 
 logging.getLogger("variantlib").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -38,46 +36,35 @@ def show(args: list[str]) -> None:
 
     source_f = None
     if parsed_args.environment is None:
+        with contextlib.suppress(FileNotFoundError):
+            source_f = VariantConfiguration.get_config_file()
+        # This mode will return the default configuration if the file does not exist
         configuration = VariantConfiguration.get_config()
-        config_files = get_configuration_files()
-
-        for config_name in ConfigEnvironments:
-            if (cfg_f := config_files[config_name]).exists():
-                source_f = cfg_f
-                break
-        else:
-            raise FileNotFoundError("No configuration file found.")
 
     else:
         source_f = get_configuration_files()[
             getattr(ConfigEnvironments, parsed_args.environment)
         ]
 
+        # This mode will raise an exception if the file does not exist
         if not source_f.exists():
             raise FileNotFoundError(
                 f"The specified configuration [{parsed_args.environment}] file does "
                 f"not exist: `{source_f}`."
             )
-
-    with source_f.open("rb") as f:
-        try:
-            config = tomllib.load(f)
-        except tomllib.TOMLDecodeError as e:
-            raise ConfigurationError from e
-
-    configuration = ConfigurationModel.from_toml_config(**config)
+        configuration = VariantConfiguration.get_config_from_file(source_f)
 
     data = configuration.to_dict()
     doc = tomlkit.document()
-    doc.add(tomlkit.comment(f"This file has been sourced from: `{source_f.resolve()}`"))
+    doc.add(tomlkit.comment(f"This file has been sourced from: `{source_f}`"))
     doc.add(tomlkit.nl())  # Blank line after comment
-    for idx, (key, items) in enumerate(data.items()):
+
+    for key, items in data.items():
         array = tomlkit.array().multiline(multiline=True)
         array.extend(items)
         doc[key] = array
 
-        # Add a blank line if it's not the last item
-        if idx < len(data) - 1:
-            doc.add(tomlkit.nl())
+        # Add a blank line
+        doc.add(tomlkit.nl())
 
     tomlkit.dump(doc, sys.stderr)

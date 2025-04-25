@@ -171,3 +171,5 @@ cython_debug/
 .pypirc
 
 variantlib/example.json
+
+variants.toml
