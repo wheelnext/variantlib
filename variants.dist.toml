@@ -12,7 +12,7 @@
 
 property_priorities = [
     "fictional_hw::architecture::mother",
-    "fictional_tech::risk_exposure:25",
+    "fictional_tech::risk_exposure::25",
 ]
 
 # ============= Second-Most Priority ============= #

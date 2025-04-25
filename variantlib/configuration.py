@@ -13,8 +13,8 @@ from typing import TypeVar
 
 import platformdirs
 
-from variantlib import errors
 from variantlib.constants import CONFIG_FILENAME
+from variantlib.errors import ConfigurationError
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
 from variantlib.utils import classproperty
 
@@ -82,26 +82,34 @@ class VariantConfiguration:
         cls._config = None
 
     @classmethod
-    def get_config(cls) -> ConfigurationModel:
-        """Load the configuration from the configuration files"""
-        # TODO: Read namespace priority configuration
-        # TODO: Read namespace-feature prority configuration
-        # TODO: Read namespace-feature-value prority configuration
+    def get_config_file(cls) -> Path:
+        """Get the configuration file path"""
         config_files = get_configuration_files()
-
         for config_name in ConfigEnvironments:
             if (cfg_f := config_files[config_name]).exists():
-                logger.info("Loading configuration file: %s", config_files[config_name])
-                with cfg_f.open("rb") as f:
-                    try:
-                        config = tomllib.load(f)
-                    except tomllib.TOMLDecodeError as e:
-                        raise errors.ConfigurationError from e
+                return cfg_f
 
-                return ConfigurationModel.from_toml_config(**config)
+        raise FileNotFoundError("No configuration file found.")
 
-        # No user-configuration file found
-        return ConfigurationModel.default()
+    @classmethod
+    def get_config_from_file(cls, config_file: Path) -> ConfigurationModel:
+        """Load the configuration from a file"""
+        with config_file.open("rb") as f:
+            try:
+                config = tomllib.load(f)
+            except tomllib.TOMLDecodeError as e:
+                raise ConfigurationError from e
+
+        return ConfigurationModel.from_toml_config(**config)
+
+    @classmethod
+    def get_config(cls) -> ConfigurationModel:
+        """Load the configuration from the configuration files"""
+        try:
+            return cls.get_config_from_file(cls.get_config_file())
+        except FileNotFoundError:
+            # No user-configuration file found
+            return ConfigurationModel.default()
 
     @classproperty
     @check_initialized

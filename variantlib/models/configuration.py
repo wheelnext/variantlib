@@ -121,3 +121,18 @@ class VariantConfiguration(BaseModel):
             feature_priorities=_feature_priorities,
             property_priorities=_property_priorities,
         )
+
+    def to_dict(self) -> dict[str, list[str]]:
+        """
+        Convert the Configuration instance to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the Configuration instance.
+        """
+        return {
+            "namespace_priorities": self.namespace_priorities,
+            "feature_priorities": [vfeat.to_str() for vfeat in self.feature_priorities],
+            "property_priorities": [
+                vprop.to_str() for vprop in self.property_priorities
+            ],
+        }
