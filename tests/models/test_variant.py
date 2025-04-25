@@ -305,12 +305,30 @@ def test_variantdescription_hexdigest():
     vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
-    hash_object = hashlib.sha256()
-    for vprop in vprops:
-        hash_object.update(vprop.to_str().encode("utf-8"))
+    hash_object = hashlib.sha256(
+        b"OmniCorp :: custom_feat :: secret_value\n"
+        b"TyrellCorporation :: client_id :: secret_pass\n"
+    )
     expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
     assert vdesc.hexdigest == expected_hexdigest
+
+
+def test_variantdescription_hexdigest_adjacent_strings():
+    assert (
+        VariantDescription(
+            [
+                VariantProperty("a", "b", "cx"),
+                VariantProperty("d", "e", "f"),
+            ]
+        ).hexdigest
+        != VariantDescription(
+            [
+                VariantProperty("a", "b", "c"),
+                VariantProperty("xd", "e", "f"),
+            ]
+        ).hexdigest
+    )
 
 
 def test_variantdescription_serialization():
@@ -341,7 +359,7 @@ def test_variantdescription_deserialization():
     assert vdesc.properties[0].namespace == "provider"
     assert vdesc.properties[0].feature == "feature"
     assert vdesc.properties[0].value == "value"
-    assert vdesc.hexdigest == "e4be6b4d"
+    assert vdesc.hexdigest == "c44d3adf"
 
 
 # -----------------------------------------------

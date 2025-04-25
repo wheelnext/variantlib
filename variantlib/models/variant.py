@@ -201,7 +201,7 @@ class VariantDescription(BaseModel):
         """
         hash_object = hashlib.sha256()
         for vprop in self.properties:
-            hash_object.update(vprop.to_str().encode("utf-8"))
+            hash_object.update(f"{vprop.to_str()}\n".encode())
 
         # Like digest() except the digest is returned as a string object of double
         # length, containing only hexadecimal digits. This may be used to exchange the
