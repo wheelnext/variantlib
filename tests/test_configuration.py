@@ -7,6 +7,7 @@ import platformdirs
 import pytest
 import tomlkit
 
+from variantlib import __package_name__
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
@@ -34,13 +35,15 @@ def test_get_configuration_files():
     assert (
         config_files[ConfigEnvironments.USER]
         == Path(
-            platformdirs.user_config_dir("variantlib", appauthor=False, roaming=True)
+            platformdirs.user_config_dir(
+                __package_name__, appauthor=False, roaming=True
+            )
         )
         / CONFIG_FILENAME
     )
     assert (
         config_files[ConfigEnvironments.GLOBAL]
-        == Path(platformdirs.site_config_dir("variantlib", appauthor=False))
+        == Path(platformdirs.site_config_dir(__package_name__, appauthor=False))
         / CONFIG_FILENAME
     )
 
