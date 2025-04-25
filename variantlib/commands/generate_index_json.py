@@ -11,10 +11,11 @@ from collections import defaultdict
 
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
+from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
-from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
 from variantlib.errors import ValidationError
+from variantlib.models.provider import ProviderPackage
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
@@ -46,11 +47,11 @@ def generate_index_json(args: list[str]) -> None:
 
     vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
     known_variants: dict[str, VariantDescription] = {}
-    providers: dict[str, set[str]] = defaultdict(set)
+    known_providers: set[ProviderPackage] = set()
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
-        if (wheel_info := WHEEL_NAME_VALIDATION_REGEX.fullmatch(wheel.name)) is None:
+        if (wheel_info := VALIDATION_WHEEL_NAME_REGEX.fullmatch(wheel.name)) is None:
             raise TypeError(
                 f"The file is not a valid python wheel filename: `{wheel.name}`"
             )
@@ -115,17 +116,11 @@ def generate_index_json(args: list[str]) -> None:
                 )
 
             for wheel_provider in wheel_providers:
-                ns, _, provider = (x.strip() for x in wheel_provider.partition(", "))
-                if not ns or not provider:
-                    raise ValueError(
-                        f"{wheel}: Invalid {METADATA_VARIANT_PROVIDER_HEADER}: "
-                        f"{wheel_provider}"
-                    )
-                providers[ns].add(provider)
+                known_providers.add(ProviderPackage.from_str(wheel_provider))
 
-    sorted_providers = {
-        key: sorted(values) for key, values in providers.items()
-    }
+    sorted_providers = defaultdict(list)
+    for provider in known_providers:
+        sorted_providers[provider.namespace].append(provider.package_name)
 
     with (directory / "variants.json").open(mode="w") as f:
         json.dump(

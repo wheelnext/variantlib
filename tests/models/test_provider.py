@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import ProviderPackage
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantProperty
+
+# ======================== VariantFeatureConfig ======================== #
 
 
 def test_vfeat_config_creation_valid():
@@ -85,6 +92,50 @@ def test_invalid_values_type_in_vfeat_config():
         )  # Expecting a list for `values`
 
 
+def test_vfeat_config_invalid_values_type():
+    """Test a invalid values VariantFeatureConfig raises a ValidationError."""
+    with pytest.raises(ValidationError):
+        VariantFeatureConfig(name="attr_nameA", values="invalid_values")  # type: ignore[arg-type]
+
+
+def test_vfeat_config_non_string_name():
+    """Test that non-string name in VariantFeatureConfig raise an error."""
+    with pytest.raises(ValidationError):
+        VariantFeatureConfig(name=12345, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
+
+
+def test_name_config_repr():
+    """Test the __repr__ method of VariantFeatureConfig."""
+    vfeat_config = VariantFeatureConfig(
+        name="attr_nameA", values=["7", "4", "8.4.3", "12.1"]
+    )
+    expected_repr = (
+        "VariantFeatureConfig(name='attr_nameA', values=['7', '4', '8.4.3', '12.1'])"
+    )
+    assert repr(vfeat_config) == expected_repr
+
+
+def test_failing_regex_name():
+    with pytest.raises(ValidationError, match="must match regex"):
+        _ = VariantFeatureConfig(name="", values=["7", "4", "8", "12"])
+
+    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
+        with pytest.raises(ValidationError, match="must match regex"):
+            _ = VariantFeatureConfig(name=f"name{c}value", values=["7", "4", "8", "12"])
+
+
+def test_failing_regex_value():
+    with pytest.raises(ValidationError, match="must match regex"):
+        _ = VariantFeatureConfig(name="name", values=[""])
+
+    for c in "@#$%&*^()[]?!-{}[]\\/ ":
+        with pytest.raises(ValidationError, match="must match regex"):
+            _ = VariantFeatureConfig(name="name", values=[f"val{c}ue"])
+
+
+# ======================== ProviderConfig ======================== #
+
+
 def test_provider_config_invalid_namespace_type():
     """Test that an invalid namespace type raises a validation error."""
     with pytest.raises(ValidationError):
@@ -138,18 +189,6 @@ def test_provider_config_invalid_vfeat_config_type():
         )
 
 
-def test_vfeat_config_invalid_values_type():
-    """Test a invalid values VariantFeatureConfig raises a ValidationError."""
-    with pytest.raises(ValidationError):
-        VariantFeatureConfig(name="attr_nameA", values="invalid_values")  # type: ignore[arg-type]
-
-
-def test_vfeat_config_non_string_name():
-    """Test that non-string name in VariantFeatureConfig raise an error."""
-    with pytest.raises(ValidationError):
-        VariantFeatureConfig(name=12345, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
-
-
 def test_provider_config_repr():
     """Test the __repr__ method of ProviderConfig."""
     vfeat_config_1 = VariantFeatureConfig(
@@ -168,35 +207,6 @@ def test_provider_config_repr():
         "VariantFeatureConfig(name='attr_nameB', values=['3', '7', '2', '18'])])"
     )
     assert repr(provider_config) == expected_repr
-
-
-def test_name_config_repr():
-    """Test the __repr__ method of VariantFeatureConfig."""
-    vfeat_config = VariantFeatureConfig(
-        name="attr_nameA", values=["7", "4", "8.4.3", "12.1"]
-    )
-    expected_repr = (
-        "VariantFeatureConfig(name='attr_nameA', values=['7', '4', '8.4.3', '12.1'])"
-    )
-    assert repr(vfeat_config) == expected_repr
-
-
-def test_failing_regex_name():
-    with pytest.raises(ValidationError, match="must match regex"):
-        _ = VariantFeatureConfig(name="", values=["7", "4", "8", "12"])
-
-    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
-        with pytest.raises(ValidationError, match="must match regex"):
-            _ = VariantFeatureConfig(name=f"name{c}value", values=["7", "4", "8", "12"])
-
-
-def test_failing_regex_value():
-    with pytest.raises(ValidationError, match="must match regex"):
-        _ = VariantFeatureConfig(name="name", values=[""])
-
-    for c in "@#$%&*^()[]?!-{}[]\\/ ":
-        with pytest.raises(ValidationError, match="must match regex"):
-            _ = VariantFeatureConfig(name="name", values=[f"val{c}ue"])
 
 
 def test_to_list_of_properties():
@@ -218,3 +228,54 @@ def test_to_list_of_properties():
         VariantProperty("ns", "c", "c1"),
         VariantProperty("ns", "b", "b1"),
     ]
+
+
+# ======================== ProviderPackage ======================== #
+
+
+@pytest.fixture
+def valid_namespace():
+    return "namespace"
+
+
+@pytest.fixture
+def valid_package_name():
+    return "package_name"
+
+
+def test_provider_package_init(valid_namespace, valid_package_name):
+    provider_package = ProviderPackage(
+        namespace=valid_namespace, package_name=valid_package_name
+    )
+    assert provider_package.namespace == valid_namespace
+    assert provider_package.package_name == valid_package_name
+
+
+@given(
+    namespace=st.text(
+        alphabet=st.characters(min_codepoint=0, max_codepoint=32)
+        | st.characters(min_codepoint=58, max_codepoint=64)
+        | st.characters(min_codepoint=91, max_codepoint=96)
+        | st.characters(min_codepoint=123, max_codepoint=127)
+    ),
+    package_name=st.text(
+        alphabet=st.characters(min_codepoint=0, max_codepoint=32)
+        | st.characters(min_codepoint=58, max_codepoint=64)
+        | st.characters(min_codepoint=91, max_codepoint=96)
+        | st.characters(min_codepoint=123, max_codepoint=127)
+    ),
+)
+def test_provider_package_init_invalid(namespace, package_name):
+    with pytest.raises(ValidationError):
+        ProviderPackage(namespace=namespace, package_name=package_name)
+
+
+@given(
+    namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+    package_name=st.from_regex(VALIDATION_PYTHON_PACKAGE_NAME_REGEX, fullmatch=True),
+)
+def test_provider_package(namespace: str, package_name: str):
+    provider_package = ProviderPackage(namespace=namespace, package_name=package_name)
+    assert provider_package.namespace == namespace
+    assert provider_package.package_name == package_name
+    assert provider_package.to_str() == f"{namespace}: {package_name}"

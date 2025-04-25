@@ -156,4 +156,4 @@ def set_variant_metadata(
     for ns, provider in sorted(providers.items()):
         # Follow the "<key>, <value>" format used in metadata already:
         # https://packaging.python.org/en/latest/specifications/core-metadata/#project-url-multiple-use
-        metadata[METADATA_VARIANT_PROVIDER_HEADER] = f"{ns}, {provider}"
+        metadata[METADATA_VARIANT_PROVIDER_HEADER] = f"{ns}: {provider}"
