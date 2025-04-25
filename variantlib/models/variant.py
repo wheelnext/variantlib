@@ -200,8 +200,17 @@ class VariantDescription(BaseModel):
         Compute the hash of the object.
         """
         hash_object = hashlib.sha256()
+        # Append a newline to every serialized property to ensure that they
+        # are separated from one another. Otherwise, two "adjacent" variants
+        # such as:
+        #     a :: b :: cx
+        #     d :: e :: f
+        # and:
+        #     a :: b :: c
+        #     xd :: e :: f
+        # would serialize to the same hash.
         for vprop in self.properties:
-            hash_object.update(vprop.to_str().encode("utf-8"))
+            hash_object.update(f"{vprop.to_str()}\n".encode())
 
         # Like digest() except the digest is returned as a string object of double
         # length, containing only hexadecimal digits. This may be used to exchange the
