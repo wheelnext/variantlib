@@ -13,6 +13,7 @@ from collections import defaultdict
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
+from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
@@ -59,11 +60,15 @@ def generate_index_json(args: list[str]) -> None:
             )
             continue
 
-        if wheel_info.group("variant_hash") is None:
+        if (vhash := wheel_info.group("variant_hash")) is None:
             logger.debug(
-                "Filepath: `%(input_file)s` ... is not a wheel variant.",
+                "Filepath: `%(input_file)s` ... is not a wheel variant. Skipping ...",
                 {"input_file": wheel.name},
             )
+            continue
+
+        if vhash == "0" * VARIANT_HASH_LEN:
+            known_variants[vhash] = VariantDescription()
             continue
 
         with zipfile.ZipFile(wheel, "r") as zip_file:

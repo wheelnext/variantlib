@@ -50,18 +50,26 @@ def make_variant(args: list[str]) -> None:
         help="Output Directory to use to store the Wheel Variant",
     )
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument(
         "-p",
         "--property",
         dest="properties",
         type=VariantProperty.from_str,
-        required=True,
         action="extend",
         nargs="+",
         help=(
             "Variant Properties to add to the Wheel Variant, can be repeated as many "
             "times as needed"
         ),
+        default=[],
+    )
+
+    group.add_argument(
+        "--null-variant",
+        action="store_true",
+        help="make the variant a `null variant` - no variant property.",
     )
 
     parsed_args = parser.parse_args(args)
@@ -69,6 +77,20 @@ def make_variant(args: list[str]) -> None:
     input_filepath: pathlib.Path = parsed_args.input_filepath
     output_directory: pathlib.Path = parsed_args.output_directory
 
+    _make_variant(
+        input_filepath,
+        output_directory,
+        is_null_variant=parsed_args.null_variant,
+        properties=parsed_args.properties,
+    )
+
+
+def _make_variant(
+    input_filepath: pathlib.Path,
+    output_directory: pathlib.Path,
+    is_null_variant: bool,
+    properties: list[VariantProperty],
+) -> None:
     # Input Validation
     if not input_filepath.is_file():
         raise FileNotFoundError(f"Input Wheel File `{input_filepath}` does not exists.")
@@ -83,22 +105,27 @@ def make_variant(args: list[str]) -> None:
     if wheel_info is None:
         raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 
-    # Transform properties into a VariantDescription
-    vdesc = VariantDescription(properties=parsed_args.properties)
+    if not is_null_variant:
+        # Transform properties into a VariantDescription
+        vdesc = VariantDescription(properties=properties)
 
-    # Verify whether the variant properties are valid
-    vdesc_valid = validate_variant(vdesc)
-    if vdesc_valid.invalid_properties:
-        raise ValidationError(
-            "The following variant properties are invalid according to the plugins: "
-            f"{', '.join(x.to_str() for x in vdesc_valid.invalid_properties)}"
-        )
-    if vdesc_valid.unknown_properties:
-        raise ValidationError(
-            "The following variant properties use namespaces that are not provided "
-            "by any installed plugin: "
-            f"{', '.join(x.to_str() for x in vdesc_valid.unknown_properties)}"
-        )
+        # Verify whether the variant properties are valid
+        vdesc_valid = validate_variant(vdesc)
+        if vdesc_valid.invalid_properties:
+            raise ValidationError(
+                "The following variant properties are invalid according to the "
+                "plugins: "
+                f"{', '.join(x.to_str() for x in vdesc_valid.invalid_properties)}"
+            )
+        if vdesc_valid.unknown_properties:
+            raise ValidationError(
+                "The following variant properties use namespaces that are not provided "
+                "by any installed plugin: "
+                f"{', '.join(x.to_str() for x in vdesc_valid.unknown_properties)}"
+            )
+    else:
+        # Create a null variant
+        vdesc = VariantDescription()
 
     # Determine output wheel filename
     output_filepath = (

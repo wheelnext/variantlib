@@ -221,6 +221,12 @@ def test_variantprop_sorting():
 # -----------------------------------------------
 
 
+def test_null_variant():
+    vdesc = VariantDescription()
+    assert vdesc.properties == []
+    assert vdesc.hexdigest == "00000000"
+
+
 def test_variantdescription_initialization():
     # Valid input: List of VariantProperty instances
     vprop1 = VariantProperty(
