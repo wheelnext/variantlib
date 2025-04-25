@@ -115,9 +115,7 @@ def generate_index_json(args: list[str]) -> None:
                 )
 
             for wheel_provider in wheel_providers:
-                ns, _, provider = wheel_provider.partition(", ")
-                ns = ns.strip()
-                provider = provider.strip()
+                ns, _, provider = (x.strip() for x in wheel_provider.partition(", "))
                 if not ns or not provider:
                     raise ValueError(
                         f"{wheel}: Invalid {METADATA_VARIANT_PROVIDER_HEADER}: "
