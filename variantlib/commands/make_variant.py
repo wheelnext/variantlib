@@ -14,7 +14,7 @@ from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import WHEEL_NAME_VALIDATION_REGEX
+from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -34,20 +34,6 @@ def make_variant(args: list[str]) -> None:
     )
 
     parser.add_argument(
-        "-p",
-        "--property",
-        dest="properties",
-        type=VariantProperty.from_str,
-        required=True,
-        action="extend",
-        nargs="+",
-        help=(
-            "Variant Properties to add to the Wheel Variant, can be repeated as many "
-            "times as needed"
-        ),
-    )
-
-    parser.add_argument(
         "-f",
         "--file",
         dest="input_filepath",
@@ -62,6 +48,20 @@ def make_variant(args: list[str]) -> None:
         type=pathlib.Path,
         required=True,
         help="Output Directory to use to store the Wheel Variant",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--property",
+        dest="properties",
+        type=VariantProperty.from_str,
+        required=True,
+        action="extend",
+        nargs="+",
+        help=(
+            "Variant Properties to add to the Wheel Variant, can be repeated as many "
+            "times as needed"
+        ),
     )
 
     parsed_args = parser.parse_args(args)
@@ -79,7 +79,7 @@ def make_variant(args: list[str]) -> None:
         )
 
     # Input Validation - Wheel Filename is valid and non variant already.
-    wheel_info = WHEEL_NAME_VALIDATION_REGEX.fullmatch(input_filepath.name)
+    wheel_info = VALIDATION_WHEEL_NAME_REGEX.fullmatch(input_filepath.name)
     if wheel_info is None:
         raise ValueError(f"{input_filepath.name!r} is not a valid wheel filename.")
 

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import re
+import sys
 from dataclasses import dataclass
 from dataclasses import field
 from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantProperty
@@ -18,6 +21,11 @@ from variantlib.validators import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 
 @dataclass(frozen=True)
@@ -93,3 +101,47 @@ class ProviderConfig(BaseModel):
         for feat_cfg in self.configs:
             for value in feat_cfg.values:
                 yield VariantProperty(self.namespace, feat_cfg.name, value)
+
+
+@dataclass(frozen=True)
+class ProviderPackage(BaseModel):
+    namespace: str = field(
+        metadata={
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_type(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
+                ],
+                value=val,
+            )
+        }
+    )
+
+    package_name: str = field(
+        metadata={
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_type(v, str),
+                    lambda v: validate_matches_re(
+                        v, VALIDATION_PYTHON_PACKAGE_NAME_REGEX
+                    ),
+                ],
+                value=val,
+            )
+        }
+    )
+
+    @classmethod
+    def from_str(cls, provider_str: str) -> Self:
+        validate_type(provider_str, str)
+        input_validation_regex = re.compile(
+            rf"({VALIDATION_NAMESPACE_REGEX.pattern})\s*:"
+            rf"\s*({VALIDATION_PYTHON_PACKAGE_NAME_REGEX.pattern})",
+            re.IGNORECASE,
+        )
+        validate_matches_re(provider_str, input_validation_regex)
+
+        return cls(*[val.strip() for val in provider_str.split(":")])
+
+    def to_str(self) -> str:
+        return f"{self.namespace}: {self.package_name}"

@@ -8,16 +8,21 @@ CONFIG_FILENAME = "variants.toml"
 VARIANTS_JSON_PROVIDER_DATA_KEY = "providers"
 VARIANTS_JSON_VARIANT_DATA_KEY = "variants"
 
+METADATA_VARIANT_HASH_HEADER = "Variant-hash"
+METADATA_VARIANT_PROPERTY_HEADER = "Variant"
+METADATA_VARIANT_PROVIDER_HEADER = "Variant-provider"
+
 VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[A-Za-z0-9_]+")
 VALIDATION_FEATURE_REGEX = re.compile(r"[A-Za-z0-9_]+")
 VALIDATION_VALUE_REGEX = re.compile(r"[A-Za-z0-9_.]+")
 
-METADATA_VARIANT_HASH_HEADER = "Variant-hash"
-METADATA_VARIANT_PROPERTY_HEADER = "Variant"
-METADATA_VARIANT_PROVIDER_HEADER = "Variant-provider"
-
-WHEEL_NAME_VALIDATION_REGEX = re.compile(
+# VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")
+# Per PEP 508: https://peps.python.org/pep-0508/#names
+VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(
+    r"[A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9]", re.IGNORECASE
+)
+VALIDATION_WHEEL_NAME_REGEX = re.compile(
     r"(?P<base_wheel_name>                "  # <base_wheel_name> group (without variant)
     r"  (?P<namever>                      "  # "namever" group contains <name>-<ver>
     r"    (?P<name>[^\s-]+?)              "  # <name>
