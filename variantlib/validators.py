@@ -15,6 +15,7 @@ from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
+from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 
@@ -184,8 +185,23 @@ def validate_variants_json(data: dict) -> None:
             raise ValidationError(
                 f"Invalid `variant_hash` type: `{variant_hash}` in data (expected str)"
             )
+
         if VALIDATION_VARIANT_HASH_REGEX.fullmatch(variant_hash) is None:
             raise ValidationError(f"Invalid variant hash `{variant_hash}` in data")
+
+        if variant_hash == "0" * VARIANT_HASH_LEN:
+            if len(vdata) != 0:
+                raise ValidationError(
+                    f"Invalid variant data for null variant `{variant_hash}`: "
+                    f"{vdata}. Should be empty."
+                )
+            continue
+
+        if len(vdata) == 0:
+            raise ValidationError(
+                f"Invalid variant data for non-null variant `{variant_hash}`: "
+                f"{vdata}. Should not be empty."
+            )
 
         # Check the Variant Data
         if not isinstance(vdata, dict):

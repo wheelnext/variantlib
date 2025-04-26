@@ -6,12 +6,26 @@ import pathlib
 import re
 import zipfile
 
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
+from variantlib.models.provider import ProviderPackage
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def pretty_print(vdesc: VariantDescription, providers: list[ProviderPackage]) -> str:
+    result_str = f"{'#' * 30} Variant: `{vdesc.hexdigest}` {'#' * 29}"
+    for vprop in vdesc.properties:
+        result_str += f"\n{METADATA_VARIANT_PROPERTY_HEADER}: {vprop.to_str()}"
+    for provider in providers:
+        result_str += f"\n{METADATA_VARIANT_PROVIDER_HEADER}: {provider.to_str()}"
+    result_str += f"\n{'#' * 80}\n"
+    return result_str
 
 
 def analyze_wheel(args: list[str]) -> None:
@@ -58,22 +72,33 @@ def analyze_wheel(args: list[str]) -> None:
         # original_xml_data = xmltodict.parse(zip_file.open("Data.xml").read())
         for name in zip_file.namelist():
             if name.endswith(".dist-info/METADATA"):
-                vprop_str = zip_file.open(name).read().decode("utf-8")
+                metadata_str = zip_file.open(name).read().decode("utf-8")
                 break
 
         # Extract the hash value
-        hash_match = re.search(r"Variant-hash: (\w+)", vprop_str)
+        hash_match = re.search(rf"{METADATA_VARIANT_HASH_HEADER}: (\w+)", metadata_str)
         hash_value = hash_match.group(1) if hash_match else None
         assert hash_value == variant_hash, (
             "Hash value does not match - this variant is not valid"
         )
 
         # Extract all variant strings
-        variant_matches = re.findall(r"Variant: (.+)", vprop_str)
+        variant_matches = re.findall(
+            rf"{METADATA_VARIANT_PROPERTY_HEADER}: (.+)", metadata_str
+        )
         vprop = variant_matches if variant_matches else []
 
         vdesc = VariantDescription(
             [VariantProperty.from_str(variant) for variant in vprop]
         )
 
-        logger.info(vdesc.pretty_print())
+        # Extract all variant provider strings``
+        providers = [
+            ProviderPackage.from_str(provider_str)
+            for provider_str in re.findall(
+                rf"{METADATA_VARIANT_PROVIDER_HEADER}: (.+)", metadata_str
+            )
+        ]
+
+        for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
+            logger.info(line)

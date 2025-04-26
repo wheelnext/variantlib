@@ -173,6 +173,10 @@ def sort_variants_descriptions(
         :return: Rank tuple[int, ...] of the `VariantDescription` object.
         """
 
+        if vdesc.is_null_variant():
+            # return the tuple that represents the lowest priority
+            return tuple(sys.maxsize for _ in property_hash_priorities)
+
         # --------------------------- Implementation Notes --------------------------- #
         # - `property_hash_priorities` is ordered. It's a list.
         # - `vdesc_prop_hashes` is unordered. It's a set.

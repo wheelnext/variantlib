@@ -119,6 +119,8 @@ def sort_and_filter_supported_variants(
     """
     validate_type(vdescs, list[VariantDescription])
 
+    vdescs = [*vdescs, VariantDescription()]
+
     if supported_vprops is None:
         """No supported properties provided, return no variants."""
         return []

@@ -185,6 +185,7 @@ def test_filter_variants_only_one_prop_allowed(
     assert len(vprops) == 6
     _, _, _, vprop4, _, _ = vprops
 
+    # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     assert (
@@ -244,6 +245,7 @@ def test_filter_variants_forbidden_feature_allowed_prop(
     assert len(vprops) == 6
     _, vprop2, _, vprop4, _, _ = vprops
 
+    # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     assert list(
@@ -261,6 +263,7 @@ def test_filter_variants_forbidden_namespace_allowed_prop(
     assert len(vprops) == 6
     vprop1, _, _, vprop4, _, _ = vprops
 
+    # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     assert list(
@@ -285,6 +288,7 @@ def test_filter_variants_only_remove_duplicates(
 ):
     assert len(vprops) == 6
 
+    # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     ddiff = deep_diff(
@@ -306,6 +310,8 @@ def test_filter_variants_remove_duplicates_and_namespaces(
     assert len(vprops) == 6
     _, _, vprop3, vprop4, vprop5, vprop6 = vprops
 
+    # Adding the `null-Variant` and shuffling the list & creating duplicates
+    vdescs = [*vdescs, VariantDescription()]
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     expected_vdescs = [
@@ -326,6 +332,8 @@ def test_filter_variants_remove_duplicates_and_namespaces(
         VariantDescription([vprop4]),
         VariantDescription([vprop5]),
         VariantDescription([vprop6]),
+        # Null-Variant is never removed and last
+        VariantDescription(),
     ]
 
     ddiff = deep_diff(
@@ -360,6 +368,8 @@ def test_filter_variants_remove_duplicates_and_features(
     assert len(vprops) == 6
     vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
 
+    # Adding the `null-Variant` and shuffling the list & creating duplicates
+    vdescs = [*vdescs, VariantDescription()]
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     expected_vdescs = [
@@ -371,6 +381,8 @@ def test_filter_variants_remove_duplicates_and_features(
         VariantDescription([vprop1]),
         VariantDescription([vprop4]),
         VariantDescription([vprop5]),
+        # Null-Variant is never removed and last
+        VariantDescription(),
     ]
 
     forbidden_features = [
@@ -411,6 +423,8 @@ def test_filter_variants_remove_duplicates_and_properties(
     assert len(vprops) == 6
     vprop1, vprop2, _, vprop4, vprop5, _ = vprops
 
+    # Adding the `null-Variant` and shuffling the list & creating duplicates
+    vdescs = [*vdescs, VariantDescription()]
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     expected_vdescs = [
@@ -422,6 +436,8 @@ def test_filter_variants_remove_duplicates_and_properties(
         VariantDescription([vprop1]),
         VariantDescription([vprop4]),
         VariantDescription([vprop5]),
+        # Null-Variant is never removed and last
+        VariantDescription(),
     ]
 
     allowed_properties = [vprop1, vprop2, vprop4, vprop5]
@@ -522,9 +538,13 @@ def test_sort_and_filter_supported_variants(
         VariantDescription([vprop1, vprop6]),
         VariantDescription([vprop6]),
         VariantDescription([vprop1]),
+
+        # Null-Variant is never removed and last - Implicitly added
+        VariantDescription(),
     ]
     # fmt: on
 
+    # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
     ddiff = deep_diff(

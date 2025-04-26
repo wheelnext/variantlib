@@ -54,9 +54,10 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
 
     namespace_priorities = ["test_namespace", "second_namespace"]
 
-    combinations: list[VariantDescription] = list(
-        get_combinations(configs, namespace_priorities)
-    )
+    # The null-variant is always the last one and implicitly added
+    combinations: list[VariantDescription] = [
+        *list(get_combinations(configs, namespace_priorities)),
+    ]
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
@@ -127,7 +128,9 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
             assume(i < 65536)
             yield x
 
-    combinations: list[VariantDescription] = list(get_or_skip_combinations())
+    # The null-variant is always the last one and implicitly added
+    combinations: list[VariantDescription] = [*list(get_or_skip_combinations())]
+
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations

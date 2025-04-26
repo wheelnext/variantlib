@@ -18,7 +18,6 @@ from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
 from variantlib.validators import validate_and
 from variantlib.validators import validate_list_all_unique
-from variantlib.validators import validate_list_min_len
 from variantlib.validators import validate_matches_re
 from variantlib.validators import validate_type
 
@@ -172,14 +171,14 @@ class VariantDescription(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, list[VariantProperty]),
-                    lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(
                         v, keys=["namespace", "feature"]
                     ),
                 ],
                 value=val,
             ),
-        }
+        },
+        default_factory=list,
     )
 
     def __post_init__(self) -> None:
@@ -194,11 +193,22 @@ class VariantDescription(BaseModel):
         # Execute the validator
         super().__post_init__()
 
+    def is_null_variant(self) -> bool:
+        """
+        Check if the variant is a null variant.
+        A null variant is a variant with no properties.
+        """
+        return not self.properties
+
     @cached_property
     def hexdigest(self) -> str:
         """
         Compute the hash of the object.
         """
+        if self.is_null_variant():
+            # The `null-variant` is a special case where no properties are defined.
+            return "0" * VARIANT_HASH_LEN
+
         hash_object = hashlib.sha256()
         # Append a newline to every serialized property to ensure that they
         # are separated from one another. Otherwise, two "adjacent" variants
@@ -249,13 +259,6 @@ class VariantDescription(BaseModel):
         ]
 
         return cls(vprops)
-
-    def pretty_print(self) -> str:
-        result_str = f"{'#' * 30} Variant: `{self.hexdigest}` {'#' * 29}"
-        for vprop in self.properties:
-            result_str += f"\nVariant Property: {vprop.to_str()}"
-        result_str += f"\n{'#' * 80}\n"
-        return result_str
 
 
 @dataclass(frozen=True)
