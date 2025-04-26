@@ -199,7 +199,7 @@ class VariantDescription(BaseModel):
         Check if the variant is a null variant.
         A null variant is a variant with no properties.
         """
-        return self.hexdigest == "0" * VARIANT_HASH_LEN
+        return not self.properties
 
     @cached_property
     def hexdigest(self) -> str:
