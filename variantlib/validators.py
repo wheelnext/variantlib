@@ -197,6 +197,12 @@ def validate_variants_json(data: dict) -> None:
                 )
             continue
 
+        if len(vdata) == 0:
+            raise ValidationError(
+                f"Invalid variant data for non-null variant `{variant_hash}`: "
+                f"{vdata}. Should not be empty."
+            )
+
         # Check the Variant Data
         if not isinstance(vdata, dict):
             raise ValidationError(
