@@ -50,3 +50,6 @@ def get_combinations(
     for start in range(len(all_properties)):
         for properties in yield_all_values(all_properties[start:]):
             yield VariantDescription(properties)
+
+    # Finish by the null variant
+    yield VariantDescription()

@@ -57,7 +57,6 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
     # The null-variant is always the last one and implicitly added
     combinations: list[VariantDescription] = [
         *list(get_combinations(configs, namespace_priorities)),
-        VariantDescription(),
     ]
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
@@ -130,10 +129,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
             yield x
 
     # The null-variant is always the last one and implicitly added
-    combinations: list[VariantDescription] = [
-        *list(get_or_skip_combinations()),
-        VariantDescription(),
-    ]
+    combinations: list[VariantDescription] = [*list(get_or_skip_combinations())]
 
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {

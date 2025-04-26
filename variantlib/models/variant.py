@@ -193,7 +193,6 @@ class VariantDescription(BaseModel):
         # Execute the validator
         super().__post_init__()
 
-    @property
     def is_null_variant(self) -> bool:
         """
         Check if the variant is a null variant.
@@ -206,7 +205,7 @@ class VariantDescription(BaseModel):
         """
         Compute the hash of the object.
         """
-        if self.is_null_variant:
+        if self.is_null_variant():
             # The `null-variant` is a special case where no properties are defined.
             return "0" * VARIANT_HASH_LEN
 

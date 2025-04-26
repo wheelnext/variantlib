@@ -57,6 +57,7 @@ def test_get_combinations(configs):
         VariantDescription([val2c, val3a]),
         VariantDescription([val2c]),
         VariantDescription([val3a]),
+        VariantDescription(),
     ]
 
 
@@ -98,6 +99,7 @@ def test_get_combinations_flipped_order(configs):
         VariantDescription([val2a]),
         VariantDescription([val2b]),
         VariantDescription([val2c]),
+        VariantDescription(),
     ]
 
 
@@ -107,7 +109,12 @@ def test_get_combinations_one_one_namespace_one(configs):
     namespace_priorities = ["second_namespace"]
 
     assert list(get_combinations(configs, namespace_priorities)) == [
-        VariantDescription([VariantProperty("second_namespace", "name3", "val3a")]),
+        VariantDescription(
+            [
+                VariantProperty("second_namespace", "name3", "val3a"),
+            ]
+        ),
+        VariantDescription(),
     ]
 
 
@@ -135,6 +142,7 @@ def test_get_combinations_one_one_namespace_two(configs):
         VariantDescription([val2a]),
         VariantDescription([val2b]),
         VariantDescription([val2c]),
+        VariantDescription(),
     ]
 
 
