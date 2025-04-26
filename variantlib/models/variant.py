@@ -206,7 +206,7 @@ class VariantDescription(BaseModel):
         """
         Compute the hash of the object.
         """
-        if not self.properties:
+        if self.is_null_variant:
             # The `null-variant` is a special case where no properties are defined.
             return "0" * VARIANT_HASH_LEN
 
