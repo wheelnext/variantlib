@@ -4,6 +4,7 @@ import argparse
 import logging
 import pathlib
 import re
+import sys
 import zipfile
 
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
@@ -101,4 +102,4 @@ def analyze_wheel(args: list[str]) -> None:
         ]
 
         for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
-            logger.info(line)
+            sys.stdout.write(f"{line}\n")
