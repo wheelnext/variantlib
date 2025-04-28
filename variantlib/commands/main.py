@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 
 import variantlib
@@ -15,6 +16,13 @@ else:
 
 
 def main() -> None:
+    logger = logging.getLogger(__package_name__)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
     registered_commands = entry_points(group=f"{__package_name__}.actions")
 
     parser = argparse.ArgumentParser(prog=__package_name__)
