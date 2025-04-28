@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 
+from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -105,6 +106,13 @@ def get_variant_property_priorities_tuple(
     """
     validate_type(vprop, VariantProperty)
 
+    if namespace_priorities is not None:
+        validate_type(namespace_priorities, list[str])
+    if feature_priorities is not None:
+        validate_type(feature_priorities, list[VariantFeature])
+    if property_priorities is not None:
+        validate_type(property_priorities, list[VariantProperty])
+
     ranking_tuple = (
         # First Priority
         get_property_priorities(vprop, property_priorities),
@@ -115,7 +123,7 @@ def get_variant_property_priorities_tuple(
     )
 
     if all(x == sys.maxsize for x in ranking_tuple):
-        raise ValidationError(
+        raise ConfigurationError(
             f"VariantProperty {vprop} has no priority - this should not happen."
         )
 
@@ -138,6 +146,30 @@ def sort_variant_properties(
     :return: Sorted list of `VariantProperty` objects.
     """
     validate_type(vprops, list[VariantProperty])
+
+    if namespace_priorities is not None:
+        validate_type(namespace_priorities, list[str])
+    if feature_priorities is not None:
+        validate_type(feature_priorities, list[VariantFeature])
+    if property_priorities is not None:
+        validate_type(property_priorities, list[VariantProperty])
+
+    error_message = (
+        "The variant environment needs to be (re)configured, please execute "
+        "`variantlib config setup` and re-run your command."
+    )
+
+    found_namespaces = {vprop.namespace for vprop in vprops}
+
+    if namespace_priorities is None or not namespace_priorities:
+        if len(found_namespaces) > 1:
+            raise ConfigurationError(error_message)
+
+        # if there is only one namespace, use it as the default
+        namespace_priorities = list(found_namespaces)
+
+    elif len(found_namespaces.difference(namespace_priorities)) > 0:
+        raise ConfigurationError(error_message)
 
     return sorted(
         vprops,

@@ -8,6 +8,7 @@ import pytest
 from deepdiff import DeepDiff
 from deepdiff.operator import BaseOperator
 
+from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -597,7 +598,7 @@ def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ):
     # This one specifies no ordering/priority => can't sort
-    with pytest.raises(ValidationError, match="has no priority"):
+    with pytest.raises(ConfigurationError, match="The variant environment needs"):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
             supported_vprops=vprops,

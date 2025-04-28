@@ -4,6 +4,7 @@ import sys
 
 import pytest
 
+from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -243,8 +244,6 @@ def test_sort_variant_properties():
         ([VariantProperty("a", "b", "c")], None, ["not a VariantFeature"], None),
         ([VariantProperty("a", "b", "c")], None, None, "not a list or None"),
         ([VariantProperty("a", "b", "c")], None, None, ["not a VariantProperty"]),
-        # Can't sort without any ordering priorities
-        ([VariantProperty("a", "b", "c")], None, None, None),
     ],
 )
 def test_sort_variant_properties_validation_error(
@@ -259,6 +258,16 @@ def test_sort_variant_properties_validation_error(
             namespace_priorities=namespace_priorities,
             feature_priorities=feature_priorities,
             property_priorities=property_priorities,
+        )
+
+
+def test_sort_variant_properties_configuration_error():
+    with pytest.raises(ConfigurationError):
+        sort_variant_properties(
+            vprops=[VariantProperty("a", "b", "c"), VariantProperty("x", "y", "z")],
+            namespace_priorities=None,
+            feature_priorities=None,
+            property_priorities=None,
         )
 
 
