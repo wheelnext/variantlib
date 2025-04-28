@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib.resources
 import logging
 import sys
 from itertools import chain
@@ -254,9 +253,8 @@ def setup(args: list[str]) -> None:
     try:
         toml_data = toml_file.read()
     except FileNotFoundError:
-        toml_data = tomlkit.parse(
-            importlib.resources.read_binary(__name__, "variants.dist.toml")
-        )
+        with (Path(__file__).parent / "variants.dist.toml").open("rb") as f:
+            toml_data = tomlkit.parse(f.read())
         path.parent.mkdir(parents=True, exist_ok=True)
 
     if not parsed_args.skip_instructions and not parsed_args.default:
