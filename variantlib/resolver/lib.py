@@ -119,7 +119,14 @@ def sort_and_filter_supported_variants(
     """
     validate_type(vdescs, list[VariantDescription])
 
-    vdescs = [*vdescs, VariantDescription()]
+    if (null_variant := VariantDescription()) not in vdescs:
+        """Add a null variant description to the list."""
+        # This is needed to ensure that we always consider the null variant
+        # to fall back on when no other variants are available.
+        #
+        # This can be used to provide a different default build when using
+        # a variant-enabled installer.
+        vdescs.append(null_variant)
 
     if supported_vprops is None:
         """No supported properties provided, return no variants."""
