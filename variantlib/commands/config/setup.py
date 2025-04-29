@@ -8,8 +8,8 @@ from pathlib import Path
 import tomlkit
 from tomlkit.toml_file import TOMLFile
 
-from variantlib.commands.config.console_ui import ConsoleUI
-from variantlib.commands.config.urwid_ui import UrwidUI
+from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
+from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
 from variantlib.loader import PluginLoader
@@ -135,6 +135,7 @@ def setup(args: list[str]) -> None:
                 "Configuration reset to defaults, please edit the file to adjust "
                 "priorities\n"
             )
+
         else:
             supported_configs = PluginLoader.get_supported_configs()
             known_features = [

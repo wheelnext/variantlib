@@ -17,7 +17,9 @@ def display_configs(
     provider_configs: list[ProviderConfig],
     namespace_filter: str | None,
     feature_filter: str | None,
+    sort_vprops: bool = False,
 ) -> None:
+    vprops = []
     for provider_cfg in provider_configs:
         if namespace_filter is not None and namespace_filter != provider_cfg.namespace:
             continue
@@ -27,5 +29,11 @@ def display_configs(
                 continue
 
             for value in feature.values:
-                vprop = VariantProperty(provider_cfg.namespace, feature.name, value)
-                sys.stdout.write(f"{vprop.to_str()}\n")
+                vprops.append(  # noqa: PERF401
+                    VariantProperty(
+                        provider_cfg.namespace, feature.name, value
+                    ).to_str()
+                )
+
+    for vprop in sorted(vprops) if sort_vprops else vprops:
+        sys.stdout.write(f"{vprop}\n")

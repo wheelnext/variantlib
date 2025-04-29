@@ -13,18 +13,18 @@ if TYPE_CHECKING:
 
 INSTRUCTIONS = {
     "namespace_priorities": "Please order the namespaces according to their priority, "
-    "most preferred namespace first. Press Page Up and Page Down to reorder "
+    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
     "the focused namespace, and enter to toggle it. Only enabled namespaces will be "
     "included in the configuration. The namespacs in bold are required "
     "and cannot be disabled.",
     "feature_priorities": "Please order the features according to their priority, "
-    "most preferred namespace first. Press Page Up and Page Down to reorder "
+    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
     "the focused feature, and enter to toggle it. Only enabled features will be "
     "included in the configuration. All feature priorities are optional.",
     "property_priorities": "Please order the properties according to their priority, "
-    "most preferred property first. Press Page Up and Page Down to reorder the focused "
-    "property, and enter to toggle it. Only enabled namespaces will be included "
-    "in the configuration. All propety priorities are optional.",
+    "most preferred property first. Press [Page Up or Tab] and Page Down to reorder "
+    "the focused property, and enter to toggle it. Only enabled namespaces will be "
+    "included in the configuration. All propety priorities are optional.",
 }
 
 
@@ -132,7 +132,7 @@ class UrwidUI:
                     super().toggle_state()
 
             def keypress(self, size: tuple[int], key: str) -> str | None:
-                if key == "page up":
+                if key in ["page up", "tab"]:
                     old_pos = value_box.focus_position
                     if old_pos != 0:
                         item = value_box.body.pop(old_pos)
@@ -140,6 +140,7 @@ class UrwidUI:
                         if old_pos != len(value_box.body) - 1:
                             value_box.focus_position -= 1
                     return None
+
                 if key == "page down":
                     old_pos = value_box.focus_position
                     if old_pos != len(value_box.body) - 1:
@@ -147,6 +148,7 @@ class UrwidUI:
                         value_box.body.insert(old_pos + 1, item)
                         value_box.focus_position += 1
                     return None
+
                 return super().keypress(size, key)
 
         def save_button(_: Any) -> None:
@@ -202,9 +204,11 @@ class UrwidUI:
         loop.run()
 
         new_values = [
-            item.label
+            item.base_widget.label
             for item in value_box.body
-            if isinstance(item, MovableCheckBox) and item.get_state()
+            if isinstance(item, urwid.AttrMap)
+            and isinstance(item.base_widget, MovableCheckBox)
         ]
+
         toml_values.clear()
         toml_values.extend(new_values)
