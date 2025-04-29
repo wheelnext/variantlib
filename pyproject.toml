@@ -64,6 +64,7 @@ config = "variantlib.commands.config.main:main"
 generate-index-json = "variantlib.commands.generate_index_json:generate_index_json"
 make-variant = "variantlib.commands.make_variant:make_variant"
 unmake-variant = "variantlib.commands.unmake_variant:unmake_variant"
+hack-variant = "variantlib.commands.hack_variant:hack_variant"
 plugins = "variantlib.commands.plugins.main:main"
 
 [project.entry-points."variantlib.actions.config"]
