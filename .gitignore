@@ -173,3 +173,5 @@ cython_debug/
 variantlib/example.json
 
 variants.toml
+
+.DS_Store
