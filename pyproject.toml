@@ -31,6 +31,7 @@ dynamic = ["version"]
 cli = [
     "tomlkit>=0.13,<0.14",
     "tzlocal>=3.0,<6",
+    "urwid>=2.6.0,<3",
 ]
 dev = [
     "check-manifest",

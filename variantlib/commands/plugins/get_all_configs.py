@@ -25,4 +25,5 @@ def get_all_configs(args: list[str]) -> None:
         list(PluginLoader.get_all_configs().values()),
         namespace_filter=parsed_args.namespace,
         feature_filter=parsed_args.feature,
+        sort_vprops=True,
     )

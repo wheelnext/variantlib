@@ -145,9 +145,8 @@ class PluginLoader:
     def get_supported_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
 
-        cls.load_plugins()
         provider_cfgs = {}
-        for namespace, plugin_instance in cls._plugins.items():
+        for namespace, plugin_instance in cls.plugins.items():
             vfeat_configs = cls._call(plugin_instance.get_supported_configs)
 
             # skip providers that do not return any supported configs
@@ -170,7 +169,7 @@ class PluginLoader:
 
         cls.load_plugins()
         provider_cfgs = {}
-        for namespace, plugin_instance in cls._plugins.items():
+        for namespace, plugin_instance in cls.plugins.items():
             vfeat_configs = cls._call(plugin_instance.get_all_configs)
 
             if not vfeat_configs:
@@ -192,13 +191,12 @@ class PluginLoader:
     @classmethod
     def get_build_setup(cls, properties: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
-        cls.load_plugins()
 
         ret_env: dict[str, list[str]] = {}
         for namespace, p_props in groupby(
             sorted(properties.properties), lambda prop: prop.namespace
         ):
-            if (plugin := cls._plugins.get(namespace)) is None:
+            if (plugin := cls.plugins.get(namespace)) is None:
                 raise PluginMissingError(f"No plugin found for namespace {namespace}")
 
             if hasattr(plugin, "get_build_setup"):

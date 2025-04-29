@@ -3,31 +3,18 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import tomlkit
 from tomlkit.toml_file import TOMLFile
 
+from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
+from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
 from variantlib.loader import PluginLoader
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    from tomlkit.toml_document import TOMLDocument
-
-readline: ModuleType | None
-try:
-    import readline
-except ImportError:
-    # readline is optional
-    readline = None
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,13 +28,16 @@ INSTRUCTIONS = """
 # of variants among the compatible variants on the system.                  #
 #                                                                           #
 -----------------------------------------------------------------------------
+
 - Namespace Priorities [REQUIRED]:
     If more than one plugin is installed, this setting is mandatory to
     understand which variant namespace goes first.
     Example: `MPI` > `x86_64`
     ~ Meaning that `variantlib` will prioritize MPI support over special
       x86_64 optimizations. ~
+
 -----------------------------------------------------------------------------
+
 - Feature Priorities [OPTIONAL]:    - EXPERT USERS ONLY -
     For most users and usecases, this setting should stay empty & untouched.
     This allows to override the default ordering provided by the Variant
@@ -56,7 +46,9 @@ INSTRUCTIONS = """
     ~ Meaning that `variantlib` will force prioritization of AES intrinsics
       over SSE3 support no matter what the variant provider plugin `x86_64` is
       recommending. ~
+
 -----------------------------------------------------------------------------
+
 - Property Priorities [OPTIONAL]:   - EXPERT USERS ONLY -
     For most users and usecases, this setting should stay empty & untouched.
     This allows to override the default ordering provided by the Variant
@@ -67,141 +59,6 @@ INSTRUCTIONS = """
       is recommending. ~
 
 """
-
-NAMESPACE_INSTRUCTIONS = """
-Namespace priorities
-====================
-
-Please specify a space-separated list of numbers corresponding to the following
-namespaces, in preference order, starting with the most preferred namespace.
-All namespaces listed as "known" must be included.
-"""
-
-FEATURE_INSTRUCTIONS = """
-Feature priorities
-==================
-
-Please specify a space-separated list of numbers corresponding to the following
-features, in preference order, starting with the most preferred feature.
-All feature priorities are optional.
-"""
-
-PROPERTY_INSTRUCTIONS = """
-Property priorities
-===================
-
-Please specify a space-separated list of numbers corresponding to the following
-properties, in preference order, starting with the most preferred properties.
-All property priorities are optional.
-"""
-
-
-def input_with_default(prompt: str, default: str) -> str:
-    if readline is not None:
-
-        def readline_hook() -> None:
-            readline.insert_text(default.strip())
-            if default.strip():
-                readline.insert_text(" ")
-            readline.redisplay()
-
-        readline.set_pre_input_hook(readline_hook)
-        ret = input(f"{prompt}: ")
-        readline.set_pre_input_hook()
-    else:
-        ret = input(f"{prompt} (current value: {default}): ")
-    return ret
-
-
-def input_bool(prompt: str, default: bool) -> bool:
-    full_prompt = f"{prompt} [{'Y/n' if default else 'y/N'}] "
-    while True:
-        val = input(full_prompt)
-        if not val:
-            return default
-        if val.lower() in ("y", "yes"):
-            return True
-        if val.lower() in ("n", "no"):
-            return False
-        sys.stderr.write("Invalid reply!\n\n")
-
-
-def index_string_to_values(
-    index_map: dict[int, str], value_str: str
-) -> list[str] | None:
-    ret = []
-    valid = True
-    for index in value_str.split():
-        if not index.isdigit():
-            sys.stderr.write(f"Value not a number: {index}\n")
-            valid = False
-            continue
-
-        new_value = index_map.get(int(index, 10))
-        if new_value is None:
-            sys.stderr.write(f"Value out of range: {index}\n")
-            valid = False
-            continue
-
-        if new_value in ret:
-            sys.stderr.write(f"Duplicate value ignored: {index}\n")
-        else:
-            ret.append(new_value)
-    return ret if valid else None
-
-
-def update_key(
-    tomldoc: TOMLDocument,
-    key: str,
-    instructions: str,
-    known_values: list[str],
-    known_values_required: bool,
-) -> None:
-    toml_values = tomldoc.setdefault(key, [])
-    unknown_values = sorted(set(toml_values) - set(known_values))
-
-    index_map = {
-        index + 1: value
-        for index, value in enumerate(chain(known_values, unknown_values))
-    }
-    reverse_map = {
-        value: index + 1
-        for index, value in enumerate(chain(known_values, unknown_values))
-    }
-
-    sys.stderr.write(instructions)
-    sys.stderr.write("\nKnown values:\n")
-
-    for index, value in index_map.items():
-        # Switching to optional values.
-        if index == len(known_values) + 1:
-            sys.stderr.write("\nUnrecognized values already in configuration:\n")
-        sys.stderr.write(f"{index:3}. {value}\n")
-
-    value_str = " ".join(f"{reverse_map[value]}" for value in toml_values)
-    while True:
-        value_str = input_with_default(f"\n{key}", value_str)
-        new_values = index_string_to_values(index_map, value_str)
-        if new_values is None:
-            continue
-
-        if known_values_required:
-            missing_values = sorted(set(known_values) - set(new_values))
-            if missing_values:
-                sys.stderr.write(
-                    "Not all required values specified.\n"
-                    "The following values are missing:\n"
-                )
-                # Sort order is the same as index order.
-                for value in sorted(missing_values):
-                    sys.stderr.write(f"{reverse_map[value]:3}. {value}\n")
-                continue
-
-        break
-
-    toml_values.clear()
-    toml_values.extend(new_values)
-    sys.stderr.write("\n")
 
 
 def setup(args: list[str]) -> None:
@@ -221,6 +78,11 @@ def setup(args: list[str]) -> None:
         action="store_true",
         help="Skip printing initial instructions",
     )
+    parser.add_argument(
+        "--ui",
+        choices=("text", "urwid"),
+        help="UI to use",
+    )
 
     excl_group = parser.add_mutually_exclusive_group()
     excl_group.add_argument(
@@ -238,6 +100,12 @@ def setup(args: list[str]) -> None:
     )
 
     parsed_args = parser.parse_args(args)
+
+    if parsed_args.ui is None:
+        parsed_args.ui = (
+            "urwid" if sys.stdin.isatty() and sys.stdout.isatty() else "text"
+        )
+    ui = UrwidUI() if parsed_args.ui == "urwid" else ConsoleUI()
 
     # note: due to default= above, parsed_args.environment will never be None
     # however, argparse will still prevent the user from using `-p` and `-e`
@@ -258,11 +126,7 @@ def setup(args: list[str]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
 
     if not parsed_args.skip_instructions and not parsed_args.default:
-        sys.stderr.write(INSTRUCTIONS)
-        try:
-            input("Press Enter to continue or Ctrl-C to abort...")
-        except KeyboardInterrupt:
-            sys.stderr.write("\nAborting.\n")
+        if not ui.display_text(INSTRUCTIONS):
             return
 
     if PluginLoader.plugins:
@@ -276,6 +140,7 @@ def setup(args: list[str]) -> None:
                 "Configuration reset to defaults, please edit the file to adjust "
                 "priorities\n"
             )
+
         else:
             supported_configs = PluginLoader.get_supported_configs()
             known_features = [
@@ -296,26 +161,27 @@ def setup(args: list[str]) -> None:
                 )
             ]
 
-            update_key(
+            ui.update_key(
                 toml_data,
                 "namespace_priorities",
-                NAMESPACE_INSTRUCTIONS,
                 known_namespaces,
                 known_values_required=True,
             )
-            if input_bool("Do you want to adjust feature priorities?", default=False):
-                update_key(
+            if ui.input_bool(
+                "Do you want to adjust feature priorities?", default=False
+            ):
+                ui.update_key(
                     toml_data,
                     "feature_priorities",
-                    FEATURE_INSTRUCTIONS,
                     known_features,
                     known_values_required=False,
                 )
-            if input_bool("Do you want to adjust property priorities?", default=False):
-                update_key(
+            if ui.input_bool(
+                "Do you want to adjust property priorities?", default=False
+            ):
+                ui.update_key(
                     toml_data,
                     "property_priorities",
-                    PROPERTY_INSTRUCTIONS,
                     known_properties,
                     known_values_required=False,
                 )
@@ -338,11 +204,12 @@ def setup(args: list[str]) -> None:
             "```\n"
             "\n"
         )
-        if not input_bool(
-            "Do you want to save the configuration changes?", default=True
-        ):
-            sys.stdout.write("Configuration changes discarded\n")
-            return
+        if parsed_args.ui != "urwid":
+            if not ui.input_bool(
+                "Do you want to save the configuration changes?", default=True
+            ):
+                sys.stdout.write("Configuration changes discarded\n")
+                return
     else:
         sys.stdout.write("No plugins found, empty configuration will be written\n")
 
