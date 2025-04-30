@@ -7,6 +7,7 @@ import re
 import sys
 import zipfile
 
+from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
@@ -30,7 +31,8 @@ def pretty_print(vdesc: VariantDescription, providers: list[ProviderPackage]) ->
 
 def analyze_wheel(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="analyze_wheel", description="Analyze a Wheel file for Variant Information"
+        prog=f"{__package_name__} analyze-wheel",
+        description="Analyze a Wheel file for Variant Information",
     )
     parser.add_argument(
         "-i",

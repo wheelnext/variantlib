@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 
+from variantlib import __package_name__
 from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def analyze_platform(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="analyze_platform",
+        prog=f"{__package_name__} analyze-platform",
         description="Analyze the platform and return the variant hashes compatible",
     )
     _ = parser.parse_args(args)

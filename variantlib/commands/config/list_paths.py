@@ -5,6 +5,7 @@ import logging
 import sys
 from datetime import datetime
 
+from variantlib import __package_name__
 from variantlib.configuration import get_configuration_files
 
 try:
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def list_paths(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="list-paths",
+        prog=f"{__package_name__} config list-paths",
         description="CLI interface to list configuration paths",
     )
 

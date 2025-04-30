@@ -10,6 +10,7 @@ import pathlib
 import shutil
 import zipfile
 
+from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
@@ -28,7 +29,7 @@ METADATA_POLICY = email.policy.EmailPolicy(
 
 def make_variant(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="make_variant",
+        prog=f"{__package_name__} make-variant",
         description="Transform a normal Wheel into a Wheel Variant.",
     )
 

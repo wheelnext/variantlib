@@ -8,6 +8,7 @@ from pathlib import Path
 import tomlkit
 from tomlkit.toml_file import TOMLFile
 
+from variantlib import __package_name__
 from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
 from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
 from variantlib.configuration import ConfigEnvironments
@@ -62,7 +63,7 @@ INSTRUCTIONS = """
 
 def setup(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="setup",
+        prog=f"{__package_name__} config setup",
         description="CLI interface to interactively set configuration up",
     )
     parser.add_argument(
