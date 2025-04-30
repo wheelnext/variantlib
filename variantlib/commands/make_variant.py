@@ -18,7 +18,6 @@ from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 METADATA_POLICY = email.policy.EmailPolicy(
     utf8=True,
@@ -72,6 +71,12 @@ def make_variant(args: list[str]) -> None:
         help="make the variant a `null variant` - no variant property.",
     )
 
+    parser.add_argument(
+        "--skip-plugin-validation",
+        action="store_true",
+        help="allow to register invalid or unknown variant properties",
+    )
+
     parsed_args = parser.parse_args(args)
 
     input_filepath: pathlib.Path = parsed_args.input_filepath
@@ -82,6 +87,7 @@ def make_variant(args: list[str]) -> None:
         output_directory,
         is_null_variant=parsed_args.null_variant,
         properties=parsed_args.properties,
+        validate_properties=not parsed_args.skip_plugin_validation,
     )
 
 
@@ -90,6 +96,7 @@ def _make_variant(
     output_directory: pathlib.Path,
     is_null_variant: bool,
     properties: list[VariantProperty],
+    validate_properties: bool = True,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -109,20 +116,21 @@ def _make_variant(
         # Transform properties into a VariantDescription
         vdesc = VariantDescription(properties=properties)
 
-        # Verify whether the variant properties are valid
-        vdesc_valid = validate_variant(vdesc)
-        if vdesc_valid.invalid_properties:
-            raise ValidationError(
-                "The following variant properties are invalid according to the "
-                "plugins: "
-                f"{', '.join(x.to_str() for x in vdesc_valid.invalid_properties)}"
-            )
-        if vdesc_valid.unknown_properties:
-            raise ValidationError(
-                "The following variant properties use namespaces that are not provided "
-                "by any installed plugin: "
-                f"{', '.join(x.to_str() for x in vdesc_valid.unknown_properties)}"
-            )
+        if validate_properties:
+            # Verify whether the variant properties are valid
+            vdesc_valid = validate_variant(vdesc)
+            if vdesc_valid.invalid_properties:
+                raise ValidationError(
+                    "The following variant properties are invalid according to the "
+                    "plugins: "
+                    f"{', '.join(x.to_str() for x in vdesc_valid.invalid_properties)}"
+                )
+            if vdesc_valid.unknown_properties:
+                raise ValidationError(
+                    "The following variant properties use namespaces that are not "
+                    "provided by any installed plugin: "
+                    f"{', '.join(x.to_str() for x in vdesc_valid.unknown_properties)}"
+                )
     else:
         # Create a null variant
         vdesc = VariantDescription()

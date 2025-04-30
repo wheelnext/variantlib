@@ -21,7 +21,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def generate_index_json(args: list[str]) -> None:
@@ -65,10 +64,6 @@ def generate_index_json(args: list[str]) -> None:
                 {"input_file": wheel.name},
             )
             continue
-
-        # if vhash == "0" * VARIANT_HASH_LEN:
-        #     known_variants[vhash] = VariantDescription()
-        #     continue
 
         with zipfile.ZipFile(wheel, "r") as zip_file:
             # Find the METADATA file

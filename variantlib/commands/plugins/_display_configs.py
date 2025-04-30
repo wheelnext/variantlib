@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from variantlib.models.provider import ProviderConfig
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def display_configs(

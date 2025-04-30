@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 
 from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def analyze_platform(args: list[str]) -> None:
@@ -16,13 +16,13 @@ def analyze_platform(args: list[str]) -> None:
     )
     _ = parser.parse_args(args)
 
-    logger.info("Analyzing the platform ... \n")
+    logger.info("Analyzing the platform ...\n")
     variant_cfgs = PluginLoader.get_supported_configs().values()
 
-    for variant_cfg in variant_cfgs:
-        logger.info(variant_cfg.pretty_print())
-        print()  # visual spacing  # noqa: T201
+    # We have to flush the logger handlers to ensure that all logs are printed
+    for handler in logger.handlers:
+        handler.flush()
 
-    logger.info(
-        f"Total Variant Hashes: {2 ** sum(len(variant_cfg.configs) for variant_cfg in variant_cfgs):,}"  # noqa: G004, E501
-    )
+    for variant_cfg in variant_cfgs:
+        for line in variant_cfg.pretty_print().splitlines():
+            sys.stdout.write(f"{line}\n")

@@ -7,7 +7,6 @@ from variantlib.commands.plugins._display_configs import display_configs
 from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def get_supported_configs(args: list[str]) -> None:

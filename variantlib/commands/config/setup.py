@@ -17,7 +17,6 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 INSTRUCTIONS = """
 ----------------------------------------------------------------------------#

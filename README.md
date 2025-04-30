@@ -9,7 +9,7 @@
     <img src="https://img.shields.io/github/license/wheelnext/variantlib?style=for-the-badge">
   </a>
   <a href="https://discord.com/channels/803025117553754132/1279204588196597811">
-      <img src="https://img.shields.io/badge/Discord_PyPA-WheelNext-blueviolet?style=for-the-badge" /> 
+      <img src="https://img.shields.io/badge/Discord_PyPA-WheelNext-blueviolet?style=for-the-badge" />
   </a>
   <a href="https://wheelnext.dev">
       <img src="https://img.shields.io/badge/WheelNext.dev-lightblue?style=for-the-badge" />
@@ -18,6 +18,6 @@
 
 <p align="center">
   <a href="https://deepwiki.com/wheelnext/variantlib">
-      <img src="https://img.shields.io/badge/Deep_Wiki-VariantLib-lightblue?style=for-the-badge" /> 
+      <img src="https://img.shields.io/badge/Deep_Wiki-VariantLib-lightblue?style=for-the-badge" />
   </a>
 </p>

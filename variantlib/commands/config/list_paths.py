@@ -16,7 +16,6 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def list_paths(args: list[str]) -> None:

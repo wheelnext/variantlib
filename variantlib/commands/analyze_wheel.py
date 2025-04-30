@@ -16,7 +16,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def pretty_print(vdesc: VariantDescription, providers: list[ProviderPackage]) -> str:
@@ -100,6 +99,10 @@ def analyze_wheel(args: list[str]) -> None:
                 rf"{METADATA_VARIANT_PROVIDER_HEADER}: (.+)", metadata_str
             )
         ]
+
+        # We have to flush the logger handlers to ensure that all logs are printed
+        for handler in logger.handlers:
+            handler.flush()
 
         for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
             sys.stdout.write(f"{line}\n")

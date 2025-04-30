@@ -16,7 +16,6 @@ from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 METADATA_POLICY = email.policy.EmailPolicy(
     utf8=True,

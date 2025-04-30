@@ -87,13 +87,16 @@ class ProviderConfig(BaseModel):
     )
 
     def pretty_print(self) -> str:
-        result_str = f"{'#' * 20} Provider Config: `{self.namespace}` {'#' * 20}"
+        result_str = f"\n{'#' * 20} Provider Config: `{self.namespace}` {'#' * 20}"
+        header_length = len(result_str) - 1
+
         for kid, vconfig in enumerate(self.configs):
             result_str += (
                 f"\n\t- Variant Config [{kid + 1:03d}]: "
                 f"{vconfig.name} :: {vconfig.values}"
             )
-        result_str += f"\n{'#' * 80}\n"
+
+        result_str += f"\n{'#' * header_length}\n"
         return result_str
 
     def to_list_of_properties(self) -> Generator[VariantProperty]:

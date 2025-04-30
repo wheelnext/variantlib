@@ -7,7 +7,6 @@ import sys
 from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def list_plugins(args: list[str]) -> None:
