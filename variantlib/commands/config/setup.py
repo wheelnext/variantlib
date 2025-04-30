@@ -144,6 +144,8 @@ def setup(args: list[str]) -> None:
 
         else:
             supported_configs = PluginLoader.get_supported_configs()
+
+            ui.clear()
             namespace_priorities = ui.update_key(
                 toml_data,
                 "namespace_priorities",
@@ -151,9 +153,14 @@ def setup(args: list[str]) -> None:
                 known_values_required=True,
             )
 
-            if ui.input_bool(
-                "Do you want to adjust feature priorities?", default=False
-            ):
+            message = (
+                "**Expert-Users Only**\n\n"
+                "~ This setting should be left empty & untouched in most cases ~\n\n"
+                "Do you wish to adjust variant-feature priorities?"
+            )
+
+            ui.clear()
+            if ui.input_bool(message, default=False, height=9):
                 known_features = [
                     VariantFeature(namespace, config.name).to_str()
                     for namespace, provider in sorted(
@@ -169,9 +176,14 @@ def setup(args: list[str]) -> None:
                     known_values_required=False,
                 )
 
-            if ui.input_bool(
-                "Do you want to adjust property priorities?", default=False
-            ):
+            message = (
+                "**Expert-Users Only**\n\n"
+                "~ This setting should be left empty & untouched in most cases ~\n\n"
+                "Do you wish to adjust variant-property priorities?"
+            )
+
+            ui.clear()
+            if ui.input_bool(message, default=False, height=9):
                 feature_priorities = [
                     VariantFeature.from_str(x)
                     for x in toml_data.get("feature_priorities", [])
@@ -205,8 +217,8 @@ def setup(args: list[str]) -> None:
             # Always use multiline output for readability.
             toml_data[key].multiline(multiline=True)
 
+        ui.clear()
         sys.stderr.write(
-            "\n"
             "Final configuration:\n"
             "\n"
             "```\n"
@@ -217,7 +229,9 @@ def setup(args: list[str]) -> None:
         )
         if parsed_args.ui != "urwid":
             if not ui.input_bool(
-                "Do you want to save the configuration changes?", default=True
+                "Do you want to save the configuration changes?",
+                default=True,
+                clear_console=False,
             ):
                 sys.stdout.write("Configuration changes discarded\n")
                 return

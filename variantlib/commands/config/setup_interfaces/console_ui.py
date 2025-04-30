@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from itertools import chain
 from typing import TYPE_CHECKING
@@ -55,7 +56,7 @@ class ConsoleUI:
             return False
         return True
 
-    def input_bool(self, prompt: str, default: bool) -> bool:
+    def input_bool(self, prompt: str, default: bool, *args, **kwargs) -> bool:
         full_prompt = f"{prompt} [{'Y/n' if default else 'y/N'}] "
         while True:
             val = input(full_prompt)
@@ -159,3 +160,9 @@ class ConsoleUI:
         toml_values.extend(new_values)
         sys.stderr.write("\n")
         return new_values
+
+    def clear(self) -> None:
+        sys.stdout.write("\033[2J\033[H") if os.name != "nt" else sys.stdout.write(
+            "\033[2J"
+        )
+        sys.stdout.flush()

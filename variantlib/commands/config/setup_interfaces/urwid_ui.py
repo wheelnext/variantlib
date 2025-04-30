@@ -103,7 +103,7 @@ class UrwidUI:
             return False
         return True
 
-    def input_bool(self, prompt: str, default: bool) -> bool:
+    def input_bool(self, prompt: str, default: bool, height: int = 6) -> bool:
         class State:
             retval: bool
 
@@ -158,7 +158,7 @@ class UrwidUI:
                 align=urwid.CENTER,
                 width=(urwid.RELATIVE, 50),
             ),
-            height=6,
+            height=height,
         )
         loop = urwid.MainLoop(frame, self.palette, unhandled_input=State.input_handler)
         loop.run()
@@ -276,3 +276,7 @@ class UrwidUI:
         toml_values.clear()
         toml_values.extend(new_values)
         return new_values
+
+    def clear(self) -> None:
+        # No-op for urwid UI
+        pass
