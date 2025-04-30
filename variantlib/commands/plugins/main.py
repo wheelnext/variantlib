@@ -20,7 +20,7 @@ def main(args: list[str]) -> None:
 
     parser.add_argument(
         "command",
-        choices=registered_commands.names,
+        choices=sorted(registered_commands.names),
     )
 
     parser.add_argument(
