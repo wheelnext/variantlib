@@ -11,20 +11,26 @@ if TYPE_CHECKING:
     from tomlkit.toml_document import TOMLDocument
 
 
+COMMON_INSTRUCTION = (
+    "Please order the {plural} according to their priority, most preferred {sing} "
+    "first. Press [F7] or [Tab] to increase priority of the focused {sing}, "
+    "[F8] to decrease its priority, [Enter] to toggle it. Only enabled {plural} "
+    "will be included in the configuration."
+)
+
 INSTRUCTIONS = {
-    "namespace_priorities": "Please order the namespaces according to their priority, "
-    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused namespace, and enter to toggle it. Only enabled namespaces will be "
-    "included in the configuration. The namespacs in bold are required "
-    "and cannot be disabled.",
-    "feature_priorities": "Please order the features according to their priority, "
-    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused feature, and enter to toggle it. Only enabled features will be "
-    "included in the configuration. All feature priorities are optional.",
-    "property_priorities": "Please order the properties according to their priority, "
-    "most preferred property first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused property, and enter to toggle it. Only enabled namespaces will be "
-    "included in the configuration. All propety priorities are optional.",
+    "namespace_priorities": (
+        f"{COMMON_INSTRUCTION.format(sing='namespace', plural='namespaces')}. "
+        "The namespaces in bold are required and cannot be disabled."
+    ),
+    "feature_priorities": (
+        f"{COMMON_INSTRUCTION.format(sing='feature', plural='features')}. "
+        "All feature priorities are optional."
+    ),
+    "property_priorities": (
+        f"{COMMON_INSTRUCTION.format(sing='property', plural='properties')}. "
+        "All property priorities are optional."
+    ),
 }
 
 
@@ -132,7 +138,7 @@ class UrwidUI:
                     super().toggle_state()
 
             def keypress(self, size: tuple[int], key: str) -> str | None:
-                if key in ["page up", "tab"]:
+                if key in ("f7", "tab"):
                     old_pos = value_box.focus_position
                     if old_pos != 0:
                         item = value_box.body.pop(old_pos)
@@ -141,7 +147,7 @@ class UrwidUI:
                             value_box.focus_position -= 1
                     return None
 
-                if key == "page down":
+                if key in ("f8",):
                     old_pos = value_box.focus_position
                     if old_pos != len(value_box.body) - 1:
                         item = value_box.body.pop(old_pos)
