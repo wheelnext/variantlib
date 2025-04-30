@@ -112,7 +112,7 @@ class ConsoleUI:
         key: str,
         known_values: list[str],
         known_values_required: bool,
-    ) -> None:
+    ) -> list[str]:
         toml_values = tomldoc.setdefault(key, [])
         unknown_values = sorted(set(toml_values) - set(known_values))
 
@@ -158,3 +158,4 @@ class ConsoleUI:
         toml_values.clear()
         toml_values.extend(new_values)
         sys.stderr.write("\n")
+        return new_values

@@ -15,6 +15,7 @@ from variantlib.configuration import get_configuration_files
 from variantlib.loader import PluginLoader
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.resolver.sorting import sort_variant_properties
 
 logger = logging.getLogger(__name__)
 
@@ -142,42 +143,52 @@ def setup(args: list[str]) -> None:
 
         else:
             supported_configs = PluginLoader.get_supported_configs()
-            known_features = [
-                vfeat.to_str()
-                for vfeat in sorted(
-                    VariantFeature(namespace, config.name)
-                    for namespace, provider in supported_configs.items()
-                    for config in provider.configs
-                )
-            ]
-            known_properties = [
-                vprop.to_str()
-                for vprop in sorted(
-                    VariantProperty(namespace, config.name, value)
-                    for namespace, provider in supported_configs.items()
-                    for config in provider.configs
-                    for value in config.values
-                )
-            ]
-
-            ui.update_key(
+            namespace_priorities = ui.update_key(
                 toml_data,
                 "namespace_priorities",
                 known_namespaces,
                 known_values_required=True,
             )
+
             if ui.input_bool(
                 "Do you want to adjust feature priorities?", default=False
             ):
+                known_features = [
+                    VariantFeature(namespace, config.name).to_str()
+                    for namespace, provider in sorted(
+                        supported_configs.items(),
+                        key=lambda kv: namespace_priorities.index(kv[0]),
+                    )
+                    for config in provider.configs
+                ]
                 ui.update_key(
                     toml_data,
                     "feature_priorities",
                     known_features,
                     known_values_required=False,
                 )
+
             if ui.input_bool(
                 "Do you want to adjust property priorities?", default=False
             ):
+                feature_priorities = [
+                    VariantFeature.from_str(x)
+                    for x in toml_data.get("feature_priorities", [])
+                ]
+                known_properties = [
+                    vprop.to_str()
+                    for vprop in sort_variant_properties(
+                        [
+                            VariantProperty(namespace, config.name, value)
+                            for namespace, provider in supported_configs.items()
+                            for config in provider.configs
+                            for value in config.values
+                        ],
+                        namespace_priorities=namespace_priorities,
+                        feature_priorities=feature_priorities,
+                        property_priorities=None,
+                    )
+                ]
                 ui.update_key(
                     toml_data,
                     "property_priorities",

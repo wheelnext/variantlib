@@ -114,7 +114,7 @@ class UrwidUI:
         key: str,
         known_values: list[str],
         known_values_required: bool,
-    ) -> None:
+    ) -> list[str]:
         toml_values = tomldoc.setdefault(key, [])
         toml_values_set = set(toml_values)
         all_values = toml_values + [
@@ -213,3 +213,4 @@ class UrwidUI:
 
         toml_values.clear()
         toml_values.extend(new_values)
+        return new_values
