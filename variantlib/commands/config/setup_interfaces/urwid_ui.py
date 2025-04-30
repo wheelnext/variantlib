@@ -11,20 +11,47 @@ if TYPE_CHECKING:
     from tomlkit.toml_document import TOMLDocument
 
 
+COMMON_INSTRUCTION = [
+    (
+        "dialog",
+        "Please order the {plural} according to their priority, most preferred {sing} "
+        "first. Press ",
+    ),
+    ("dialog_key", "[F7]"),
+    ("dialog", " or "),
+    ("dialog_key", "[Tab]"),
+    ("dialog", " to increase priority of the focused {sing}, "),
+    ("dialog_key", "[F8]"),
+    ("dialog", " to decrease its priority, "),
+    ("dialog_key", "[Enter]"),
+    (
+        "dialog",
+        " to toggle it. Only enabled {plural} will be included in the configuration. ",
+    ),
+]
+
 INSTRUCTIONS = {
-    "namespace_priorities": "Please order the namespaces according to their priority, "
-    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused namespace, and enter to toggle it. Only enabled namespaces will be "
-    "included in the configuration. The namespacs in bold are required "
-    "and cannot be disabled.",
-    "feature_priorities": "Please order the features according to their priority, "
-    "most preferred namespace first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused feature, and enter to toggle it. Only enabled features will be "
-    "included in the configuration. All feature priorities are optional.",
-    "property_priorities": "Please order the properties according to their priority, "
-    "most preferred property first. Press [Page Up or Tab] and Page Down to reorder "
-    "the focused property, and enter to toggle it. Only enabled namespaces will be "
-    "included in the configuration. All propety priorities are optional.",
+    "namespace_priorities": [
+        (attr, text.format(sing="namespace", plural="namespaces"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "The namespaces in bold are required and cannot be disabled.\n"),
+    ],
+    "feature_priorities": [
+        (attr, text.format(sing="feature", plural="features"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "All feature priorities are optional.\n"),
+    ],
+    "property_priorities": [
+        (attr, text.format(sing="property", plural="properties"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "All property priorities are optional.\n"),
+    ],
 }
 
 
@@ -32,22 +59,36 @@ class UrwidUI:
     palette = [
         ("button", "white", "dark cyan"),
         ("dialog", "white", "dark blue"),
+        ("dialog_key", "yellow,bold", "dark blue"),
         ("footer", "white", "dark blue"),
+        ("footer_key", "yellow,bold", "dark blue"),
         ("list", "white", "dark cyan"),
         ("checkbox", "white", "dark cyan"),
         ("required_checkbox", "yellow,bold", "dark cyan"),
+        ("highlight", "yellow,bold", "dark cyan"),
     ]
 
     def display_text(self, text: str) -> bool:
         def input_handler(key: str) -> None:
             if key == "enter":
                 raise urwid.ExitMainLoop
-            if key in ("q", "Q"):
+            if key == " ":
+                loop.process_input(["page down"])
+            if key in ("q", "Q", "esc"):
                 raise KeyboardInterrupt
 
         text_widget = urwid.Text(text)
         footer = urwid.AttrMap(
-            urwid.Text("Press Enter to continue or Q to abort..."), "footer"
+            urwid.Text(
+                [
+                    ("footer", "Press "),
+                    ("footer_key", "Enter"),
+                    ("footer", " to continue or "),
+                    ("footer_key", "Q"),
+                    ("footer", " to abort..."),
+                ]
+            ),
+            "footer",
         )
         listbox = urwid.ListBox(urwid.SimpleListWalker([text_widget]))
         scrollable = urwid.ScrollBar(
@@ -71,6 +112,15 @@ class UrwidUI:
                 cls.retval = val
                 raise urwid.ExitMainLoop
 
+            @classmethod
+            def input_handler(cls, key: str) -> None:
+                if key in ("y", "Y"):
+                    cls.retval = True
+                    raise urwid.ExitMainLoop
+                if key in ("esc", "n", "N"):
+                    cls.retval = False
+                    raise urwid.ExitMainLoop
+
         listbox = urwid.ListBox(
             urwid.SimpleListWalker(
                 [
@@ -79,11 +129,17 @@ class UrwidUI:
                     urwid.GridFlow(
                         [
                             urwid.AttrMap(
-                                urwid.Button("Yes", lambda _: State.press(val=True)),
+                                urwid.Button(
+                                    [("highlight", "Y"), ("button", "es")],
+                                    lambda _: State.press(val=True),
+                                ),
                                 "button",
                             ),
                             urwid.AttrMap(
-                                urwid.Button("No", lambda _: State.press(val=False)),
+                                urwid.Button(
+                                    [("highlight", "N"), ("button", "o")],
+                                    lambda _: State.press(val=False),
+                                ),
                                 "button",
                             ),
                         ],
@@ -104,7 +160,7 @@ class UrwidUI:
             ),
             height=6,
         )
-        loop = urwid.MainLoop(frame, self.palette)
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=State.input_handler)
         loop.run()
         return State.retval
 
@@ -132,7 +188,7 @@ class UrwidUI:
                     super().toggle_state()
 
             def keypress(self, size: tuple[int], key: str) -> str | None:
-                if key in ["page up", "tab"]:
+                if key in ("f7", "tab"):
                     old_pos = value_box.focus_position
                     if old_pos != 0:
                         item = value_box.body.pop(old_pos)
@@ -141,7 +197,7 @@ class UrwidUI:
                             value_box.focus_position -= 1
                     return None
 
-                if key == "page down":
+                if key in ("f8",):
                     old_pos = value_box.focus_position
                     if old_pos != len(value_box.body) - 1:
                         item = value_box.body.pop(old_pos)
@@ -150,6 +206,12 @@ class UrwidUI:
                     return None
 
                 return super().keypress(size, key)
+
+        def input_handler(key: str) -> None:
+            if key in ("s", "S"):
+                value_box.focus_position = len(value_box) - 2
+            if key in ("esc", "a", "A"):
+                value_box.focus_position = len(value_box) - 1
 
         def save_button(_: Any) -> None:
             raise urwid.ExitMainLoop
@@ -175,8 +237,8 @@ class UrwidUI:
                     for value in all_values
                 ]
                 + [
-                    urwid.Button("Save", save_button),
-                    urwid.Button("Abort", abort_button),
+                    urwid.Button([("highlight", "S"), ("list", "ave")], save_button),
+                    urwid.Button([("highlight", "A"), ("list", "bort")], abort_button),
                 ]
             )
         )
@@ -200,7 +262,7 @@ class UrwidUI:
             top=2,
             bottom=2,
         )
-        loop = urwid.MainLoop(frame, self.palette)
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)
         loop.run()
 
         new_values = [
