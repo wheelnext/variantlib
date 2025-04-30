@@ -39,21 +39,32 @@ class UrwidUI:
         ("button", "white", "dark cyan"),
         ("dialog", "white", "dark blue"),
         ("footer", "white", "dark blue"),
+        ("footer_key", "yellow,bold", "dark blue"),
         ("list", "white", "dark cyan"),
         ("checkbox", "white", "dark cyan"),
         ("required_checkbox", "yellow,bold", "dark cyan"),
+        ("highlight", "yellow,bold", "dark cyan"),
     ]
 
     def display_text(self, text: str) -> bool:
         def input_handler(key: str) -> None:
             if key == "enter":
                 raise urwid.ExitMainLoop
-            if key in ("q", "Q"):
+            if key in ("q", "Q", "esc"):
                 raise KeyboardInterrupt
 
         text_widget = urwid.Text(text)
         footer = urwid.AttrMap(
-            urwid.Text("Press Enter to continue or Q to abort..."), "footer"
+            urwid.Text(
+                [
+                    ("footer", "Press "),
+                    ("footer_key", "Enter"),
+                    ("footer", " to continue or "),
+                    ("footer_key", "Q"),
+                    ("footer", " to abort..."),
+                ]
+            ),
+            "footer",
         )
         listbox = urwid.ListBox(urwid.SimpleListWalker([text_widget]))
         scrollable = urwid.ScrollBar(
@@ -77,6 +88,15 @@ class UrwidUI:
                 cls.retval = val
                 raise urwid.ExitMainLoop
 
+            @classmethod
+            def input_handler(cls, key: str) -> None:
+                if key in ("y", "Y"):
+                    cls.retval = True
+                    raise urwid.ExitMainLoop
+                if key in ("esc", "n", "N"):
+                    cls.retval = False
+                    raise urwid.ExitMainLoop
+
         listbox = urwid.ListBox(
             urwid.SimpleListWalker(
                 [
@@ -85,11 +105,17 @@ class UrwidUI:
                     urwid.GridFlow(
                         [
                             urwid.AttrMap(
-                                urwid.Button("Yes", lambda _: State.press(val=True)),
+                                urwid.Button(
+                                    [("highlight", "Y"), ("button", "es")],
+                                    lambda _: State.press(val=True),
+                                ),
                                 "button",
                             ),
                             urwid.AttrMap(
-                                urwid.Button("No", lambda _: State.press(val=False)),
+                                urwid.Button(
+                                    [("highlight", "N"), ("button", "o")],
+                                    lambda _: State.press(val=False),
+                                ),
                                 "button",
                             ),
                         ],
@@ -110,7 +136,7 @@ class UrwidUI:
             ),
             height=6,
         )
-        loop = urwid.MainLoop(frame, self.palette)
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=State.input_handler)
         loop.run()
         return State.retval
 
@@ -157,6 +183,12 @@ class UrwidUI:
 
                 return super().keypress(size, key)
 
+        def input_handler(key: str) -> None:
+            if key in ("s", "S"):
+                value_box.focus_position = len(value_box) - 2
+            if key in ("esc", "a", "A"):
+                value_box.focus_position = len(value_box) - 1
+
         def save_button(_: Any) -> None:
             raise urwid.ExitMainLoop
 
@@ -181,8 +213,8 @@ class UrwidUI:
                     for value in all_values
                 ]
                 + [
-                    urwid.Button("Save", save_button),
-                    urwid.Button("Abort", abort_button),
+                    urwid.Button([("highlight", "S"), ("list", "ave")], save_button),
+                    urwid.Button([("highlight", "A"), ("list", "bort")], abort_button),
                 ]
             )
         )
@@ -206,7 +238,7 @@ class UrwidUI:
             top=2,
             bottom=2,
         )
-        loop = urwid.MainLoop(frame, self.palette)
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)
         loop.run()
 
         new_values = [
