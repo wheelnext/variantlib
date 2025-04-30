@@ -50,6 +50,8 @@ class UrwidUI:
         def input_handler(key: str) -> None:
             if key == "enter":
                 raise urwid.ExitMainLoop
+            if key == " ":
+                loop.process_input(["page down"])
             if key in ("q", "Q", "esc"):
                 raise KeyboardInterrupt
 
