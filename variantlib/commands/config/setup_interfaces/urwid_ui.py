@@ -11,26 +11,47 @@ if TYPE_CHECKING:
     from tomlkit.toml_document import TOMLDocument
 
 
-COMMON_INSTRUCTION = (
-    "Please order the {plural} according to their priority, most preferred {sing} "
-    "first. Press [F7] or [Tab] to increase priority of the focused {sing}, "
-    "[F8] to decrease its priority, [Enter] to toggle it. Only enabled {plural} "
-    "will be included in the configuration."
-)
+COMMON_INSTRUCTION = [
+    (
+        "dialog",
+        "Please order the {plural} according to their priority, most preferred {sing} "
+        "first. Press ",
+    ),
+    ("dialog_key", "[F7]"),
+    ("dialog", " or "),
+    ("dialog_key", "[Tab]"),
+    ("dialog", " to increase priority of the focused {sing}, "),
+    ("dialog_key", "[F8]"),
+    ("dialog", " to decrease its priority, "),
+    ("dialog_key", "[Enter]"),
+    (
+        "dialog",
+        " to toggle it. Only enabled {plural} will be included in the configuration. ",
+    ),
+]
 
 INSTRUCTIONS = {
-    "namespace_priorities": (
-        f"{COMMON_INSTRUCTION.format(sing='namespace', plural='namespaces')}. "
-        "The namespaces in bold are required and cannot be disabled."
-    ),
-    "feature_priorities": (
-        f"{COMMON_INSTRUCTION.format(sing='feature', plural='features')}. "
-        "All feature priorities are optional."
-    ),
-    "property_priorities": (
-        f"{COMMON_INSTRUCTION.format(sing='property', plural='properties')}. "
-        "All property priorities are optional."
-    ),
+    "namespace_priorities": [
+        (attr, text.format(sing="namespace", plural="namespaces"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "The namespaces in bold are required and cannot be disabled.\n"),
+    ],
+    "feature_priorities": [
+        (attr, text.format(sing="feature", plural="features"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "All feature priorities are optional.\n"),
+    ],
+    "property_priorities": [
+        (attr, text.format(sing="property", plural="properties"))
+        for attr, text in COMMON_INSTRUCTION
+    ]
+    + [
+        ("dialog", "All property priorities are optional.\n"),
+    ],
 }
 
 
@@ -38,6 +59,7 @@ class UrwidUI:
     palette = [
         ("button", "white", "dark cyan"),
         ("dialog", "white", "dark blue"),
+        ("dialog_key", "yellow,bold", "dark blue"),
         ("footer", "white", "dark blue"),
         ("footer_key", "yellow,bold", "dark blue"),
         ("list", "white", "dark cyan"),
