@@ -34,7 +34,7 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=registered_commands.names,
+        choices=sorted(registered_commands.names),
     )
     parser.add_argument(
         "args",

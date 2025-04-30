@@ -10,6 +10,7 @@ import pathlib
 import shutil
 import zipfile
 
+from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
@@ -26,7 +27,7 @@ METADATA_POLICY = email.policy.EmailPolicy(
 
 def unmake_variant(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="unmake_variant",
+        prog=f"{__package_name__} unmake-variant",
         description="Transform a variant Wheel into a normal Wheel.",
     )
 

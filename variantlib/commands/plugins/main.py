@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+from variantlib import __package_name__
+
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
 else:
@@ -14,11 +16,11 @@ else:
 def main(args: list[str]) -> None:
     registered_commands = entry_points(group="variantlib.actions.plugins")
 
-    parser = argparse.ArgumentParser(prog="variantlib plugins")
+    parser = argparse.ArgumentParser(prog=f"{__package_name__} plugins")
 
     parser.add_argument(
         "command",
-        choices=registered_commands.names,
+        choices=sorted(registered_commands.names),
     )
 
     parser.add_argument(

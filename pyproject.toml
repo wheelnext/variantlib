@@ -58,12 +58,12 @@ test = [
 variantlib = "variantlib.commands.main:main"
 
 [project.entry-points."variantlib.actions"]
-analyze_wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
-analyze_platform = "variantlib.commands.analyze_platform:analyze_platform"
+analyze-wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
+analyze-platform = "variantlib.commands.analyze_platform:analyze_platform"
 config = "variantlib.commands.config.main:main"
-generate_index_json = "variantlib.commands.generate_index_json:generate_index_json"
-make_variant = "variantlib.commands.make_variant:make_variant"
-unmake_variant = "variantlib.commands.unmake_variant:unmake_variant"
+generate-index-json = "variantlib.commands.generate_index_json:generate_index_json"
+make-variant = "variantlib.commands.make_variant:make_variant"
+unmake-variant = "variantlib.commands.unmake_variant:unmake_variant"
 plugins = "variantlib.commands.plugins.main:main"
 
 [project.entry-points."variantlib.actions.config"]

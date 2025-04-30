@@ -10,6 +10,7 @@ import pathlib
 import zipfile
 from collections import defaultdict
 
+from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def generate_index_json(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="generate_index_json",
+        prog=f"{__package_name__} generate-index-json",
         description="Generate a JSON index of all package variants",
     )
     parser.add_argument(

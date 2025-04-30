@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 
+from variantlib import __package_name__
 from variantlib.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def list_plugins(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="list-plugins",
+        prog=f"{__package_name__} plugins list-plugins",
         description="CLI interface to list plugins",
     )
 

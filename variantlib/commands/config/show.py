@@ -7,6 +7,7 @@ import sys
 
 import tomlkit
 
+from variantlib import __package_name__
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def show(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="show",
+        prog=f"{__package_name__} config show",
         description="CLI interface to interactively show active configuration.",
     )
 

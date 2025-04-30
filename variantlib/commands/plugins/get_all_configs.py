@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 
+from variantlib import __package_name__
 from variantlib.commands.plugins._display_configs import display_configs
 from variantlib.loader import PluginLoader
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def get_all_configs(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
-        prog="get-all-configs",
+        prog=f"{__package_name__} plugins get-all-configs",
         description="CLI interface to get all valid configs",
     )
 
