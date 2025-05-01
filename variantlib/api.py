@@ -139,20 +139,11 @@ def set_variant_metadata(
 ) -> None:
     """Set metadata-related keys in metadata email-dict"""
 
-    # Match namespaces to plugins
-    # namespaces = {vprop.namespace for vprop in vdesc.properties}
-    # providers = {ns: PluginLoader.distribution_names[ns] for ns in namespaces}
-
     # Remove old metadata
     del metadata[METADATA_VARIANT_PROPERTY_HEADER]
     del metadata[METADATA_VARIANT_HASH_HEADER]
-    # del metadata[METADATA_VARIANT_PROVIDER_HEADER]
 
     # Add new metadata
     for vprop in vdesc.properties:
         metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
     metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
-    # for ns, provider in sorted(providers.items()):
-    #     # Follow the "<key>, <value>" format used in metadata already:
-    #     # https://packaging.python.org/en/latest/specifications/core-metadata/#project-url-multiple-use
-    #     metadata[METADATA_VARIANT_PROVIDER_HEADER] = f"{ns}: {provider}"
