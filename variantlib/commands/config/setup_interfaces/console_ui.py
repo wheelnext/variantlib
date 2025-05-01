@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from types import ModuleType
+    from typing import Any
 
     from tomlkit.toml_document import TOMLDocument
 
@@ -56,7 +57,7 @@ class ConsoleUI:
             return False
         return True
 
-    def input_bool(self, prompt: str, default: bool, *args, **kwargs) -> bool:
+    def input_bool(self, prompt: str, default: bool, *args: Any, **kwargs: Any) -> bool:
         full_prompt = f"{prompt} [{'Y/n' if default else 'y/N'}] "
         while True:
             val = input(full_prompt)

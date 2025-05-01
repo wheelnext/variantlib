@@ -229,9 +229,7 @@ def setup(args: list[str]) -> None:
         )
         if parsed_args.ui != "urwid":
             if not ui.input_bool(
-                "Do you want to save the configuration changes?",
-                default=True,
-                clear_console=False,
+                "Do you want to save the configuration changes?", default=True
             ):
                 sys.stdout.write("Configuration changes discarded\n")
                 return
