@@ -231,7 +231,6 @@ def setup(args: list[str]) -> None:
             if not ui.input_bool(
                 "Do you want to save the configuration changes?",
                 default=True,
-                clear_console=False,
             ):
                 sys.stdout.write("Configuration changes discarded\n")
                 return
