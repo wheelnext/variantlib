@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
+from contextlib import contextmanager
 from types import GenericAlias
 from typing import Any
 from typing import Callable
@@ -279,3 +280,64 @@ def validate_variants_json(data: dict) -> None:
                         f"Invalid variant value `{feature_value}` for hash "
                         f"`{variant_hash}`"
                     )
+
+
+class KeyTrackingValidator:
+    """Helper class for validating types in nested structure"""
+
+    def __init__(self, top_key: str, top_data: dict) -> None:
+        self._keys = [top_key]
+        self._data: list[Any] = [top_data]
+        self._expected_keys: list[set[str]] = [set()]
+        self.validate(top_data, dict[str, Any])
+
+    @property
+    def _key(self) -> str:
+        return ".".join(self._keys)
+
+    def validate(self, value: Any, expected_type: type) -> None:
+        wrong_type = _validate_type(value, expected_type)
+        if wrong_type is not None:
+            raise ValidationError(
+                f"{self._key}: expected {expected_type}, got {wrong_type}"
+            )
+
+    def matches_re(self, pattern: str | re.Pattern) -> None:
+        if not re.fullmatch(pattern, self._data[-1]):
+            raise ValidationError(
+                f"{self._key}: value {self._data[-1]!r} must match regex {pattern}"
+            )
+
+    def list_matches_re(self, pattern: str | re.Pattern) -> None:
+        for i, value in enumerate(self._data[-1]):
+            if not re.fullmatch(pattern, value):
+                raise ValidationError(
+                    f"{self._key}[{i}]: value {value!r} must match regex {pattern}"
+                )
+
+    @contextmanager
+    def get(self, key: str, expected_type: type, default: Any) -> Any:
+        # add to list of expected keys of current dict
+        self._expected_keys[-1].add(key)
+
+        # push the value to the stack
+        self._keys.append(key)
+        self._data.append(self._data[-1].get(key, default))
+        self._expected_keys.append(set())
+        self.validate(self._data[-1], expected_type)
+
+        # return the value
+        yield self._data[-1]
+
+        # pop the value
+        expected_keys = self._expected_keys.pop()
+        last_data = self._data.pop()
+        # if it was a dict, verify that we didn't get any unwelcome keys
+        if isinstance(last_data, dict):
+            unexpected_keys = last_data.keys() - expected_keys
+            if unexpected_keys:
+                raise ValidationError(
+                    f"{self._key}: unexpected subkeys: {unexpected_keys}; "
+                    f"expected only: {expected_keys}"
+                )
+        self._keys.pop()
