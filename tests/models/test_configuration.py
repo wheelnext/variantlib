@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.configuration import VariantConfiguration
@@ -63,7 +63,7 @@ def test_namespace_priorities_validation(namespaces: list[str]):
         st.builds(
             VariantFeature,
             namespace=st.just("OmniCorp"),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
+            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
         )
     ),
 )
@@ -82,14 +82,14 @@ def test_feature_priorities_validation(
         st.builds(
             VariantFeature,
             namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
+            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
         )
     ),
     st.lists(
         st.builds(
             VariantProperty,
             namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
-            feature=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
+            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
             value=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
         )
     ),

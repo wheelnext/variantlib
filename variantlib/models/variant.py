@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from functools import cached_property
 
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
@@ -45,7 +45,7 @@ class VariantFeature(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
                 ],
                 value=val,
             )
@@ -76,7 +76,7 @@ class VariantFeature(BaseModel):
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
         pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
-        pttn_feature = VALIDATION_FEATURE_REGEX.pattern
+        pttn_feature = VALIDATION_FEATURE_NAME_REGEX.pattern
 
         pattern = re.compile(
             rf"(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})"
@@ -130,7 +130,7 @@ class VariantProperty(VariantFeature):
     def from_str(cls, input_str: str) -> Self:
         # removing starting `^` and trailing `$`
         pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
-        pttn_feature = VALIDATION_FEATURE_REGEX.pattern
+        pttn_feature = VALIDATION_FEATURE_NAME_REGEX.pattern
         pttn_value = VALIDATION_VALUE_REGEX.pattern
 
         pattern = re.compile(

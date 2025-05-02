@@ -13,8 +13,7 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
-
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
@@ -255,7 +254,7 @@ def validate_variants_json(data: dict) -> None:
                         f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"
                     )
-                if VALIDATION_FEATURE_REGEX.fullmatch(feature_name) is None:
+                if VALIDATION_FEATURE_NAME_REGEX.fullmatch(feature_name) is None:
                     raise ValidationError(
                         f"Invalid variant feature name `{feature_name}` for hash "
                         f"`{variant_hash}`"

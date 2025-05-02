@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import TYPE_CHECKING
 
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -35,7 +35,7 @@ class VariantFeatureConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
                 ],
                 value=val,
             )
