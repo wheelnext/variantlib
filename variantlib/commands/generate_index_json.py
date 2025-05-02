@@ -3,24 +3,14 @@ from __future__ import annotations
 import argparse
 import email.parser
 import email.policy
-import json
 import logging
 import pathlib
 import zipfile
-from collections import defaultdict
-from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.commands.index_json_utils import append_variant_info_to_json_file
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
-
-if TYPE_CHECKING:
-    from variantlib.models.provider import ProviderPackage
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +38,8 @@ def generate_index_json(args: list[str]) -> None:
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
-    known_variants: dict[str, VariantDescription] = {}
-    known_providers: set[ProviderPackage] = set()
+
+    seen_versions = set()
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
@@ -66,6 +56,20 @@ def generate_index_json(args: list[str]) -> None:
                 {"input_file": wheel.name},
             )
             continue
+
+        if (pkg_version := wheel_info.group("ver")) is None:
+            logger.error(
+                "Filepath: `%(input_file)s` ... does not have a valid version. "
+                "Skipping ...",
+                {"input_file": wheel.name},
+            )
+            continue
+
+        if pkg_version not in seen_versions:
+            # Clean old JSON file if it exists at first encounter
+            # This is to avoid appending to an existing file
+            (directory / f"variants-{pkg_version}.json").unlink(missing_ok=True)
+            seen_versions.add(pkg_version)
 
         logger.info(
             "Processing wheel: `%(wheel)s` with variant hash: `%(vhash)s`",
@@ -84,59 +88,15 @@ def generate_index_json(args: list[str]) -> None:
                 logger.warning("%s: no METADATA file found", wheel)
                 continue
 
-            # Only valid Wheel Variants need to be processed
-            variant_properties = wheel_metadata.get_all(
-                METADATA_VARIANT_PROPERTY_HEADER, []
-            )
-
-            # ============== Variant Properties Processing ================ #
-
             try:
-                vprops = [
-                    VariantProperty.from_str(vprop) for vprop in variant_properties
-                ]
-                vdesc = VariantDescription(vprops)
+                append_variant_info_to_json_file(
+                    base_dir=directory,
+                    metadata=wheel_metadata,
+                )
             except ValidationError:
                 logger.exception(
-                    "%(wheel)s has been rejected due to invalid properties. Will be "
-                    "ignored.",
-                    {"wheel": wheel},
+                    "Failed to process wheel: `%(wheel)s` with variant hash: "
+                    "`%(vhash)s`",
+                    {"wheel": wheel.name, "vhash": vhash},
                 )
                 continue
-
-            if (vhash := vdesc.hexdigest) not in known_variants:
-                known_variants[vhash] = vdesc
-
-            # ============== Variant Providers Processing ================ #
-            # TODO: Remove
-            # if variant_properties and not (
-            #     wheel_providers := wheel_metadata.get_all(
-            #         METADATA_VARIANT_PROVIDER_HEADER, []
-            #     )
-            # ):
-            #     logger.info(
-            #         "%(wheel)s: did not declare any `%(key)s`",
-            #         {"wheel": wheel, "key": METADATA_VARIANT_PROVIDER_HEADER},
-            #     )
-
-            # for wheel_provider in wheel_providers:
-            #     with contextlib.suppress(ValidationError):
-            #         # If the following fails, the provider will be ignored.
-            #         known_providers.add(ProviderPackage.from_str(wheel_provider))
-
-    sorted_providers = defaultdict(list)
-    for provider in known_providers:
-        sorted_providers[provider.namespace].append(provider.package_name)
-
-    with (directory / "variants.json").open(mode="w") as f:
-        json.dump(
-            {
-                VARIANTS_JSON_PROVIDER_DATA_KEY: sorted_providers,
-                VARIANTS_JSON_VARIANT_DATA_KEY: {
-                    vhash: vdesc.to_dict() for vhash, vdesc in known_variants.items()
-                },
-            },
-            f,
-            indent=4,
-            sort_keys=True,
-        )
