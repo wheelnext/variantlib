@@ -10,21 +10,17 @@ import zipfile
 from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.models.provider import ProviderPackage
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
 logger = logging.getLogger(__name__)
 
 
-def pretty_print(vdesc: VariantDescription, providers: list[ProviderPackage]) -> str:
+def pretty_print(vdesc: VariantDescription) -> str:
     result_str = f"{'#' * 30} Variant: `{vdesc.hexdigest}` {'#' * 29}"
     for vprop in vdesc.properties:
         result_str += f"\n{METADATA_VARIANT_PROPERTY_HEADER}: {vprop.to_str()}"
-    for provider in providers:
-        result_str += f"\n{METADATA_VARIANT_PROVIDER_HEADER}: {provider.to_str()}"
     result_str += f"\n{'#' * 80}\n"
     return result_str
 
@@ -95,16 +91,18 @@ def analyze_wheel(args: list[str]) -> None:
         )
 
         # Extract all variant provider strings``
-        providers = [
-            ProviderPackage.from_str(provider_str)
-            for provider_str in re.findall(
-                rf"{METADATA_VARIANT_PROVIDER_HEADER}: (.+)", metadata_str
-            )
-        ]
+        # TODO: REMOVE
+        # providers = [
+        #     ProviderPackage.from_str(provider_str)
+        #     for provider_str in re.findall(
+        #         rf"{METADATA_VARIANT_PROVIDER_HEADER}: (.+)", metadata_str
+        #     )
+        # ]
 
         # We have to flush the logger handlers to ensure that all logs are printed
         for handler in logger.handlers:
             handler.flush()
 
-        for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
+        # for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
+        for line in pretty_print(vdesc=vdesc).splitlines():
             sys.stdout.write(f"{line}\n")

@@ -13,7 +13,6 @@ import zipfile
 from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 
 logger = logging.getLogger(__name__)
@@ -110,7 +109,6 @@ def _unmake_variant(
                     # Remove old metadata
                     del metadata[METADATA_VARIANT_PROPERTY_HEADER]
                     del metadata[METADATA_VARIANT_HASH_HEADER]
-                    del metadata[METADATA_VARIANT_PROVIDER_HEADER]
 
                     # Write the serialized metadata
                     new_metadata = metadata.as_bytes(policy=METADATA_POLICY)

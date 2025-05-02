@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import email.parser
 import email.policy
 import json
@@ -9,17 +8,19 @@ import logging
 import pathlib
 import zipfile
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.provider import ProviderPackage
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+
+if TYPE_CHECKING:
+    from variantlib.models.provider import ProviderPackage
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,11 @@ def generate_index_json(args: list[str]) -> None:
             )
             continue
 
+        logger.info(
+            "Processing wheel: `%(wheel)s` with variant hash: `%(vhash)s`",
+            {"wheel": wheel.name, "vhash": vhash},
+        )
+
         with zipfile.ZipFile(wheel, "r") as zip_file:
             # Find the METADATA file
             for name in zip_file.namelist():
@@ -102,20 +108,21 @@ def generate_index_json(args: list[str]) -> None:
                 known_variants[vhash] = vdesc
 
             # ============== Variant Providers Processing ================ #
-            if variant_properties and not (
-                wheel_providers := wheel_metadata.get_all(
-                    METADATA_VARIANT_PROVIDER_HEADER, []
-                )
-            ):
-                logger.info(
-                    "%(wheel)s: did not declare any `%(key)s`",
-                    {"wheel": wheel, "key": METADATA_VARIANT_PROVIDER_HEADER},
-                )
+            # TODO: Remove
+            # if variant_properties and not (
+            #     wheel_providers := wheel_metadata.get_all(
+            #         METADATA_VARIANT_PROVIDER_HEADER, []
+            #     )
+            # ):
+            #     logger.info(
+            #         "%(wheel)s: did not declare any `%(key)s`",
+            #         {"wheel": wheel, "key": METADATA_VARIANT_PROVIDER_HEADER},
+            #     )
 
-            for wheel_provider in wheel_providers:
-                with contextlib.suppress(ValidationError):
-                    # If the following fails, the provider will be ignored.
-                    known_providers.add(ProviderPackage.from_str(wheel_provider))
+            # for wheel_provider in wheel_providers:
+            #     with contextlib.suppress(ValidationError):
+            #         # If the following fails, the provider will be ignored.
+            #         known_providers.add(ProviderPackage.from_str(wheel_provider))
 
     sorted_providers = defaultdict(list)
     for provider in known_providers:

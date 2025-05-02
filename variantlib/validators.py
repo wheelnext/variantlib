@@ -11,6 +11,9 @@ from typing import Union
 from typing import get_args
 from typing import get_origin
 
+from packaging.requirements import InvalidRequirement
+from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -159,6 +162,13 @@ def validate_type(value: Any, expected_type: type) -> None:
     wrong_type = _validate_type(value, expected_type)
     if wrong_type is not None:
         raise ValidationError(f"Expected {expected_type}, got {wrong_type}")
+
+
+def validate_requirement_str(dependency_str: str) -> None:
+    try:
+        _ = Requirement(dependency_str)
+    except (InvalidRequirement, ValueError) as e:
+        raise ValidationError from e
 
 
 def validate_variants_json(data: dict) -> None:
