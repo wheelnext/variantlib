@@ -10,6 +10,7 @@ PYPROJECT_TOML_DEFAULT_PRIO_KEY = "default-priorities"
 PYPROJECT_TOML_NAMESPACE_KEY = "namespace"
 PYPROJECT_TOML_FEATURE_KEY = "feature"
 PYPROJECT_TOML_PROPERTY_KEY = "property"
+PYPROJECT_TOML_PROVIDER_DATA_KEY = "providers"
 PYPROJECT_TOML_PROVIDER_REQUIRES_KEY = "requires"
 PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY = "entry-point"
 
@@ -33,14 +34,47 @@ METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER = f"Variant-{VARIANTS_JSON_DEFAULT
 
 VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[A-Za-z0-9_]+")
-VALIDATION_FEATURE_REGEX = re.compile(r"[A-Za-z0-9_]+")
+VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[A-Za-z0-9_]+")
 VALIDATION_VALUE_REGEX = re.compile(r"[A-Za-z0-9_.]+")
 
-VALIDATION_PROVIDER_ENTRYPOINT_REGEX = re.compile(
-    r"(?P<namespace>[\S]+)\: ?(?P<entrypoint>[a-zA-Z0-9_.]+\:[a-zA-Z0-9_]+)"
+VALIDATION_FEATURE_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* :: \s*
+    (?P<feature>{VALIDATION_FEATURE_NAME_REGEX.pattern})
+""",
+    re.VERBOSE,
 )
-VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(
-    r"(?P<namespace>[\S]+)\: ?(?P<requirement_str>[\S ]+)"
+
+VALIDATION_PROPERTY_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* :: \s*
+    (?P<feature>{VALIDATION_FEATURE_NAME_REGEX.pattern})
+    \s* :: \s*
+    (?P<value>{VALIDATION_VALUE_REGEX.pattern})
+""",
+    re.VERBOSE,
+)
+
+VALIDATION_PROVIDER_ENTRY_POINT_REGEX = re.compile(r"[a-zA-Z0-9_.]+\:[a-zA-Z0-9_]+")
+VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
+
+VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* : \s*
+    (?P<entrypoint>{VALIDATION_PROVIDER_ENTRY_POINT_REGEX.pattern})
+""",
+    re.VERBOSE,
+)
+VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* : \s*
+    (?P<requirement_str>{VALIDATION_PROVIDER_REQUIRES_REGEX.pattern})
+""",
+    re.VERBOSE,
 )
 
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")

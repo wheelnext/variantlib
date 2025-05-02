@@ -21,7 +21,7 @@ from variantlib.api import VariantValidationResult
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -105,7 +105,7 @@ def test_get_variant_hashes_by_priority_roundtrip(mocker, configs):
                 unique_by=lambda vfeat_cfg: vfeat_cfg.name,
                 elements=st.builds(
                     VariantFeatureConfig,
-                    name=st.from_regex(VALIDATION_FEATURE_REGEX, fullmatch=True),
+                    name=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
                     values=st.lists(
                         min_size=1,
                         max_size=3,
