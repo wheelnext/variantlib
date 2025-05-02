@@ -53,6 +53,11 @@ class MyClass(HalfClass):
         ([[[1], [2, 3], [4, 5]]], list[list[list[int]]]),
         ({"a": 1, "b": 2}, dict[str, int]),
         ({"a": [1, 2, 3], "b": [4]}, dict[str, list[int]]),
+        ([1, "foo", True], list[Any]),
+        ({1, "foo"}, set[Any]),
+        ({"a": 1, "b": "foo", "c": True}, dict[str, Any]),
+        ({"a": 1, 1: "foo", False: True}, dict[Any, Any]),
+        ({"a": 1, 1: 2, False: 3}, dict[Any, int]),
     ],
 )
 def test_validate_type_good(value: Any, expected: type):
@@ -101,6 +106,8 @@ def test_validate_type_good(value: Any, expected: type):
             dict[str, list[int]],
             dict[str, Union[list[int], int]],
         ),
+        ({"a": 1, 1: "foo", "c": True}, dict[str, Any], dict[Union[str, int], Any]),
+        ({"a": 1, 1: "foo", False: 3}, dict[Any, int], dict[Any, Union[int, str]]),
     ],
 )
 def test_validate_type_bad(value: Any, expected: type, have: type):
