@@ -123,12 +123,18 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
         if list_type is dict:
             assert isinstance(value, dict)
             key_type, value_type = get_args(expected_type)
-            incorrect_key_types = {_validate_type(key, key_type) for key in value}
-            incorrect_key_types.discard(None)
-            incorrect_value_types = {
-                _validate_type(v, value_type) for v in value.values()
-            }
-            incorrect_value_types.discard(None)
+            if key_type is not Any:
+                incorrect_key_types = {_validate_type(key, key_type) for key in value}
+                incorrect_key_types.discard(None)
+            else:
+                incorrect_key_types = set()
+            if value_type is not Any:
+                incorrect_value_types = {
+                    _validate_type(v, value_type) for v in value.values()
+                }
+                incorrect_value_types.discard(None)
+            else:
+                incorrect_value_types = set()
             if incorrect_key_types or incorrect_value_types:
                 key_ored = Union.__getitem__((key_type, *incorrect_key_types))
                 value_ored = Union.__getitem__((value_type, *incorrect_value_types))
@@ -137,11 +143,12 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
         else:
             (item_type,) = get_args(expected_type)
             assert isinstance(value, Iterable)
-            incorrect_types = {_validate_type(item, item_type) for item in value}
-            incorrect_types.discard(None)
-            if incorrect_types:
-                ored = Union.__getitem__((item_type, *incorrect_types))
-                return list_type[ored]  # type: ignore[index]
+            if item_type is not Any:
+                incorrect_types = {_validate_type(item, item_type) for item in value}
+                incorrect_types.discard(None)
+                if incorrect_types:
+                    ored = Union.__getitem__((item_type, *incorrect_types))
+                    return list_type[ored]  # type: ignore[index]
 
     # Protocols and Iterable must enable subclassing to pass
     elif issubclass(expected_type, (Protocol, Iterable)):  # type: ignore[arg-type]
