@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
-import re
 import sys
 from collections import defaultdict
 from dataclasses import asdict
@@ -11,7 +10,9 @@ from dataclasses import field
 from functools import cached_property
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
+from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
@@ -74,17 +75,8 @@ class VariantFeature(BaseModel):
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
-        # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
-        pttn_feature = VALIDATION_FEATURE_NAME_REGEX.pattern
-
-        pattern = re.compile(
-            rf"(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})"
-        )
-
         # Try matching the input string with the regex pattern
-        match = pattern.fullmatch(input_str.strip())
-
+        match = VALIDATION_FEATURE_REGEX.fullmatch(input_str.strip())
         if match is None:
             raise ValidationError(
                 f"Invalid format: `{input_str}`, expected format: "
@@ -128,17 +120,8 @@ class VariantProperty(VariantFeature):
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
-        # removing starting `^` and trailing `$`
-        pttn_nmspc = VALIDATION_NAMESPACE_REGEX.pattern
-        pttn_feature = VALIDATION_FEATURE_NAME_REGEX.pattern
-        pttn_value = VALIDATION_VALUE_REGEX.pattern
-
-        pattern = re.compile(
-            rf"(?P<namespace>{pttn_nmspc})\s*::\s*(?P<feature>{pttn_feature})\s*::\s*(?P<value>{pttn_value})"
-        )
-
         # Try matching the input string with the regex pattern
-        match = pattern.fullmatch(input_str.strip())
+        match = VALIDATION_PROPERTY_REGEX.fullmatch(input_str.strip())
 
         if match is None:
             raise ValidationError(

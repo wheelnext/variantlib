@@ -36,6 +36,26 @@ VALIDATION_NAMESPACE_REGEX = re.compile(r"[A-Za-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[A-Za-z0-9_]+")
 VALIDATION_VALUE_REGEX = re.compile(r"[A-Za-z0-9_.]+")
 
+VALIDATION_FEATURE_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* :: \s*
+    (?P<feature>{VALIDATION_FEATURE_NAME_REGEX.pattern})
+""",
+    re.VERBOSE,
+)
+
+VALIDATION_PROPERTY_REGEX = re.compile(
+    rf"""
+    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
+    \s* :: \s*
+    (?P<feature>{VALIDATION_FEATURE_NAME_REGEX.pattern})
+    \s* :: \s*
+    (?P<value>{VALIDATION_VALUE_REGEX.pattern})
+""",
+    re.VERBOSE,
+)
+
 VALIDATION_PROVIDER_ENTRYPOINT_REGEX = re.compile(
     r"(?P<namespace>[\S]+)\: ?(?P<entrypoint>[a-zA-Z0-9_.]+\:[a-zA-Z0-9_]+)"
 )
