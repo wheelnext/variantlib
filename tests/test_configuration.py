@@ -164,7 +164,11 @@ def test_get_config_from_file(mocker, tmp_path: Path):
         assert config.namespace_priorities == data["namespace_priorities"]
 
 
-def test_class_properties_with_default():
+def test_class_properties_with_default(mocker):
+    mocker.patch(
+        "variantlib.configuration.VariantConfiguration.get_config_file"
+    ).side_effect = FileNotFoundError
+
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
     assert VariantConfiguration.namespace_priorities == []
