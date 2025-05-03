@@ -46,9 +46,18 @@ requires = [
 entry-point = "ns2_provider:Plugin"
 """
 
+PYPROJECT_TOML = tomllib.loads(TOML_DATA)
+
+PYPROJECT_TOML_MINIMAL = tomllib.loads(
+    # remove truly optional keys
+    "\n".join(
+        x for x in TOML_DATA.splitlines() if not x.startswith(("feature", "property"))
+    )
+)
+
 
 def test_pyproject_toml():
-    pyproj = VariantPyProjectToml(tomllib.loads(TOML_DATA))
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
     assert pyproj.feature_priorities == [
         VariantFeature("ns2", "f1"),
@@ -71,16 +80,7 @@ def test_pyproject_toml():
 
 
 def test_pyproject_toml_minimal():
-    pyproj = VariantPyProjectToml(
-        tomllib.loads(
-            # remove truly optional keys
-            "\n".join(
-                x
-                for x in TOML_DATA.splitlines()
-                if not x.startswith(("feature", "property"))
-            )
-        )
-    )
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML_MINIMAL)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
     assert pyproj.feature_priorities == []
     assert pyproj.property_priorities == []
