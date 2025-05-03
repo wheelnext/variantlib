@@ -9,7 +9,7 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRYPOINT_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
@@ -170,7 +170,7 @@ def append_variant_info_to_json_file(
     # ===================== Variant Provider Entry-Point ===================== #
 
     for provider_entrypoint in metadata.get_all(
-        METADATA_VARIANT_PROVIDER_ENTRYPOINT_HEADER, []
+        METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER, []
     ):
         try:
             match = VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX.fullmatch(
