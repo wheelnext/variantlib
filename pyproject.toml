@@ -51,7 +51,9 @@ test = [
     "pytest-mock>=3.14.0,<4.0.0",
     "pytest-runner>=6.0.0,<7.0.0",
     "pytest-ordering>=0.6,<1.0.0",
+    "virtualenv>=20.0.0,<21.0.0",
     "tomlkit>=0.13,<0.14",
+    "uv>=0.7,<0.8",
 ]
 
 [project.scripts]
@@ -78,7 +80,13 @@ get-supported-configs = "variantlib.commands.plugins.get_supported_configs:get_s
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
+log_cli_level = "info"
 addopts = "-vvv --cov=variantlib --cov-report=term-missing"
+markers = [
+  "isolated",
+  "pypy3323bug",
+  "network",
+]
 
 [tool.mypy]
 disallow_untyped_defs = true
