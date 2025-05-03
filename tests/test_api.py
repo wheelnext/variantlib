@@ -12,6 +12,8 @@ from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
 
+from tests.test_pyproject_toml import PYPROJECT_TOML
+from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
 from tests.utils import get_combinations
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
@@ -29,6 +31,7 @@ from variantlib.loader import PluginLoader
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
+from variantlib.pyproject_toml import VariantPyProjectToml
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -247,36 +250,69 @@ def metadata() -> EmailMessage:
 
 
 @pytest.mark.parametrize("replace", [False, True])
+@pytest.mark.parametrize(
+    "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
+)
 def test_set_variant_metadata(
     mocked_plugin_loader: type[PluginLoader],
     metadata: EmailMessage,
     replace: bool,
+    pyproject_toml: dict | None,
 ):
     if replace:
         # deliberately using different case
         metadata["Variant-Hash"] = "12345678"
         metadata["variant-property"] = "a :: b :: c"
+        metadata["VARIANT-REQUIRES"] = "ns1: frobnicate"
+        metadata["variant-requires"] = "ns2: barnicate"
+        metadata["Variant-requires"] = "ns3: baznicate"
         metadata["variant-property"] = "d :: e :: f"
+        metadata["VARIANT-entry-POINT"] = "ns1: frobnicate:Plugin"
+        metadata["variant-Entry-poinT"] = "ns2: barnicate.plugin:BarPlugin"
+        metadata["Variant-Entry-Point"] = "ns3: baz:Nicate"
+        metadata["Variant-Default-Namespace-Priorities"] = "ns3, ns2,ns1"
+        metadata["Variant-Default-Feature-Priorities"] = "ns3 :: f1"
+        metadata["Variant-Default-Property-Priorities"] = "ns2 :: f2 :: p2"
 
     set_variant_metadata(
         metadata,
         VariantDescription(
             [
-                VariantProperty("test_namespace", "name1", "val1d"),
-                VariantProperty("test_namespace", "name2", "val2a"),
-                VariantProperty("second_namespace", "name3", "val3a"),
+                VariantProperty("ns1", "f1", "p1"),
+                VariantProperty("ns1", "f2", "p2"),
+                VariantProperty("ns2", "f1", "p1"),
             ]
         ),
+        pyproject_toml=VariantPyProjectToml(pyproject_toml)
+        if pyproject_toml is not None
+        else None,
     )
-    assert metadata.as_string() == (
+
+    expected = (
         "Metadata-Version: 2.1\n"
         "Name: test-package\n"
         "Version: 1.2.3\n"
-        "Variant-property: second_namespace :: name3 :: val3a\n"
-        "Variant-property: test_namespace :: name1 :: val1d\n"
-        "Variant-property: test_namespace :: name2 :: val2a\n"
-        "Variant-hash: c9267e19\n"
-        "\n"
-        "long description\n"
-        "of a package\n"
+        "Variant-property: ns1 :: f1 :: p1\n"
+        "Variant-property: ns1 :: f2 :: p2\n"
+        "Variant-property: ns2 :: f1 :: p1\n"
+        "Variant-hash: 67fcaf38\n"
     )
+
+    if pyproject_toml is not None:
+        expected += (
+            "Variant-requires: ns1: ns1-provider >= 1.2.3\n"
+            "Variant-entry-point: ns1: ns1_provider.plugin:NS1Plugin\n"
+            "Variant-requires: ns2: ns2_provider; python_version >= '3.11'\n"
+            "Variant-requires: ns2: old_ns2_provider; python_version < '3.11'\n"
+            "Variant-entry-point: ns2: ns2_provider:Plugin\n"
+            "Variant-default-namespace-priorities: ns1, ns2\n"
+        )
+    if pyproject_toml is PYPROJECT_TOML:
+        expected += (
+            "Variant-default-feature-priorities: ns2 :: f1, ns1 :: f2\n"
+            "Variant-default-property-priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
+        )
+
+    expected += "\nlong description\nof a package\n"
+
+    assert metadata.as_string() == expected

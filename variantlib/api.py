@@ -7,8 +7,14 @@ import logging
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
+from variantlib.constants import METADATA_ALL_HEADERS
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
@@ -23,6 +29,9 @@ from variantlib.variant_file import unpack_variants_json
 
 if TYPE_CHECKING:
     from email.message import Message
+
+    from variantlib.pyproject_toml import VariantPyProjectToml
+
 
 logger = logging.getLogger(__name__)
 
@@ -136,14 +145,39 @@ def validate_variant(
 def set_variant_metadata(
     metadata: Message,
     vdesc: VariantDescription,
+    pyproject_toml: VariantPyProjectToml | None = None,
 ) -> None:
     """Set metadata-related keys in metadata email-dict"""
 
     # Remove old metadata
-    del metadata[METADATA_VARIANT_PROPERTY_HEADER]
-    del metadata[METADATA_VARIANT_HASH_HEADER]
+    for key in METADATA_ALL_HEADERS:
+        del metadata[key]
 
-    # Add new metadata
+    # Add variant metadata
     for vprop in vdesc.properties:
         metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
     metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
+
+    # Copy pyproject.toml metadata
+    if pyproject_toml is not None:
+        for namespace, provider_info in pyproject_toml.providers.items():
+            for requirement in provider_info.requires:
+                metadata[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
+                    f"{namespace}: {requirement}"
+                )
+            metadata[METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER] = (
+                f"{namespace}: {provider_info.entry_point}"
+            )
+
+        if pyproject_toml.namespace_priorities:
+            metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = ", ".join(
+                pyproject_toml.namespace_priorities
+            )
+        if pyproject_toml.feature_priorities:
+            metadata[METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER] = ", ".join(
+                x.to_str() for x in pyproject_toml.feature_priorities
+            )
+        if pyproject_toml.property_priorities:
+            metadata[METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER] = ", ".join(
+                x.to_str() for x in pyproject_toml.property_priorities
+            )
