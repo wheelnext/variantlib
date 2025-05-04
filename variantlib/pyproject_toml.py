@@ -66,7 +66,7 @@ class VariantPyProjectToml:
             PYPROJECT_TOML_PROVIDER_DATA_KEY, dict[str, Any], {}
         ) as providers:
             validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
-            namespaces = set(providers.keys())
+            namespaces = list(providers.keys())
             self.providers = {}
             for namespace in namespaces:
                 with validator.get(namespace, dict[str, Any], {}):
