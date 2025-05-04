@@ -255,8 +255,8 @@ def test_set_variant_metadata(
     if replace:
         # deliberately using different case
         metadata["Variant-Hash"] = "12345678"
-        metadata["variant"] = "a :: b :: c"
-        metadata["variant"] = "d :: e :: f"
+        metadata["variant-property"] = "a :: b :: c"
+        metadata["variant-property"] = "d :: e :: f"
 
     set_variant_metadata(
         metadata,
@@ -272,9 +272,9 @@ def test_set_variant_metadata(
         "Metadata-Version: 2.1\n"
         "Name: test-package\n"
         "Version: 1.2.3\n"
-        "Variant: second_namespace :: name3 :: val3a\n"
-        "Variant: test_namespace :: name1 :: val1d\n"
-        "Variant: test_namespace :: name2 :: val2a\n"
+        "Variant-property: second_namespace :: name3 :: val3a\n"
+        "Variant-property: test_namespace :: name1 :: val1d\n"
+        "Variant-property: test_namespace :: name2 :: val2a\n"
         "Variant-hash: c9267e19\n"
         "\n"
         "long description\n"

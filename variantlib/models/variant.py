@@ -60,7 +60,7 @@ class VariantFeature(BaseModel):
         return hash((VariantFeature, self.namespace, self.feature))
 
     def to_str(self) -> str:
-        # Variant: <namespace> :: <feature> :: <val>
+        # Variant-property: <namespace> :: <feature> :: <val>
         return f"{self.namespace} :: {self.feature}"
 
     def serialize(self) -> dict[str, str]:
@@ -115,7 +115,7 @@ class VariantProperty(VariantFeature):
         return VariantFeature(namespace=self.namespace, feature=self.feature)
 
     def to_str(self) -> str:
-        # Variant: <namespace> :: <feature> :: <val>
+        # Variant-property: <namespace> :: <feature> :: <val>
         return f"{self.namespace} :: {self.feature} :: {self.value}"
 
     @classmethod
