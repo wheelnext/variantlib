@@ -10,10 +10,12 @@ If possible, this code should stay as close to the original as possible.
 from __future__ import annotations
 
 import abc
+import contextlib
 import functools
 import importlib.util
 import logging
 import os
+import pathlib
 import platform
 import shutil
 import subprocess
@@ -21,20 +23,13 @@ import sys
 import sysconfig
 import tempfile
 import typing
-import warnings
+from itertools import chain
 
-from packaging.version import Version
-
-from variantlib.installer_utils import check_dependency
+import pip._internal.configuration
 
 if typing.TYPE_CHECKING:
     from collections.abc import Collection
     from collections.abc import Mapping
-
-if sys.version_info >= (3, 10):
-    from importlib.metadata import distributions
-else:
-    from importlib_metadata import distributions
 
 logger = logging.getLogger(__name__)
 
@@ -43,369 +38,40 @@ Installer = typing.Literal["pip", "uv"]
 INSTALLERS = typing.get_args(Installer)
 
 
-def run_subprocess(cmd: list[str], env: Mapping[str, str] | None = None) -> None:
-    subprocess.run(cmd, capture_output=True, check=True, env=env)  # noqa: S603
+def _get_pip_index_urls():
+    # Load pip configuration
+    configuration = pip._internal.configuration.Configuration(  # noqa: SLF001
+        isolated=False, load_only=None
+    )
+    configuration.load()
+
+    def unpack_pip_index_config_value(val: str | list[str] | tuple[str]) -> list[str]:
+        val: list[str] | tuple[str]
+        return [v.strip() for v in val.split("\n") if v.strip()]
+
+    # Retrieve index-url and extra-index-url values
+    # index_url = configuration.get_value("global.index-url")
+    # extra_index_urls = configuration.get_value("global.extra-index-url")
+    index_url = []
+    extra_index_urls = []
+    for key, val in configuration.items():
+        if key in ["global.index-url", "install.index-url"]:
+            index_url.extend(unpack_pip_index_config_value(val))
+        if key in ["global.extra-index-url", "install.extra-index-url"]:
+            extra_index_urls.extend(unpack_pip_index_config_value(val))
+
+    return list(set(index_url)), list(set(extra_index_urls))
 
 
-class FailedProcessError(Exception):
-    """
-    Exception raised when a setup or preparation operation fails.
-    """
-
-    def __init__(
-        self, exception: subprocess.CalledProcessError, description: str
-    ) -> None:
-        super().__init__()
-        self.exception = exception
-        self._description = description
-
-    def __str__(self) -> str:
-        return self._description
-
-
-class IsolatedEnv(typing.Protocol):
-    """Isolated build environment ABC."""
-
-    @property
-    @abc.abstractmethod
-    def python_executable(self) -> str:
-        """The Python executable of the isolated environment."""
-
-    @abc.abstractmethod
-    def make_extra_environ(self) -> Mapping[str, str] | None:
-        """Generate additional env vars specific to the isolated environment."""
-
-
-def _has_dependency(
-    name: str, minimum_version_str: str | None = None, /, **distargs: typing.Any
-) -> bool | None:
-    """
-    Given a path, see if a package is present and return True if the version is
-    sufficient for build, False if it is not, None if the package is missing.
-    """
-
+def _run_subprocess(cmd: list[str], env: Mapping[str, str] | None = None) -> bool:
     try:
-        distribution = next(iter(distributions(name=name, **distargs)))
-    except StopIteration:
-        return None
+        subprocess.run(cmd, capture_output=True, check=True, env=env)  # noqa: S603
+    except subprocess.CalledProcessError as exc:
+        logger.exception(exc.stdout.decode("utf-8"), exc_info=False)
+        logger.exception(exc.stderr.decode("utf-8"), exc_info=False)
+        return False
 
-    if minimum_version_str is None:
-        return True
-
-    return Version(distribution.version) >= Version(minimum_version_str)
-
-
-class DefaultIsolatedEnv(IsolatedEnv):
-    """
-    Isolated environment which supports several different underlying implementations.
-    """
-
-    def __init__(
-        self,
-        *,
-        installer: Installer = "pip",
-    ) -> None:
-        self.installer: Installer = installer
-
-    def __enter__(self) -> DefaultIsolatedEnv:  # noqa: PYI034
-        try:
-            path = tempfile.mkdtemp(prefix="build-env-")
-            # Call ``realpath`` to prevent spurious warning from being emitted
-            # that the venv location has changed on Windows for the venv impl.
-            # The username is DOS-encoded in the output of tempfile - the location is
-            # the same but the representation of it is different, which confuses venv.
-            # Ref: https://bugs.python.org/issue46171
-            path = os.path.realpath(path)
-            self._path = path
-
-            self._env_backend: _EnvBackend
-
-            # uv is opt-in only.
-            if self.installer == "uv":
-                self._env_backend = _UvBackend()
-            else:
-                self._env_backend = _PipBackend()
-
-            logger.info(
-                "Creating isolated environment: %(env)s ...",
-                {"env": self._env_backend.display_name},
-            )
-            self._env_backend.create(self._path)
-
-        except Exception:  # cleanup folder if creation fails
-            self.__exit__(*sys.exc_info())
-            raise
-
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        # in case the user already deleted skip remove
-        if os.path.exists(self._path):  # noqa: PTH110
-            shutil.rmtree(self._path)
-
-    @property
-    def path(self) -> str:
-        """The location of the isolated build environment."""
-        return self._path
-
-    @property
-    def python_executable(self) -> str:
-        """The python executable of the isolated build environment."""
-        return self._env_backend.python_executable
-
-    def make_extra_environ(self) -> dict[str, str]:
-        path = os.environ.get("PATH")
-        return {
-            "PATH": os.pathsep.join([self._env_backend.scripts_dir, path])
-            if path is not None
-            else self._env_backend.scripts_dir
-        }
-
-    def install(self, requirements: Collection[str]) -> None:
-        """
-        Install packages from PEP 508 requirements in the isolated build environment.
-
-        :param requirements: PEP 508 requirement specification to install
-
-        :note: Passing non-PEP 508 strings will result in undefined behavior, you
-               *should not* rely on it. It is merely an implementation detail, it may
-               change any time without warning.
-        """
-        if not requirements:
-            return
-
-        logger.info(
-            "Installing packages in isolated environment:\n%(reqs)s",
-            {"reqs": "\n".join(f"- {r}" for r in sorted(requirements))},
-        )
-        self._env_backend.install_requirements(requirements)
-
-
-class _EnvBackend(typing.Protocol):  # pragma: no cover
-    python_executable: str
-    scripts_dir: str
-
-    def create(self, path: str) -> None: ...
-
-    def install_requirements(self, requirements: Collection[str]) -> None: ...
-
-    @property
-    def display_name(self) -> str: ...
-
-
-class _PipBackend(_EnvBackend):
-    def __init__(self) -> None:
-        self._create_with_virtualenv = (
-            not self._has_valid_outer_pip and self._has_virtualenv
-        )
-
-    @functools.cached_property
-    def _has_valid_outer_pip(self) -> bool | None:
-        """
-        This checks for a valid global pip. Returns None if pip is missing, False
-        if pip is too old, and True if it can be used.
-        """
-        # `pip install --python` is nonfunctional on Gentoo debundled pip.
-        # Detect that by checking if pip._vendor` module exists.  However,
-        # searching for pip could yield warnings from _distutils_hack,
-        # so silence them.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            if importlib.util.find_spec("pip._vendor") is None:
-                return False  # pragma: no cover
-
-        # Version to have added the `--python` option.
-        return _has_dependency("pip", "22.3")
-
-    @functools.cached_property
-    def _has_virtualenv(self) -> bool:
-        """
-        virtualenv might be incompatible if it was installed separately
-        from build. This verifies that virtualenv and all of its
-        dependencies are installed as required by build.
-        """
-        from packaging.requirements import Requirement
-
-        name = "virtualenv"
-
-        return importlib.util.find_spec(name) is not None and not any(
-            Requirement(d[1]).name == name
-            for d in check_dependency(f"build[{name}]")
-            if len(d) > 1
-        )
-
-    @staticmethod
-    def _get_minimum_pip_version_str() -> str:
-        if platform.system() == "Darwin":
-            release, _, machine = platform.mac_ver()
-            if int(release[: release.find(".")]) >= 11:
-                # macOS 11+ name scheme change requires 20.3. Intel macOS 11.0 can be
-                # told to report 10.16 for backwards compatibility; but that also fixes
-                # earlier versions of pip so this is only needed for 11+.
-                is_apple_silicon_python = machine != "x86_64"
-                return "21.0.1" if is_apple_silicon_python else "20.3.0"
-
-        # PEP-517 and manylinux1 was first implemented in 19.1
-        return "19.1.0"
-
-    def create(self, path: str) -> None:
-        if self._create_with_virtualenv:
-            import virtualenv
-
-            result = virtualenv.cli_run(
-                [
-                    path,
-                    "--activators",
-                    "",
-                    "--no-setuptools",
-                    "--no-wheel",
-                ],
-                setup_logging=False,
-            )
-
-            # The creator attributes are `pathlib.Path`s.
-            self.python_executable = str(result.creator.exe)
-            self.scripts_dir = str(result.creator.script_dir)
-
-        else:
-            import venv
-
-            with_pip = not self._has_valid_outer_pip
-
-            try:
-                venv.EnvBuilder(
-                    symlinks=_fs_supports_symlink(), with_pip=with_pip
-                ).create(path)
-            except subprocess.CalledProcessError as exc:
-                raise FailedProcessError(
-                    exc, "Failed to create venv. Maybe try installing virtualenv."
-                ) from None
-
-            self.python_executable, self.scripts_dir, purelib = (
-                _find_executable_and_scripts(path)
-            )
-
-            if with_pip:
-                minimum_pip_version_str = self._get_minimum_pip_version_str()
-                if not _has_dependency(
-                    "pip",
-                    minimum_pip_version_str,
-                    path=[purelib],
-                ):
-                    run_subprocess(
-                        [
-                            self.python_executable,
-                            "-Im",
-                            "pip",
-                            "install",
-                            f"pip>={minimum_pip_version_str}",
-                        ]
-                    )
-
-                # Uninstall setuptools from the build env to prevent depending on it
-                # implicitly. Pythons 3.12 and up do not install setuptools, check if
-                # it exists first.
-                if _has_dependency(
-                    "setuptools",
-                    path=[purelib],
-                ):
-                    run_subprocess(
-                        [
-                            self.python_executable,
-                            "-Im",
-                            "pip",
-                            "uninstall",
-                            "-y",
-                            "setuptools",
-                        ]
-                    )
-
-    def install_requirements(self, requirements: Collection[str]) -> None:
-        # pip does not honour environment markers in command line arguments
-        # but it does from requirement files.
-        with tempfile.NamedTemporaryFile(
-            "w", prefix="build-reqs-", suffix=".txt", delete=False, encoding="utf-8"
-        ) as req_file:
-            req_file.write(os.linesep.join(requirements))
-
-        try:
-            if self._has_valid_outer_pip:
-                cmd = [sys.executable, "-m", "pip", "--python", self.python_executable]
-            else:
-                cmd = [self.python_executable, "-Im", "pip"]
-
-            cmd += [
-                "install",
-                "--use-pep517",
-                "--no-warn-script-location",
-                "--no-compile",
-                "-r",
-                os.path.abspath(req_file.name),  # noqa: PTH100
-            ]
-            run_subprocess(cmd)
-
-        finally:
-            os.unlink(req_file.name)  # noqa: PTH108
-
-    @property
-    def display_name(self) -> str:
-        return "virtualenv+pip" if self._create_with_virtualenv else "venv+pip"
-
-
-class _UvBackend(_EnvBackend):
-    def create(self, path: str) -> None:
-        import venv
-
-        self._env_path = path
-
-        try:
-            import uv  # type: ignore  # noqa: PGH003
-
-            self._uv_bin = uv.find_uv_bin()
-        except (ModuleNotFoundError, FileNotFoundError):
-            uv_bin = shutil.which("uv")
-            if uv_bin is None:
-                msg = "uv executable not found"
-                raise RuntimeError(msg) from None
-
-            logger.info("Using external uv from `%s`", uv_bin)
-            self._uv_bin = uv_bin
-
-        venv.EnvBuilder(symlinks=_fs_supports_symlink(), with_pip=False).create(
-            self._env_path
-        )
-        self.python_executable, self.scripts_dir, _ = _find_executable_and_scripts(
-            self._env_path
-        )
-
-    def install_requirements(self, requirements: Collection[str]) -> None:
-        cmd = [self._uv_bin, "pip"]
-        run_subprocess(
-            [*cmd, "install", *requirements],
-            env={**os.environ, "VIRTUAL_ENV": self._env_path},
-        )
-
-    @property
-    def display_name(self) -> str:
-        return "venv+uv"
-
-
-@functools.cache
-def _fs_supports_symlink() -> bool:
-    """Return True if symlinks are supported"""
-    # Using definition used by venv.main()
-    if os.name != "nt":
-        return True
-
-    # Windows may support symlinks (setting in Windows 10)
-    with tempfile.NamedTemporaryFile(prefix="build-symlink-") as tmp_file:
-        dest = f"{tmp_file}-b"
-        try:
-            os.symlink(tmp_file.name, dest)
-            os.unlink(dest)  # noqa: PTH108
-        except (OSError, NotImplementedError, AttributeError):
-            return False
-        return True
+    return True
 
 
 def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
@@ -420,14 +86,16 @@ def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
     )  # globally cached, copy before altering it
     config_vars["base"] = path
     scheme_names = sysconfig.get_scheme_names()
+
     if "venv" in scheme_names:
         # Python distributors with custom default installation scheme can set a
         # scheme that can't be used to expand the paths in a venv.
-        # This can happen if build itself is not installed in a venv.
+        # This can happen if `variantlib` itself is not installed in a venv.
         # The distributors are encouraged to set a "venv" scheme to be used for this.
         # See https://bugs.python.org/issue45413
         # and https://github.com/pypa/virtualenv/issues/2208
         paths = sysconfig.get_paths(scheme="venv", vars=config_vars)
+
     elif "posix_local" in scheme_names:
         # The Python that ships on Debian/Ubuntu varies the default scheme to
         # install to /usr/local
@@ -435,6 +103,7 @@ def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
         # If we're the Debian "posix_local" scheme is available, but "venv"
         # is not, we use "posix_prefix" instead which is venv-compatible there.
         paths = sysconfig.get_paths(scheme="posix_prefix", vars=config_vars)
+
     elif "osx_framework_library" in scheme_names:
         # The Python that ships with the macOS developer tools varies the
         # default scheme depending on whether the ``sys.prefix`` is part of a framework.
@@ -442,6 +111,7 @@ def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
         # If the Apple-custom "osx_framework_library" scheme is available but "venv"
         # is not, we use "posix_prefix" instead which is venv-compatible there.
         paths = sysconfig.get_paths(scheme="posix_prefix", vars=config_vars)
+
     else:
         paths = sysconfig.get_paths(vars=config_vars)
 
@@ -455,7 +125,257 @@ def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
     return executable, paths["scripts"], paths["purelib"]
 
 
-__all__ = [
-    "DefaultIsolatedEnv",
-    "IsolatedEnv",
-]
+@functools.cache
+def _fs_supports_symlink() -> bool:
+    """Return True if symlinks are supported"""
+    # Using definition used by venv.main()
+    if os.name != "nt":
+        return True
+
+    # Windows may support symlinks (setting in Windows 10)
+    with tempfile.NamedTemporaryFile(prefix="variant-symlink-") as tmp_file:
+        dest = f"{tmp_file}-b"
+        try:
+            os.symlink(tmp_file.name, dest)
+            os.unlink(dest)  # noqa: PTH108
+        except (OSError, NotImplementedError, AttributeError):
+            return False
+        return True
+
+
+class _EnvBackend(abc.ABC):  # pragma: no cover
+    @contextlib.contextmanager
+    def prepare_requirements(
+        self,
+        requirements: Collection[str],
+    ) -> typing.Generator[pathlib.Path, None, None]:
+        """
+        Prepare requirements for installation.
+
+        :param requirements: PEP 508 requirement specification to install
+        :return: A list of requirements to install
+        """
+        # pip does not honour environment markers in command line arguments
+        # but it does from requirement files.
+        with tempfile.NamedTemporaryFile(
+            "w",
+            prefix="variants-plugins-reqs-",
+            suffix=".txt",
+            encoding="utf-8",
+        ) as _req_file:
+            req_file = pathlib.Path(_req_file.name)
+
+            with req_file.open("w", encoding="utf-8") as rf:
+                rf.write(os.linesep.join(requirements))
+
+            yield req_file
+
+    @abc.abstractmethod
+    def install_requirements(
+        self, requirements: Collection[str], py_exec: str | None = None
+    ) -> None: ...
+
+    @property
+    @abc.abstractmethod
+    def display_name(self) -> str: ...
+
+
+class _UvBackend(_EnvBackend):
+    display_name = "uv"
+
+    def install_requirements(
+        self, requirements: Collection[str], py_exec: str | None = None
+    ) -> None:
+        index_urls, extra_index_urls = _get_pip_index_urls()
+
+        with self.prepare_requirements(requirements) as req_file:
+            cmd = [
+                shutil.which("uv"),
+                "pip",
+                "install",
+                "--python",
+                sys.executable if py_exec is None else py_exec,
+                "--no-config",
+                "--no-managed-python",
+                "--no-progress",
+                "--no-python-downloads",
+                *chain.from_iterable([["--default-index", idx] for idx in index_urls]),
+                *chain.from_iterable([["--index", idx] for idx in extra_index_urls]),
+                "-r",
+                req_file.resolve(),
+            ]
+            _run_subprocess(cmd)
+
+
+class _PipBackend(_EnvBackend):
+    display_name = "pip"
+
+    def install_requirements(
+        self, requirements: Collection[str], py_exec: str | None = None
+    ) -> None:
+        index_urls, extra_index_urls = _get_pip_index_urls()
+
+        with self.prepare_requirements(requirements) as req_file:
+            cmd = [
+                sys.executable if py_exec is None else py_exec,
+                "-m",
+                "pip",
+                "install",
+                "--use-pep517",
+                "--no-warn-script-location",
+                "--no-compile",
+                *chain.from_iterable([["--index-url", idx] for idx in index_urls]),
+                *chain.from_iterable(
+                    [["--extra-index-url", idx] for idx in extra_index_urls]
+                ),
+                "-r",
+                req_file.resolve(),
+            ]
+            _run_subprocess(cmd)
+
+
+class BasePythonEnv(abc.ABC):
+    """Base Installation Environment."""
+
+    python_executable: str | None = None
+    scripts_dir: str | None = None
+
+    def __init__(
+        self,
+        *,
+        installer: Installer = "pip",
+    ) -> None:
+        self.installer: Installer = installer
+
+        self._env_backend: _EnvBackend
+
+        # uv is opt-in only.
+        if self.installer == "uv":
+            self._env_backend = _UvBackend()
+        else:
+            self._env_backend = _PipBackend()
+
+    @abc.abstractmethod
+    def __enter__(self) -> typing.Self:
+        """
+        Enter the environment.
+        """
+
+    @abc.abstractmethod
+    def __exit__(self, *args: object) -> None:
+        """
+        Exit the environment.
+        """
+
+    def install(self, requirements: Collection[str]) -> None:
+        """
+        Install packages from PEP 508 requirements in the isolated variant plugin
+        environment.
+
+        :param requirements: PEP 508 requirement specification to install
+
+        :note: Passing non-PEP 508 strings will result in undefined behavior, you
+               *should not* rely on it. It is merely an implementation detail, it may
+               change any time without warning.
+        """
+        if not requirements:
+            return
+
+        logger.info(
+            "Installing packages in current environment:\n%(reqs)s",
+            {"reqs": "\n".join(f"- {r}" for r in sorted(requirements))},
+        )
+        self._env_backend.install_requirements(
+            requirements, py_exec=self.python_executable
+        )
+
+
+class NonIsolatedPythonEnv(BasePythonEnv):
+    """
+    Non-Isolated environment which supports several different underlying
+    implementations.
+    """
+
+    def __enter__(self) -> typing.Self:
+        logger.info(
+            "Using environment: %(env)s ...",
+            {"env": self._env_backend.display_name},
+        )
+
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+
+class IsolatedPythonEnv(BasePythonEnv):
+    """
+    Isolated environment which supports several different underlying
+    implementations.
+    """
+
+    def __enter__(self) -> typing.Self:
+        try:
+            self._path = pathlib.Path(tempfile.mkdtemp(prefix="variant-env-"))
+
+            logger.info(
+                "Creating isolated environment: %(env)s ...",
+                {"env": self._env_backend.display_name},
+            )
+            self.python_executable, self.scripts_dir = self._create_venv(self._path)
+
+        except Exception:  # cleanup folder if creation fails
+            self.__exit__(*sys.exc_info())
+            raise
+
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        # in case the user already deleted skip remove
+        if os.path.exists(self._path):  # noqa: PTH110
+            shutil.rmtree(self._path)
+        self.python_executable, self.scripts_dir = None, None
+
+    def _create_venv(self, path: pathlib.Path) -> tuple[str, str]:
+        try:
+            import virtualenv
+
+            result = virtualenv.cli_run(
+                [
+                    str(path.resolve()),
+                    "--no-setuptools",
+                    "--no-wheel",
+                    "--no-pip",
+                    # below is necessary until `variantlib` is vendored into PIP
+                    "--system-site-packages",
+                ],
+                setup_logging=False,
+            )
+
+            # The creator attributes are `pathlib.Path`s.
+            python_executable = str(result.creator.exe)
+            scripts_dir = str(result.creator.script_dir)
+
+        except (ImportError, ModuleNotFoundError):
+            import venv
+
+            try:
+                venv.EnvBuilder(
+                    symlinks=_fs_supports_symlink(),
+                    with_pip=True,
+                    system_site_packages=True,
+                    clear=True,
+                ).create(path)
+            except subprocess.CalledProcessError as exc:
+                raise RuntimeError(
+                    exc, "Failed to create venv. Maybe try installing virtualenv."
+                ) from None
+
+            python_executable, scripts_dir, _ = _find_executable_and_scripts(path)
+
+        return python_executable, scripts_dir
+
+    def install(self, requirements: Collection[str]) -> None:
+        if self.python_executable is None:
+            raise RuntimeError("The virtual environment is not created yet.")
+        super().install(requirements)

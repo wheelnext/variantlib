@@ -14,7 +14,7 @@ import textwrap
 
 import pytest
 
-from variantlib.installer_utils import check_dependency
+from variantlib._installer_utils import check_dependency
 
 if sys.version_info >= (3, 10):
     import importlib.metadata as importlib_metadata
