@@ -48,7 +48,28 @@ class PluginLoader:
         cls._plugins = {}
 
     @classmethod
-    def _init_plugin(cls, plugin_callable: Any, entry_point: str) -> PluginType:
+    def load_plugin(cls, entry_point: str) -> None:
+        """Load plugin via specific entry point"""
+
+        entry_point_match = validate_matches_re(
+            entry_point, VALIDATION_PROVIDER_ENTRY_POINT_REGEX
+        )
+        try:
+            module = import_module(entry_point_match.group("module"))
+            attr_chain = entry_point_match.group("attr").split(".")
+            plugin_callable = reduce(getattr, attr_chain, module)
+        except Exception as exc:
+            raise PluginError(
+                f"Loading the plugin from entry point {entry_point!r} failed: {exc}"
+            ) from exc
+
+        logger.info(
+            "Loading plugin via %(entry_point)s",
+            {
+                "entry_point": entry_point,
+            },
+        )
+
         if not callable(plugin_callable):
             raise PluginError(
                 f"Entry point {entry_point!r} points at a value that is not "
@@ -79,31 +100,6 @@ class PluginLoader:
                 f"{plugin_instance.namespace}. Refusing to proceed."
             )
 
-        return plugin_instance
-
-    @classmethod
-    def load_plugin(cls, entry_point: str) -> None:
-        """Load plugin via specific entry point"""
-
-        entry_point_match = validate_matches_re(
-            entry_point, VALIDATION_PROVIDER_ENTRY_POINT_REGEX
-        )
-        try:
-            module = import_module(entry_point_match.group("module"))
-            attr_chain = entry_point_match.group("attr").split(".")
-            plugin_callable = reduce(getattr, attr_chain, module)
-        except Exception as exc:
-            raise PluginError(
-                f"Loading the plugin from entry point {entry_point!r} failed: {exc}"
-            ) from exc
-
-        logger.info(
-            "Loading plugin via %(entry_point)s",
-            {
-                "entry_point": entry_point,
-            },
-        )
-        plugin_instance = cls._init_plugin(plugin_callable, entry_point)
         cls._plugins[plugin_instance.namespace] = plugin_instance
 
     @classmethod
