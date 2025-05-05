@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import sys
 from typing import Any
 
 import pytest
@@ -16,12 +15,6 @@ from variantlib.models.variant import VariantProperty
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.validators import ValidationError
-
-if sys.version_info >= (3, 10):
-    pass
-else:
-    pass
-
 
 RANDOM_STUFF = 123
 

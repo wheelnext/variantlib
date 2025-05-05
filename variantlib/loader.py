@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from functools import reduce
 from importlib import import_module
 from itertools import groupby
@@ -19,11 +18,6 @@ from variantlib.protocols import PluginType
 from variantlib.validators import ValidationError
 from variantlib.validators import validate_matches_re
 from variantlib.validators import validate_type
-
-if sys.version_info >= (3, 11):
-    pass
-else:
-    pass
 
 if TYPE_CHECKING:
     from typing import Callable
