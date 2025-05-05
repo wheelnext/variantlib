@@ -341,20 +341,20 @@ def test_namespaces(mocked_plugin_loader: type[PluginLoader]):
     ]
 
 
-def test_load_plugin(mocked_plugin_loader: type[PluginLoader]):
-    mocked_plugin_loader.load_plugin(
+def test_load_plugin():
+    PluginLoader.load_plugin(
         "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a"
     )
-    assert "test_namespace" in mocked_plugin_loader.plugins
-    assert "second_namespace" not in mocked_plugin_loader.plugins
+    assert "test_namespace" in PluginLoader.plugins
+    assert "second_namespace" not in PluginLoader.plugins
 
-    mocked_plugin_loader.load_plugin(
+    PluginLoader.load_plugin(
         "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b"
     )
-    assert "test_namespace" in mocked_plugin_loader.plugins
-    assert "second_namespace" in mocked_plugin_loader.plugins
+    assert "test_namespace" in PluginLoader.plugins
+    assert "second_namespace" in PluginLoader.plugins
 
 
-def test_load_plugin_invalid_arg(mocked_plugin_loader: type[PluginLoader]):
+def test_load_plugin_invalid_arg():
     with pytest.raises(ValidationError):
-        mocked_plugin_loader.load_plugin("tests.mocked_plugins")
+        PluginLoader.load_plugin("tests.mocked_plugins")
