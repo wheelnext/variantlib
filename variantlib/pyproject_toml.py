@@ -9,8 +9,8 @@ from variantlib.constants import PYPROJECT_TOML_NAMESPACE_KEY
 from variantlib.constants import PYPROJECT_TOML_PROPERTY_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
+from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
@@ -36,10 +36,10 @@ class VariantPyProjectToml:
 
     def __init__(self, toml_data: dict) -> None:
         """Init from pre-read ``pyproject.toml`` data"""
-        self._process(toml_data.get(PYPROJECT_TOML_PROVIDER_KEY, {}))
+        self._process(toml_data.get(PYPROJECT_TOML_TOP_KEY, {}))
 
     def _process(self, variant_table: dict) -> None:
-        validator = KeyTrackingValidator(PYPROJECT_TOML_PROVIDER_KEY, variant_table)
+        validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)
 
         with validator.get(PYPROJECT_TOML_DEFAULT_PRIO_KEY, dict[str, Any], {}):
             with validator.get(
@@ -84,9 +84,9 @@ class VariantPyProjectToml:
 
         if set(self.namespace_priorities) != set(self.providers.keys()):
             raise ValidationError(
-                f"{PYPROJECT_TOML_PROVIDER_KEY}.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}."
+                f"{PYPROJECT_TOML_TOP_KEY}.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}."
                 f"{PYPROJECT_TOML_NAMESPACE_KEY} must specify the same namespaces "
-                f"as {PYPROJECT_TOML_PROVIDER_KEY}.{PYPROJECT_TOML_PROVIDER_DATA_KEY} "
+                f"as {PYPROJECT_TOML_TOP_KEY}.{PYPROJECT_TOML_PROVIDER_DATA_KEY} "
                 f"table; currently: {set(self.namespace_priorities)} vs. "
                 f"{set(self.providers.keys())}"
             )
