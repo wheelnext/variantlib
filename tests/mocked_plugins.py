@@ -11,21 +11,18 @@ from variantlib.protocols import VariantPropertyType
 
 
 @dataclass
-class MockedDistribution:
-    name: str
-    version: str
-
-
-@dataclass
 class MockedEntryPoint:
     name: str | None
     value: str
     plugin: Any
     group: str | None = None
-    dist: MockedDistribution | None = None
 
     def load(self) -> Any:
         return self.plugin
+
+    @property
+    def dist(self) -> None:
+        return None
 
 
 class MockedPluginA(PluginType):

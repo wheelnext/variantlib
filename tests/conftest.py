@@ -1,6 +1,5 @@
 import pytest
 
-from tests.mocked_plugins import MockedDistribution
 from tests.mocked_plugins import MockedEntryPoint
 from tests.mocked_plugins import MockedPluginA
 from tests.mocked_plugins import MockedPluginB
@@ -20,13 +19,11 @@ def mocked_plugin_loader(session_mocker):
         MockedEntryPoint(
             name="test_namespace",
             value="tests.test_plugins:MockedPluginA",
-            dist=MockedDistribution(name="test-plugin", version="1.2.3"),
             plugin=MockedPluginA,
         ),
         MockedEntryPoint(
             name="second_namespace",
             value="tests.test_plugins:MockedPluginB",
-            dist=MockedDistribution(name="second-plugin", version="4.5.6"),
             plugin=MockedPluginB,
         ),
         MockedEntryPoint(

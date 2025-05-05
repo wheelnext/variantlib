@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 
-from tests.mocked_plugins import MockedDistribution
 from tests.mocked_plugins import MockedEntryPoint
 from tests.mocked_plugins import MockedPluginA
 from variantlib.errors import PluginError
@@ -105,13 +104,11 @@ def test_namespace_clash(mocker):
         MockedEntryPoint(
             name="test_namespace",
             value="tests.test_plugins:MockedPluginA",
-            dist=MockedDistribution(name="test-plugin", version="1.2.3"),
             plugin=MockedPluginA,
         ),
         MockedEntryPoint(
             name="clashing_plugin",
             value="tests.test_plugins:ClashingPlugin",
-            dist=MockedDistribution(name="clashing-plugin", version="4.5.6"),
             plugin=ClashingPlugin,
         ),
     ]
