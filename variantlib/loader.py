@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 import sys
+from functools import reduce
+from importlib import import_module
 from itertools import groupby
 from types import MethodType
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import get_type_hints
 
+from variantlib.constants import VALIDATION_PROVIDER_ENTRY_POINT_REGEX
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
@@ -15,6 +18,7 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.protocols import PluginType
 from variantlib.utils import classproperty
 from variantlib.validators import ValidationError
+from variantlib.validators import validate_matches_re
 from variantlib.validators import validate_type
 
 if sys.version_info >= (3, 10):
@@ -51,6 +55,59 @@ class PluginLoader:
         cls._dist_names = {}
 
     @classmethod
+    def _init_plugin(cls, plugin_callable: Any, entry_point: str) -> PluginType:
+        if not callable(plugin_callable):
+            raise PluginError(
+                f"Entry point {entry_point} points at a value that is not "
+                f"callable: {plugin_callable!r}"
+            )
+
+        try:
+            # Instantiate the plugin
+            plugin_instance = plugin_callable()
+        except Exception as exc:
+            raise PluginError(
+                f"Instantiating the plugin from entry point {entry_point} failed: {exc}"
+            ) from exc
+
+        required_attributes = PluginType.__abstractmethods__
+        if missing_attributes := required_attributes.difference(dir(plugin_instance)):
+            raise PluginError(
+                f"Instantiating the plugin from entry point {entry_point} "
+                "returned an object that does not meet the PluginType prototype: "
+                f"{plugin_instance!r} (missing attributes: "
+                f"{', '.join(sorted(missing_attributes))})"
+            )
+
+        if plugin_instance.namespace in cls._plugins:
+            raise RuntimeError(
+                "Two plugins found using the same namespace "
+                f"{plugin_instance.namespace}. Refusing to proceed."
+            )
+
+        return plugin_instance
+
+    @classmethod
+    def load_plugin(cls, entry_point: str) -> None:
+        """Load plugin via specific entry point"""
+
+        entry_point_match = validate_matches_re(
+            entry_point, VALIDATION_PROVIDER_ENTRY_POINT_REGEX
+        )
+        module = import_module(entry_point_match.group("module"))
+        attr_chain = entry_point_match.group("attr").split(".")
+        plugin_callable = reduce(getattr, attr_chain, module)
+
+        logger.info(
+            "Loading plugin via %(entry_point)s",
+            {
+                "entry_point": entry_point,
+            },
+        )
+        plugin_instance = cls._init_plugin(plugin_callable, entry_point)
+        cls._plugins[plugin_instance.namespace] = plugin_instance
+
+    @classmethod
     def load_plugins(cls) -> None:
         """Find, load and instantiate all plugins"""
 
@@ -75,48 +132,13 @@ class PluginLoader:
 
             try:
                 # Dynamically load the plugin class
-                plugin_class = plugin.load()
+                plugin.load()
             except Exception as exc:
                 raise PluginError(
                     f"Loading the plugin from entry point {plugin.name} failed: {exc}"
                 ) from exc
 
-            if not callable(plugin_class):
-                raise PluginError(
-                    f"Entry point {plugin.name} points at a value that is not "
-                    f"callable: {plugin_class!r}"
-                )
-
-            try:
-                # Instantiate the plugin
-                plugin_instance = plugin_class()
-            except Exception as exc:
-                raise PluginError(
-                    f"Instantiating the plugin from entry point {plugin.name} failed: "
-                    f"{exc}"
-                ) from exc
-
-            required_attributes = PluginType.__abstractmethods__
-            if missing_attributes := required_attributes.difference(
-                dir(plugin_instance)
-            ):
-                raise PluginError(
-                    f"Instantiating the plugin from entry point {plugin.name} "
-                    "returned an object that does not meet the PluginType prototype: "
-                    f"{plugin_instance!r} (missing attributes: "
-                    f"{', '.join(sorted(missing_attributes))})"
-                )
-
-            if plugin_instance.namespace in cls._plugins:
-                pkg1 = cls._dist_names.get(plugin_instance.namespace)
-                pkg2 = plugin.dist.name if plugin.dist is not None else None
-                if pkg1 is not None and pkg2 is not None:
-                    hint = f": {pkg1} or {pkg2}."
-                raise RuntimeError(
-                    "Two plugins found using the same namespace "
-                    f"{plugin_instance.namespace}. Refusing to proceed. "
-                    f"Please uninstall one of them{hint}.."
-                )
+            plugin_instance = cls._init_plugin(plugin.load(), plugin.name)
             cls._plugins[plugin_instance.namespace] = plugin_instance
 
             if plugin.dist is not None:

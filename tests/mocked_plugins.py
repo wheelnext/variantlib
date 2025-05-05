@@ -113,3 +113,14 @@ class MockedPluginC(PluginType):
             "cflags": flag_opts,
             "cxxflags": flag_opts,
         }
+
+
+class IndirectPath:
+    class MoreIndirection:
+        @classmethod
+        def plugin_a(cls) -> MockedPluginA:
+            return MockedPluginA()
+
+        @staticmethod
+        def plugin_b() -> MockedPluginB:
+            return MockedPluginB()

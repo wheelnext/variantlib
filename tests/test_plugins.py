@@ -18,6 +18,7 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
+from variantlib.validators import ValidationError
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import EntryPoint
@@ -124,7 +125,7 @@ def test_namespace_clash(mocker):
     with pytest.raises(
         RuntimeError,
         match="Two plugins found using the same namespace test_namespace. Refusing to "
-        "proceed. Please uninstall one of them: test-plugin or clashing-plugin",
+        "proceed.",
     ):
         PluginLoader.load_plugins()
 
@@ -348,3 +349,22 @@ def test_namespaces(mocked_plugin_loader: type[PluginLoader]):
         "second_namespace",
         "incompatible_namespace",
     ]
+
+
+def test_load_plugin(mocked_plugin_loader: type[PluginLoader]):
+    mocked_plugin_loader.load_plugin(
+        "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a"
+    )
+    assert "test_namespace" in mocked_plugin_loader.plugins
+    assert "second_namespace" not in mocked_plugin_loader.plugins
+
+    mocked_plugin_loader.load_plugin(
+        "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b"
+    )
+    assert "test_namespace" in mocked_plugin_loader.plugins
+    assert "second_namespace" in mocked_plugin_loader.plugins
+
+
+def test_load_plugin_invalid_arg(mocked_plugin_loader: type[PluginLoader]):
+    with pytest.raises(ValidationError):
+        mocked_plugin_loader.load_plugin("tests.mocked_plugins")
