@@ -43,7 +43,6 @@ class PluginLoader:
     """Load and query plugins"""
 
     _plugins: dict[str, PluginType] = {}
-    _dist_names: dict[str, str] = {}
 
     def __new__(cls, *args: Any, **kwargs: dict[str, Any]) -> Self:
         raise RuntimeError(f"Cannot instantiate {cls.__name__}")
@@ -52,7 +51,6 @@ class PluginLoader:
     def flush_cache(cls) -> None:
         """Flush all loaded plugins"""
         cls._plugins = {}
-        cls._dist_names = {}
 
     @classmethod
     def _init_plugin(cls, plugin_callable: Any, entry_point: str) -> PluginType:
@@ -140,9 +138,6 @@ class PluginLoader:
 
             plugin_instance = cls._init_plugin(plugin.load(), plugin.name)
             cls._plugins[plugin_instance.namespace] = plugin_instance
-
-            if plugin.dist is not None:
-                cls._dist_names[plugin_instance.namespace] = plugin.dist.name
 
     @classmethod
     def _call(cls, method: Callable[[], Any]) -> Any:
@@ -237,12 +232,6 @@ class PluginLoader:
             for k, v in plugin_env.items():
                 ret_env.setdefault(k, []).extend(v)
         return ret_env
-
-    @classproperty
-    def distribution_names(cls) -> dict[str, str]:  # noqa: N805
-        """Get a mapping from plugin names to distribution names"""
-        cls.load_plugins()
-        return cls._dist_names
 
     @classproperty
     def plugins(cls) -> dict[str, PluginType]:  # noqa: N805

@@ -16,19 +16,7 @@ def list_plugins(args: list[str]) -> None:
         description="CLI interface to list plugins",
     )
 
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="print distributions providing plugins",
-    )
-
-    parsed_args = parser.parse_args(args)
+    parser.parse_args(args)
 
     for plugin_name in PluginLoader.plugins:
-        if parsed_args.verbose:
-            sys.stdout.write(
-                f"{plugin_name}\t{PluginLoader.distribution_names[plugin_name]}\n"
-            )
-        else:
-            sys.stdout.write(f"{plugin_name}\n")
+        sys.stdout.write(f"{plugin_name}\n")

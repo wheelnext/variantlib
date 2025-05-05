@@ -100,13 +100,6 @@ def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
     }
 
 
-def test_get_dist_name_mapping(mocked_plugin_loader: type[PluginLoader]):
-    assert mocked_plugin_loader.distribution_names == {
-        "second_namespace": "second-plugin",
-        "test_namespace": "test-plugin",
-    }
-
-
 def test_namespace_clash(mocker):
     mocker.patch("variantlib.loader.entry_points")().select.return_value = [
         MockedEntryPoint(
