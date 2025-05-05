@@ -56,7 +56,7 @@ class PluginLoader:
     def _init_plugin(cls, plugin_callable: Any, entry_point: str) -> PluginType:
         if not callable(plugin_callable):
             raise PluginError(
-                f"Entry point {entry_point} points at a value that is not "
+                f"Entry point {entry_point!r} points at a value that is not "
                 f"callable: {plugin_callable!r}"
             )
 
@@ -65,13 +65,14 @@ class PluginLoader:
             plugin_instance = plugin_callable()
         except Exception as exc:
             raise PluginError(
-                f"Instantiating the plugin from entry point {entry_point} failed: {exc}"
+                f"Instantiating the plugin from entry point {entry_point!r} failed: "
+                f"{exc}"
             ) from exc
 
         required_attributes = PluginType.__abstractmethods__
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise PluginError(
-                f"Instantiating the plugin from entry point {entry_point} "
+                f"Instantiating the plugin from entry point {entry_point!r} "
                 "returned an object that does not meet the PluginType prototype: "
                 f"{plugin_instance!r} (missing attributes: "
                 f"{', '.join(sorted(missing_attributes))})"
@@ -92,9 +93,14 @@ class PluginLoader:
         entry_point_match = validate_matches_re(
             entry_point, VALIDATION_PROVIDER_ENTRY_POINT_REGEX
         )
-        module = import_module(entry_point_match.group("module"))
-        attr_chain = entry_point_match.group("attr").split(".")
-        plugin_callable = reduce(getattr, attr_chain, module)
+        try:
+            module = import_module(entry_point_match.group("module"))
+            attr_chain = entry_point_match.group("attr").split(".")
+            plugin_callable = reduce(getattr, attr_chain, module)
+        except Exception as exc:
+            raise PluginError(
+                f"Loading the plugin from entry point {entry_point!r} failed: {exc}"
+            ) from exc
 
         logger.info(
             "Loading plugin via %(entry_point)s",

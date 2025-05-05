@@ -6,8 +6,6 @@ from typing import Any
 
 import pytest
 
-from tests.mocked_plugins import MockedEntryPoint
-from tests.mocked_plugins import MockedPluginA
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.loader import PluginLoader
@@ -20,9 +18,12 @@ from variantlib.protocols import VariantFeatureConfigType
 from variantlib.validators import ValidationError
 
 if sys.version_info >= (3, 10):
-    from importlib.metadata import EntryPoint
+    pass
 else:
-    from importlib_metadata import EntryPoint
+    pass
+
+
+RANDOM_STUFF = 123
 
 
 class ClashingPlugin(PluginType):
@@ -99,38 +100,26 @@ def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
     }
 
 
-def test_namespace_clash(mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="test_namespace",
-            value="tests.test_plugins:MockedPluginA",
-            plugin=MockedPluginA,
-        ),
-        MockedEntryPoint(
-            name="clashing_plugin",
-            value="tests.test_plugins:ClashingPlugin",
-            plugin=ClashingPlugin,
-        ),
-    ]
+def test_namespace_clash():
+    PluginLoader.load_plugin("tests.mocked_plugins:MockedPluginA")
     with pytest.raises(
         RuntimeError,
         match="Two plugins found using the same namespace test_namespace. Refusing to "
         "proceed.",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin("tests.test_plugins:ClashingPlugin")
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_type(method: str, mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:ExceptionTestingPlugin",
-            plugin=ExceptionTestingPlugin(
+    mocker.patch(
+        "variantlib.loader.PluginLoader.plugins",
+        new={
+            "exception_test": ExceptionTestingPlugin(
                 (VariantFeatureConfig("k1", ["v1"]), VariantFeatureConfig("k2", ["v2"]))
             ),
-        ),
-    ]
+        },
+    )
     with pytest.raises(
         TypeError,
         match=re.escape(
@@ -143,13 +132,12 @@ def test_get_configs_incorrect_list_type(method: str, mocker):
 
 
 def test_get_all_configs_incorrect_list_length(mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:ExceptionTestingPlugin",
-            plugin=ExceptionTestingPlugin([]),
-        ),
-    ]
+    mocker.patch(
+        "variantlib.loader.PluginLoader.plugins",
+        new={
+            "exception_test": ExceptionTestingPlugin([]),
+        },
+    )
     with pytest.raises(
         ValueError,
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
@@ -160,13 +148,12 @@ def test_get_all_configs_incorrect_list_length(mocker):
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_member_type(method: str, mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:ExceptionTestingPlugin",
-            plugin=ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
-        ),
-    ]
+    mocker.patch(
+        "variantlib.loader.PluginLoader.plugins",
+        new={
+            "exception_test": ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
+        },
+    )
     with pytest.raises(
         TypeError,
         match=re.escape(
@@ -179,38 +166,22 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         getattr(PluginLoader, method)()
 
 
-def test_namespace_missing_module(mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        EntryPoint(
-            name="exception_test",
-            value="tests.no_such_module",
-            group="variantlib.plugins",
-        ),
-    ]
-
+def test_namespace_missing_module():
     with pytest.raises(
         PluginError,
-        match="Loading the plugin from entry point exception_test failed: "
-        "No module named 'tests.no_such_module'",
+        match=r"Loading the plugin from entry point 'tests.no_such_module:foo' failed: "
+        r"No module named 'tests.no_such_module'",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin("tests.no_such_module:foo")
 
 
-def test_namespace_incorrect_name(mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        EntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:no_such_name",
-            group="variantlib.plugins",
-        ),
-    ]
-
+def test_namespace_incorrect_name():
     with pytest.raises(
         PluginError,
-        match="Loading the plugin from entry point exception_test failed: "
-        "module 'tests.test_plugins' has no attribute 'no_such_name'",
+        match=r"Loading the plugin from entry point 'tests.test_plugins:no_such_name' "
+        r"failed: module 'tests.test_plugins' has no attribute 'no_such_name'",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin("tests.test_plugins:no_such_name")
 
 
 class IncompletePlugin:
@@ -220,22 +191,13 @@ class IncompletePlugin:
         return []
 
 
-@pytest.mark.parametrize("val", [None, 42, "a-string", {}])
-def test_namespace_incorrect_type(val: Any, mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:random_stuff",
-            plugin=val,
-        ),
-    ]
-
+def test_namespace_incorrect_type():
     with pytest.raises(
         PluginError,
-        match="Entry point exception_test points at a value that is not callable: "
-        f"{val!r}",
+        match=r"Entry point 'tests.test_plugins:RANDOM_STUFF' points at a value that "
+        r"is not callable: 123",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin("tests.test_plugins:RANDOM_STUFF")
 
 
 class RaisingInstantiationPlugin:
@@ -251,21 +213,14 @@ class RaisingInstantiationPlugin:
         return []
 
 
-def test_namespace_instantiation_raises(mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:random_stuff",
-            plugin=RaisingInstantiationPlugin,
-        ),
-    ]
-
+def test_namespace_instantiation_raises():
     with pytest.raises(
         PluginError,
-        match="Instantiating the plugin from entry point exception_test failed: "
-        "I failed to initialize",
+        match=r"Instantiating the plugin from entry point "
+        r"'tests.test_plugins:RaisingInstantiationPlugin' failed: "
+        r"I failed to initialize",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin("tests.test_plugins:RaisingInstantiationPlugin")
 
 
 class CrossTypeInstantiationPlugin:
@@ -281,24 +236,16 @@ class CrossTypeInstantiationPlugin:
         return []
 
 
-@pytest.mark.parametrize("cls", [IncompletePlugin, CrossTypeInstantiationPlugin])
+@pytest.mark.parametrize("cls", ["IncompletePlugin", "CrossTypeInstantiationPlugin"])
 def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
-    mocker.patch("variantlib.loader.entry_points")().select.return_value = [
-        MockedEntryPoint(
-            name="exception_test",
-            value="tests.test_plugins:random_stuff",
-            plugin=cls,
-        ),
-    ]
-
     with pytest.raises(
         PluginError,
-        match=r"Instantiating the plugin from entry point exception_test returned "
-        r"an object that does not meet the PluginType prototype: "
+        match=rf"Instantiating the plugin from entry point 'tests.test_plugins:{cls}' "
+        r"returned an object that does not meet the PluginType prototype: "
         r"<tests.test_plugins.IncompletePlugin object at .*> "
         r"\(missing attributes: get_all_configs\)",
     ):
-        PluginLoader.load_plugins()
+        PluginLoader.load_plugin(f"tests.test_plugins:{cls}")
 
 
 def test_get_build_setup(mocked_plugin_loader):
