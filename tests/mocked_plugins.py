@@ -1,31 +1,11 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from dataclasses import dataclass
-from typing import Any
 
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.protocols import VariantPropertyType
-
-
-@dataclass
-class MockedDistribution:
-    name: str
-    version: str
-
-
-@dataclass
-class MockedEntryPoint:
-    name: str | None
-    value: str
-    plugin: Any
-    group: str | None = None
-    dist: MockedDistribution | None = None
-
-    def load(self) -> Any:
-        return self.plugin
 
 
 class MockedPluginA(PluginType):
@@ -113,3 +93,14 @@ class MockedPluginC(PluginType):
             "cflags": flag_opts,
             "cxxflags": flag_opts,
         }
+
+
+class IndirectPath:
+    class MoreIndirection:
+        @classmethod
+        def plugin_a(cls) -> MockedPluginA:
+            return MockedPluginA()
+
+        @staticmethod
+        def plugin_b() -> MockedPluginB:
+            return MockedPluginB()

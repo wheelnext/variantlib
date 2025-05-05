@@ -68,7 +68,14 @@ VALIDATION_PROPERTY_REGEX = re.compile(
     re.VERBOSE,
 )
 
-VALIDATION_PROVIDER_ENTRY_POINT_REGEX = re.compile(r"[a-zA-Z0-9_.]+\:[a-zA-Z0-9_]+")
+VALIDATION_PROVIDER_ENTRY_POINT_REGEX = re.compile(
+    r"""
+    (?P<module> [\w.]+)
+    \s* : \s*
+    (?P<attr> [\w.]+)
+    """,
+    re.VERBOSE,
+)
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
 
 VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX = re.compile(

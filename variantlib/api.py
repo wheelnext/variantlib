@@ -16,7 +16,6 @@ from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -30,6 +29,7 @@ from variantlib.variant_file import unpack_variants_json
 if TYPE_CHECKING:
     from email.message import Message
 
+    from variantlib.loader import PluginLoader
     from variantlib.pyproject_toml import VariantPyProjectToml
 
 
@@ -50,6 +50,7 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
+    plugin_loader: PluginLoader,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[str] | None = None,
     property_priorities: list[str] | None = None,
@@ -62,7 +63,7 @@ def get_variant_hashes_by_priority(
     supported_vprops = list(
         itertools.chain.from_iterable(
             provider_cfg.to_list_of_properties()
-            for provider_cfg in PluginLoader.get_supported_configs().values()
+            for provider_cfg in plugin_loader.get_supported_configs().values()
         )
     )
 
@@ -115,6 +116,7 @@ def get_variant_hashes_by_priority(
 
 def validate_variant(
     variant_desc: VariantDescription,
+    plugin_loader: PluginLoader,
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -126,7 +128,7 @@ def validate_variant(
     be verified.
     """
 
-    provider_cfgs = PluginLoader.get_all_configs()
+    provider_cfgs = plugin_loader.get_all_configs()
 
     def _validate_variant(vprop: VariantProperty) -> bool | None:
         provider_cfg = provider_cfgs.get(vprop.namespace)

@@ -7,16 +7,16 @@ import pytest
 from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.loader import PluginLoader
 from variantlib.utils import aggregate_user_and_default_lists
 
 if TYPE_CHECKING:
+    from variantlib.loader import PluginLoader
     from variantlib.models.provider import ProviderConfig
 
 
 @pytest.fixture
-def configs(mocked_plugin_loader: type[PluginLoader]) -> list[ProviderConfig]:
-    return list(PluginLoader.get_supported_configs().values())
+def configs(mocked_plugin_loader: PluginLoader) -> list[ProviderConfig]:
+    return list(mocked_plugin_loader.get_supported_configs().values())
 
 
 def test_get_combinations(configs):

@@ -14,7 +14,6 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -26,9 +25,10 @@ from variantlib.errors import ValidationError
 logger = logging.getLogger(__name__)
 
 
-def validate_matches_re(value: str, pattern: str | re.Pattern) -> None:
-    if not re.fullmatch(pattern, value):
+def validate_matches_re(value: str, pattern: str | re.Pattern) -> re.Match:
+    if (match := re.fullmatch(pattern, value)) is None:
         raise ValidationError(f"Value `{value}` must match regex {pattern}")
+    return match
 
 
 def validate_list_matches_re(values: list[str], pattern: str | re.Pattern) -> None:
@@ -303,15 +303,16 @@ class KeyTrackingValidator:
                 f"{self._key}: expected {expected_type}, got {wrong_type}"
             )
 
-    def matches_re(self, pattern: str | re.Pattern) -> None:
-        if not re.fullmatch(pattern, self._data[-1]):
+    def matches_re(self, pattern: str | re.Pattern) -> re.Match:
+        if (match := re.fullmatch(pattern, self._data[-1])) is None:
             raise ValidationError(
                 f"{self._key}: value {self._data[-1]!r} must match regex {pattern}"
             )
+        return match
 
     def list_matches_re(self, pattern: str | re.Pattern) -> None:
         for i, value in enumerate(self._data[-1]):
-            if not re.fullmatch(pattern, value):
+            if re.fullmatch(pattern, value) is None:
                 raise ValidationError(
                     f"{self._key}[{i}]: value {value!r} must match regex {pattern}"
                 )

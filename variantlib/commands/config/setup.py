@@ -11,9 +11,10 @@ from tomlkit.toml_file import TOMLFile
 from variantlib import __package_name__
 from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
 from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
+from variantlib.commands.plugin_arguments import add_plugin_arguments
+from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
-from variantlib.loader import PluginLoader
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.resolver.sorting import sort_variant_properties
@@ -67,6 +68,7 @@ def setup(args: list[str]) -> None:
         prog=f"{__package_name__} config setup",
         description="CLI interface to interactively set configuration up",
     )
+    add_plugin_arguments(parser)
     parser.add_argument(
         "-d",
         "--default",
@@ -94,13 +96,14 @@ def setup(args: list[str]) -> None:
         default="USER",
     )
     excl_group.add_argument(
-        "-p",
+        "-P",
         "--path",
         type=Path,
         help="custom path to the config file",
     )
 
     parsed_args = parser.parse_args(args)
+    loader = parse_plugin_arguments(parsed_args)
 
     if parsed_args.ui is None:
         parsed_args.ui = (
@@ -130,8 +133,8 @@ def setup(args: list[str]) -> None:
         if not ui.display_text(INSTRUCTIONS):
             return
 
-    if PluginLoader.plugins:
-        known_namespaces = sorted(PluginLoader.namespaces)
+    if loader.plugins:
+        known_namespaces = sorted(loader.namespaces)
 
         if parsed_args.default:
             toml_data["namespace_priorities"] = known_namespaces
@@ -143,7 +146,7 @@ def setup(args: list[str]) -> None:
             )
 
         else:
-            supported_configs = PluginLoader.get_supported_configs()
+            supported_configs = loader.get_supported_configs()
 
             ui.clear()
             namespace_priorities = ui.update_key(
