@@ -18,8 +18,10 @@ def add_plugin_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_plugin_arguments(parsed_args: argparse.Namespace) -> type[PluginLoader]:
-    for entry_point in parsed_args.plugin:
-        PluginLoader.load_plugin(entry_point)
+def parse_plugin_arguments(parsed_args: argparse.Namespace) -> PluginLoader:
+    loader = PluginLoader()
 
-    return PluginLoader
+    for entry_point in parsed_args.plugin:
+        loader.load_plugin(entry_point)
+
+    return loader

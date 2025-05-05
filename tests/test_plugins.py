@@ -55,7 +55,7 @@ class ExceptionTestingPlugin(PluginType):
         return self
 
 
-def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
+def test_get_all_configs(mocked_plugin_loader: PluginLoader):
     assert mocked_plugin_loader.get_all_configs() == {
         "incompatible_namespace": ProviderConfig(
             namespace="incompatible_namespace",
@@ -82,7 +82,7 @@ def test_get_all_configs(mocked_plugin_loader: type[PluginLoader]):
     }
 
 
-def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
+def test_get_supported_configs(mocked_plugin_loader: PluginLoader):
     assert mocked_plugin_loader.get_supported_configs() == {
         "second_namespace": ProviderConfig(
             namespace="second_namespace",
@@ -101,13 +101,14 @@ def test_get_supported_configs(mocked_plugin_loader: type[PluginLoader]):
 
 
 def test_namespace_clash():
-    PluginLoader.load_plugin("tests.mocked_plugins:MockedPluginA")
+    loader = PluginLoader()
+    loader.load_plugin("tests.mocked_plugins:MockedPluginA")
     with pytest.raises(
         RuntimeError,
         match="Two plugins found using the same namespace test_namespace. Refusing to "
         "proceed.",
     ):
-        PluginLoader.load_plugin("tests.test_plugins:ClashingPlugin")
+        loader.load_plugin("tests.test_plugins:ClashingPlugin")
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
@@ -128,7 +129,7 @@ def test_get_configs_incorrect_list_type(method: str, mocker):
             "got <class 'tuple'>"
         ),
     ):
-        getattr(PluginLoader, method)()
+        getattr(PluginLoader(), method)()
 
 
 def test_get_all_configs_incorrect_list_length(mocker):
@@ -143,7 +144,7 @@ def test_get_all_configs_incorrect_list_length(mocker):
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
         r"configs",
     ):
-        PluginLoader.get_all_configs()
+        PluginLoader().get_all_configs()
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
@@ -163,7 +164,7 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         )
         + r"(dict, int|int, dict)",
     ):
-        getattr(PluginLoader, method)()
+        getattr(PluginLoader(), method)()
 
 
 def test_namespace_missing_module():
@@ -172,7 +173,7 @@ def test_namespace_missing_module():
         match=r"Loading the plugin from entry point 'tests.no_such_module:foo' failed: "
         r"No module named 'tests.no_such_module'",
     ):
-        PluginLoader.load_plugin("tests.no_such_module:foo")
+        PluginLoader().load_plugin("tests.no_such_module:foo")
 
 
 def test_namespace_incorrect_name():
@@ -181,7 +182,7 @@ def test_namespace_incorrect_name():
         match=r"Loading the plugin from entry point 'tests.test_plugins:no_such_name' "
         r"failed: module 'tests.test_plugins' has no attribute 'no_such_name'",
     ):
-        PluginLoader.load_plugin("tests.test_plugins:no_such_name")
+        PluginLoader().load_plugin("tests.test_plugins:no_such_name")
 
 
 class IncompletePlugin:
@@ -197,7 +198,7 @@ def test_namespace_incorrect_type():
         match=r"Entry point 'tests.test_plugins:RANDOM_STUFF' points at a value that "
         r"is not callable: 123",
     ):
-        PluginLoader.load_plugin("tests.test_plugins:RANDOM_STUFF")
+        PluginLoader().load_plugin("tests.test_plugins:RANDOM_STUFF")
 
 
 class RaisingInstantiationPlugin:
@@ -220,7 +221,7 @@ def test_namespace_instantiation_raises():
         r"'tests.test_plugins:RaisingInstantiationPlugin' failed: "
         r"I failed to initialize",
     ):
-        PluginLoader.load_plugin("tests.test_plugins:RaisingInstantiationPlugin")
+        PluginLoader().load_plugin("tests.test_plugins:RaisingInstantiationPlugin")
 
 
 class CrossTypeInstantiationPlugin:
@@ -245,7 +246,7 @@ def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
         r"<tests.test_plugins.IncompletePlugin object at .*> "
         r"\(missing attributes: get_all_configs\)",
     ):
-        PluginLoader.load_plugin(f"tests.test_plugins:{cls}")
+        PluginLoader().load_plugin(f"tests.test_plugins:{cls}")
 
 
 def test_get_build_setup(mocked_plugin_loader):
@@ -280,7 +281,7 @@ def test_get_build_setup_missing_plugin(mocked_plugin_loader):
         assert mocked_plugin_loader.get_build_setup(variant_desc) == {}
 
 
-def test_namespaces(mocked_plugin_loader: type[PluginLoader]):
+def test_namespaces(mocked_plugin_loader: PluginLoader):
     assert mocked_plugin_loader.namespaces == [
         "test_namespace",
         "second_namespace",
@@ -289,19 +290,16 @@ def test_namespaces(mocked_plugin_loader: type[PluginLoader]):
 
 
 def test_load_plugin():
-    PluginLoader.load_plugin(
-        "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a"
-    )
-    assert "test_namespace" in PluginLoader.plugins
-    assert "second_namespace" not in PluginLoader.plugins
+    loader = PluginLoader()
+    loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
+    assert "test_namespace" in loader.plugins
+    assert "second_namespace" not in loader.plugins
 
-    PluginLoader.load_plugin(
-        "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b"
-    )
-    assert "test_namespace" in PluginLoader.plugins
-    assert "second_namespace" in PluginLoader.plugins
+    loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
+    assert "test_namespace" in loader.plugins
+    assert "second_namespace" in loader.plugins
 
 
 def test_load_plugin_invalid_arg():
     with pytest.raises(ValidationError):
-        PluginLoader.load_plugin("tests.mocked_plugins")
+        PluginLoader().load_plugin("tests.mocked_plugins")

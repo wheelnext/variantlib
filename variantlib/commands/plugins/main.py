@@ -35,7 +35,7 @@ def main(args: list[str]) -> None:
 
     namespace = argparse.Namespace()
     parsed_args = parser.parse_args(args=args, namespace=namespace)
-    parse_plugin_arguments(parsed_args)
+    plugin_loader = parse_plugin_arguments(parsed_args)
 
     main_fn = registered_commands[namespace.command].load()
-    return main_fn(namespace.args)
+    return main_fn(namespace.args, plugin_loader=plugin_loader)

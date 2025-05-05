@@ -3,16 +3,10 @@ import pytest
 from variantlib.loader import PluginLoader
 
 
-@pytest.fixture(autouse=True)
-def flush_caches():
-    yield
-    PluginLoader.flush_cache()
-
-
-@pytest.fixture
-def mocked_plugin_loader(session_mocker):
-    PluginLoader.load_plugin("tests.mocked_plugins:MockedPluginA")
-    PluginLoader.load_plugin("tests.mocked_plugins:MockedPluginB")
-    PluginLoader.load_plugin("tests.mocked_plugins:MockedPluginC")
-
-    return PluginLoader
+@pytest.fixture(scope="session")
+def mocked_plugin_loader():
+    loader = PluginLoader()
+    loader.load_plugin("tests.mocked_plugins:MockedPluginA")
+    loader.load_plugin("tests.mocked_plugins:MockedPluginB")
+    loader.load_plugin("tests.mocked_plugins:MockedPluginC")
+    return loader
