@@ -16,7 +16,7 @@ def add_plugin_arguments(parser: argparse.ArgumentParser) -> None:
         "--plugin",
         action="append",
         default=[],
-        help="Plugin entry point to load (can be specified multiple times)",
+        help="Variant provider plugin api to load (can be specified multiple times)",
     )
     parser.add_argument(
         "--plugins-from-pyproject-toml",
@@ -31,12 +31,12 @@ def add_plugin_arguments(parser: argparse.ArgumentParser) -> None:
 def parse_plugin_arguments(parsed_args: argparse.Namespace) -> PluginLoader:
     loader = PluginLoader()
 
-    entry_points = set(parsed_args.plugin)
+    plugin_apis = set(parsed_args.plugin)
     for pyproject_toml_path in parsed_args.plugins_from_pyproject_toml:
         pyproject_toml = VariantPyProjectToml.from_path(pyproject_toml_path)
-        entry_points.update(x.entry_point for x in pyproject_toml.providers.values())
+        plugin_apis.update(x.plugin_api for x in pyproject_toml.providers.values())
 
-    for entry_point in entry_points:
-        loader.load_plugin(entry_point)
+    for plugin_api in plugin_apis:
+        loader.load_plugin(plugin_api)
 
     return loader

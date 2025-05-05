@@ -10,13 +10,13 @@ from variantlib.constants import PYPROJECT_TOML_FEATURE_KEY
 from variantlib.constants import PYPROJECT_TOML_NAMESPACE_KEY
 from variantlib.constants import PYPROJECT_TOML_PROPERTY_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY
+from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
-from variantlib.constants import VALIDATION_PROVIDER_ENTRY_POINT_REGEX
+from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -38,7 +38,7 @@ else:
 @dataclass
 class ProviderInfo:
     requires: list[str]
-    entry_point: str
+    plugin_api: str
 
 
 class VariantPyProjectToml:
@@ -93,11 +93,11 @@ class VariantPyProjectToml:
                     ) as provider_requires:
                         validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     with validator.get(
-                        PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY, str, None
-                    ) as provider_entry_point:
-                        validator.matches_re(VALIDATION_PROVIDER_ENTRY_POINT_REGEX)
+                        PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, str, None
+                    ) as provider_plugin_api:
+                        validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        provider_requires, provider_entry_point
+                        provider_requires, provider_plugin_api
                     )
 
         if set(self.namespace_priorities) != set(self.providers.keys()):

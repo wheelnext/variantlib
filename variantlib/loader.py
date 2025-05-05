@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import get_type_hints
 
-from variantlib.constants import VALIDATION_PROVIDER_ENTRY_POINT_REGEX
+from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
@@ -35,31 +35,31 @@ class PluginLoader:
     def __init__(self) -> None:
         self._plugins = {}
 
-    def load_plugin(self, entry_point: str) -> None:
-        """Load plugin via specific entry point"""
+    def load_plugin(self, plugin_api: str) -> None:
+        """Load plugin via specific plugin api"""
 
-        entry_point_match = validate_matches_re(
-            entry_point, VALIDATION_PROVIDER_ENTRY_POINT_REGEX
+        plugin_api_match = validate_matches_re(
+            plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
         )
         try:
-            module = import_module(entry_point_match.group("module"))
-            attr_chain = entry_point_match.group("attr").split(".")
+            module = import_module(plugin_api_match.group("module"))
+            attr_chain = plugin_api_match.group("attr").split(".")
             plugin_callable = reduce(getattr, attr_chain, module)
         except Exception as exc:
             raise PluginError(
-                f"Loading the plugin from entry point {entry_point!r} failed: {exc}"
+                f"Loading the plugin from plugin api {plugin_api!r} failed: {exc}"
             ) from exc
 
         logger.info(
-            "Loading plugin via %(entry_point)s",
+            "Loading plugin via %(plugin_api)s",
             {
-                "entry_point": entry_point,
+                "plugin_api": plugin_api,
             },
         )
 
         if not callable(plugin_callable):
             raise PluginError(
-                f"Entry point {entry_point!r} points at a value that is not "
+                f"Plugin api {plugin_api!r} points at a value that is not "
                 f"callable: {plugin_callable!r}"
             )
 
@@ -68,14 +68,13 @@ class PluginLoader:
             plugin_instance = plugin_callable()
         except Exception as exc:
             raise PluginError(
-                f"Instantiating the plugin from entry point {entry_point!r} failed: "
-                f"{exc}"
+                f"Instantiating the plugin from plugin api {plugin_api!r} failed: {exc}"
             ) from exc
 
         required_attributes = PluginType.__abstractmethods__
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise PluginError(
-                f"Instantiating the plugin from entry point {entry_point!r} "
+                f"Instantiating the plugin from plugin api {plugin_api!r} "
                 "returned an object that does not meet the PluginType prototype: "
                 f"{plugin_instance!r} (missing attributes: "
                 f"{', '.join(sorted(missing_attributes))})"
