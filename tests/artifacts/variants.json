@@ -4,7 +4,7 @@
         "provider_fictional_tech"
     ],
     "variants": {
-        "9cc137a9": {
+        "aeb8dad7": {
             "fictional_hw": {
                 "architecture": "HAL9000",
                 "compute_accuracy": "0",
@@ -12,7 +12,7 @@
                 "humor": "2"
             }
         },
-        "80fa16ff": {
+        "be4a6c72": {
             "fictional_hw": {
                 "architecture": "tars",
                 "compute_accuracy": "8",
@@ -20,14 +20,14 @@
                 "humor": "10"
             }
         },
-        "df159646": {
+        "fd74efb3": {
             "fictional_tech": {
                 "quantum": "FOAM",
                 "risk_exposure": "1000000000",
                 "technology": "improb_drive"
             }
         },
-        "4513a073": {
+        "1711e2d9": {
             "fictional_hw": {
                 "architecture": "deepthought",
                 "compute_accuracy": "10",
@@ -38,14 +38,14 @@
                 "quantum": "FOAM"
             }
         },
-        "2c4ac281": {
+        "708cd07d": {
             "fictional_tech": {
                 "quantum": "SUPERPOSITION",
                 "risk_exposure": "25",
                 "technology": "auto_chef"
             }
         },
-        "03e04d5e": {
+        "c9be5aa9": {
             "fictional_hw": {
                 "architecture": "mother",
                 "compute_capability": "4"

@@ -81,6 +81,7 @@ def get_namespace_priorities(
     if namespace_priorities is None:
         return sys.maxsize
     validate_type(namespace_priorities, list[str])
+    namespace_priorities = [ns.lower() for ns in namespace_priorities]
 
     # if not present push at the end
     try:
@@ -149,6 +150,7 @@ def sort_variant_properties(
 
     if namespace_priorities is not None:
         validate_type(namespace_priorities, list[str])
+        namespace_priorities = [ns.lower() for ns in namespace_priorities]
     if feature_priorities is not None:
         validate_type(feature_priorities, list[VariantFeature])
     if property_priorities is not None:

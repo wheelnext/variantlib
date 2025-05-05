@@ -64,6 +64,9 @@ def filter_variants_by_namespaces(
     validate_type(vdescs, Iterable)
     validate_type(forbidden_namespaces, list[str])
 
+    # Normalize to lower case
+    forbidden_namespaces = [ns.lower() for ns in forbidden_namespaces]
+
     # Note: for performance reasons we convert the list to a set to avoid O(n) lookups
     _forbidden_namespaces = set(forbidden_namespaces)
 

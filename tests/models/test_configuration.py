@@ -54,7 +54,7 @@ def test_from_toml_config(config_params: dict[str, list[str]]):
 @given(st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)))
 def test_namespace_priorities_validation(namespaces: list[str]):
     config = VariantConfiguration(namespace_priorities=namespaces)
-    assert config.namespace_priorities == namespaces
+    assert config.namespace_priorities == [ns.lower() for ns in namespaces]
 
 
 @given(

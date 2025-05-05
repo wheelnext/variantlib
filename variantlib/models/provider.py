@@ -57,6 +57,18 @@ class VariantFeatureConfig(BaseModel):
         }
     )
 
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        if isinstance(self.name, str):
+            object.__setattr__(self, "name", self.name.lower())
+        if isinstance(self.values, list):
+            object.__setattr__(self, "values", [v.lower() for v in self.values])
+
+        # Execute the validator
+        super().__post_init__()
+
 
 @dataclass(frozen=True)
 class ProviderConfig(BaseModel):
@@ -85,6 +97,16 @@ class ProviderConfig(BaseModel):
             ),
         }
     )
+
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        if isinstance(self.namespace, str):
+            object.__setattr__(self, "namespace", self.namespace.lower())
+
+        # Execute the validator
+        super().__post_init__()
 
     def pretty_print(self) -> str:
         result_str = f"\n{'#' * 20} Provider Config: `{self.namespace}` {'#' * 20}"
@@ -133,6 +155,16 @@ class ProviderPackage(BaseModel):
             )
         }
     )
+
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        if isinstance(self.namespace, str):
+            object.__setattr__(self, "namespace", self.namespace.lower())
+
+        # Execute the validator
+        super().__post_init__()
 
     @classmethod
     def from_str(cls, provider_str: str) -> Self:

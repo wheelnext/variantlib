@@ -71,6 +71,19 @@ class VariantConfiguration(BaseModel):
         default_factory=list,
     )
 
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        object.__setattr__(
+            self,
+            "namespace_priorities",
+            [ns.lower() for ns in self.namespace_priorities],
+        )
+
+        # Execute the validator
+        super().__post_init__()
+
     @classmethod
     def default(cls) -> Self:
         """

@@ -107,14 +107,14 @@ def test_get_variant_hashes_by_priority_roundtrip(
             configs=st.lists(
                 min_size=1,
                 max_size=2,
-                unique_by=lambda vfeat_cfg: vfeat_cfg.name,
+                unique_by=lambda vfeat_cfg: vfeat_cfg.name.lower(),
                 elements=st.builds(
                     VariantFeatureConfig,
                     name=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
                     values=st.lists(
                         min_size=1,
                         max_size=3,
-                        unique=True,
+                        unique_by=lambda value: value.lower(),
                         elements=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
                     ),
                 ),
@@ -298,7 +298,7 @@ def test_set_variant_metadata(
         "Variant-property: ns1 :: f1 :: p1\n"
         "Variant-property: ns1 :: f2 :: p2\n"
         "Variant-property: ns2 :: f1 :: p1\n"
-        "Variant-hash: 67fcaf38\n"
+        "Variant-hash: 326add71\n"
     )
 
     if pyproject_toml is not None:

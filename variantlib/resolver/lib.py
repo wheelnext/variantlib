@@ -48,6 +48,8 @@ def filter_variants(
 
     if forbidden_namespaces is not None:
         validate_type(forbidden_namespaces, list[str])
+        # Normalize to lower case
+        forbidden_namespaces = [ns.lower() for ns in forbidden_namespaces]
 
     if forbidden_features is not None:
         validate_type(forbidden_features, list[VariantFeature])

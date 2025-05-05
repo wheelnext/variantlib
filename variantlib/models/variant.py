@@ -53,6 +53,18 @@ class VariantFeature(BaseModel):
         }
     )
 
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        if isinstance(self.namespace, str):
+            object.__setattr__(self, "namespace", self.namespace.lower())
+        if isinstance(self.feature, str):
+            object.__setattr__(self, "feature", self.feature.lower())
+
+        # Execute the validator
+        super().__post_init__()
+
     @property
     def feature_hash(self) -> int:
         # __class__ is being added to guarantee the hash to be specific to this class
@@ -104,6 +116,16 @@ class VariantProperty(VariantFeature):
             )
         }
     )
+
+    def __post_init__(self) -> None:
+        # Normalization of feature values to lowercase
+
+        # Only "legal way" to modify a frozen dataclass attribute post init.
+        if isinstance(self.value, str):
+            object.__setattr__(self, "value", self.value.lower())
+
+        # Execute the validator
+        super().__post_init__()
 
     @property
     def property_hash(self) -> int:
@@ -192,7 +214,6 @@ class VariantDescription(BaseModel):
             # The `null-variant` is a special case where no properties are defined.
             return "0" * VARIANT_HASH_LEN
 
-        hash_object = hashlib.sha256()
         # Append a newline to every serialized property to ensure that they
         # are separated from one another. Otherwise, two "adjacent" variants
         # such as:
@@ -202,8 +223,10 @@ class VariantDescription(BaseModel):
         #     a :: b :: c
         #     xd :: e :: f
         # would serialize to the same hash.
-        for vprop in self.properties:
-            hash_object.update(f"{vprop.to_str()}\n".encode())
+
+        hash_object = hashlib.sha256(
+            "\n".join([vprop.to_str() for vprop in self.properties]).encode()
+        )
 
         # Like digest() except the digest is returned as a string object of double
         # length, containing only hexadecimal digits. This may be used to exchange the

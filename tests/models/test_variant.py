@@ -18,12 +18,10 @@ from variantlib.models.variant import VariantProperty
 
 def test_variantprop_initialization():
     # Valid initialization
-    vprop = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
-    )
-    assert vprop.namespace == "OmniCorp"
+    vprop = VariantProperty(namespace="OmniCorp", feature="CUSTOM_feat", value="PASS")
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
-    assert vprop.value == "secret_value"
+    assert vprop.value == "pass"
 
 
 def test_variantprop_invalid_type():
@@ -45,7 +43,7 @@ def test_variantprop_data():
     vprop = VariantProperty(
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
-    expected_data = "OmniCorp :: custom_feat :: secret_value"
+    expected_data = "omnicorp :: custom_feat :: secret_value"
     assert vprop.to_str() == expected_data
 
 
@@ -72,7 +70,7 @@ def test_variantprop_to_str():
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
 
-    assert vprop.to_str() == "OmniCorp :: custom_feat :: secret_value"
+    assert vprop.to_str() == "omnicorp :: custom_feat :: secret_value"
 
 
 def test_failing_regex_namespace():
@@ -114,6 +112,7 @@ def test_failing_regex_value():
         "OmniCorp :: custom_feat :: secret_value",
         "OmniCorp::custom_feat::secret_value",
         "OmniCorp ::custom_feat::     secret_value",
+        "OMNICORP ::CUSTOM_FEAT::     SECRET_VALUE",
     ],
 )
 def test_from_str_valid(input_str: str):
@@ -121,7 +120,7 @@ def test_from_str_valid(input_str: str):
     vprop = VariantProperty.from_str(input_str)
 
     # Check if the resulting object matches the expected values
-    assert vprop.namespace == "OmniCorp"
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
     assert vprop.value == "secret_value"
 
@@ -148,11 +147,11 @@ def test_from_str_edge_case_empty_string():
 
 def test_from_str_trailing_spaces():
     # Test case: Input with leading/trailing spaces
-    input_str = "   OmniCorp :: custom_feat :: secret_value   "
+    input_str = "   OmniCorp :: Custom_Feat :: Secret_Value   "
     vprop = VariantProperty.from_str(input_str.strip())
 
     # Check if it still correctly parses and matches the expected values
-    assert vprop.namespace == "OmniCorp"
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
     assert vprop.value == "secret_value"
 
@@ -305,15 +304,15 @@ def test_variantdescription_hexdigest():
         namespace="OmniCorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
-        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
+        namespace="TyrellCorporation", feature="client_ID", value="secret_pass"
     )
     vprops = [vprop1, vprop2]
     vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     hash_object = hashlib.sha256(
-        b"OmniCorp :: custom_feat :: secret_value\n"
-        b"TyrellCorporation :: client_id :: secret_pass\n"
+        b"omnicorp :: custom_feat :: secret_value\n"
+        b"tyrellcorporation :: client_id :: secret_pass"
     )
     expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
@@ -365,7 +364,7 @@ def test_variantdescription_deserialization():
     assert vdesc.properties[0].namespace == "provider"
     assert vdesc.properties[0].feature == "feature"
     assert vdesc.properties[0].value == "value"
-    assert vdesc.hexdigest == "c44d3adf"
+    assert vdesc.hexdigest == "e4be6b4d"
 
 
 # -----------------------------------------------
@@ -382,14 +381,15 @@ def test_variantdescription_deserialization():
         ("SoylentCorporation", "token", "auth_value_123"),
         ("CyberdyneSystems", "version", "10.1"),
         ("CyberdyneSystems", "version", "10.1.4"),
+        ("MY", "CUSTOM", "PROPERTY"),
     ],
 )
-def test_fuzzy_variantprop(namespace, feature, value):
+def test_fuzzy_variantprop(namespace: str, feature: str, value: str):
     # Fuzzy test for random combinations of VariantProperty
     variant = VariantProperty(namespace=namespace, feature=feature, value=value)
-    assert variant.namespace == namespace
-    assert variant.feature == feature
-    assert variant.value == value
+    assert variant.namespace == namespace.lower()
+    assert variant.feature == feature.lower()
+    assert variant.value == value.lower()
 
 
 @pytest.mark.parametrize(
