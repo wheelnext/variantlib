@@ -21,11 +21,6 @@ from variantlib.validators import ValidationError
 from variantlib.validators import validate_matches_re
 from variantlib.validators import validate_type
 
-if sys.version_info >= (3, 10):
-    from importlib.metadata import entry_points
-else:
-    from importlib_metadata import entry_points
-
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
@@ -112,40 +107,6 @@ class PluginLoader:
         cls._plugins[plugin_instance.namespace] = plugin_instance
 
     @classmethod
-    def load_plugins(cls) -> None:
-        """Find, load and instantiate all plugins"""
-
-        if cls._plugins:
-            return
-
-        logger.info("Discovering Wheel Variant plugins...")
-        plugins = entry_points().select(group="variantlib.plugins")
-
-        for plugin in plugins:
-            logger.info(
-                "Loading plugin from entry point: %(name)s; provided by package "
-                "%(package)s %(version)s",
-                {
-                    "name": plugin.name,
-                    "package": plugin.dist.name
-                    if plugin.dist is not None
-                    else "unknown",
-                    "version": (plugin.dist.version if plugin.dist is not None else ""),
-                },
-            )
-
-            try:
-                # Dynamically load the plugin class
-                plugin.load()
-            except Exception as exc:
-                raise PluginError(
-                    f"Loading the plugin from entry point {plugin.name} failed: {exc}"
-                ) from exc
-
-            plugin_instance = cls._init_plugin(plugin.load(), plugin.name)
-            cls._plugins[plugin_instance.namespace] = plugin_instance
-
-    @classmethod
     def _call(cls, method: Callable[[], Any]) -> Any:
         """Call plugin method and verify the return type"""
 
@@ -190,7 +151,6 @@ class PluginLoader:
     def get_all_configs(cls) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
 
-        cls.load_plugins()
         provider_cfgs = {}
         for namespace, plugin_instance in cls.plugins.items():
             vfeat_configs = cls._call(plugin_instance.get_all_configs)
@@ -242,7 +202,8 @@ class PluginLoader:
     @classproperty
     def plugins(cls) -> dict[str, PluginType]:  # noqa: N805
         """Get the loaded plugins"""
-        cls.load_plugins()
+        if not cls._plugins:
+            raise RuntimeError("No plugins loaded, use load_plugin() to load them")
         return cls._plugins
 
     @classproperty
