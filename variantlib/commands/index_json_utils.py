@@ -9,9 +9,9 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
-from variantlib.constants import VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX
+from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VARIANTS_JSON_DEFAULT_PRIO_KEY
@@ -19,7 +19,7 @@ from variantlib.constants import VARIANTS_JSON_FEATURE_KEY
 from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
 from variantlib.constants import VARIANTS_JSON_PROPERTY_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANTS_JSON_PROVIDER_ENTRY_POINT_KEY
+from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
@@ -69,7 +69,7 @@ def append_variant_info_to_json_file(
             defaultdict(
                 lambda: {
                     VARIANTS_JSON_PROVIDER_REQUIRES_KEY: [],
-                    VARIANTS_JSON_PROVIDER_ENTRY_POINT_KEY: "",
+                    VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY: "",
                 }
             ),
         ),
@@ -167,44 +167,44 @@ def append_variant_info_to_json_file(
                 "requirements. Expected format: `<namespace>: <requirement>`"
             )
 
-    # ===================== Variant Provider Entry-Point ===================== #
+    # ===================== Variant Provider Plugin API ===================== #
 
-    for provider_entrypoint in metadata.get_all(
-        METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER, []
+    for provider_plugin_api in metadata.get_all(
+        METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER, []
     ):
         try:
-            match = VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX.fullmatch(
-                provider_entrypoint
+            match = VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX.fullmatch(
+                provider_plugin_api
             )
             if match is None:
                 raise ValidationError("Regex failure")  # noqa: TRY301
 
             namespace = match.group("namespace").strip()
-            entrypoint_str = match.group("entrypoint").strip()
+            plugin_api_str = match.group("plugin_api").strip()
 
-            # no need to validate namespace or entrypoint_str again
+            # no need to validate namespace or plugin_api_str again
             # as they are already validated in the regex:
-            # `VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX`
+            # `VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX`
 
         except (ValidationError, IndexError):
             raise ValidationError(
-                f"Invalid `{VALIDATION_METADATA_PROVIDER_ENTRY_POINT_REGEX}` value "
-                "found: `{provider_entrypoint}`. Expected format: "
-                "`<namespace>: <entry-point>`"
+                f"Invalid `{VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX}` value "
+                "found: `{provider_plugin_api}`. Expected format: "
+                "`<namespace>: <plugin-api>`"
             ) from None
 
         provider_data = data[VARIANTS_JSON_PROVIDER_DATA_KEY][namespace]
-        if curr_val := provider_data[VARIANTS_JSON_PROVIDER_ENTRY_POINT_KEY]:
-            if curr_val != entrypoint_str:
+        if curr_val := provider_data[VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY]:
+            if curr_val != plugin_api_str:
                 raise ValidationError(
-                    "Invalid configuration found. The entry-point for the variant "
+                    "Invalid configuration found. The plugin-api for the variant "
                     f"namespace `{namespace}` is not consistent. "
-                    f"Expected: `{curr_val}`, Found: `{entrypoint_str}`"
+                    f"Expected: `{curr_val}`, Found: `{plugin_api_str}`"
                 )
             continue
 
         modified = True
-        provider_data[VARIANTS_JSON_PROVIDER_ENTRY_POINT_KEY] = entrypoint_str
+        provider_data[VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY] = plugin_api_str
 
     # Validation:
     # - Every default namespace has to be declared in the providers dictionary

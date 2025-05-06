@@ -9,7 +9,7 @@ from variantlib.constants import PYPROJECT_TOML_FEATURE_KEY
 from variantlib.constants import PYPROJECT_TOML_NAMESPACE_KEY
 from variantlib.constants import PYPROJECT_TOML_PROPERTY_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY
+from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.models.variant import VariantFeature
@@ -36,14 +36,14 @@ property = ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"]
 
 [variant.providers.ns1]
 requires = ["ns1-provider >= 1.2.3"]
-entry-point = "ns1_provider.plugin:NS1Plugin"
+plugin-api = "ns1_provider.plugin:NS1Plugin"
 
 [variant.providers.ns2]
 requires = [
     "ns2_provider; python_version >= '3.11'",
     "old_ns2_provider; python_version < '3.11'",
 ]
-entry-point = "ns2_provider:Plugin"
+plugin-api = "ns2_provider:Plugin"
 """
 
 PYPROJECT_TOML = tomllib.loads(TOML_DATA)
@@ -189,7 +189,7 @@ def test_invalid_provider_table_type():
     ("key", "expected"),
     [
         (PYPROJECT_TOML_PROVIDER_REQUIRES_KEY, r"list\[str\]"),
-        (PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY, r"<class 'str'>"),
+        (PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, r"<class 'str'>"),
     ],
 )
 def test_invalid_provider_data_type(key: str, expected: str):
@@ -229,29 +229,29 @@ def test_invalid_provider_requires():
         )
 
 
-def test_invalid_provider_entry_point():
+def test_invalid_provider_plugin_api():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
-        rf"{PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY}: value 'frobnicate' must match "
+        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: value 'frobnicate' must match "
         r"regex",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
                     PYPROJECT_TOML_PROVIDER_DATA_KEY: {
-                        "ns": {PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY: "frobnicate"}
+                        "ns": {PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY: "frobnicate"}
                     }
                 }
             }
         )
 
 
-def test_missing_provider_entry_point():
+def test_missing_provider_plugin_api():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
-        rf"{PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY}: expected <class 'str'>, "
+        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: expected <class 'str'>, "
         r"got <class 'NoneType'>",
     ):
         VariantPyProjectToml(
@@ -279,7 +279,7 @@ def test_missing_namespace_priority():
                     PYPROJECT_TOML_PROVIDER_DATA_KEY: {
                         "ns": {
                             PYPROJECT_TOML_PROVIDER_REQUIRES_KEY: ["frobnicate"],
-                            PYPROJECT_TOML_PROVIDER_ENTRY_POINT_KEY: "foo:Plugin",
+                            PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY: "foo:Plugin",
                         }
                     }
                 }
@@ -328,7 +328,7 @@ def test_extra_provider_data_key():
                 PYPROJECT_TOML_TOP_KEY: {
                     PYPROJECT_TOML_PROVIDER_DATA_KEY: {
                         "ns": {
-                            "entry-point": "frobnicate:Plugin",
+                            "plugin-api": "frobnicate:Plugin",
                             "foo": {},
                         }
                     }

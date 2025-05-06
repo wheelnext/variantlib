@@ -163,7 +163,7 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
 def test_namespace_missing_module():
     with pytest.raises(
         PluginError,
-        match=r"Loading the plugin from entry point 'tests.no_such_module:foo' failed: "
+        match=r"Loading the plugin from 'tests.no_such_module:foo' failed: "
         r"No module named 'tests.no_such_module'",
     ):
         PluginLoader().load_plugin("tests.no_such_module:foo")
@@ -172,7 +172,7 @@ def test_namespace_missing_module():
 def test_namespace_incorrect_name():
     with pytest.raises(
         PluginError,
-        match=r"Loading the plugin from entry point 'tests.test_plugins:no_such_name' "
+        match=r"Loading the plugin from 'tests.test_plugins:no_such_name' "
         r"failed: module 'tests.test_plugins' has no attribute 'no_such_name'",
     ):
         PluginLoader().load_plugin("tests.test_plugins:no_such_name")
@@ -188,7 +188,7 @@ class IncompletePlugin:
 def test_namespace_incorrect_type():
     with pytest.raises(
         PluginError,
-        match=r"Entry point 'tests.test_plugins:RANDOM_STUFF' points at a value that "
+        match=r"'tests.test_plugins:RANDOM_STUFF' points at a value that "
         r"is not callable: 123",
     ):
         PluginLoader().load_plugin("tests.test_plugins:RANDOM_STUFF")
@@ -210,7 +210,7 @@ class RaisingInstantiationPlugin:
 def test_namespace_instantiation_raises():
     with pytest.raises(
         PluginError,
-        match=r"Instantiating the plugin from entry point "
+        match=r"Instantiating the plugin from "
         r"'tests.test_plugins:RaisingInstantiationPlugin' failed: "
         r"I failed to initialize",
     ):
@@ -234,7 +234,7 @@ class CrossTypeInstantiationPlugin:
 def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
     with pytest.raises(
         PluginError,
-        match=rf"Instantiating the plugin from entry point 'tests.test_plugins:{cls}' "
+        match=rf"Instantiating the plugin from 'tests.test_plugins:{cls}' "
         r"returned an object that does not meet the PluginType prototype: "
         r"<tests.test_plugins.IncompletePlugin object at .*> "
         r"\(missing attributes: get_all_configs\)",

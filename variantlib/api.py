@@ -13,7 +13,7 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.models.provider import ProviderConfig
@@ -167,8 +167,8 @@ def set_variant_metadata(
                 metadata[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
                     f"{namespace}: {requirement}"
                 )
-            metadata[METADATA_VARIANT_PROVIDER_ENTRY_POINT_HEADER] = (
-                f"{namespace}: {provider_info.entry_point}"
+            metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
+                f"{namespace}: {provider_info.plugin_api}"
             )
 
         if pyproject_toml.namespace_priorities:
