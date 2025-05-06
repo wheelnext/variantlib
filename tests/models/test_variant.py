@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import random
-import string
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -443,18 +444,22 @@ def test_fuzzy_variantdescription(vprop: list[VariantProperty]):
 # -----------------------------------------------
 
 
-@pytest.mark.parametrize("num_entries", [1, 3, 5, 10])
-def test_random_hexdigest(num_entries):
-    # Generate random data for VariantProperty instances
-    def random_string(length: int) -> str:
-        return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
-
-    vprop = [
-        VariantProperty(
-            namespace=random_string(5), feature=random_string(5), value=random_string(8)
-        )
-        for _ in range(num_entries)
-    ]
-    vdesc = VariantDescription(vprop)
+@given(
+    st.builds(
+        VariantDescription,
+        st.lists(
+            min_size=1,
+            max_size=10,
+            unique_by=lambda vprop: (vprop.namespace, vprop.feature),
+            elements=st.builds(
+                VariantProperty,
+                namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+                feature=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+                value=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+            ),
+        ),
+    )
+)
+def test_random_hexdigest(vdesc: VariantDescription):
     assert isinstance(vdesc.hexdigest, str)
     assert len(vdesc.hexdigest) == VARIANT_HASH_LEN
