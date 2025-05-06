@@ -36,7 +36,7 @@ class PluginLoader:
         self._plugins = {}
 
     def load_plugin(self, plugin_api: str) -> None:
-        """Load plugin via specific plugin api"""
+        """Load a specific plugin"""
 
         plugin_api_match = validate_matches_re(
             plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
@@ -47,7 +47,7 @@ class PluginLoader:
             plugin_callable = reduce(getattr, attr_chain, module)
         except Exception as exc:
             raise PluginError(
-                f"Loading the plugin from plugin api {plugin_api!r} failed: {exc}"
+                f"Loading the plugin from {plugin_api!r} failed: {exc}"
             ) from exc
 
         logger.info(
@@ -59,8 +59,8 @@ class PluginLoader:
 
         if not callable(plugin_callable):
             raise PluginError(
-                f"Plugin api {plugin_api!r} points at a value that is not "
-                f"callable: {plugin_callable!r}"
+                f"{plugin_api!r} points at a value that is not callable: "
+                f"{plugin_callable!r}"
             )
 
         try:
@@ -68,13 +68,13 @@ class PluginLoader:
             plugin_instance = plugin_callable()
         except Exception as exc:
             raise PluginError(
-                f"Instantiating the plugin from plugin api {plugin_api!r} failed: {exc}"
+                f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
             ) from exc
 
         required_attributes = PluginType.__abstractmethods__
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise PluginError(
-                f"Instantiating the plugin from plugin api {plugin_api!r} "
+                f"Instantiating the plugin from {plugin_api!r} "
                 "returned an object that does not meet the PluginType prototype: "
                 f"{plugin_instance!r} (missing attributes: "
                 f"{', '.join(sorted(missing_attributes))})"
