@@ -23,7 +23,7 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.resolver.lib import sort_and_filter_supported_variants
-from variantlib.utils import aggregate_user_and_default_lists
+from variantlib.utils import aggregate_priority_lists
 from variantlib.variant_file import unpack_variants_json
 
 if TYPE_CHECKING:
@@ -98,13 +98,13 @@ def get_variant_hashes_by_priority(
         for vdesc in sort_and_filter_supported_variants(
             vdescs,
             supported_vprops,
-            namespace_priorities=aggregate_user_and_default_lists(
+            namespace_priorities=aggregate_priority_lists(
                 namespace_priorities, config.namespace_priorities
             ),
-            feature_priorities=aggregate_user_and_default_lists(
+            feature_priorities=aggregate_priority_lists(
                 _feature_priorities, config.feature_priorities
             ),
-            property_priorities=aggregate_user_and_default_lists(
+            property_priorities=aggregate_priority_lists(
                 _property_priorities, config.property_priorities
             ),
             forbidden_namespaces=forbidden_namespaces,
