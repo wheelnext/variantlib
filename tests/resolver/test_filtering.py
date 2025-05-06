@@ -19,9 +19,9 @@ from variantlib.resolver.filtering import remove_duplicates
 @pytest.fixture(scope="session")
 def vprops() -> list[VariantProperty]:
     return [
-        VariantProperty(namespace="OmniCorp", feature="custom_feat", value="value1"),
+        VariantProperty(namespace="omnicorp", feature="custom_feat", value="value1"),
         VariantProperty(
-            namespace="TyrellCorporation", feature="client_id", value="value2"
+            namespace="tyrell_corporation", feature="client_id", value="value2"
         ),
     ]
 
@@ -97,29 +97,29 @@ def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]):
         == vdescs
     )
 
-    # Only `OmniCorp` forbidden - should return `vdesc2`
+    # Only `omnicorp` forbidden - should return `vdesc2`
     assert list(
         filter_variants_by_namespaces(
             vdescs=vdescs,
-            forbidden_namespaces=["OmniCorp"],
+            forbidden_namespaces=["omnicorp"],
         )
     ) == [vdesc2]
 
-    # Only `TyrellCorporation` forbidden - should return `vdesc1`
+    # Only `tyrell_corporation` forbidden - should return `vdesc1`
     assert list(
         filter_variants_by_namespaces(
             vdescs=vdescs,
-            forbidden_namespaces=["TyrellCorporation"],
+            forbidden_namespaces=["tyrell_corporation"],
         )
     ) == [vdesc1]
 
-    # Both `OmniCorp` and `TyrellCorporation` forbidden - should return empty
+    # Both `omnicorp` and `tyrell_corporation` forbidden - should return empty
     # Note: Order should not matter
     assert (
         list(
             filter_variants_by_namespaces(
                 vdescs=vdescs,
-                forbidden_namespaces=["OmniCorp", "TyrellCorporation"],
+                forbidden_namespaces=["omnicorp", "tyrell_corporation"],
             )
         )
         == []
@@ -129,7 +129,7 @@ def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]):
         list(
             filter_variants_by_namespaces(
                 vdescs=vdescs,
-                forbidden_namespaces=["TyrellCorporation", "OmniCorp"],
+                forbidden_namespaces=["tyrell_corporation", "omnicorp"],
             )
         )
         == []
@@ -147,8 +147,8 @@ def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]):
             [VariantDescription([VariantProperty("a", "b", "c")])],
             [VariantProperty("not", "a", "str")],
         ),
-        ("not a list", ["OmniCorp"]),
-        (["not a `VariantDescription`"], ["OmniCorp"]),
+        ("not a list", ["omnicorp"]),
+        (["not a `VariantDescription`"], ["omnicorp"]),
     ],
 )
 def test_filter_variants_by_namespaces_validation_error(
@@ -196,7 +196,7 @@ def test_filter_variants_by_features(
             filter_variants_by_features(
                 vdescs=vdescs,
                 forbidden_features=[
-                    VariantFeature(namespace="UmbrellaCorporation", feature="AI")
+                    VariantFeature(namespace="umbrella_corporation", feature="ai")
                 ],
             )
         )
@@ -301,7 +301,7 @@ def test_filter_variants_by_property(
                 vdescs=vdescs,
                 allowed_properties=[
                     VariantProperty(
-                        namespace="UmbrellaCorporation", feature="AI", value="ChatBot"
+                        namespace="umbrella_corporation", feature="ai", value="chatbot"
                     )
                 ],
                 forbidden_properties=[],
@@ -318,7 +318,7 @@ def test_filter_variants_by_property(
                 allowed_properties=[],
                 forbidden_properties=[
                     VariantProperty(
-                        namespace="UmbrellaCorporation", feature="AI", value="ChatBot"
+                        namespace="umbrella_corporation", feature="ai", value="chatbot"
                     )
                 ],
             )
@@ -449,7 +449,7 @@ def test_filter_variants_by_property(
             [VariantProperty("a", "b", "c")],
         ),
         (
-            [VariantProperty("not", "a", "VariantDescription")],
+            [VariantProperty("not", "a", "variantdescription")],
             [VariantProperty("a", "b", "c")],
             [VariantProperty("a", "b", "c")],
         ),

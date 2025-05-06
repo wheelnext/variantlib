@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import random
-import string
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -19,9 +20,9 @@ from variantlib.models.variant import VariantProperty
 def test_variantprop_initialization():
     # Valid initialization
     vprop = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
-    assert vprop.namespace == "OmniCorp"
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
     assert vprop.value == "secret_value"
 
@@ -29,50 +30,50 @@ def test_variantprop_initialization():
 def test_variantprop_invalid_type():
     # Invalid initialization for provider (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantProperty(namespace="OmniCorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
+        VariantProperty(namespace="omnicorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
 
     # Invalid initialization for feature (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantProperty(namespace="OmniCorp", feature=123, value="secret_value")  # type: ignore[arg-type]
+        VariantProperty(namespace="omnicorp", feature=123, value="secret_value")  # type: ignore[arg-type]
 
     # Invalid initialization for value (should raise ValidationError)
     with pytest.raises(ValidationError):
-        VariantProperty(namespace="OmniCorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
+        VariantProperty(namespace="omnicorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
 
 
 def test_variantprop_data():
     # Test the repr method of VariantProperty
     vprop = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
-    expected_data = "OmniCorp :: custom_feat :: secret_value"
+    expected_data = "omnicorp :: custom_feat :: secret_value"
     assert vprop.to_str() == expected_data
 
 
 def test_variantprop_hexdigest():
     # Test the hashing functionality of VariantProperty
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="value1"
+        namespace="omnicorp", feature="custom_feat", value="value1"
     )
     vprop2 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="value2"
+        namespace="omnicorp", feature="custom_feat", value="value2"
     )
     assert vprop1.feature_hash == vprop2.feature_hash
     assert vprop1.property_hash != vprop2.property_hash
 
     # Different object, same everything. Should also result in identical hash
     vprop3 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="value1"
+        namespace="omnicorp", feature="custom_feat", value="value1"
     )
     assert vprop1.feature_hash == vprop3.feature_hash
 
 
 def test_variantprop_to_str():
     vprop = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
 
-    assert vprop.to_str() == "OmniCorp :: custom_feat :: secret_value"
+    assert vprop.to_str() == "omnicorp :: custom_feat :: secret_value"
 
 
 def test_failing_regex_namespace():
@@ -111,9 +112,9 @@ def test_failing_regex_value():
 @pytest.mark.parametrize(
     "input_str",
     [
-        "OmniCorp :: custom_feat :: secret_value",
-        "OmniCorp::custom_feat::secret_value",
-        "OmniCorp ::custom_feat::     secret_value",
+        "omnicorp :: custom_feat :: secret_value",
+        "omnicorp::custom_feat::secret_value",
+        "omnicorp ::custom_feat::     secret_value",
     ],
 )
 def test_from_str_valid(input_str: str):
@@ -121,24 +122,24 @@ def test_from_str_valid(input_str: str):
     vprop = VariantProperty.from_str(input_str)
 
     # Check if the resulting object matches the expected values
-    assert vprop.namespace == "OmniCorp"
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
     assert vprop.value == "secret_value"
 
 
 def test_from_str_missing_parts():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantProperty.from_str("OmniCorp :: custom_feat")
+        VariantProperty.from_str("omnicorp :: custom_feat")
 
 
 def test_from_str_extra_colons():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantProperty.from_str("OmniCorp :: custom_feat :: secret_value :: extra")
+        VariantProperty.from_str("omnicorp :: custom_feat :: secret_value :: extra")
 
 
 def test_from_str_empty_value():
     with pytest.raises(ValidationError, match="Invalid format"):
-        VariantProperty.from_str("OmniCorp :: custom_feat ::")
+        VariantProperty.from_str("omnicorp :: custom_feat ::")
 
 
 def test_from_str_edge_case_empty_string():
@@ -148,18 +149,18 @@ def test_from_str_edge_case_empty_string():
 
 def test_from_str_trailing_spaces():
     # Test case: Input with leading/trailing spaces
-    input_str = "   OmniCorp :: custom_feat :: secret_value   "
+    input_str = "   omnicorp :: custom_feat :: secret_value   "
     vprop = VariantProperty.from_str(input_str.strip())
 
     # Check if it still correctly parses and matches the expected values
-    assert vprop.namespace == "OmniCorp"
+    assert vprop.namespace == "omnicorp"
     assert vprop.feature == "custom_feat"
     assert vprop.value == "secret_value"
 
 
 def test_from_str_invalid_format():
     # Test case: Input with invalid format
-    input_str = "OmniCorp, custom_feat, secret_value"
+    input_str = "omnicorp, custom_feat, secret_value"
 
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantProperty.from_str(input_str)
@@ -230,10 +231,10 @@ def test_null_variant():
 def test_variantdescription_initialization():
     # Valid input: List of VariantProperty instances
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
-        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
+        namespace="tyrell_corporation", feature="client_id", value="secret_pass"
     )
     vdesc = VariantDescription([vprop1, vprop2])
 
@@ -250,7 +251,7 @@ def test_variantdescription_invalid_data():
 
     # Test data containing non-VariantProperty instances
     invalid_vprop = {
-        "namespace": "OmniCorp",
+        "namespace": "omnicorp",
         "feature": "custom_feat",
         "value": "secret_value",
     }
@@ -261,7 +262,7 @@ def test_variantdescription_invalid_data():
 def test_variantdescription_duplicate_data():
     # Test that duplicate VariantProperty instances are removed
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([vprop1, vprop1])
@@ -270,10 +271,10 @@ def test_variantdescription_duplicate_data():
 def test_variantdescription_partial_duplicate_data():
     # Test that duplicate VariantProperty instances are removed
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="another_value"
+        namespace="omnicorp", feature="custom_feat", value="another_value"
     )
     with pytest.raises(ValidationError, match="Duplicate value"):
         _ = VariantDescription([vprop1, vprop2])
@@ -282,13 +283,13 @@ def test_variantdescription_partial_duplicate_data():
 def test_variantdescription_sorted_data():
     # Ensure that the data is sorted by namespace, feature, value
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
-        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
+        namespace="tyrell_corporation", feature="client_id", value="secret_pass"
     )
     vprop3 = VariantProperty(
-        namespace="OmniCorp", feature="secret_pass", value="client_value"
+        namespace="omnicorp", feature="secret_pass", value="client_value"
     )
     vdesc = VariantDescription([vprop1, vprop2, vprop3])
 
@@ -302,18 +303,18 @@ def test_variantdescription_sorted_data():
 def test_variantdescription_hexdigest():
     # Ensure that the hexdigest property works correctly
     vprop1 = VariantProperty(
-        namespace="OmniCorp", feature="custom_feat", value="secret_value"
+        namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
-        namespace="TyrellCorporation", feature="client_id", value="secret_pass"
+        namespace="tyrell_corporation", feature="client_id", value="secret_pass"
     )
     vprops = [vprop1, vprop2]
     vdesc = VariantDescription(vprops)
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     hash_object = hashlib.sha256(
-        b"OmniCorp :: custom_feat :: secret_value\n"
-        b"TyrellCorporation :: client_id :: secret_pass\n"
+        b"omnicorp :: custom_feat :: secret_value\n"
+        b"tyrell_corporation :: client_id :: secret_pass\n"
     )
     expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
@@ -376,12 +377,12 @@ def test_variantdescription_deserialization():
 @pytest.mark.parametrize(
     ("namespace", "feature", "value"),
     [
-        ("OmniCorp", "custom_feat", "secret_value"),
-        ("TyrellCorporation", "client_id", "secret_pass"),
-        ("InGenTechnologies", "tenant_id", "secret_value123"),
-        ("SoylentCorporation", "token", "auth_value_123"),
-        ("CyberdyneSystems", "version", "10.1"),
-        ("CyberdyneSystems", "version", "10.1.4"),
+        ("omnicorp", "custom_feat", "secret_value"),
+        ("tyrell_corporation", "client_id", "secret_pass"),
+        ("ingen_technologies", "tenant_id", "secret_value123"),
+        ("soylent_corporation", "token", "auth_value_123"),
+        ("cyberdyne_systems", "version", "10.1"),
+        ("cyberdyne_systems", "version", "10.1.4"),
     ],
 )
 def test_fuzzy_variantprop(namespace, feature, value):
@@ -398,34 +399,34 @@ def test_fuzzy_variantprop(namespace, feature, value):
         (
             [
                 VariantProperty(
-                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
+                    namespace="omnicorp", feature="custom_feat", value="secret_value"
                 )
             ]
         ),
         (
             [
                 VariantProperty(
-                    namespace="TyrellCorporation",
+                    namespace="tyrell_corporation",
                     feature="client_id",
                     value="secret_pass",
                 ),
                 VariantProperty(
-                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
+                    namespace="omnicorp", feature="custom_feat", value="secret_value"
                 ),
             ]
         ),
         (
             [
                 VariantProperty(
-                    namespace="OmniCorp", feature="custom_feat", value="secret_value"
+                    namespace="omnicorp", feature="custom_feat", value="secret_value"
                 ),
                 VariantProperty(
-                    namespace="TyrellCorporation",
+                    namespace="tyrell_corporation",
                     feature="client_id",
                     value="secret_pass",
                 ),
                 VariantProperty(
-                    namespace="OmniCorp", feature="secret_pass", value="client_value"
+                    namespace="omnicorp", feature="secret_pass", value="client_value"
                 ),
             ]
         ),
@@ -443,18 +444,22 @@ def test_fuzzy_variantdescription(vprop: list[VariantProperty]):
 # -----------------------------------------------
 
 
-@pytest.mark.parametrize("num_entries", [1, 3, 5, 10])
-def test_random_hexdigest(num_entries):
-    # Generate random data for VariantProperty instances
-    def random_string(length: int) -> str:
-        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
-
-    vprop = [
-        VariantProperty(
-            namespace=random_string(5), feature=random_string(5), value=random_string(8)
-        )
-        for _ in range(num_entries)
-    ]
-    vdesc = VariantDescription(vprop)
+@given(
+    st.builds(
+        VariantDescription,
+        st.lists(
+            min_size=1,
+            max_size=10,
+            unique_by=lambda vprop: (vprop.namespace, vprop.feature),
+            elements=st.builds(
+                VariantProperty,
+                namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+                feature=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+                value=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+            ),
+        ),
+    )
+)
+def test_random_hexdigest(vdesc: VariantDescription):
     assert isinstance(vdesc.hexdigest, str)
     assert len(vdesc.hexdigest) == VARIANT_HASH_LEN

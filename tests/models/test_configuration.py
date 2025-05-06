@@ -23,22 +23,22 @@ def test_default_configuration():
     "config_params",
     [
         {
-            "namespaces": ["OmniCorp"],
+            "namespaces": ["omnicorp"],
             "features": [],
             "properties": [],
         },
         {
-            "namespaces": ["OmniCorp"],
-            "features": ["OmniCorp::custom_feat"],
-            "properties": ["OmniCorp::custom_feat::secret_value"],
+            "namespaces": ["omnicorp"],
+            "features": ["omnicorp::custom_feat"],
+            "properties": ["omnicorp::custom_feat::secret_value"],
         },
         {
-            "namespaces": ["OmniCorp", "AcmeCorp"],
-            "features": ["OmniCorp::custom_feat", "AcmeCorp :: custom_feat"],
+            "namespaces": ["omnicorp", "acme_corp"],
+            "features": ["omnicorp::custom_feat", "acme_corp :: custom_feat"],
             "properties": [
-                "OmniCorp :: custom_featA  ::   secret_value",
-                "OmniCorp :: custom_featB::   secret_value",
-                "AcmeCorp::custom_feat::secret_value",
+                "omnicorp :: custom_feat_a  ::   secret_value",
+                "omnicorp :: custom_feat_b::   secret_value",
+                "acme_corp::custom_feat::secret_value",
             ],
         },
     ],
@@ -62,7 +62,7 @@ def test_namespace_priorities_validation(namespaces: list[str]):
     st.lists(
         st.builds(
             VariantFeature,
-            namespace=st.just("OmniCorp"),
+            namespace=st.just("omnicorp"),
             feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
         )
     ),

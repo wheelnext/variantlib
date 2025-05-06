@@ -20,9 +20,9 @@ from variantlib.resolver.sorting import sort_variants_descriptions
 
 
 def test_get_property_priorities():
-    vprop1 = VariantProperty(namespace="OmniCorp", feature="feat", value="value1")
-    vprop2 = VariantProperty(namespace="OmniCorp", feature="feat", value="value2")
-    vprop3 = VariantProperty(namespace="OmniCorp", feature="feat", value="value3")
+    vprop1 = VariantProperty(namespace="omnicorp", feature="feat", value="value1")
+    vprop2 = VariantProperty(namespace="omnicorp", feature="feat", value="value2")
+    vprop3 = VariantProperty(namespace="omnicorp", feature="feat", value="value3")
     assert get_property_priorities(vprop1, [vprop1, vprop2]) == 0
     assert get_property_priorities(vprop2, [vprop1, vprop2]) == 1
     assert get_property_priorities(vprop1, [vprop1, vprop2, vprop3]) == 0
@@ -30,8 +30,8 @@ def test_get_property_priorities():
 
 
 def test_negative_get_property_priorities():
-    vprop1 = VariantProperty(namespace="OmniCorp", feature="feat", value="value1")
-    vprop2 = VariantProperty(namespace="OmniCorp", feature="feat", value="value2")
+    vprop1 = VariantProperty(namespace="omnicorp", feature="feat", value="value1")
+    vprop2 = VariantProperty(namespace="omnicorp", feature="feat", value="value2")
 
     assert get_property_priorities(vprop1, None) == sys.maxsize
     assert get_property_priorities(vprop1, []) == sys.maxsize
@@ -58,19 +58,19 @@ def test_get_property_priorities_validation_error(
 
 
 def test_get_feature_priorities():
-    vprop1 = VariantProperty(namespace="OmniCorp", feature="feature", value="value")
-    vprop2 = VariantProperty(namespace="OmniCorp", feature="other_feat", value="value")
+    vprop1 = VariantProperty(namespace="omnicorp", feature="feature", value="value")
+    vprop2 = VariantProperty(namespace="omnicorp", feature="other_feat", value="value")
     feature_priorities = [
-        VariantFeature(namespace="OmniCorp", feature="feature"),
-        VariantFeature(namespace="OmniCorp", feature="other_feat"),
+        VariantFeature(namespace="omnicorp", feature="feature"),
+        VariantFeature(namespace="omnicorp", feature="other_feat"),
     ]
     assert get_feature_priorities(vprop1, feature_priorities) == 0
     assert get_feature_priorities(vprop2, feature_priorities) == 1
 
 
 def test_negative_get_feature_priorities():
-    vprop = VariantProperty(namespace="OmniCorp", feature="no_exist", value="value")
-    vfeat = VariantFeature(namespace="OmniCorp", feature="feature")
+    vprop = VariantProperty(namespace="omnicorp", feature="no_exist", value="value")
+    vfeat = VariantFeature(namespace="omnicorp", feature="feature")
 
     assert get_feature_priorities(vprop, None) == sys.maxsize
     assert get_feature_priorities(vprop, []) == sys.maxsize
@@ -97,21 +97,21 @@ def test_get_feature_priorities_validation_error(
 
 
 def test_get_namespace_priorities():
-    vprop1 = VariantProperty(namespace="OmniCorp", feature="feature", value="value")
-    vprop2 = VariantProperty(namespace="OtherCorp", feature="feature", value="value")
-    vprop3 = VariantProperty(namespace="NoCorp", feature="feature", value="value")
-    namespace_priorities = ["OmniCorp", "OtherCorp"]
+    vprop1 = VariantProperty(namespace="omnicorp", feature="feature", value="value")
+    vprop2 = VariantProperty(namespace="other_corp", feature="feature", value="value")
+    vprop3 = VariantProperty(namespace="no_corp", feature="feature", value="value")
+    namespace_priorities = ["omnicorp", "other_corp"]
     assert get_namespace_priorities(vprop1, namespace_priorities) == 0
     assert get_namespace_priorities(vprop2, namespace_priorities) == 1
     assert get_namespace_priorities(vprop3, namespace_priorities) == sys.maxsize
 
 
 def test_negative_get_namespace_priorities():
-    vprop = VariantProperty(namespace="OmniCorp", feature="no_exist", value="value")
+    vprop = VariantProperty(namespace="omnicorp", feature="no_exist", value="value")
 
     assert get_namespace_priorities(vprop, None) == sys.maxsize
     assert get_namespace_priorities(vprop, []) == sys.maxsize
-    assert get_namespace_priorities(vprop, ["OtherCorp"]) == sys.maxsize
+    assert get_namespace_priorities(vprop, ["other_corp"]) == sys.maxsize
 
 
 @pytest.mark.parametrize(
@@ -133,16 +133,16 @@ def test_get_namespace_priorities_validation_error(
 
 
 def test_get_variant_property_priorities_tuple():
-    vprop = VariantProperty(namespace="OmniCorp", feature="custom_feat", value="value1")
+    vprop = VariantProperty(namespace="omnicorp", feature="custom_feat", value="value1")
     property_priorities = [
-        VariantProperty(namespace="OtherCorp", feature="other_feat", value="value2"),
+        VariantProperty(namespace="other_corp", feature="other_feat", value="value2"),
         vprop,
     ]
     feature_priorities = [
         VariantFeature(namespace=vprop.namespace, feature=vprop.feature),
-        VariantFeature(namespace="OmniCorp", feature="feature"),
+        VariantFeature(namespace="omnicorp", feature="feature"),
     ]
-    namespace_priorities = ["OtherCorp"]
+    namespace_priorities = ["other_corp"]
     assert get_variant_property_priorities_tuple(
         vprop, namespace_priorities, feature_priorities, property_priorities
     ) == (1, 0, sys.maxsize)
@@ -185,45 +185,45 @@ def test_get_variant_property_priorities_tuple_validation_error(
 
 def test_sort_variant_properties():
     vprop_list = [
-        VariantProperty(namespace="OmniCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value2"),
-        VariantProperty(namespace="OmniCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featD", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value2"),
-        VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featD", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_d", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_d", value="value"),
     ]
     property_priorities = [
-        VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
     ]
     feature_priorities = [
-        VariantFeature(namespace="OtherCorp", feature="featB"),
-        VariantFeature(namespace="OmniCorp", feature="featB"),
+        VariantFeature(namespace="other_corp", feature="feat_b"),
+        VariantFeature(namespace="omnicorp", feature="feat_b"),
     ]
-    namespace_priorities = ["OmniCorp", "OtherCorp"]
+    namespace_priorities = ["omnicorp", "other_corp"]
     sorted_vprops = sort_variant_properties(
         vprop_list, namespace_priorities, feature_priorities, property_priorities
     )
     assert sorted_vprops == [
         # sorted by property priorities
-        VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
         # sorted by feature priorities
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value2"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value2"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value2"),
         # sorted by namespace priorities
-        VariantProperty(namespace="OmniCorp", feature="featD", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featD", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_d", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_d", value="value"),
     ]
 
 
@@ -276,32 +276,32 @@ def test_sort_variant_properties_configuration_error():
 
 def test_sort_variants_descriptions():
     vprops_proprioty_list = [
-        VariantProperty(namespace="OmniCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value2"),
-        VariantProperty(namespace="OmniCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OmniCorp", feature="featD", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value1"),
-        VariantProperty(namespace="OtherCorp", feature="featB", value="value2"),
-        VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
-        VariantProperty(namespace="OtherCorp", feature="featD", value="value"),
-        VariantProperty(namespace="AnyCorp", feature="feature", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_d", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value1"),
+        VariantProperty(namespace="other_corp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_d", value="value"),
+        VariantProperty(namespace="any_corp", feature="feature", value="value"),
     ]
 
     vdesc1 = VariantDescription(
         [
-            VariantProperty(namespace="OtherCorp", feature="featA", value="value"),
-            VariantProperty(namespace="OmniCorp", feature="featB", value="value1"),
-            VariantProperty(namespace="OmniCorp", feature="featC", value="value"),
-            VariantProperty(namespace="OtherCorp", feature="featC", value="value"),
+            VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+            VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+            VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
+            VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
         ]
     )
     vdesc2 = VariantDescription(
-        [VariantProperty(namespace="OtherCorp", feature="featA", value="value")]
+        [VariantProperty(namespace="other_corp", feature="feat_a", value="value")]
     )
     vdesc3 = VariantDescription(
-        [VariantProperty(namespace="OmniCorp", feature="featA", value="value")]
+        [VariantProperty(namespace="omnicorp", feature="feat_a", value="value")]
     )
 
     assert sort_variants_descriptions(
@@ -371,22 +371,22 @@ def test_sort_variants_descriptions():
         VariantDescription(
             properties=[
                 VariantProperty(
-                    namespace="OmniCorp", feature="feat", value="other_value"
+                    namespace="omnicorp", feature="feat", value="other_value"
                 )
             ]
         ),
         VariantDescription(
             properties=[
-                VariantProperty(namespace="OmniCorp", feature="feat", value="value"),
+                VariantProperty(namespace="omnicorp", feature="feat", value="value"),
                 VariantProperty(
-                    namespace="OmniCorp", feature="other_feat", value="other_value"
+                    namespace="omnicorp", feature="other_feat", value="other_value"
                 ),
             ],
         ),
     ],
 )
 def test_sort_variants_descriptions_ranking_validation_error(vdesc: VariantDescription):
-    vprops = [VariantProperty(namespace="OmniCorp", feature="feat", value="value")]
+    vprops = [VariantProperty(namespace="omnicorp", feature="feat", value="value")]
 
     # Test with a completely different property (same feature, different value)
     with pytest.raises(ValidationError, match="Filtering should be applied first."):
