@@ -68,21 +68,21 @@ def vprops() -> list[VariantProperty]:
     # Does not assume filtering per namespace. Only features & properties.
 
     return [
-        # -------------------------- Plugin `OmniCorp` -------------------------- #
-        # Feature 1: `OmniCorp :: featA`
-        VariantProperty(namespace="OmniCorp", feature="featA", value="value"),
-        # Feature 2: `OmniCorp :: featB`
-        VariantProperty(namespace="OmniCorp", feature="featB", value="value"),
-        # ------------------------- Plugin `TyrellCorp` ------------------------- #
-        # Feature 1: `TyrellCorp :: featA`
-        VariantProperty(namespace="TyrellCorp", feature="featA", value="value"),
-        # Feature 2: `TyrellCorp :: featB`
-        # Property 2.1: `TyrellCorp :: featB :: abcde`
-        VariantProperty(namespace="TyrellCorp", feature="featB", value="abcde"),
-        # Property 2.2: `TyrellCorp :: featB :: efghij`
-        VariantProperty(namespace="TyrellCorp", feature="featB", value="efghij"),
-        # Feature 3: `TyrellCorp :: featC`
-        VariantProperty(namespace="TyrellCorp", feature="featC", value="value"),
+        # -------------------------- Plugin `omnicorp` -------------------------- #
+        # Feature 1: `omnicorp :: feat_a`
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        # Feature 2: `omnicorp :: feat_b`
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value"),
+        # ------------------------- Plugin `tyrell_corp` ------------------------- #
+        # Feature 1: `tyrell_corp :: feat_a`
+        VariantProperty(namespace="tyrell_corp", feature="feat_a", value="value"),
+        # Feature 2: `tyrell_corp :: feat_b`
+        # Property 2.1: `tyrell_corp :: feat_b :: abcde`
+        VariantProperty(namespace="tyrell_corp", feature="feat_b", value="abcde"),
+        # Property 2.2: `tyrell_corp :: feat_b :: efghij`
+        VariantProperty(namespace="tyrell_corp", feature="feat_b", value="efghij"),
+        # Feature 3: `tyrell_corp :: feat_c`
+        VariantProperty(namespace="tyrell_corp", feature="feat_c", value="value"),
     ]
 
 
@@ -342,7 +342,7 @@ def test_filter_variants_remove_duplicates_and_namespaces(
             filter_variants(
                 vdescs=inputs_vdescs,
                 allowed_properties=vprops,
-                forbidden_namespaces=["OmniCorp"],
+                forbidden_namespaces=["omnicorp"],
             )
         ),
         expected_vdescs,
@@ -354,7 +354,7 @@ def test_filter_variants_remove_duplicates_and_namespaces(
         list(
             filter_variants_by_namespaces(
                 remove_duplicates(vdescs=inputs_vdescs),
-                forbidden_namespaces=["OmniCorp"],
+                forbidden_namespaces=["omnicorp"],
             )
         ),
         expected_vdescs,
@@ -491,8 +491,8 @@ def test_sort_and_filter_supported_variants(
     prio_vfeats: list[VariantFeature] = [vprop4.feature_object]
 
     # Third Priority: namespaces
-    #                 vprop3, vprop4, vprop5, vprop6 [TyrellCorp] > vprop1, vprop2 ["OmniCorp"]  # noqa: E501
-    prio_namespaces = ["NotExistingNamespace", "TyrellCorp", "OmniCorp"]
+    #                 vprop3, vprop4, vprop5, vprop6 [tyrell_corp] > vprop1, vprop2 ["omnicorp"]  # noqa: E501
+    prio_namespaces = ["NotExistingNamespace", "tyrell_corp", "omnicorp"]
 
     # Default Ordering: properties are assumed pre-sorted in features/properties
     #                   vprop1 > vprop2 > vprop3 > vprop4 > vprop5 > vprop6
@@ -507,35 +507,35 @@ def test_sort_and_filter_supported_variants(
         # ============ A - Everything with vprop3 ============ #
         # ============ A.1 - Everything with vprop3 & vprop4 ============ #
         VariantDescription([vprop1, vprop3, vprop4, vprop6]),
-        VariantDescription([vprop3, vprop4, vprop6]),  # TyrellCorp > OmniCorp
-        VariantDescription([vprop1, vprop3, vprop4]),  # TyrellCorp > OmniCorp
+        VariantDescription([vprop3, vprop4, vprop6]),  # tyrell_corp > omnicorp
+        VariantDescription([vprop1, vprop3, vprop4]),  # tyrell_corp > omnicorp
         VariantDescription([vprop3, vprop4]),
         # ============ A.2 - Everything with vprop3 & vprop5 ============ #
         VariantDescription([vprop1, vprop3, vprop5, vprop6]),
-        VariantDescription([vprop3, vprop5, vprop6]),  # TyrellCorp > OmniCorp
-        VariantDescription([vprop1, vprop3, vprop5]),  # TyrellCorp > OmniCorp
+        VariantDescription([vprop3, vprop5, vprop6]),  # tyrell_corp > omnicorp
+        VariantDescription([vprop1, vprop3, vprop5]),  # tyrell_corp > omnicorp
         VariantDescription([vprop3, vprop5]),
         # =========== A.4 - Everything with vprop3 & without vprop5/vprop6 =========== #
         VariantDescription([vprop1, vprop3, vprop6]),
-        VariantDescription([vprop3, vprop6]),  # TyrellCorp > OmniCorp
-        VariantDescription([vprop1, vprop3]),  # TyrellCorp > OmniCorp
+        VariantDescription([vprop3, vprop6]),  # tyrell_corp > omnicorp
+        VariantDescription([vprop1, vprop3]),  # tyrell_corp > omnicorp
         # =========== A.5 - vprop3 alone =========== #
         VariantDescription([vprop3]),
 
         # ============ B - Everything without vprop3 ============ #
         # ============ B.1 - Everything without vprop3 & with vprop4 ============ #
         VariantDescription([vprop1, vprop4, vprop6]),
-        VariantDescription([vprop4, vprop6]),  # TyrellCorp > OmniCorp
-        VariantDescription([vprop1, vprop4]),  # TyrellCorp > OmniCorp
+        VariantDescription([vprop4, vprop6]),  # tyrell_corp > omnicorp
+        VariantDescription([vprop1, vprop4]),  # tyrell_corp > omnicorp
         VariantDescription([vprop4]),
 
         # ============ B.2 - Everything without vprop3 & with vprop5 ============ #
         VariantDescription([vprop1, vprop5, vprop6]),
-        VariantDescription([vprop5, vprop6]),  # TyrellCorp > OmniCorp
-        VariantDescription([vprop1, vprop5]),  # TyrellCorp > OmniCorp
+        VariantDescription([vprop5, vprop6]),  # tyrell_corp > omnicorp
+        VariantDescription([vprop1, vprop5]),  # tyrell_corp > omnicorp
         VariantDescription([vprop5]),
 
-        # == C - Everything without vprop3/vprop4/vprop5 and TyrellCorp > OmniCorp == #
+        # == C - Everything without vprop3/vprop4/vprop5 and tyrell_corp > omnicorp == #
         VariantDescription([vprop1, vprop6]),
         VariantDescription([vprop6]),
         VariantDescription([vprop1]),
@@ -573,7 +573,7 @@ def test_sort_and_filter_supported_variants(
         ),
         (
             [VariantDescription([VariantProperty("a", "b", "c")])],
-            [VariantFeature("not_a", "VariantProperty")],
+            [VariantFeature("not_a", "variantproperty")],
         ),
         ("not a list", VariantProperty("a", "b", "c")),
         (["not a `VariantDescription`"], VariantProperty("a", "b", "c")),

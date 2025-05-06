@@ -82,17 +82,17 @@ def test_get_variant_hashes_by_priority_roundtrip(
 @example(
     [
         ProviderConfig(
-            namespace="A",
+            namespace="a",
             configs=[
-                VariantFeatureConfig(name="A1", values=["x"]),
-                VariantFeatureConfig(name="A2", values=["x"]),
+                VariantFeatureConfig(name="a1", values=["x"]),
+                VariantFeatureConfig(name="a2", values=["x"]),
             ],
         ),
         ProviderConfig(
-            namespace="B", configs=[VariantFeatureConfig(name="B1", values=["x"])]
+            namespace="b", configs=[VariantFeatureConfig(name="b1", values=["x"])]
         ),
         ProviderConfig(
-            namespace="C", configs=[VariantFeatureConfig(name="C1", values=["x"])]
+            namespace="c", configs=[VariantFeatureConfig(name="c1", values=["x"])]
         ),
     ]
 )
