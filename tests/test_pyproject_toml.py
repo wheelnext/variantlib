@@ -251,8 +251,7 @@ def test_missing_provider_plugin_api():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
-        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: expected <class 'str'>, "
-        r"got <class 'NoneType'>",
+        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: required key not found",
     ):
         VariantPyProjectToml(
             {

@@ -93,7 +93,7 @@ class VariantPyProjectToml:
                     ) as provider_requires:
                         validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     with validator.get(
-                        PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, str, None
+                        PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, str
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     self.providers[namespace] = ProviderInfo(

@@ -14,7 +14,6 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -319,13 +318,17 @@ class KeyTrackingValidator:
                 )
 
     @contextmanager
-    def get(self, key: str, expected_type: type, default: Any) -> Any:
+    def get(self, key: str, expected_type: type, default: Any = None) -> Any:
         # add to list of expected keys of current dict
         self._expected_keys[-1].add(key)
 
         # push the value to the stack
         self._keys.append(key)
         self._data.append(self._data[-1].get(key, default))
+
+        if default is None and self._data[-1] is None:
+            raise ValidationError(f"{self._key}: required key not found")
+
         self._expected_keys.append(set())
         self.validate(self._data[-1], expected_type)
 
