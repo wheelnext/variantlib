@@ -99,13 +99,19 @@ def get_variant_hashes_by_priority(
             list(parsed_variants_json.variants.values()),
             supported_vprops,
             namespace_priorities=aggregate_priority_lists(
-                namespace_priorities, config.namespace_priorities
+                namespace_priorities,
+                config.namespace_priorities,
+                parsed_variants_json.namespace_priorities,
             ),
             feature_priorities=aggregate_priority_lists(
-                _feature_priorities, config.feature_priorities
+                _feature_priorities,
+                config.feature_priorities,
+                parsed_variants_json.feature_priorities,
             ),
             property_priorities=aggregate_priority_lists(
-                _property_priorities, config.property_priorities
+                _property_priorities,
+                config.property_priorities,
+                parsed_variants_json.property_priorities,
             ),
             forbidden_namespaces=forbidden_namespaces,
             forbidden_features=_forbidden_features,
