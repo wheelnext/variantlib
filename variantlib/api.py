@@ -58,7 +58,7 @@ def get_variant_hashes_by_priority(
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
-    parsed_variants_json = VariantsJson(variants_json)
+    parsed_variants_json = VariantsJson.from_dict(variants_json)
 
     supported_vprops = list(
         itertools.chain.from_iterable(

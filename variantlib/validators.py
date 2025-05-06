@@ -14,6 +14,7 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
+
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
