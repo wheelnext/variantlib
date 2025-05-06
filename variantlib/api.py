@@ -24,7 +24,7 @@ from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
-from variantlib.variant_file import unpack_variants_json
+from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
     from email.message import Message
@@ -58,7 +58,7 @@ def get_variant_hashes_by_priority(
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
-    vdescs = unpack_variants_json(variants_json)
+    parsed_variants_json = VariantsJson(variants_json)
 
     supported_vprops = list(
         itertools.chain.from_iterable(
@@ -96,7 +96,7 @@ def get_variant_hashes_by_priority(
     return [
         vdesc.hexdigest
         for vdesc in sort_and_filter_supported_variants(
-            vdescs,
+            list(parsed_variants_json.variants.values()),
             supported_vprops,
             namespace_priorities=aggregate_priority_lists(
                 namespace_priorities, config.namespace_priorities

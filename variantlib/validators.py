@@ -14,12 +14,6 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
-from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -179,115 +173,11 @@ def validate_requirement_str(dependency_str: str) -> None:
         raise ValidationError from e
 
 
-def validate_variants_json(data: dict) -> None:
-    """
-    Validate the variant JSON data structure.
-    """
-
-    if not isinstance(data, dict):
-        raise ValidationError(f"Expected a dictionary for data, got {type(data)}")
-
-    if VARIANTS_JSON_VARIANT_DATA_KEY not in data:
-        raise ValidationError(f"Key `variants` is missing in data: {list(data.keys())}")
-
-    variant_data = data[VARIANTS_JSON_VARIANT_DATA_KEY]
-
-    if not isinstance(variant_data, dict):
-        raise ValidationError(
-            f"Expected a dictionary for `data['variants']`, got `{type(variant_data)}`."
-        )
-
-    for variant_hash, vdata in variant_data.items():
-        # Check if variant_hash is a string and matches the regex
-        if not isinstance(variant_hash, str):
-            raise ValidationError(
-                f"Invalid `variant_hash` type: `{variant_hash}` in data (expected str)"
-            )
-
-        if VALIDATION_VARIANT_HASH_REGEX.fullmatch(variant_hash) is None:
-            raise ValidationError(f"Invalid variant hash `{variant_hash}` in data")
-
-        if variant_hash == "0" * VARIANT_HASH_LEN:
-            if len(vdata) != 0:
-                raise ValidationError(
-                    f"Invalid variant data for null variant `{variant_hash}`: "
-                    f"{vdata}. Should be empty."
-                )
-            continue
-
-        if len(vdata) == 0:
-            raise ValidationError(
-                f"Invalid variant data for non-null variant `{variant_hash}`: "
-                f"{vdata}. Should not be empty."
-            )
-
-        # Check the Variant Data
-        if not isinstance(vdata, dict):
-            raise ValidationError(
-                f"Invalid variant data for hash `{variant_hash}`: {type(vdata)}"
-            )
-
-        if len(vdata) == 0:
-            raise ValidationError(
-                f"No variant properties declared for `{variant_hash}`"
-            )
-
-        for namespace, vprop_data in vdata.items():
-            # Check if namespace is a string and matches the regex
-            if not isinstance(namespace, str):
-                raise ValidationError(
-                    f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
-                )
-            if VALIDATION_NAMESPACE_REGEX.fullmatch(namespace) is None:
-                raise ValidationError(
-                    f"Invalid variant namespace `{namespace}` for hash `{variant_hash}`"
-                )
-
-            # Check the VariantProperties Data
-            if not isinstance(vprop_data, dict):
-                raise ValidationError(
-                    f"Invalid variant property data for hash `{variant_hash}`: "
-                    f"{type(vprop_data)}"
-                )
-
-            if len(vprop_data) == 0:
-                raise ValidationError(
-                    f"Invalid no variant properties declared for `{variant_hash}` in "
-                    f"namespace: `{namespace}`"
-                )
-
-            for feature_name, feature_value in vprop_data.items():
-                # Check if feature_name is a string and matches the regex
-                if not isinstance(feature_name, str):
-                    raise ValidationError(
-                        f"Invalid variant feature name `{feature_name}` for hash "
-                        f"`{variant_hash}`"
-                    )
-                if VALIDATION_FEATURE_NAME_REGEX.fullmatch(feature_name) is None:
-                    raise ValidationError(
-                        f"Invalid variant feature name `{feature_name}` for hash "
-                        f"`{variant_hash}`"
-                    )
-
-                # Check if feature_value is a string and matches the regex
-                if not isinstance(feature_value, str):
-                    raise ValidationError(
-                        f"Invalid variant feature value `{feature_value}` for hash "
-                        f"`{variant_hash}` - Type received: `{type(feature_value)}`, "
-                        "expected: `str`."
-                    )
-                if VALIDATION_VALUE_REGEX.fullmatch(feature_value) is None:
-                    raise ValidationError(
-                        f"Invalid variant value `{feature_value}` for hash "
-                        f"`{variant_hash}`"
-                    )
-
-
 class KeyTrackingValidator:
     """Helper class for validating types in nested structure"""
 
-    def __init__(self, top_key: str, top_data: dict) -> None:
-        self._keys = [top_key]
+    def __init__(self, top_key: str | None, top_data: dict) -> None:
+        self._keys = [top_key] if top_key else []
         self._data: list[Any] = [top_data]
         self._expected_keys: list[set[str]] = [set()]
         self.validate(top_data, dict[str, Any])
@@ -318,7 +208,13 @@ class KeyTrackingValidator:
                 )
 
     @contextmanager
-    def get(self, key: str, expected_type: type, default: Any = None) -> Any:
+    def get(
+        self,
+        key: str,
+        expected_type: type,
+        default: Any = None,
+        ignore_subkeys: bool = False,
+    ) -> Any:
         # add to list of expected keys of current dict
         self._expected_keys[-1].add(key)
 
@@ -339,7 +235,7 @@ class KeyTrackingValidator:
         expected_keys = self._expected_keys.pop()
         last_data = self._data.pop()
         # if it was a dict, verify that we didn't get any unwelcome keys
-        if isinstance(last_data, dict):
+        if isinstance(last_data, dict) and not ignore_subkeys:
             unexpected_keys = last_data.keys() - expected_keys
             if unexpected_keys:
                 raise ValidationError(
