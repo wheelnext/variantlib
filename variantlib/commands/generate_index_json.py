@@ -39,7 +39,7 @@ def generate_index_json(args: list[str]) -> None:
 
     vprop_parser = email.parser.BytesParser(policy=email.policy.compat32)
 
-    seen_versions = set()
+    seen_namevers = set()
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
@@ -57,19 +57,13 @@ def generate_index_json(args: list[str]) -> None:
             )
             continue
 
-        if (pkg_version := wheel_info.group("ver")) is None:
-            logger.error(
-                "Filepath: `%(input_file)s` ... does not have a valid version. "
-                "Skipping ...",
-                {"input_file": wheel.name},
-            )
-            continue
-
-        if pkg_version not in seen_versions:
+        if (namever := wheel_info.group("namever")) not in seen_namevers:
             # Clean old JSON file if it exists at first encounter
             # This is to avoid appending to an existing file
-            (directory / f"variants-{pkg_version}.json").unlink(missing_ok=True)
-            seen_versions.add(pkg_version)
+            path = directory / f"{namever}-variants.json"
+            path.unlink(missing_ok=True)
+            seen_namevers.add(namever)
+            logger.info("Updating: `%(path)s`", {"path": path})
 
         logger.info(
             "Processing wheel: `%(wheel)s` with variant hash: `%(vhash)s`",
@@ -90,7 +84,7 @@ def generate_index_json(args: list[str]) -> None:
 
             try:
                 append_variant_info_to_json_file(
-                    base_dir=directory,
+                    path=directory / f"{namever}-variants.json",
                     metadata=wheel_metadata,
                 )
             except ValidationError:

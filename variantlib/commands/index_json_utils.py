@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 def append_variant_info_to_json_file(
-    base_dir: pathlib.Path,
+    path: pathlib.Path,
     metadata: Message,
 ) -> None:
     """
@@ -52,15 +52,11 @@ def append_variant_info_to_json_file(
     """
     data = {}
     modified = False
-    pkg_version = metadata.get("Version")
-
-    if pkg_version is None:
-        raise ValidationError("No version found in the `METADATA`")
 
     # ========== Loading existing file and setting default values ========== #
 
-    if (variant_fp := base_dir / f"variants-{pkg_version}.json").exists():
-        data = json.loads(variant_fp.read_text())
+    if path.exists():
+        data = json.loads(path.read_text())
 
     for key, default_val in [  # type: ignore[var-annotated]
         (VARIANTS_JSON_VARIANT_DATA_KEY, {}),
@@ -221,5 +217,5 @@ def append_variant_info_to_json_file(
 
     # ====================== Write to Disk if modified ===================== #
     if modified:
-        with variant_fp.open(mode="w") as f:
+        with path.open(mode="w") as f:
             json.dump(data, f, indent=4, sort_keys=True)
