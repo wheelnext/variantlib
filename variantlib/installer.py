@@ -229,9 +229,15 @@ class _PipBackend(_EnvBackend):
                 "--use-pep517",
                 "--no-warn-script-location",
                 "--no-compile",
-                *chain.from_iterable([["--index-url", idx] for idx in index_urls]),
+                *chain.from_iterable(
+                    [["--index-url", idx] for idx in index_urls]
+                    if py_exec is not None
+                    else []
+                ),
                 *chain.from_iterable(
                     [["--extra-index-url", idx] for idx in extra_index_urls]
+                    if py_exec is not None
+                    else []
                 ),
                 "-r",
                 req_file.resolve(),
@@ -247,7 +253,6 @@ class BasePythonEnv(abc.ABC):
     _env_backend: _EnvBackend
 
     def __init__(self) -> None:
-        # if False:
         if shutil.which("uv") is not None:
             self._env_backend = _UvBackend()
         else:
