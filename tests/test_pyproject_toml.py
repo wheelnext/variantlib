@@ -158,7 +158,7 @@ def test_invalid_priority_value(key: str, value: list[str]):
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
-        rf"{key}\[1\]: value {value[1]!r} must match regex",
+        rf"{key}\[1\]: Value `{value[1]}` must match regex",
     ):
         VariantPyProjectToml(
             {PYPROJECT_TOML_TOP_KEY: {PYPROJECT_TOML_DEFAULT_PRIO_KEY: {key: value}}}
@@ -169,7 +169,7 @@ def test_invalid_provider_namespace():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}"
-        r"\[0\]: value 'invalid namespace' must match regex",
+        r"\[0\]: Value `invalid namespace` must match regex",
     ):
         VariantPyProjectToml(
             {
@@ -217,7 +217,7 @@ def test_invalid_provider_requires():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
-        rf"{PYPROJECT_TOML_PROVIDER_REQUIRES_KEY}\[1\]: value '' must match regex",
+        rf"{PYPROJECT_TOML_PROVIDER_REQUIRES_KEY}\[1\]: Value `` must match regex",
     ):
         VariantPyProjectToml(
             {
@@ -239,7 +239,7 @@ def test_invalid_provider_plugin_api():
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
-        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: value 'frobnicate' must match "
+        rf"{PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY}: Value `frobnicate` must match "
         r"regex",
     ):
         VariantPyProjectToml(
