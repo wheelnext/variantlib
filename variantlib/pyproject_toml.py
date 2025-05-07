@@ -87,7 +87,7 @@ class VariantPyProjectToml(VariantMetadata):
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        provider_requires, provider_plugin_api
+                        requires=provider_requires, plugin_api=provider_plugin_api
                     )
 
         if set(self.namespace_priorities) != set(self.providers.keys()):

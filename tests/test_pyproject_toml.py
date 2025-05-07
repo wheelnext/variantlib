@@ -68,13 +68,16 @@ def test_pyproject_toml():
         VariantProperty("ns2", "f1", "p2"),
     ]
     assert pyproj.providers == {
-        "ns1": ProviderInfo(["ns1-provider >= 1.2.3"], "ns1_provider.plugin:NS1Plugin"),
+        "ns1": ProviderInfo(
+            requires=["ns1-provider >= 1.2.3"],
+            plugin_api="ns1_provider.plugin:NS1Plugin",
+        ),
         "ns2": ProviderInfo(
-            [
+            requires=[
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
-            "ns2_provider:Plugin",
+            plugin_api="ns2_provider:Plugin",
         ),
     }
 
@@ -85,13 +88,16 @@ def test_pyproject_toml_minimal():
     assert pyproj.feature_priorities == []
     assert pyproj.property_priorities == []
     assert pyproj.providers == {
-        "ns1": ProviderInfo(["ns1-provider >= 1.2.3"], "ns1_provider.plugin:NS1Plugin"),
+        "ns1": ProviderInfo(
+            requires=["ns1-provider >= 1.2.3"],
+            plugin_api="ns1_provider.plugin:NS1Plugin",
+        ),
         "ns2": ProviderInfo(
-            [
+            requires=[
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
-            "ns2_provider:Plugin",
+            plugin_api="ns2_provider:Plugin",
         ),
     }
 
