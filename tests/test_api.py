@@ -21,16 +21,24 @@ from variantlib.api import VariantDescription
 from variantlib.api import VariantFeatureConfig
 from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
+from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.dist_metadata import DistMetadata
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
+from variantlib.models.metadata import ProviderInfo
+from variantlib.models.metadata import VariantMetadata
 from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 
@@ -337,3 +345,83 @@ def test_set_variant_metadata(
     expected += "\nlong description\nof a package\n"
 
     assert metadata.as_string() == expected
+
+
+def test_check_variant_supported_dist(
+    metadata: EmailMessage,
+):
+    # set the common plugin data
+    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
+        "test_namespace: tests.mocked_plugins:MockedPluginA"
+    )
+    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
+        "second_namespace: tests.mocked_plugins:MockedPluginB"
+    )
+    metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = (
+        "test_namespace, second_namespace"
+    )
+
+    # test the null variant
+    metadata[METADATA_VARIANT_HASH_HEADER] = "00000000"
+    assert check_variant_supported(
+        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
+    )
+
+    # test a supported variant
+    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "51c2ca68")
+    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name2 :: val2c"
+    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "second_namespace :: name3 :: val3a"
+    assert check_variant_supported(
+        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
+    )
+
+    # test an unsupported variant
+    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "acb7cd38")
+    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name1 :: val1c"
+    assert not check_variant_supported(
+        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
+    )
+
+
+def test_check_variant_supported_generic():
+    # metadata should only be used to load plugins
+    vmeta = VariantMetadata(
+        namespace_priorities=["test_namespace", "second_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+        },
+    )
+
+    # test the null variant
+    assert check_variant_supported(
+        vdesc=VariantDescription(),
+        metadata=vmeta,
+        use_auto_install=False,
+        venv_path=None,
+    )
+
+    # test a supported variant
+    assert check_variant_supported(
+        vdesc=VariantDescription(
+            [
+                VariantProperty("test_namespace", "name2", "val2c"),
+                VariantProperty("second_namespace", "name3", "val3a"),
+            ]
+        ),
+        metadata=vmeta,
+        use_auto_install=False,
+        venv_path=None,
+    )
+
+    # test an usupported variant
+    assert not check_variant_supported(
+        vdesc=VariantDescription([VariantProperty("test_namespace", "name1", "val1c")]),
+        metadata=vmeta,
+        use_auto_install=False,
+        venv_path=None,
+    )
