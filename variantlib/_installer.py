@@ -401,7 +401,7 @@ class _PipBackend(_EnvBackend):
         ) as req_file:
             req_file.write(os.linesep.join(requirements))
 
-        with open(req_file.name, "r", encoding="utf-8") as f:
+        with open(req_file.name, encoding="utf-8") as f:
             print(f.read())
 
         try:

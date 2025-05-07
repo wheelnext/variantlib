@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
 import itertools
 import logging
-import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
@@ -19,8 +16,6 @@ from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.installer import IsolatedPythonEnv
-from variantlib.installer import NonIsolatedPythonEnv
 from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
@@ -65,59 +60,11 @@ def get_variant_hashes_by_priority(
 ) -> list[str]:
     parsed_variants_json = VariantsJson.from_dict(variants_json)
 
-    from dataclasses import asdict
-    from pprint import pprint
-
-    pprint(asdict(parsed_variants_json))
-
-    reqs = []
-    for namespace in parsed_variants_json.namespace_priorities:
-        if (provider_data := parsed_variants_json.providers.get(namespace)) is None:
-            logger.error(
-                "Impossible to install the variant provider plugin corresponding "
-                "to namespace `%(ns)s`. Missing provider entry - Known: %(known)s.",
-                {"ns": namespace, "known": list(parsed_variants_json.providers.keys())},
-            )
-            continue
-
-        if not (req_str := provider_data.requires):
-            logger.error(
-                "Impossible to install the variant provider plugin corresponding "
-                "to namespace `%(ns)s`. Missing provider requirement, "
-                "received: %(data)s.",
-                {"ns": namespace, "data": provider_data},
-            )
-            continue
-
-        reqs.extend(req_str)
-
-    print(f"{reqs}")
-
-    with NonIsolatedPythonEnv(installer="pip") as env:
-        # with NonIsolatedPythonEnv(installer="uv") as env:
-        env.install(reqs)
-
-        # import_name = package_name.replace("-", "_")
-        # if env.python_executable is None:
-        #     your_module = importlib.import_module(import_name)
-
-        # else:
-        #     spec = importlib.util.spec_from_file_location(
-        #         name=import_name,
-        #         location=pathlib.Path(env.python_executable).parent,
-        #     )
-        #     your_module = importlib.util.module_from_spec(spec)
-
-        plugin_loader = PluginLoader()
-        for namespace in parsed_variants_json.namespace_priorities:
-            plugin_loader.load_plugin(
-                parsed_variants_json.providers[namespace].plugin_api
-            )
-
+    with PluginLoader(variant_nfo=parsed_variants_json, isolated=False) as plugin_ctx:
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs().values()
+                for provider_cfg in plugin_ctx.get_supported_configs().values()
             )
         )
 

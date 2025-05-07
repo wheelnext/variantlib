@@ -12,11 +12,9 @@ from __future__ import annotations
 import abc
 import contextlib
 import functools
-import importlib.util
 import logging
 import os
 import pathlib
-import platform
 import shutil
 import subprocess
 import sys
@@ -24,12 +22,19 @@ import sysconfig
 import tempfile
 import typing
 from itertools import chain
+from typing import TYPE_CHECKING
 
 import pip._internal.configuration
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Collection
     from collections.abc import Mapping
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+
+else:
+    from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -239,24 +244,17 @@ class BasePythonEnv(abc.ABC):
 
     python_executable: str | None = None
     scripts_dir: str | None = None
+    _env_backend: _EnvBackend
 
-    def __init__(
-        self,
-        *,
-        installer: Installer = "pip",
-    ) -> None:
-        self.installer: Installer = installer
-
-        self._env_backend: _EnvBackend
-
-        # uv is opt-in only.
-        if self.installer == "uv":
+    def __init__(self) -> None:
+        # if False:
+        if shutil.which("uv") is not None:
             self._env_backend = _UvBackend()
         else:
             self._env_backend = _PipBackend()
 
     @abc.abstractmethod
-    def __enter__(self) -> typing.Self:
+    def __enter__(self) -> Self:
         """
         Enter the environment.
         """
@@ -296,7 +294,7 @@ class NonIsolatedPythonEnv(BasePythonEnv):
     implementations.
     """
 
-    def __enter__(self) -> typing.Self:
+    def __enter__(self) -> Self:
         logger.info(
             "Using environment: %(env)s ...",
             {"env": self._env_backend.display_name},
@@ -314,7 +312,7 @@ class IsolatedPythonEnv(BasePythonEnv):
     implementations.
     """
 
-    def __enter__(self) -> typing.Self:
+    def __enter__(self) -> Self:
         try:
             self._path = pathlib.Path(tempfile.mkdtemp(prefix="variant-env-"))
 

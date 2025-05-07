@@ -1,8 +1,4 @@
-import shutil
-from pathlib import Path
-
 import pytest
-import tomlkit
 
 from variantlib.loader import PluginLoader
 
