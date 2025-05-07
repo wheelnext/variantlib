@@ -63,7 +63,7 @@ def get_variant_hashes_by_priority(
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
     supported_vprops = []
-    parsed_variants_json = VariantsJson.from_dict(variants_json)
+    parsed_variants_json = VariantsJson(variants_json)
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 

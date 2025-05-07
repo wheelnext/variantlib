@@ -21,7 +21,7 @@ def test_validate_variants_json():
     with json_file.open() as f:
         data = json.load(f)
 
-    variants_json = VariantsJson.from_dict(data)
+    variants_json = VariantsJson(data)
     assert variants_json.variants == {
         "03e04d5e": VariantDescription(
             properties=[
@@ -175,7 +175,7 @@ def test_validate_variants_json():
 
 
 def test_validate_variants_json_empty():
-    assert VariantsJson.from_dict({"variants": {}}).variants == {}
+    assert VariantsJson({"variants": {}}).variants == {}
 
 
 @pytest.mark.parametrize(
@@ -196,4 +196,4 @@ def test_validate_variants_json_empty():
 )
 def test_validate_variants_json_incorrect_vhash(data: dict):
     with pytest.raises(ValidationError):
-        VariantsJson.from_dict(data)
+        VariantsJson(data)
