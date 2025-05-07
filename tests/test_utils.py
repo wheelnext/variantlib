@@ -7,7 +7,7 @@ import pytest
 from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.utils import aggregate_user_and_default_lists
+from variantlib.utils import aggregate_priority_lists
 
 if TYPE_CHECKING:
     from variantlib.loader import PluginLoader
@@ -147,17 +147,18 @@ def test_get_combinations_one_one_namespace_two(configs):
 
 
 @pytest.mark.parametrize(
-    ("user_list", "default_list", "expected"),
+    ("lists", "expected"),
     [
-        (None, [1, 2, 3], [1, 2, 3]),
-        ([], [1, 2, 3], [1, 2, 3]),
-        ([1], [1, 2, 3], [1, 2, 3]),
-        ([1, 4], [1, 2, 3], [1, 4, 2, 3]),
-        ([5], [1, 2, 3], [5, 1, 2, 3]),
-        ([3], [1, 2, 3], [3, 1, 2]),
+        ([None, [1, 2, 3]], [1, 2, 3]),
+        ([[], [1, 2, 3]], [1, 2, 3]),
+        ([[1], [1, 2, 3]], [1, 2, 3]),
+        ([[1, 4], [1, 2, 3]], [1, 4, 2, 3]),
+        ([[5], [1, 2, 3]], [5, 1, 2, 3]),
+        ([[3], [1, 2, 3]], [3, 1, 2]),
+        ([[3], [1, 3], [3, 2, 1]], [3, 1, 2]),
+        ([[3], None, [3, 2, 1]], [3, 2, 1]),
+        ([None, None, [2, 3, 1]], [2, 3, 1]),
     ],
 )
-def test_aggregate_user_and_default_lists(
-    user_list: list | None, default_list: list, expected: list
-):
-    assert aggregate_user_and_default_lists(user_list, default_list) == expected
+def test_aggregate_priority_lists(lists: list[list | None], expected: list):
+    assert aggregate_priority_lists(*lists) == expected

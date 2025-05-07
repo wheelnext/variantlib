@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import Any
 from typing import TypeVar
 
@@ -13,20 +12,21 @@ class classproperty(property):  # noqa: N801
 T = TypeVar("T")
 
 
-def aggregate_user_and_default_lists(
-    user_list: list[T] | None, default_list: list[T]
-) -> list[T]:
+def aggregate_priority_lists(*lists: list[T] | None) -> list[T]:
     """
-    Aggregate a user-provided list with a default list.
+    Aggregate multiple priority lists
 
-    If the user-provided list is None, return the default list.
-    Otherwise, return the user-provided list.
+    Takes multiple priority lists and aggregates them into a single
+    list, with items from the earlier lists taking precedence over items
+    from the later lists. Lists that are None are skipped.
     """
-    if user_list is None:
-        return copy.deepcopy(default_list)
 
-    result = copy.deepcopy(user_list)
-    for item in default_list:
-        if item not in user_list:
-            result.append(item)
+    result: list[T] = []
+    for iter_list in lists:
+        if iter_list is None:
+            continue
+        if not result:
+            result.extend(iter_list)
+        else:
+            result.extend(item for item in iter_list if item not in result)
     return result

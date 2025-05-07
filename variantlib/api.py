@@ -23,8 +23,8 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.resolver.lib import sort_and_filter_supported_variants
-from variantlib.utils import aggregate_user_and_default_lists
-from variantlib.variant_file import unpack_variants_json
+from variantlib.utils import aggregate_priority_lists
+from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
     from email.message import Message
@@ -58,7 +58,7 @@ def get_variant_hashes_by_priority(
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
-    vdescs = unpack_variants_json(variants_json)
+    parsed_variants_json = VariantsJson.from_dict(variants_json)
 
     supported_vprops = list(
         itertools.chain.from_iterable(
@@ -96,16 +96,22 @@ def get_variant_hashes_by_priority(
     return [
         vdesc.hexdigest
         for vdesc in sort_and_filter_supported_variants(
-            vdescs,
+            list(parsed_variants_json.variants.values()),
             supported_vprops,
-            namespace_priorities=aggregate_user_and_default_lists(
-                namespace_priorities, config.namespace_priorities
+            namespace_priorities=aggregate_priority_lists(
+                namespace_priorities,
+                config.namespace_priorities,
+                parsed_variants_json.namespace_priorities,
             ),
-            feature_priorities=aggregate_user_and_default_lists(
-                _feature_priorities, config.feature_priorities
+            feature_priorities=aggregate_priority_lists(
+                _feature_priorities,
+                config.feature_priorities,
+                parsed_variants_json.feature_priorities,
             ),
-            property_priorities=aggregate_user_and_default_lists(
-                _property_priorities, config.property_priorities
+            property_priorities=aggregate_priority_lists(
+                _property_priorities,
+                config.property_priorities,
+                parsed_variants_json.property_priorities,
             ),
             forbidden_namespaces=forbidden_namespaces,
             forbidden_features=_forbidden_features,

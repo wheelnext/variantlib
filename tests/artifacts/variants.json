@@ -1,8 +1,23 @@
 {
-    "providers": [
-        "provider_fictional_hw",
-        "provider_fictional_tech"
-    ],
+    "default-priorities": {
+        "namespace": ["fictional_hw", "fictional_tech"],
+        "feature": ["fictional_tech :: quantum"],
+        "property": ["fictional_tech :: technology :: auto_chef"]
+    },
+    "providers": {
+        "fictional_hw": {
+            "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin",
+            "requires": [
+                "provider-fictional-hw == 1.0.0"
+            ]
+        },
+        "fictional_tech": {
+            "plugin-api": "provider_fictional_tech.plugin:FictionalTechPlugin",
+            "requires": [
+                "provider-fictional-tech == 1.0.0"
+            ]
+        }
+    },
     "variants": {
         "3f7188c1": {
             "fictional_hw": {

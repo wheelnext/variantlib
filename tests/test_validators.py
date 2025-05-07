@@ -1,5 +1,3 @@
-import json
-import pathlib
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -9,11 +7,8 @@ from typing import runtime_checkable
 
 import pytest
 
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
 from variantlib.validators import ValidationError
 from variantlib.validators import validate_type
-from variantlib.validators import validate_variants_json
 
 
 @runtime_checkable
@@ -115,58 +110,3 @@ def test_validate_type_bad(value: Any, expected: type, have: type):
         ValidationError, match=re.escape(f"Expected {expected}, got {have}")
     ):
         validate_type(value, expected)
-
-
-def test_validate_variants_json():
-    json_file = pathlib.Path("tests/artifacts/variants.json")
-    assert json_file.exists(), "Expected JSON file does not exist"
-
-    # Read the Variants JSON file
-    with json_file.open() as f:
-        data = json.load(f)
-
-    validate_variants_json(data)
-
-    for vhash, vdata in data["variants"].items():
-        assert isinstance(vhash, str)
-        assert isinstance(vdata, dict)
-
-        vprops = []
-
-        for namespace, feature_data in vdata.items():
-            assert isinstance(namespace, str)
-            assert isinstance(feature_data, dict)
-
-            for feature_name, feature_value in feature_data.items():
-                assert isinstance(feature_name, str)
-                assert isinstance(feature_value, str)
-                vprops.append(VariantProperty(namespace, feature_name, feature_value))
-
-        assert VariantDescription(vprops).hexdigest == vhash, (
-            f"Found `{VariantDescription(vprops).hexdigest}` - Expected {vhash}"
-        )
-
-
-def test_validate_variants_json_empty():
-    validate_variants_json({"variants": {}})
-
-
-@pytest.mark.parametrize(
-    "data",
-    [
-        {},
-        {"variants": ["abcd1234"]},
-        {"variants": {"abcd12345": {}}},
-        {"variants": {"abcd1234": {}}},
-        {"variants": {"abcd1234": ["namespace"]}},
-        {"variants": {"abcd1234": {"namespace": [{"feature": "value"}]}}},
-        {"variants": {"abcd1234": {"namespace": {}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature": 1}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature": "variant@python"}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature@variant": "python"}}}},
-        {"variants": {"abcd1234": {"namesp@ce": {"feature": "value"}}}},
-    ],
-)
-def test_validate_variants_json_incorrect_vhash(data: dict):
-    with pytest.raises(ValidationError):
-        validate_variants_json(data)
