@@ -59,6 +59,12 @@ class DistMetadata(VariantMetadata):
             [VariantProperty.from_str(x) for x in variant_properties]
         )
 
+        if self.variant_desc.hexdigest != self.variant_hash:
+            raise ValidationError(
+                f"{METADATA_VARIANT_HASH_HEADER} specifies incorrect hash: "
+                f"{variant_hash!r}; expected: {self.variant_desc.hexdigest!r}"
+            )
+
         namespace_priorities = get_comma_sep(
             metadata.get(METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER, "")
         )
