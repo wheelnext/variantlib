@@ -19,6 +19,7 @@ from variantlib.commands.plugin_arguments import add_plugin_arguments
 from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
+from variantlib.plugins.loader import ManualPluginLoader
 
 logger = logging.getLogger(__name__)
 
@@ -125,8 +126,11 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
+            plugin_loader = ManualPluginLoader()
+            for plugin_api in plugin_apis:
+                plugin_loader.load_plugin(plugin_api)
             # Verify whether the variant properties are valid
-            vdesc_valid = validate_variant(vdesc, plugin_apis=plugin_apis)
+            vdesc_valid = validate_variant(vdesc, plugin_loader=plugin_loader)
             if vdesc_valid.invalid_properties:
                 raise ValidationError(
                     "The following variant properties are invalid according to the "

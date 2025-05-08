@@ -23,10 +23,9 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
-from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.plugins.py_envs import AutoPythonEnv
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
@@ -137,8 +136,7 @@ def get_variant_hashes_by_priority(
 
 
 def validate_variant(
-    variant_desc: VariantDescription,
-    plugin_apis: list[str],
+    variant_desc: VariantDescription, plugin_loader: BasePluginLoader
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -150,9 +148,7 @@ def validate_variant(
     be verified.
     """
 
-    with ExternalNonIsolatedPythonEnv() as py_ctx:  # noqa: SIM117
-        with CLIPluginLoader(plugin_apis=plugin_apis, python_ctx=py_ctx) as loader:
-            provider_cfgs = loader.get_all_configs()
+    provider_cfgs = plugin_loader.get_all_configs()
 
     def _validate_variant(vprop: VariantProperty) -> bool | None:
         provider_cfg = provider_cfgs.get(vprop.namespace)

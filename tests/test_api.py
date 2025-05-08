@@ -31,6 +31,7 @@ from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
+from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 if TYPE_CHECKING:
@@ -220,6 +221,10 @@ def test_validation_result_properties():
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]):
+    plugin_loader = ManualPluginLoader()
+    for plugin_api in mocked_plugin_apis:
+        plugin_loader.load_plugin(plugin_api)
+    # Verify whether the variant properties are valid
     res = validate_variant(
         VariantDescription(
             [
@@ -234,7 +239,7 @@ def test_validate_variant(mocked_plugin_apis: list[str]):
                 VariantProperty("private", "build_type", "debug"),
             ]
         ),
-        plugin_apis=mocked_plugin_apis,
+        plugin_loader=plugin_loader,
     )
 
     assert res == VariantValidationResult(
