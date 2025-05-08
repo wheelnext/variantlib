@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import email.parser
 import email.policy
 import hashlib
@@ -15,11 +16,16 @@ from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.commands.plugin_arguments import add_plugin_arguments
-from variantlib.commands.plugin_arguments import parse_plugin_arguments
+from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
+from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
+from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
 from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.pyproject_toml import ProviderInfo
+from variantlib.pyproject_toml import VariantPyProjectToml
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +41,6 @@ def make_variant(args: list[str]) -> None:
         prog=f"{__package_name__} make-variant",
         description="Transform a normal Wheel into a Wheel Variant.",
     )
-
-    add_plugin_arguments(parser)
 
     parser.add_argument(
         "-f",
@@ -83,8 +87,107 @@ def make_variant(args: list[str]) -> None:
         help="allow to register invalid or unknown variant properties",
     )
 
+    parser.add_argument(
+        "--default-namespace-prio",
+        type=str,
+        default=None,
+        help="Comma separated list of namespace priority",
+    )
+
+    parser.add_argument(
+        "--default-feature-prio",
+        type=str,
+        default=None,
+        help="Comma separated list of feature priority",
+    )
+
+    parser.add_argument(
+        "--default-property-prio",
+        type=str,
+        default=None,
+        help="Comma separated list of property priority",
+    )
+
+    parser.add_argument(
+        "--provider-req",
+        action="append",
+        default=[],
+        help=(
+            "Variant provider plugin requirement str to install the plugin (can be "
+            "specified multiple times)"
+        ),
+    )
+
+    parser.add_argument(
+        "--provider-api",
+        action="append",
+        default=[],
+        help="Variant provider plugin api to load (can be specified multiple times)",
+    )
+
     parsed_args = parser.parse_args(args)
-    plugin_apis = parse_plugin_arguments(parsed_args)
+
+    pyproj_toml = VariantPyProjectToml(toml_data={})
+
+    with contextlib.suppress(AttributeError):
+        pyproj_toml.namespace_priorities = parsed_args.default_namespace_prio.split(",")
+        for ns in pyproj_toml.namespace_priorities:
+            if VALIDATION_NAMESPACE_REGEX.fullmatch(ns) is None:
+                raise ValueError(f"The following namespace is invalid: `{ns}`")
+    with contextlib.suppress(AttributeError):
+        pyproj_toml.feature_priorities = parsed_args.default_feature_prio.split(",")
+        for vfeat in pyproj_toml.feature_priorities:
+            if VALIDATION_FEATURE_REGEX.fullmatch(vfeat) is None:
+                raise ValueError(f"The following feature is invalid: `{vfeat}`")
+    with contextlib.suppress(AttributeError):
+        pyproj_toml.property_priorities = parsed_args.default_property_prio.split(",")
+        for vprop in pyproj_toml.property_priorities:
+            if VALIDATION_PROPERTY_REGEX.fullmatch(vprop) is None:
+                raise ValueError(f"The following feature is invalid: `{vprop}`")
+
+    for provider_api in parsed_args.provider_api:
+        if (
+            match := VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX.fullmatch(
+                provider_api
+            )
+        ) is None:
+            raise ValueError(f"The provider plugin-api: `{provider_api}` is not valid")
+
+        if (namespace := match.group("namespace")) in pyproj_toml.providers:
+            raise ValueError(
+                f"The following namespace `{namespace}` already has a declared "
+                "plugin-api"
+            )
+
+        pyproj_toml.providers[namespace] = ProviderInfo(
+            requires=[],
+            plugin_api=match.group("plugin_api"),
+        )
+
+    for provider_req in parsed_args.provider_req:
+        if (
+            match := VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX.fullmatch(provider_req)
+        ) is None:
+            raise ValueError(f"The provider plugin-api: `{provider_req}` is not valid")
+
+        if (namespace := match.group("namespace")) not in pyproj_toml.providers:
+            raise ValueError(f"The namespace `{namespace}` declares no plugin-api.")
+
+        pyproj_toml.providers[namespace].requires.append(match.group("requirement_str"))
+
+    for namespace, provider_info in pyproj_toml.providers.items():
+        if not provider_info.requires:
+            raise ValueError(
+                f"The provider for namespace `{namespace}` declares no requirement"
+            )
+
+    if except_ns := set(pyproj_toml.namespace_priorities).difference(
+        pyproj_toml.providers.keys()
+    ):
+        raise ValueError(
+            "Some default namespaces declare no plugin-api and requirement: "
+            f"{except_ns}"
+        )
 
     input_filepath: pathlib.Path = parsed_args.input_filepath
     output_directory: pathlib.Path = parsed_args.output_directory
@@ -95,7 +198,7 @@ def make_variant(args: list[str]) -> None:
         is_null_variant=parsed_args.null_variant,
         properties=parsed_args.properties,
         validate_properties=not parsed_args.skip_plugin_validation,
-        plugin_apis=plugin_apis,
+        pyproject_toml=pyproj_toml,
     )
 
 
@@ -104,8 +207,8 @@ def _make_variant(
     output_directory: pathlib.Path,
     is_null_variant: bool,
     properties: list[VariantProperty],
-    plugin_apis: list[str],
     validate_properties: bool = True,
+    pyproject_toml: VariantPyProjectToml | None = None,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -127,8 +230,8 @@ def _make_variant(
 
         if validate_properties:
             plugin_loader = ManualPluginLoader()
-            for plugin_api in plugin_apis:
-                plugin_loader.load_plugin(plugin_api)
+            for provider_nfo in pyproject_toml.providers.values():
+                plugin_loader.load_plugin(provider_nfo.plugin_api)
             # Verify whether the variant properties are valid
             vdesc_valid = validate_variant(vdesc, plugin_loader=plugin_loader)
             if vdesc_valid.invalid_properties:
@@ -169,7 +272,7 @@ def _make_variant(
                     metadata = metadata_parser.parse(input_file)
 
                     # Update the metadata
-                    set_variant_metadata(metadata, vdesc)
+                    set_variant_metadata(metadata, vdesc, pyproject_toml=pyproject_toml)
 
                     # Write the serialized metadata
                     new_metadata = metadata.as_bytes(policy=METADATA_POLICY)
