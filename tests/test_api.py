@@ -32,6 +32,10 @@ from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VARIANTS_JSON_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
+from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.dist_metadata import DistMetadata
 from variantlib.models import provider as pconfig
@@ -68,31 +72,33 @@ def configs(
 
 
 def test_get_variant_hashes_by_priority_roundtrip(
-    mocker,
     configs,
 ):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
 
     namespace_priorities = ["test_namespace", "second_namespace"]
+    plugin_apis = {
+        "test_namespace": "tests.mocked_plugins:MockedPluginA",
+        "second_namespace": "tests.mocked_plugins:MockedPluginB",
+    }
 
     # The null-variant is always the last one and implicitly added
     combinations: list[VariantDescription] = [
         *list(get_combinations(configs, namespace_priorities)),
     ]
     variants_json = {
+        VARIANTS_JSON_DEFAULT_PRIO_KEY: {
+            VARIANTS_JSON_NAMESPACE_KEY: namespace_priorities,
+        },
+        VARIANTS_JSON_PROVIDER_DATA_KEY: {
+            namespace: {VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY: plugin_api}
+            for namespace, plugin_api in plugin_apis.items()
+        },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
-        }
+        },
     }
-
-    mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
-    ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
-
-    mocker.patch(
-        "variantlib.configuration.VariantConfiguration.get_config"
-    ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
     assert get_variant_hashes_by_priority(
         variants_json=variants_json, use_auto_install=False, venv_path=None
