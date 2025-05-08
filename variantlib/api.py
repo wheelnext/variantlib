@@ -17,6 +17,7 @@ from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.dist_metadata import DistMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -26,6 +27,7 @@ from variantlib.models.variant import VariantValidationResult
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.plugins.py_envs import AutoPythonEnv
+from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
@@ -33,6 +35,7 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from email.message import Message
 
+    from variantlib.models.metadata import VariantMetadata
     from variantlib.pyproject_toml import VariantPyProjectToml
 
 
@@ -63,7 +66,7 @@ def get_variant_hashes_by_priority(
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
     supported_vprops = []
-    parsed_variants_json = VariantsJson.from_dict(variants_json)
+    parsed_variants_json = VariantsJson(variants_json)
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
@@ -203,3 +206,68 @@ def set_variant_metadata(
             metadata[METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER] = ", ".join(
                 x.to_str() for x in pyproject_toml.property_priorities
             )
+
+
+def check_variant_supported(
+    *,
+    vdesc: VariantDescription | None = None,
+    metadata: VariantMetadata,
+    use_auto_install: bool = True,
+    venv_path: str | pathlib.Path | None = None,
+    forbidden_namespaces: list[str] | None = None,
+    forbidden_features: list[str] | None = None,
+    forbidden_properties: list[str] | None = None,
+) -> bool:
+    """Check if variant description is supported
+
+    Returns True if the variant description is supported.
+
+    If `vdesc` is provided, it is tested. Otherwise, `metadata` must be
+    a `DistMetadata` and variant description is inferred from it.
+    """
+
+    if vdesc is None:
+        if metadata is None or not isinstance(metadata, DistMetadata):
+            raise TypeError("vdesc or metadata=DistMetadata(...) must be provided")
+        vdesc = metadata.variant_desc
+
+    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+
+    with (
+        AutoPythonEnv(
+            use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
+        ) as python_ctx,
+        PluginLoader(variant_nfo=metadata, python_ctx=python_ctx) as plugin_loader,
+    ):
+        supported_vprops = list(
+            itertools.chain.from_iterable(
+                provider_cfg.to_list_of_properties()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
+            )
+        )
+
+    _forbidden_features = (
+        None
+        if forbidden_features is None
+        else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
+    )
+
+    _forbidden_properties = (
+        None
+        if forbidden_properties is None
+        else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
+    )
+
+    VariantConfiguration.get_config()
+
+    return bool(
+        list(
+            filter_variants(
+                vdescs=[vdesc],
+                allowed_properties=supported_vprops,
+                forbidden_namespaces=forbidden_namespaces,
+                forbidden_features=_forbidden_features,
+                forbidden_properties=_forbidden_properties,
+            )
+        )
+    )

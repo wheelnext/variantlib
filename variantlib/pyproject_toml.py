@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -18,6 +17,8 @@ from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
+from variantlib.models.metadata import ProviderInfo
+from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.validators import KeyTrackingValidator
@@ -35,18 +36,7 @@ else:
     from typing_extensions import Self
 
 
-@dataclass
-class ProviderInfo:
-    requires: list[str]
-    plugin_api: str
-
-
-class VariantPyProjectToml:
-    namespace_priorities: list[str]
-    feature_priorities: list[VariantFeature]
-    property_priorities: list[VariantProperty]
-    providers: dict[str, ProviderInfo]
-
+class VariantPyProjectToml(VariantMetadata):
     def __init__(self, toml_data: dict) -> None:
         """Init from pre-read ``pyproject.toml`` data"""
         self._process(toml_data.get(PYPROJECT_TOML_TOP_KEY, {}))
@@ -97,7 +87,7 @@ class VariantPyProjectToml:
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        provider_requires, provider_plugin_api
+                        requires=provider_requires, plugin_api=provider_plugin_api
                     )
 
         if set(self.namespace_priorities) != set(self.providers.keys()):

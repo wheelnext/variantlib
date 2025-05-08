@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-from dataclasses import dataclass
 from typing import Any
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
@@ -18,47 +16,29 @@ from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.models.metadata import ProviderInfo
+from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.pyproject_toml import ProviderInfo
 from variantlib.validators import KeyTrackingValidator
 from variantlib.validators import ValidationError
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
-
-@dataclass(frozen=True)
-class VariantsJson:
-    namespace_priorities: list[str]
-    feature_priorities: list[VariantFeature]
-    property_priorities: list[VariantProperty]
-    providers: dict[str, ProviderInfo]
+class VariantsJson(VariantMetadata):
     variants: dict[str, VariantDescription]
 
-    @classmethod
-    def from_dict(cls, variants_json: dict) -> Self:
+    def __init__(self, variants_json: dict) -> None:
         """Init from pre-read ``variants.json`` data"""
-        return cls(**cls._process(variants_json))
+        self._process(variants_json)
 
-    @classmethod
-    def _process(cls, variant_table: dict) -> dict:
+    def _process(self, variant_table: dict) -> None:
         validator = KeyTrackingValidator(None, variant_table)
-
-        result: dict[str, Any] = {
-            "namespace_priorities": [],
-            "feature_priorities": [],
-            "property_priorities": [],
-            "providers": {},
-            "variants": {},
-        }
 
         with validator.get(VARIANTS_JSON_VARIANT_DATA_KEY, dict[str, dict]) as variants:
             validator.list_matches_re(VALIDATION_VARIANT_HASH_REGEX)
             variant_hashes = list(variants.keys())
+            self.variants = {}
             for variant_hash in variant_hashes:
                 with validator.get(
                     variant_hash, dict[str, dict], ignore_subkeys=True
@@ -69,26 +49,26 @@ class VariantsJson:
                             f"Variant hash mismatch: {variant_hash=!r} != "
                             f"{vdesc.hexdigest=!r}"
                         )
-                    result["variants"][variant_hash] = vdesc
+                    self.variants[variant_hash] = vdesc
 
         with validator.get(VARIANTS_JSON_DEFAULT_PRIO_KEY, dict[str, Any], {}):
             with validator.get(
                 VARIANTS_JSON_NAMESPACE_KEY, list[str], []
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
-                result["namespace_priorities"] = namespace_priorities
+                self.namespace_priorities = namespace_priorities
             with validator.get(
                 VARIANTS_JSON_FEATURE_KEY, list[str], []
             ) as feature_priorities:
                 validator.list_matches_re(VALIDATION_FEATURE_REGEX)
-                result["feature_priorities"] = [
+                self.feature_priorities = [
                     VariantFeature.from_str(x) for x in feature_priorities
                 ]
             with validator.get(
                 VARIANTS_JSON_PROPERTY_KEY, list[str], []
             ) as property_priorities:
                 validator.list_matches_re(VALIDATION_PROPERTY_REGEX)
-                result["property_priorities"] = [
+                self.property_priorities = [
                     VariantProperty.from_str(x) for x in property_priorities
                 ]
 
@@ -97,7 +77,7 @@ class VariantsJson:
         ) as providers:
             validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
             namespaces = list(providers.keys())
-            result["providers"] = {}
+            self.providers = {}
             for namespace in namespaces:
                 with validator.get(namespace, dict[str, Any], {}):
                     with validator.get(
@@ -108,17 +88,15 @@ class VariantsJson:
                         VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY, str, None
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
-                    result["providers"][namespace] = ProviderInfo(
-                        provider_requires, provider_plugin_api
+                    self.providers[namespace] = ProviderInfo(
+                        requires=provider_requires, plugin_api=provider_plugin_api
                     )
 
-        if set(result["namespace_priorities"]) != set(result["providers"].keys()):
+        if set(self.namespace_priorities) != set(self.providers.keys()):
             raise ValidationError(
                 f"{VARIANTS_JSON_DEFAULT_PRIO_KEY}.{VARIANTS_JSON_NAMESPACE_KEY} "
                 "must specify the same namespaces as "
                 f"{VARIANTS_JSON_PROVIDER_DATA_KEY} object; currently: "
-                f"{set(result['namespace_priorities'])} vs. "
-                f"{set(result['providers'].keys())}"
+                f"{set(self.namespace_priorities)} vs. "
+                f"{set(self.providers.keys())}"
             )
-
-        return result

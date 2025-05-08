@@ -14,21 +14,33 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
-
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
 
-def validate_matches_re(value: str, pattern: str | re.Pattern) -> re.Match:
+def validate_matches_re(
+    value: str, pattern: str | re.Pattern, message_prefix: str | None = None
+) -> re.Match:
     if (match := re.fullmatch(pattern, value)) is None:
-        raise ValidationError(f"Value `{value}` must match regex {pattern}")
+        raise ValidationError(
+            f"{message_prefix + ': ' if message_prefix is not None else ''}"
+            f"Value `{value}` must match regex {pattern}"
+        )
     return match
 
 
-def validate_list_matches_re(values: list[str], pattern: str | re.Pattern) -> None:
-    for value in values:
-        validate_matches_re(value, pattern)
+def validate_list_matches_re(
+    values: list[str], pattern: str | re.Pattern, message_prefix: str | None = None
+) -> None:
+    for i, value in enumerate(values):
+        validate_matches_re(
+            value,
+            pattern,
+            message_prefix=f"{message_prefix}[{i}]"
+            if message_prefix is not None
+            else None,
+        )
 
 
 def validate_list_min_len(values: list, min_length: int) -> None:
@@ -195,18 +207,10 @@ class KeyTrackingValidator:
             )
 
     def matches_re(self, pattern: str | re.Pattern) -> re.Match:
-        if (match := re.fullmatch(pattern, self._data[-1])) is None:
-            raise ValidationError(
-                f"{self._key}: value {self._data[-1]!r} must match regex {pattern}"
-            )
-        return match
+        return validate_matches_re(self._data[-1], pattern, self._key)
 
     def list_matches_re(self, pattern: str | re.Pattern) -> None:
-        for i, value in enumerate(self._data[-1]):
-            if re.fullmatch(pattern, value) is None:
-                raise ValidationError(
-                    f"{self._key}[{i}]: value {value!r} must match regex {pattern}"
-                )
+        return validate_list_matches_re(self._data[-1], pattern, self._key)
 
     @contextmanager
     def get(

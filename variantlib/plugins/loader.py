@@ -31,8 +31,8 @@ from variantlib.validators import validate_type
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from variantlib.models.metadata import VariantMetadata
     from variantlib.models.variant import VariantDescription
-    from variantlib.variants_json import VariantsJson
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -292,11 +292,11 @@ class BasePluginLoader:
 
 
 class PluginLoader(BasePluginLoader):
-    _variant_nfo: VariantsJson
+    _variant_nfo: VariantMetadata
 
     def __init__(
         self,
-        variant_nfo: VariantsJson,
+        variant_nfo: VariantMetadata,
         python_ctx: BasePythonEnv | None = None,
     ) -> None:
         self._variant_nfo = variant_nfo
