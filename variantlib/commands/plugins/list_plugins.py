@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from variantlib import __package_name__
 
 if TYPE_CHECKING:
-    from variantlib.loader import PluginLoader
+    from variantlib.plugins.loader import PluginLoader
 
 logger = logging.getLogger(__name__)
 

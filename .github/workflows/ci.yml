@@ -42,6 +42,7 @@ jobs:
       - name: Install the package and test dependencies
         run: |
           uv venv
+          uv pip install --upgrade pip
           uv pip install -e '.[test]'
       - name: Run tests
         run: uv run --no-project pytest

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import logging
+import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
@@ -22,6 +23,9 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.plugins.loader import BasePluginLoader
+from variantlib.plugins.loader import PluginLoader
+from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
@@ -29,7 +33,6 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from email.message import Message
 
-    from variantlib.loader import PluginLoader
     from variantlib.pyproject_toml import VariantPyProjectToml
 
 
@@ -50,7 +53,8 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
-    plugin_loader: PluginLoader,
+    use_auto_install: bool = True,
+    venv_path: str | pathlib.Path | None = None,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[str] | None = None,
     property_priorities: list[str] | None = None,
@@ -58,14 +62,25 @@ def get_variant_hashes_by_priority(
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
+    supported_vprops = []
     parsed_variants_json = VariantsJson.from_dict(variants_json)
 
-    supported_vprops = list(
-        itertools.chain.from_iterable(
-            provider_cfg.to_list_of_properties()
-            for provider_cfg in plugin_loader.get_supported_configs().values()
+    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+
+    with (
+        AutoPythonEnv(
+            use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
+        ) as python_ctx,
+        PluginLoader(
+            variant_nfo=parsed_variants_json, python_ctx=python_ctx
+        ) as plugin_loader,
+    ):
+        supported_vprops = list(
+            itertools.chain.from_iterable(
+                provider_cfg.to_list_of_properties()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
+            )
         )
-    )
 
     _feature_priorities = (
         None
@@ -121,8 +136,7 @@ def get_variant_hashes_by_priority(
 
 
 def validate_variant(
-    variant_desc: VariantDescription,
-    plugin_loader: PluginLoader,
+    variant_desc: VariantDescription, plugin_loader: BasePluginLoader
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description

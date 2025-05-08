@@ -8,6 +8,8 @@ import sys
 from variantlib import __package_name__
 from variantlib.commands.plugin_arguments import add_plugin_arguments
 from variantlib.commands.plugin_arguments import parse_plugin_arguments
+from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
@@ -35,7 +37,9 @@ def main(args: list[str]) -> None:
 
     namespace = argparse.Namespace()
     parsed_args = parser.parse_args(args=args, namespace=namespace)
-    plugin_loader = parse_plugin_arguments(parsed_args)
+    plugin_apis = parse_plugin_arguments(parsed_args)
 
-    main_fn = registered_commands[namespace.command].load()
-    return main_fn(namespace.args, plugin_loader=plugin_loader)
+    with ExternalNonIsolatedPythonEnv() as py_ctx:  # noqa: SIM117
+        with CLIPluginLoader(plugin_apis=plugin_apis, python_ctx=py_ctx) as loader:
+            main_fn = registered_commands[namespace.command].load()
+            return main_fn(namespace.args, plugin_loader=loader)

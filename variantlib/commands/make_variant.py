@@ -9,7 +9,6 @@ import logging
 import pathlib
 import shutil
 import zipfile
-from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
@@ -20,10 +19,7 @@ from variantlib.commands.plugin_arguments import add_plugin_arguments
 from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
-
-if TYPE_CHECKING:
-    from variantlib.loader import PluginLoader
-
+from variantlib.plugins.loader import ManualPluginLoader
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +58,7 @@ def make_variant(args: list[str]) -> None:
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument(
-        "-p",
+        "-P",
         "--property",
         dest="properties",
         type=VariantProperty.from_str,
@@ -88,7 +84,7 @@ def make_variant(args: list[str]) -> None:
     )
 
     parsed_args = parser.parse_args(args)
-    plugin_loader = parse_plugin_arguments(parsed_args)
+    plugin_apis = parse_plugin_arguments(parsed_args)
 
     input_filepath: pathlib.Path = parsed_args.input_filepath
     output_directory: pathlib.Path = parsed_args.output_directory
@@ -99,7 +95,7 @@ def make_variant(args: list[str]) -> None:
         is_null_variant=parsed_args.null_variant,
         properties=parsed_args.properties,
         validate_properties=not parsed_args.skip_plugin_validation,
-        plugin_loader=plugin_loader,
+        plugin_apis=plugin_apis,
     )
 
 
@@ -108,7 +104,7 @@ def _make_variant(
     output_directory: pathlib.Path,
     is_null_variant: bool,
     properties: list[VariantProperty],
-    plugin_loader: PluginLoader,
+    plugin_apis: list[str],
     validate_properties: bool = True,
 ) -> None:
     # Input Validation
@@ -130,6 +126,9 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
+            plugin_loader = ManualPluginLoader()
+            for plugin_api in plugin_apis:
+                plugin_loader.load_plugin(plugin_api)
             # Verify whether the variant properties are valid
             vdesc_valid = validate_variant(vdesc, plugin_loader=plugin_loader)
             if vdesc_valid.invalid_properties:
