@@ -121,6 +121,9 @@ class BasePythonEnv(abc.ABC):
 class IsolatedPythonEnvMixin:
     _venv_path: pathlib.Path | None = None
 
+    def __init__(self) -> None:
+        raise NotImplementedError("This path is not yet supported")
+
     @property
     def python_executable(self) -> pathlib.Path:
         return self._get_venv_path(0)
@@ -200,6 +203,10 @@ class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv)
     implementations.
     """
 
+    def __init__(self) -> None:
+        raise NotImplementedError("This path is not yet supported")
+        super().__init__()
+
     def __enter__(self) -> Self:
         try:
             self._venv_path = pathlib.Path(tempfile.mkdtemp(prefix="variant-env-"))
@@ -249,11 +256,12 @@ def PythonInstallerEnv(  # noqa: N802
 ) -> Generator[IsolatedPythonInstallerEnv | NonIsolatedPythonInstallerEnv]:
     try:
         if isolated:
-            original_sys_path = sys.path.copy()
-            with IsolatedPythonInstallerEnv() as ctx:
-                sys.path.insert(0, str(ctx.package_dir))
-                yield ctx
-                sys.path = original_sys_path
+            # original_sys_path = sys.path.copy()
+            # with IsolatedPythonInstallerEnv() as ctx:
+            #     sys.path.insert(0, str(ctx.package_dir))
+            #     yield ctx
+            #     sys.path = original_sys_path
+            raise NotImplementedError("This path is not yet supported")  # noqa: TRY301
         else:
             with NonIsolatedPythonInstallerEnv() as ctx:
                 yield ctx
@@ -281,6 +289,7 @@ class ExternalIsolatedPythonEnv(IsolatedPythonEnvMixin, BasePythonEnv):
     """
 
     def __init__(self, venv_path: pathlib.Path | None) -> None:
+        raise NotImplementedError("This path is not yet supported")
         if venv_path is None or not (venv_path := pathlib.Path(venv_path)).exists():
             raise FileNotFoundError
         self._venv_path = venv_path
@@ -302,11 +311,12 @@ def ExternalPythonEnv(  # noqa: N802
 ) -> Generator[ExternalIsolatedPythonEnv | ExternalNonIsolatedPythonEnv]:
     try:
         if venv_path is not None:
-            original_sys_path = sys.path.copy()
-            with ExternalIsolatedPythonEnv(venv_path=venv_path) as ctx:
-                sys.path.insert(0, str(ctx.package_dir))
-                yield ctx
-                sys.path = original_sys_path
+            # original_sys_path = sys.path.copy()
+            # with ExternalIsolatedPythonEnv(venv_path=venv_path) as ctx:
+            #     sys.path.insert(0, str(ctx.package_dir))
+            #     yield ctx
+            #     sys.path = original_sys_path
+            raise NotImplementedError("This path is not yet supported")  # noqa: TRY301
         else:
             with ExternalNonIsolatedPythonEnv() as ctx:
                 yield ctx

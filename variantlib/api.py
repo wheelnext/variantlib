@@ -69,7 +69,7 @@ def get_variant_hashes_by_priority(
 
     with (
         AutoPythonEnv(
-            use_auto_install=use_auto_install, isolated=True, venv_path=venv_path
+            use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
         ) as python_ctx,
         PluginLoader(
             variant_nfo=parsed_variants_json, python_ctx=python_ctx
