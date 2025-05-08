@@ -1,22 +1,37 @@
 from __future__ import annotations
 
+import json
 import re
+import sys
+from email import message_from_string
 from typing import TYPE_CHECKING
 from typing import Any
 
 import pytest
 
+from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
+from variantlib.models.metadata import ProviderInfo
+from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.plugins.loader import CLIPluginLoader
 from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.plugins.loader import PluginLoader
+from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
+from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.validators import ValidationError
+from variantlib.variants_json import VariantsJson
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -327,3 +342,70 @@ def test_load_plugin():
 def test_load_plugin_invalid_arg():
     with pytest.raises(ValidationError):
         ManualPluginLoader().load_plugin("tests.mocked_plugins")
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        VariantMetadata(
+            namespace_priorities=["test_namespace", "second_namespace"],
+            providers={
+                "test_namespace": ProviderInfo(
+                    plugin_api="tests.mocked_plugins:MockedPluginA"
+                ),
+                "second_namespace": ProviderInfo(
+                    plugin_api="tests.mocked_plugins:MockedPluginB"
+                ),
+            },
+        ),
+        DistMetadata(
+            message_from_string("""\
+Metadata-Version: 2.1
+Name: test-package
+Version: 1.2.3
+Variant-property: test_namespace :: name1 :: val1a
+Variant-property: second_namespace :: name3 :: val3c
+Variant-hash: faf70e73
+Variant-plugin-api: test_namespace: tests.mocked_plugins:MockedPluginA
+Variant-plugin-api: second_namespace: tests.mocked_plugins:MockedPluginB
+Variant-default-namespace-priorities: test_namespace, second_namespace
+""")
+        ),
+        VariantPyProjectToml(
+            tomllib.loads("""
+[variant.default-priorities]
+namespace = ["test_namespace", "second_namespace"]
+
+[variant.providers.test_namespace]
+plugin-api = "tests.mocked_plugins:MockedPluginA"
+
+[variant.providers.second_namespace]
+plugin-api = "tests.mocked_plugins:MockedPluginB"
+""")
+        ),
+        VariantsJson(
+            json.loads("""
+{
+    "default-priorities": {
+        "namespace": ["test_namespace", "second_namespace"]
+    },
+    "providers": {
+        "test_namespace": {
+            "plugin-api": "tests.mocked_plugins:MockedPluginA"
+        },
+        "second_namespace": {
+            "plugin-api": "tests.mocked_plugins:MockedPluginB"
+        }
+    },
+    "variants": {}
+}
+""")
+        ),
+    ],
+)
+def test_load_plugins_from_metadata(metadata: VariantMetadata):
+    with (
+        ExternalNonIsolatedPythonEnv() as py_ctx,
+        PluginLoader(metadata, py_ctx) as loader,
+    ):
+        assert set(loader.plugins) == {"test_namespace", "second_namespace"}
