@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import string
+from collections.abc import Generator
 from email.message import EmailMessage
 from typing import TYPE_CHECKING
 
@@ -27,14 +28,17 @@ from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
-from variantlib.loader import PluginLoader
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from collections.abc import Generator
+    from contextlib import _GeneratorContextManager
+
+    from variantlib.plugins.loader import CLIPluginLoader
 
 
 def test_api_accessible():
@@ -47,12 +51,16 @@ def test_api_accessible():
 
 
 @pytest.fixture
-def configs(mocked_plugin_loader: PluginLoader):
-    return list(mocked_plugin_loader.get_supported_configs().values())
+def configs(
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+):
+    with mocked_plugin_loader_ctx() as loader:
+        return list(loader.get_supported_configs().values())
 
 
 def test_get_variant_hashes_by_priority_roundtrip(
-    mocker, mocked_plugin_loader: PluginLoader, configs
+    mocker,
+    configs,
 ):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
@@ -70,11 +78,15 @@ def test_get_variant_hashes_by_priority_roundtrip(
     }
 
     mocker.patch(
+        "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
+    ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
+
+    mocker.patch(
         "variantlib.configuration.VariantConfiguration.get_config"
     ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
     assert get_variant_hashes_by_priority(
-        variants_json=variants_json, plugin_loader=mocked_plugin_loader
+        variants_json=variants_json, use_auto_install=False, venv_path=None
     ) == [vdesc.hexdigest for vdesc in combinations]
 
 
@@ -122,7 +134,9 @@ def test_get_variant_hashes_by_priority_roundtrip(
         ),
     )
 )
-def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
+def test_get_variant_hashes_by_priority_roundtrip_fuzz(
+    mocker, configs: list[ProviderConfig]
+):
     namespace_priorities = list({provider_cfg.namespace for provider_cfg in configs})
     mocker.patch(
         "variantlib.configuration.VariantConfiguration.get_config"
@@ -143,11 +157,11 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(mocker, configs):
     }
 
     mocker.patch(
-        "variantlib.loader.PluginLoader.get_supported_configs"
+        "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
     assert get_variant_hashes_by_priority(
-        variants_json=variants_json, plugin_loader=PluginLoader()
+        variants_json=variants_json, use_auto_install=False, venv_path=None
     ) == [vdesc.hexdigest for vdesc in combinations]
 
 
@@ -205,7 +219,7 @@ def test_validation_result_properties():
     ]
 
 
-def test_validate_variant(mocked_plugin_loader: PluginLoader):
+def test_validate_variant(mocked_plugin_apis: list[str]):
     res = validate_variant(
         VariantDescription(
             [
@@ -220,7 +234,7 @@ def test_validate_variant(mocked_plugin_loader: PluginLoader):
                 VariantProperty("private", "build_type", "debug"),
             ]
         ),
-        plugin_loader=mocked_plugin_loader,
+        plugin_apis=mocked_plugin_apis,
     )
 
     assert res == VariantValidationResult(
@@ -257,7 +271,6 @@ def metadata() -> EmailMessage:
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
 def test_set_variant_metadata(
-    mocked_plugin_loader: PluginLoader,
     metadata: EmailMessage,
     replace: bool,
     pyproject_toml: dict | None,
