@@ -1,0 +1,377 @@
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import logging
+import sys
+from abc import abstractmethod
+from functools import reduce
+from importlib.machinery import PathFinder
+from itertools import groupby
+from types import MethodType
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import get_type_hints
+
+from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
+from variantlib.errors import PluginError
+from variantlib.errors import PluginMissingError
+from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
+from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
+from variantlib.plugins.py_envs import ISOLATED_PYTHON_ENVS
+from variantlib.plugins.py_envs import BasePythonEnv
+from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
+from variantlib.validators import ValidationError
+from variantlib.validators import validate_matches_re
+from variantlib.validators import validate_type
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from variantlib.models.variant import VariantDescription
+    from variantlib.variants_json import VariantsJson
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+
+else:
+    from typing_extensions import Self
+
+logger = logging.getLogger(__name__)
+
+
+class BasePluginLoader:
+    """Load and query plugins"""
+
+    _plugins: dict[str, PluginType] | None = None
+    _python_ctx: BasePythonEnv | None = None
+
+    def __init__(self, python_ctx: BasePythonEnv | None = None) -> None:
+        self._python_ctx = python_ctx
+
+    def __enter__(self) -> Self:
+        if self._python_ctx is None:
+            raise RuntimeError("Impossible to load plugins without a Python Context")
+
+        self._plugins = self._load_all_plugins()
+
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self._plugins = None
+
+        if self._python_ctx is None:
+            logger.warning("The Python installer is None. Should not happen.")
+            return
+
+        self._python_ctx.__exit__()
+        self._python_ctx = None
+
+    def _install_all_plugins_from_reqs(self, reqs: list[str]) -> None:
+        if not isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
+            raise TypeError
+
+        if self._python_ctx is None:
+            raise RuntimeError(
+                "Impossible to install plugins outside of an installer context"
+            )
+
+        if self._plugins is not None:
+            raise RuntimeError(
+                "Impossible to install plugins - `self._plugins` is not None"
+            )
+
+        # Actual plugin installation
+        self._python_ctx.install(reqs)
+
+    def _load_plugin(self, plugin_api: str) -> PluginType:
+        """Load a specific plugin"""
+
+        if self._python_ctx is None:
+            raise RuntimeError(
+                "Impossible to load a plugin outside of a python context"
+            )
+
+        plugin_api_match = validate_matches_re(
+            plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
+        )
+        try:
+            import_name: str = plugin_api_match.group("module")
+
+            if isinstance(self._python_ctx, ISOLATED_PYTHON_ENVS):
+                # We need to load the module first to allow `importlib` to find it
+                pkg_name = import_name.split(".", maxsplit=1)[0]
+                spec = PathFinder.find_spec(
+                    pkg_name, path=[str(self._python_ctx.package_dir)]
+                )
+                if spec is None or spec.loader is None:
+                    raise ModuleNotFoundError  # noqa: TRY301
+
+                _module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_module)
+                sys.modules[pkg_name] = _module
+
+            # We load the complete module
+            module = importlib.import_module(import_name)
+
+            attr_chain = plugin_api_match.group("attr").split(".")
+            plugin_callable = reduce(getattr, attr_chain, module)
+
+        except Exception as exc:
+            raise PluginError(
+                f"Loading the plugin from {plugin_api!r} failed: {exc}"
+            ) from exc
+
+        logger.info(
+            "Loading plugin via %(plugin_api)s",
+            {
+                "plugin_api": plugin_api,
+            },
+        )
+
+        if not callable(plugin_callable):
+            raise PluginError(
+                f"{plugin_api!r} points at a value that is not callable: "
+                f"{plugin_callable!r}"
+            )
+
+        try:
+            # Instantiate the plugin
+            plugin_instance = plugin_callable()
+        except Exception as exc:
+            raise PluginError(
+                f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
+            ) from exc
+
+        required_attributes = PluginType.__abstractmethods__
+        if missing_attributes := required_attributes.difference(dir(plugin_instance)):
+            raise PluginError(
+                f"Instantiating the plugin from {plugin_api!r} "
+                "returned an object that does not meet the PluginType prototype: "
+                f"{plugin_instance!r} (missing attributes: "
+                f"{', '.join(sorted(missing_attributes))})"
+            )
+
+        return plugin_instance
+
+    @abstractmethod
+    def _load_all_plugins(self) -> dict[str, PluginType]: ...
+
+    def _load_all_plugins_from_tuple(
+        self, plugin_apis: list[str]
+    ) -> dict[str, PluginType]:
+        if self._plugins is not None:
+            raise RuntimeError(
+                "Impossible to load plugins - `self._plugins` is not None"
+            )
+
+        plugins = {}
+        for plugin_api in plugin_apis:
+            plugin_instance = self._load_plugin(plugin_api)
+
+            if plugin_instance.namespace in plugins:
+                raise RuntimeError(
+                    "Two plugins found using the same namespace "
+                    f"{plugin_instance.namespace}. Refusing to proceed."
+                )
+
+            plugins[plugin_instance.namespace] = plugin_instance
+
+        return plugins
+
+    def _call(self, method: Callable[[], Any]) -> Any:
+        """Call plugin method and verify the return type"""
+
+        value = method()
+
+        try:
+            validate_type(value, get_type_hints(method)["return"])
+        except ValidationError as err:
+            assert isinstance(method, MethodType)
+            plugin_instance = method.__self__
+            assert isinstance(plugin_instance, PluginType)
+            raise TypeError(
+                f"Provider {plugin_instance.namespace}, {method.__func__.__name__}() "
+                f"method returned incorrect type. {err}"
+            ) from None
+
+        return value
+
+    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to supported configs"""
+        if self._python_ctx is None or self._plugins is None:
+            raise RuntimeError("Impossible to access outside of an installer context")
+
+        provider_cfgs = {}
+        for namespace, plugin_instance in self._plugins.items():
+            vfeat_configs: list[VariantFeatureConfigType] = self._call(
+                plugin_instance.get_supported_configs
+            )
+
+            # skip providers that do not return any supported configs
+            if not vfeat_configs:
+                continue
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace,
+                configs=[
+                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
+                    for vfeat_cfg in vfeat_configs
+                ],
+            )
+
+        return provider_cfgs
+
+    def get_all_configs(self) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to all valid configs"""
+        if self._python_ctx is None or self._plugins is None:
+            raise RuntimeError("Impossible to access outside of an installer context")
+
+        provider_cfgs = {}
+        for namespace, plugin_instance in self.plugins.items():
+            vfeat_configs = self._call(plugin_instance.get_all_configs)
+
+            if not vfeat_configs:
+                raise ValueError(
+                    f"Provider {namespace}, get_all_configs() method returned no valid "
+                    "configs"
+                )
+
+            provider_cfgs[namespace] = ProviderConfig(
+                plugin_instance.namespace,
+                configs=[
+                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
+                    for vfeat_cfg in vfeat_configs
+                ],
+            )
+
+        return provider_cfgs
+
+    def get_build_setup(self, properties: VariantDescription) -> dict[str, list[str]]:
+        """Get build variables for a variant made of specified properties"""
+        if self._python_ctx is None or self.plugins is None:
+            raise RuntimeError("Impossible to access outside of an installer context")
+
+        ret_env: dict[str, list[str]] = {}
+        for namespace, p_props in groupby(
+            sorted(properties.properties), lambda prop: prop.namespace
+        ):
+            if (plugin := self.plugins.get(namespace)) is None:
+                raise PluginMissingError(f"No plugin found for namespace {namespace}")
+
+            if hasattr(plugin, "get_build_setup"):
+                plugin_env = plugin.get_build_setup(list(p_props))
+
+                try:
+                    validate_type(plugin_env, dict[str, list[str]])
+                except ValidationError as err:
+                    raise TypeError(
+                        f"Provider {namespace}, get_build_setup() "
+                        f"method returned incorrect type. {err}"
+                    ) from None
+            else:
+                plugin_env = {}
+
+            for k, v in plugin_env.items():
+                ret_env.setdefault(k, []).extend(v)
+        return ret_env
+
+    @property
+    def plugins(self) -> dict[str, PluginType]:
+        if self._plugins is None:
+            raise RuntimeError("You can not access plugins outside of a python context")
+        return self._plugins
+
+
+class PluginLoader(BasePluginLoader):
+    _variant_nfo: VariantsJson
+
+    def __init__(
+        self,
+        variant_nfo: VariantsJson,
+        python_ctx: BasePythonEnv | None = None,
+    ) -> None:
+        self._variant_nfo = variant_nfo
+        super().__init__(python_ctx=python_ctx)
+
+    def __enter__(self) -> Self:
+        if self._python_ctx is None:
+            raise RuntimeError("Impossible to load plugins without a Python Context")
+
+        if isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
+            self._install_all_plugins()
+
+        return super().__enter__()
+
+    def _install_all_plugins(self) -> None:
+        if not isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
+            raise TypeError(
+                "Impossible to install a package with this type of python "
+                "environment: %s",
+                type(self._python_ctx),
+            )
+
+        # Installing the plugins
+        reqs = []
+        for namespace in self._variant_nfo.namespace_priorities:
+            if (provider_data := self._variant_nfo.providers.get(namespace)) is None:
+                logger.error(
+                    "Impossible to install the variant provider plugin corresponding "
+                    "to namespace `%(ns)s`. Missing provider entry - Known: %(known)s.",
+                    {
+                        "ns": namespace,
+                        "known": list(self._variant_nfo.providers.keys()),
+                    },
+                )
+                continue
+
+            if not (req_str := provider_data.requires):
+                logger.error(
+                    "Impossible to install the variant provider plugin corresponding "
+                    "to namespace `%(ns)s`. Missing provider requirement, "
+                    "received: %(data)s.",
+                    {"ns": namespace, "data": provider_data},
+                )
+                continue
+
+            reqs.extend(req_str)
+
+        self._install_all_plugins_from_reqs(reqs)
+
+    def _load_all_plugins(self) -> dict[str, PluginType]:
+        if self._plugins is not None:
+            raise RuntimeError(
+                "Impossible to load plugins - `self._plugins` is not None"
+            )
+
+        plugins = [
+            self._variant_nfo.providers[namespace].plugin_api
+            for namespace in self._variant_nfo.namespace_priorities
+        ]
+
+        return self._load_all_plugins_from_tuple(plugin_apis=plugins)
+
+
+class CLIPluginLoader(BasePluginLoader):
+    _plugin_apis: list[str] | None = None
+
+    def __init__(
+        self,
+        plugin_apis: list[str],
+        python_ctx: BasePythonEnv | None = None,
+    ) -> None:
+        self._plugin_apis = plugin_apis
+        super().__init__(python_ctx=python_ctx)
+
+    def _load_all_plugins(self) -> dict[str, PluginType]:
+        if self._plugins is not None:
+            raise RuntimeError(
+                "Impossible to load plugins - `self._plugins` is not None"
+            )
+
+        if self._plugin_apis is None:
+            raise RuntimeError("No plugin to load...")
+
+        return self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)

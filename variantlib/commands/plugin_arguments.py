@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from variantlib.loader import PluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 if TYPE_CHECKING:
@@ -28,15 +27,10 @@ def add_plugin_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_plugin_arguments(parsed_args: argparse.Namespace) -> PluginLoader:
-    loader = PluginLoader()
-
-    plugin_apis = set(parsed_args.plugin)
+def parse_plugin_arguments(parsed_args: argparse.Namespace) -> list[str]:
+    plugin_apis: set[str] = set(parsed_args.plugin)
     for pyproject_toml_path in parsed_args.plugins_from_pyproject_toml:
         pyproject_toml = VariantPyProjectToml.from_path(pyproject_toml_path)
         plugin_apis.update(x.plugin_api for x in pyproject_toml.providers.values())
 
-    for plugin_api in plugin_apis:
-        loader.load_plugin(plugin_api)
-
-    return loader
+    return list(plugin_apis)

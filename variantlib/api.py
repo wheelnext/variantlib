@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import logging
+import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
@@ -16,13 +17,16 @@ from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.loader import PluginLoader
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.loader import PluginLoader
+from variantlib.plugins.py_envs import AutoPythonEnv
+from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
@@ -50,6 +54,8 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: dict,
+    use_auto_install: bool = True,
+    venv_path: str | pathlib.Path | None = None,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[str] | None = None,
     property_priorities: list[str] | None = None,
@@ -57,72 +63,82 @@ def get_variant_hashes_by_priority(
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
+    supported_vprops = []
     parsed_variants_json = VariantsJson.from_dict(variants_json)
 
-    with PluginLoader(variant_nfo=parsed_variants_json, isolated=False) as plugin_ctx:
+    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+
+    with (
+        AutoPythonEnv(
+            use_auto_install=use_auto_install, isolated=True, venv_path=venv_path
+        ) as python_ctx,
+        PluginLoader(
+            variant_nfo=parsed_variants_json, python_ctx=python_ctx
+        ) as plugin_loader,
+    ):
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_ctx.get_supported_configs().values()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
 
-        _feature_priorities = (
-            None
-            if feature_priorities is None
-            else [VariantFeature.from_str(vfeat) for vfeat in feature_priorities]
+    _feature_priorities = (
+        None
+        if feature_priorities is None
+        else [VariantFeature.from_str(vfeat) for vfeat in feature_priorities]
+    )
+
+    _property_priorities = (
+        None
+        if property_priorities is None
+        else [VariantProperty.from_str(vprop) for vprop in property_priorities]
+    )
+
+    _forbidden_features = (
+        None
+        if forbidden_features is None
+        else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
+    )
+
+    _forbidden_properties = (
+        None
+        if forbidden_properties is None
+        else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
+    )
+
+    config = VariantConfiguration.get_config()
+
+    return [
+        vdesc.hexdigest
+        for vdesc in sort_and_filter_supported_variants(
+            list(parsed_variants_json.variants.values()),
+            supported_vprops,
+            namespace_priorities=aggregate_priority_lists(
+                namespace_priorities,
+                config.namespace_priorities,
+                parsed_variants_json.namespace_priorities,
+            ),
+            feature_priorities=aggregate_priority_lists(
+                _feature_priorities,
+                config.feature_priorities,
+                parsed_variants_json.feature_priorities,
+            ),
+            property_priorities=aggregate_priority_lists(
+                _property_priorities,
+                config.property_priorities,
+                parsed_variants_json.property_priorities,
+            ),
+            forbidden_namespaces=forbidden_namespaces,
+            forbidden_features=_forbidden_features,
+            forbidden_properties=_forbidden_properties,
         )
-
-        _property_priorities = (
-            None
-            if property_priorities is None
-            else [VariantProperty.from_str(vprop) for vprop in property_priorities]
-        )
-
-        _forbidden_features = (
-            None
-            if forbidden_features is None
-            else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
-        )
-
-        _forbidden_properties = (
-            None
-            if forbidden_properties is None
-            else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
-        )
-
-        config = VariantConfiguration.get_config()
-
-        return [
-            vdesc.hexdigest
-            for vdesc in sort_and_filter_supported_variants(
-                list(parsed_variants_json.variants.values()),
-                supported_vprops,
-                namespace_priorities=aggregate_priority_lists(
-                    namespace_priorities,
-                    config.namespace_priorities,
-                    parsed_variants_json.namespace_priorities,
-                ),
-                feature_priorities=aggregate_priority_lists(
-                    _feature_priorities,
-                    config.feature_priorities,
-                    parsed_variants_json.feature_priorities,
-                ),
-                property_priorities=aggregate_priority_lists(
-                    _property_priorities,
-                    config.property_priorities,
-                    parsed_variants_json.property_priorities,
-                ),
-                forbidden_namespaces=forbidden_namespaces,
-                forbidden_features=_forbidden_features,
-                forbidden_properties=_forbidden_properties,
-            )
-        ]
+    ]
 
 
 def validate_variant(
     variant_desc: VariantDescription,
-    plugin_loader: PluginLoader,
+    plugin_apis: list[str],
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -134,7 +150,9 @@ def validate_variant(
     be verified.
     """
 
-    provider_cfgs = plugin_loader.get_all_configs()
+    with ExternalNonIsolatedPythonEnv() as py_ctx:  # noqa: SIM117
+        with CLIPluginLoader(plugin_apis=plugin_apis, python_ctx=py_ctx) as loader:
+            provider_cfgs = loader.get_all_configs()
 
     def _validate_variant(vprop: VariantProperty) -> bool | None:
         provider_cfg = provider_cfgs.get(vprop.namespace)
