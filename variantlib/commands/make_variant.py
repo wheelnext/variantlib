@@ -211,10 +211,11 @@ def make_variant(args: list[str]) -> None:
 def _make_variant(
     input_filepath: pathlib.Path,
     output_directory: pathlib.Path,
+    *,
     is_null_variant: bool,
     properties: list[VariantProperty],
     validate_properties: bool = True,
-    pyproject_toml: VariantPyProjectToml | None = None,
+    pyproject_toml: VariantPyProjectToml,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
