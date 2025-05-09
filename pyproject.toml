@@ -10,12 +10,12 @@ requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
-    { name = "Michał Górny", email = "mgorny@gentoo.org" },
+    { name = "Michał Górny", email = "mgorny@quansight.com" },
     { name = "Michael Sarahan", email = "msarahan@nvidia.com" },
 ]
 maintainers = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
-    { name = "Michał Górny", email = "mgorny@gentoo.org" },
+    { name = "Michał Górny", email = "mgorny@quansight.com" },
     { name = "Michael Sarahan", email = "msarahan@nvidia.com" },
 ]
 dependencies = [
