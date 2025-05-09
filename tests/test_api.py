@@ -318,7 +318,7 @@ def test_set_variant_metadata(
                 VariantProperty("ns2", "f1", "p1"),
             ]
         ),
-        pyproject_toml=VariantPyProjectToml(pyproject_toml)
+        variant_metadata=VariantPyProjectToml(pyproject_toml)
         if pyproject_toml is not None
         else None,
     )

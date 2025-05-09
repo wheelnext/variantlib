@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from email.message import Message
 
     from variantlib.models.metadata import VariantMetadata
-    from variantlib.pyproject_toml import VariantPyProjectToml
 
 
 logger = logging.getLogger(__name__)
@@ -170,7 +169,7 @@ def validate_variant(
 def set_variant_metadata(
     metadata: Message,
     vdesc: VariantDescription,
-    pyproject_toml: VariantPyProjectToml | None = None,
+    variant_metadata: VariantMetadata | None = None,
 ) -> None:
     """Set metadata-related keys in metadata email-dict"""
 
@@ -184,8 +183,8 @@ def set_variant_metadata(
     metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
 
     # Copy pyproject.toml metadata
-    if pyproject_toml is not None:
-        for namespace, provider_info in pyproject_toml.providers.items():
+    if variant_metadata is not None:
+        for namespace, provider_info in variant_metadata.providers.items():
             for requirement in provider_info.requires:
                 metadata[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
                     f"{namespace}: {requirement}"
@@ -194,17 +193,17 @@ def set_variant_metadata(
                 f"{namespace}: {provider_info.plugin_api}"
             )
 
-        if pyproject_toml.namespace_priorities:
+        if variant_metadata.namespace_priorities:
             metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = ", ".join(
-                pyproject_toml.namespace_priorities
+                variant_metadata.namespace_priorities
             )
-        if pyproject_toml.feature_priorities:
+        if variant_metadata.feature_priorities:
             metadata[METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER] = ", ".join(
-                x.to_str() for x in pyproject_toml.feature_priorities
+                x.to_str() for x in variant_metadata.feature_priorities
             )
-        if pyproject_toml.property_priorities:
+        if variant_metadata.property_priorities:
             metadata[METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER] = ", ".join(
-                x.to_str() for x in pyproject_toml.property_priorities
+                x.to_str() for x in variant_metadata.property_priorities
             )
 
 
