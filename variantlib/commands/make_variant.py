@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import base64
-import contextlib
 import email.parser
 import email.policy
 import hashlib
@@ -13,14 +12,13 @@ import zipfile
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
+from variantlib.api import VariantFeature
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
 from variantlib.plugins.loader import ManualPluginLoader
@@ -89,22 +87,26 @@ def make_variant(args: list[str]) -> None:
 
     parser.add_argument(
         "--default-namespace-priorities",
-        type=str,
-        default=None,
+        type=lambda prios: prios.split(","),
+        default=[],
         help="Comma separated list of namespace priority",
     )
 
     parser.add_argument(
         "--default-feature-priorities",
-        type=str,
-        default=None,
+        type=lambda prios: [
+            VariantFeature.from_str(vfeat) for vfeat in prios.split(",")
+        ],
+        default=[],
         help="Comma separated list of feature priority",
     )
 
     parser.add_argument(
         "--default-property-priorities",
-        type=str,
-        default=None,
+        type=lambda prios: [
+            VariantProperty.from_str(vprop) for vprop in prios.split(",")
+        ],
+        default=[],
         help="Comma separated list of property priority",
     )
 
@@ -128,28 +130,12 @@ def make_variant(args: list[str]) -> None:
     parsed_args = parser.parse_args(args)
 
     pyproj_toml = VariantPyProjectToml(toml_data={})
-
-    with contextlib.suppress(AttributeError):
-        pyproj_toml.namespace_priorities = (
-            parsed_args.default_namespace_priorities.split(",")
-        )
-        for ns in pyproj_toml.namespace_priorities:
-            if VALIDATION_NAMESPACE_REGEX.fullmatch(ns) is None:
-                raise ValueError(f"The following namespace is invalid: `{ns}`")
-    with contextlib.suppress(AttributeError):
-        pyproj_toml.feature_priorities = parsed_args.default_feature_priorities.split(
-            ","
-        )
-        for vfeat in pyproj_toml.feature_priorities:
-            if VALIDATION_FEATURE_REGEX.fullmatch(vfeat) is None:
-                raise ValueError(f"The following feature is invalid: `{vfeat}`")
-    with contextlib.suppress(AttributeError):
-        pyproj_toml.property_priorities = parsed_args.default_property_priorities.split(
-            ","
-        )
-        for vprop in pyproj_toml.property_priorities:
-            if VALIDATION_PROPERTY_REGEX.fullmatch(vprop) is None:
-                raise ValueError(f"The following feature is invalid: `{vprop}`")
+    pyproj_toml.namespace_priorities = parsed_args.default_namespace_priorities
+    for ns in pyproj_toml.namespace_priorities:
+        if VALIDATION_NAMESPACE_REGEX.fullmatch(ns) is None:
+            raise ValueError(f"The following namespace is invalid: `{ns}`")
+    pyproj_toml.feature_priorities = parsed_args.default_feature_priorities
+    pyproj_toml.property_priorities = parsed_args.default_property_priorities
 
     for provider_api in parsed_args.provider_api:
         if (
