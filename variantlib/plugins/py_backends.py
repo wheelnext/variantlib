@@ -13,8 +13,6 @@ import typing
 from itertools import chain
 from typing import TYPE_CHECKING
 
-import pip._internal.configuration
-
 if TYPE_CHECKING:
     from collections.abc import Collection
     from collections.abc import Generator
@@ -28,6 +26,8 @@ INSTALLERS = typing.get_args(Installer)
 
 
 def _get_pip_index_urls() -> tuple[list[str], list[str]]:
+    import pip._internal.configuration
+
     # Load pip configuration
     configuration = pip._internal.configuration.Configuration(  # noqa: SLF001
         isolated=False, load_only=None
