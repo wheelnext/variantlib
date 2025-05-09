@@ -88,28 +88,28 @@ def make_variant(args: list[str]) -> None:
     )
 
     parser.add_argument(
-        "--default-namespace-prio",
+        "--default-namespace-priorities",
         type=str,
         default=None,
         help="Comma separated list of namespace priority",
     )
 
     parser.add_argument(
-        "--default-feature-prio",
+        "--default-feature-priorities",
         type=str,
         default=None,
         help="Comma separated list of feature priority",
     )
 
     parser.add_argument(
-        "--default-property-prio",
+        "--default-property-priorities",
         type=str,
         default=None,
         help="Comma separated list of property priority",
     )
 
     parser.add_argument(
-        "--provider-req",
+        "--provider-requires",
         action="append",
         default=[],
         help=(
@@ -130,17 +130,23 @@ def make_variant(args: list[str]) -> None:
     pyproj_toml = VariantPyProjectToml(toml_data={})
 
     with contextlib.suppress(AttributeError):
-        pyproj_toml.namespace_priorities = parsed_args.default_namespace_prio.split(",")
+        pyproj_toml.namespace_priorities = (
+            parsed_args.default_namespace_priorities.split(",")
+        )
         for ns in pyproj_toml.namespace_priorities:
             if VALIDATION_NAMESPACE_REGEX.fullmatch(ns) is None:
                 raise ValueError(f"The following namespace is invalid: `{ns}`")
     with contextlib.suppress(AttributeError):
-        pyproj_toml.feature_priorities = parsed_args.default_feature_prio.split(",")
+        pyproj_toml.feature_priorities = parsed_args.default_feature_priorities.split(
+            ","
+        )
         for vfeat in pyproj_toml.feature_priorities:
             if VALIDATION_FEATURE_REGEX.fullmatch(vfeat) is None:
                 raise ValueError(f"The following feature is invalid: `{vfeat}`")
     with contextlib.suppress(AttributeError):
-        pyproj_toml.property_priorities = parsed_args.default_property_prio.split(",")
+        pyproj_toml.property_priorities = parsed_args.default_property_priorities.split(
+            ","
+        )
         for vprop in pyproj_toml.property_priorities:
             if VALIDATION_PROPERTY_REGEX.fullmatch(vprop) is None:
                 raise ValueError(f"The following feature is invalid: `{vprop}`")
@@ -164,7 +170,7 @@ def make_variant(args: list[str]) -> None:
             plugin_api=match.group("plugin_api"),
         )
 
-    for provider_req in parsed_args.provider_req:
+    for provider_req in parsed_args.provider_requires:
         if (
             match := VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX.fullmatch(provider_req)
         ) is None:
