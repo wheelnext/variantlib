@@ -123,7 +123,7 @@ def append_variant_info_to_json_file(
         elif pdata[target_key] != value:
             raise ValidationError(
                 f"Invalid configuration found. `{source_key}` is not consistent. "
-                f"Expected: `{data[target_key]}`, Found: `{value}`"
+                f"Expected: `{pdata[target_key]}`, Found: `{value}`"
             )
 
     # ===================== Variant Provider Requires ===================== #
