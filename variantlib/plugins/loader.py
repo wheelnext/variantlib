@@ -13,6 +13,9 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import get_type_hints
 
+from packaging.markers import default_environment
+from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
@@ -181,7 +184,10 @@ class BasePluginLoader:
             )
 
         for plugin_api in plugin_apis:
-            self.load_plugin(plugin_api=plugin_api)
+            try:
+                self.load_plugin(plugin_api=plugin_api)
+            except PluginError:  # noqa: PERF203
+                logger.debug("Impossible to load `%s`", plugin_api)
 
     def _call(self, method: Callable[[], Any]) -> Any:
         """Call plugin method and verify the return type"""
@@ -319,6 +325,9 @@ class PluginLoader(BasePluginLoader):
                 type(self._python_ctx),
             )
 
+        # Get the current environment and evaluate the marker
+        pyenv = default_environment()
+
         # Installing the plugins
         reqs = []
         for namespace in self._variant_nfo.namespace_priorities:
@@ -333,7 +342,7 @@ class PluginLoader(BasePluginLoader):
                 )
                 continue
 
-            if not (req_str := provider_data.requires):
+            if not (list_req_str := provider_data.requires):
                 logger.error(
                     "Impossible to install the variant provider plugin corresponding "
                     "to namespace `%(ns)s`. Missing provider requirement, "
@@ -342,7 +351,23 @@ class PluginLoader(BasePluginLoader):
                 )
                 continue
 
-            reqs.extend(req_str)
+            for req_str in list_req_str:
+                pyreq = Requirement(req_str)
+                if not (pyreq.marker.evaluate(pyenv) if pyreq.marker else True):
+                    continue
+
+                # If there's at least one requirement compatible - break
+                break
+            else:
+                logger.debug(
+                    "The variant provider plugin corresponding "
+                    "to namespace `%(ns)s` has been skipped - Not compatible with the "
+                    "environmment. Details: %(data)s.",
+                    {"ns": namespace, "data": provider_data},
+                )
+                continue
+
+            reqs.extend(list_req_str)
 
         self._install_all_plugins_from_reqs(reqs)
 
