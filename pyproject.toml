@@ -67,6 +67,7 @@ generate-index-json = "variantlib.commands.generate_index_json:generate_index_js
 make-variant = "variantlib.commands.make_variant:make_variant"
 unmake-variant = "variantlib.commands.unmake_variant:unmake_variant"
 plugins = "variantlib.commands.plugins.main:main"
+update-pyproject-toml = "variantlib.commands.update_pyproject_toml:update_pyproject_toml"
 
 [project.entry-points."variantlib.actions.config"]
 list-paths = "variantlib.commands.config.list_paths:list_paths"

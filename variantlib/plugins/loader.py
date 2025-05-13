@@ -38,8 +38,10 @@ if TYPE_CHECKING:
     from variantlib.models.variant import VariantDescription
 
 if sys.version_info >= (3, 10):
+    from importlib.metadata import Distribution
     from importlib.metadata import entry_points
 else:
+    from importlib_metadata import Distribution
     from importlib_metadata import entry_points
 
 if sys.version_info >= (3, 11):
@@ -166,7 +168,7 @@ class BasePluginLoader:
 
         return plugin_instance
 
-    def load_plugin(self, plugin_api: str) -> None:
+    def load_plugin(self, plugin_api: str) -> PluginType:
         plugin_instance = self._load_plugin(plugin_api)
 
         if self._plugins is None:
@@ -182,6 +184,8 @@ class BasePluginLoader:
 
         self._plugins[plugin_instance.namespace] = plugin_instance
         self._plugin_api_values[plugin_instance.namespace] = plugin_api
+
+        return plugin_instance
 
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
@@ -402,7 +406,7 @@ class PluginLoader(BasePluginLoader):
 
 
 class EntryPointPluginLoader(BasePluginLoader):
-    _plugin_apis: list[str] | None = None
+    _plugin_provider_packages: dict[str, Distribution] | None = None
 
     def _load_all_plugins(self) -> None:
         if self._plugins is not None:
@@ -410,6 +414,7 @@ class EntryPointPluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._plugins` is not None"
             )
 
+        self._plugin_provider_packages = {}
         eps = entry_points().select(group="variant_plugins")
         for ep in eps:
             logger.info(
@@ -423,7 +428,20 @@ class EntryPointPluginLoader(BasePluginLoader):
                 },
             )
 
-        self._load_all_plugins_from_tuple(plugin_apis=[ep.value for ep in eps])
+            try:
+                plugin_instance = self.load_plugin(plugin_api=ep.value)
+            except PluginError:
+                logger.debug("Impossible to load `%s`", ep)
+            else:
+                if ep.dist is not None:
+                    self._plugin_provider_packages[plugin_instance.namespace] = ep.dist
+
+    @property
+    def plugin_provider_packages(self) -> dict[str, Distribution]:
+        if self._plugins is None:
+            raise RuntimeError("You can not access plugins outside of a python context")
+        assert self._plugin_provider_packages is not None
+        return self._plugin_provider_packages
 
 
 class ManualPluginLoader(BasePluginLoader):
