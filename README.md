@@ -1,7 +1,7 @@
 <h1 style="text-align:center; font-size: 5em">VariantLib</h1>
 
 <p align="center">
-    <img width="256px" src="assets/wheely_variantlib.png"/>
+    <img width="256px" src="https://raw.githubusercontent.com/wheelnext/variantlib/main/assets/wheely_variantlib.png"/>
 </p>
 
 <p align="center">
