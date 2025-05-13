@@ -47,9 +47,7 @@ from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from collections.abc import Generator
-    from contextlib import _GeneratorContextManager
 
     from variantlib.plugins.loader import BasePluginLoader
 
@@ -65,10 +63,9 @@ def test_api_accessible():
 
 @pytest.fixture
 def configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
-    with mocked_plugin_loader_ctx() as loader:
-        return list(loader.get_supported_configs().values())
+    return list(mocked_plugin_loader.get_supported_configs().values())
 
 
 def test_get_variant_hashes_by_priority_roundtrip(
