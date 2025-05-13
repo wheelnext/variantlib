@@ -10,19 +10,15 @@ from variantlib.api import VariantProperty
 from variantlib.utils import aggregate_priority_lists
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from contextlib import _GeneratorContextManager
-
     from variantlib.models.provider import ProviderConfig
-    from variantlib.plugins.loader import CLIPluginLoader
+    from variantlib.plugins.loader import BasePluginLoader
 
 
 @pytest.fixture
 def configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ) -> list[ProviderConfig]:
-    with mocked_plugin_loader_ctx() as loader:
-        return list(loader.get_supported_configs().values())
+    return list(mocked_plugin_loader.get_supported_configs().values())
 
 
 def test_get_combinations(configs):

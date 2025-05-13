@@ -24,7 +24,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
-from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.resolver.lib import filter_variants
@@ -36,6 +35,7 @@ if TYPE_CHECKING:
     from email.message import Message
 
     from variantlib.models.metadata import VariantMetadata
+    from variantlib.plugins.loader import BasePluginLoader
 
 
 logger = logging.getLogger(__name__)

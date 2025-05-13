@@ -37,9 +37,15 @@ if TYPE_CHECKING:
     from variantlib.models.metadata import VariantMetadata
     from variantlib.models.variant import VariantDescription
 
+if sys.version_info >= (3, 10):
+    from importlib.metadata import Distribution
+    from importlib.metadata import entry_points
+else:
+    from importlib_metadata import Distribution
+    from importlib_metadata import entry_points
+
 if sys.version_info >= (3, 11):
     from typing import Self
-
 else:
     from typing_extensions import Self
 
@@ -50,6 +56,7 @@ class BasePluginLoader:
     """Load and query plugins"""
 
     _plugins: dict[str, PluginType] | None = None
+    _plugin_api_values: dict[str, str] | None = None
     _python_ctx: BasePythonEnv | None = None
 
     def __init__(self, python_ctx: BasePythonEnv | None = None) -> None:
@@ -64,6 +71,7 @@ class BasePluginLoader:
         return self
 
     def __exit__(self, *args: object) -> None:
+        self._plugin_api_values = None
         self._plugins = None
 
         if self._python_ctx is None:
@@ -160,11 +168,13 @@ class BasePluginLoader:
 
         return plugin_instance
 
-    def load_plugin(self, plugin_api: str) -> None:
+    def load_plugin(self, plugin_api: str) -> PluginType:
         plugin_instance = self._load_plugin(plugin_api)
 
         if self._plugins is None:
             self._plugins = {}
+        if self._plugin_api_values is None:
+            self._plugin_api_values = {}
 
         if plugin_instance.namespace in self._plugins:
             raise RuntimeError(
@@ -173,6 +183,9 @@ class BasePluginLoader:
             )
 
         self._plugins[plugin_instance.namespace] = plugin_instance
+        self._plugin_api_values[plugin_instance.namespace] = plugin_api
+
+        return plugin_instance
 
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
@@ -293,6 +306,13 @@ class BasePluginLoader:
         return self._plugins
 
     @property
+    def plugin_api_values(self) -> dict[str, str]:
+        if self._plugins is None:
+            raise RuntimeError("You can not access plugins outside of a python context")
+        assert self._plugin_api_values is not None
+        return self._plugin_api_values
+
+    @property
     def namespaces(self) -> list[str]:
         return list(self.plugins.keys())
 
@@ -385,16 +405,8 @@ class PluginLoader(BasePluginLoader):
         self._load_all_plugins_from_tuple(plugin_apis=plugins)
 
 
-class CLIPluginLoader(BasePluginLoader):
-    _plugin_apis: list[str] | None = None
-
-    def __init__(
-        self,
-        plugin_apis: list[str],
-        python_ctx: BasePythonEnv | None = None,
-    ) -> None:
-        self._plugin_apis = plugin_apis
-        super().__init__(python_ctx=python_ctx)
+class EntryPointPluginLoader(BasePluginLoader):
+    _plugin_provider_packages: dict[str, Distribution] | None = None
 
     def _load_all_plugins(self) -> None:
         if self._plugins is not None:
@@ -402,10 +414,34 @@ class CLIPluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._plugins` is not None"
             )
 
-        if self._plugin_apis is None:
-            raise RuntimeError("No plugin to load...")
+        self._plugin_provider_packages = {}
+        eps = entry_points().select(group="variant_plugins")
+        for ep in eps:
+            logger.info(
+                "Plugin discovered via entry point: %(name)s = %(value)s; "
+                "provided by package %(package)s %(version)s",
+                {
+                    "name": ep.name,
+                    "value": ep.value,
+                    "package": ep.dist.name if ep.dist is not None else "unknown",
+                    "version": (ep.dist.version if ep.dist is not None else ""),
+                },
+            )
 
-        self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)
+            try:
+                plugin_instance = self.load_plugin(plugin_api=ep.value)
+            except PluginError:
+                logger.debug("Impossible to load `%s`", ep)
+            else:
+                if ep.dist is not None:
+                    self._plugin_provider_packages[plugin_instance.namespace] = ep.dist
+
+    @property
+    def plugin_provider_packages(self) -> dict[str, Distribution]:
+        if self._plugins is None:
+            raise RuntimeError("You can not access plugins outside of a python context")
+        assert self._plugin_provider_packages is not None
+        return self._plugin_provider_packages
 
 
 class ManualPluginLoader(BasePluginLoader):
@@ -416,6 +452,12 @@ class ManualPluginLoader(BasePluginLoader):
     def __init__(self) -> None:
         self._plugins = {}
         super().__init__(python_ctx=ExternalNonIsolatedPythonEnv().__enter__())
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self._plugins = {}
 
     def __del__(self) -> None:
         self._python_ctx.__exit__()

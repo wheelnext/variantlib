@@ -8,12 +8,12 @@ from variantlib import __package_name__
 from variantlib.commands.plugins._display_configs import display_configs
 
 if TYPE_CHECKING:
-    from variantlib.plugins.loader import PluginLoader
+    from variantlib.plugins.loader import BasePluginLoader
 
 logger = logging.getLogger(__name__)
 
 
-def get_supported_configs(args: list[str], plugin_loader: PluginLoader) -> None:
+def get_supported_configs(args: list[str], plugin_loader: BasePluginLoader) -> None:
     parser = argparse.ArgumentParser(
         prog=f"{__package_name__} plugins get-supported-configs",
         description="CLI interface to get all supported configs on the machine",

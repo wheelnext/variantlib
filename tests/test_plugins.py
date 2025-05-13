@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import re
 import sys
+from dataclasses import dataclass
 from email import message_from_string
-from typing import TYPE_CHECKING
 from typing import Any
 
 import pytest
@@ -18,7 +18,8 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
-from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.loader import BasePluginLoader
+from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
@@ -33,9 +34,6 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from contextlib import _GeneratorContextManager
 
 RANDOM_STUFF = 123
 
@@ -70,54 +68,52 @@ class ExceptionTestingPlugin(PluginType):
 
 
 def test_get_all_configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
-    with mocked_plugin_loader_ctx() as loader:
-        assert loader.get_all_configs() == {
-            "incompatible_namespace": ProviderConfig(
-                namespace="incompatible_namespace",
-                configs=[
-                    VariantFeatureConfig("flag1", ["on"]),
-                    VariantFeatureConfig("flag2", ["on"]),
-                    VariantFeatureConfig("flag3", ["on"]),
-                    VariantFeatureConfig("flag4", ["on"]),
-                ],
-            ),
-            "second_namespace": ProviderConfig(
-                namespace="second_namespace",
-                configs=[
-                    VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
-                ],
-            ),
-            "test_namespace": ProviderConfig(
-                namespace="test_namespace",
-                configs=[
-                    VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-                    VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-                ],
-            ),
-        }
+    assert mocked_plugin_loader.get_all_configs() == {
+        "incompatible_namespace": ProviderConfig(
+            namespace="incompatible_namespace",
+            configs=[
+                VariantFeatureConfig("flag1", ["on"]),
+                VariantFeatureConfig("flag2", ["on"]),
+                VariantFeatureConfig("flag3", ["on"]),
+                VariantFeatureConfig("flag4", ["on"]),
+            ],
+        ),
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+            ],
+        ),
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
+            configs=[
+                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
 
 
 def test_get_supported_configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
-    with mocked_plugin_loader_ctx() as loader:
-        assert loader.get_supported_configs() == {
-            "second_namespace": ProviderConfig(
-                namespace="second_namespace",
-                configs=[
-                    VariantFeatureConfig("name3", ["val3a"]),
-                ],
-            ),
-            "test_namespace": ProviderConfig(
-                namespace="test_namespace",
-                configs=[
-                    VariantFeatureConfig("name1", ["val1a", "val1b"]),
-                    VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-                ],
-            ),
-        }
+    assert mocked_plugin_loader.get_supported_configs() == {
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig("name3", ["val3a"]),
+            ],
+        ),
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
+            configs=[
+                VariantFeatureConfig("name1", ["val1a", "val1b"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
 
 
 def test_manual_loading(mocked_plugin_apis: list[str]):
@@ -280,7 +276,7 @@ def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
 
 
 def test_get_build_setup(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
     variant_desc = VariantDescription(
         [
@@ -291,16 +287,15 @@ def test_get_build_setup(
         ]
     )
 
-    with mocked_plugin_loader_ctx() as loader:
-        assert loader.get_build_setup(variant_desc) == {
-            "cflags": ["-mflag1", "-mflag4", "-march=val1b"],
-            "cxxflags": ["-mflag1", "-mflag4", "-march=val1b"],
-            "ldflags": ["-Wl,--test-flag"],
-        }
+    assert mocked_plugin_loader.get_build_setup(variant_desc) == {
+        "cflags": ["-mflag1", "-mflag4", "-march=val1b"],
+        "cxxflags": ["-mflag1", "-mflag4", "-march=val1b"],
+        "ldflags": ["-Wl,--test-flag"],
+    }
 
 
 def test_get_build_setup_missing_plugin(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
     variant_desc = VariantDescription(
         [
@@ -309,23 +304,21 @@ def test_get_build_setup_missing_plugin(
         ]
     )
 
-    with mocked_plugin_loader_ctx() as loader:  # noqa: SIM117
-        with pytest.raises(
-            PluginMissingError,
-            match=r"No plugin found for namespace missing_plugin",
-        ):
-            assert loader.get_build_setup(variant_desc)
+    with pytest.raises(
+        PluginMissingError,
+        match=r"No plugin found for namespace missing_plugin",
+    ):
+        assert mocked_plugin_loader.get_build_setup(variant_desc)
 
 
 def test_namespaces(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader: BasePluginLoader,
 ):
-    with mocked_plugin_loader_ctx() as loader:
-        assert loader.namespaces == [
-            "test_namespace",
-            "second_namespace",
-            "incompatible_namespace",
-        ]
+    assert mocked_plugin_loader.namespaces == [
+        "test_namespace",
+        "second_namespace",
+        "incompatible_namespace",
+    ]
 
 
 def test_load_plugin():
@@ -337,6 +330,19 @@ def test_load_plugin():
     loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
     assert "test_namespace" in loader.plugins
     assert "second_namespace" in loader.plugins
+
+
+def test_manual_plugin_loader_as_context_manager():
+    with ManualPluginLoader() as loader:
+        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
+        assert "test_namespace" in loader.plugins
+        assert "second_namespace" not in loader.plugins
+
+        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
+        assert "test_namespace" in loader.plugins
+        assert "second_namespace" in loader.plugins
+
+    assert not loader.plugins
 
 
 def test_load_plugin_invalid_arg():
@@ -407,5 +413,24 @@ def test_load_plugins_from_metadata(metadata: VariantMetadata):
     with (
         ExternalNonIsolatedPythonEnv() as py_ctx,
         PluginLoader(metadata, py_ctx) as loader,
+    ):
+        assert set(loader.plugins) == {"test_namespace", "second_namespace"}
+
+
+@dataclass
+class MockedEntryPoint:
+    name: str | None
+    value: str
+    dist: None = None
+
+
+def test_load_plugins_from_entry_points(mocker):
+    mocker.patch("variantlib.plugins.loader.entry_points")().select.return_value = [
+        MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
+        MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
+    ]
+    with (
+        ExternalNonIsolatedPythonEnv() as py_ctx,
+        EntryPointPluginLoader(py_ctx) as loader,
     ):
         assert set(loader.plugins) == {"test_namespace", "second_namespace"}

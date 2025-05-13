@@ -12,18 +12,13 @@ import zipfile
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
-from variantlib.api import VariantFeature
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
-from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
 from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.pyproject_toml import VariantPyProjectToml
 
 logger = logging.getLogger(__name__)
 
@@ -86,103 +81,18 @@ def make_variant(args: list[str]) -> None:
     )
 
     parser.add_argument(
-        "--default-namespace-priorities",
-        type=lambda prios: prios.split(","),
-        default=[],
-        help="Comma separated list of namespace priority",
-    )
-
-    parser.add_argument(
-        "--default-feature-priorities",
-        type=lambda prios: [
-            VariantFeature.from_str(vfeat) for vfeat in prios.split(",")
-        ],
-        default=[],
-        help="Comma separated list of feature priority",
-    )
-
-    parser.add_argument(
-        "--default-property-priorities",
-        type=lambda prios: [
-            VariantProperty.from_str(vprop) for vprop in prios.split(",")
-        ],
-        default=[],
-        help="Comma separated list of property priority",
-    )
-
-    parser.add_argument(
-        "--provider-requires",
-        action="append",
-        default=[],
-        help=(
-            "Variant provider plugin requirement str to install the plugin (can be "
-            "specified multiple times)"
-        ),
-    )
-
-    parser.add_argument(
-        "--provider-api",
-        action="append",
-        default=[],
-        help="Variant provider plugin api to load (can be specified multiple times)",
+        "--pyproject-toml",
+        type=pathlib.Path,
+        default="./pyproject.toml",
+        help="pyproject.toml to read variant metadata from (default: ./pyproject.toml",
     )
 
     parsed_args = parser.parse_args(args)
 
-    variant_metadata = VariantMetadata()
-    variant_metadata.namespace_priorities = parsed_args.default_namespace_priorities
-    for ns in variant_metadata.namespace_priorities:
-        if VALIDATION_NAMESPACE_REGEX.fullmatch(ns) is None:
-            raise ValueError(f"The following namespace is invalid: `{ns}`")
-    variant_metadata.feature_priorities = parsed_args.default_feature_priorities
-    variant_metadata.property_priorities = parsed_args.default_property_priorities
-
-    for provider_api in parsed_args.provider_api:
-        if (
-            match := VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX.fullmatch(
-                provider_api
-            )
-        ) is None:
-            raise ValueError(f"The provider plugin-api: `{provider_api}` is not valid")
-
-        if (namespace := match.group("namespace")) in variant_metadata.providers:
-            raise ValueError(
-                f"The following namespace `{namespace}` already has a declared "
-                "plugin-api"
-            )
-
-        variant_metadata.providers[namespace] = ProviderInfo(
-            requires=[],
-            plugin_api=match.group("plugin_api"),
-        )
-
-    for provider_req in parsed_args.provider_requires:
-        if (
-            match := VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX.fullmatch(provider_req)
-        ) is None:
-            raise ValueError(f"The provider plugin-api: `{provider_req}` is not valid")
-
-        if (namespace := match.group("namespace")) not in variant_metadata.providers:
-            raise ValueError(f"The namespace `{namespace}` declares no plugin-api.")
-
-        variant_metadata.providers[namespace].requires.append(
-            match.group("requirement_str")
-        )
-
-    for namespace, provider_info in variant_metadata.providers.items():
-        if not provider_info.requires:
-            raise ValueError(
-                f"The provider for namespace `{namespace}` declares no requirement"
-            )
-
-    if except_ns := set(variant_metadata.namespace_priorities).difference(
-        variant_metadata.providers.keys()
-    ):
-        raise ValueError(
-            "Some default namespaces declare no plugin-api and requirement: "
-            f"{except_ns}"
-        )
-
+    try:
+        pyproject_toml = VariantPyProjectToml.from_path(parsed_args.pyproject_toml)
+    except FileNotFoundError:
+        parser.error(f"{str(parsed_args.pyproject_toml)!r} does not exist")
     input_filepath: pathlib.Path = parsed_args.input_filepath
     output_directory: pathlib.Path = parsed_args.output_directory
 
@@ -192,7 +102,7 @@ def make_variant(args: list[str]) -> None:
         is_null_variant=parsed_args.null_variant,
         properties=parsed_args.properties,
         validate_properties=not parsed_args.skip_plugin_validation,
-        variant_metadata=variant_metadata,
+        variant_metadata=pyproject_toml,
     )
 
 
@@ -203,7 +113,7 @@ def _make_variant(
     is_null_variant: bool,
     properties: list[VariantProperty],
     validate_properties: bool = True,
-    variant_metadata: VariantMetadata,
+    variant_metadata: VariantPyProjectToml,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
