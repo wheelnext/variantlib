@@ -37,9 +37,13 @@ if TYPE_CHECKING:
     from variantlib.models.metadata import VariantMetadata
     from variantlib.models.variant import VariantDescription
 
+if sys.version_info >= (3, 10):
+    from importlib.metadata import entry_points
+else:
+    from importlib_metadata import entry_points
+
 if sys.version_info >= (3, 11):
     from typing import Self
-
 else:
     from typing_extensions import Self
 
@@ -385,16 +389,8 @@ class PluginLoader(BasePluginLoader):
         self._load_all_plugins_from_tuple(plugin_apis=plugins)
 
 
-class CLIPluginLoader(BasePluginLoader):
+class EntryPointPluginLoader(BasePluginLoader):
     _plugin_apis: list[str] | None = None
-
-    def __init__(
-        self,
-        plugin_apis: list[str],
-        python_ctx: BasePythonEnv | None = None,
-    ) -> None:
-        self._plugin_apis = plugin_apis
-        super().__init__(python_ctx=python_ctx)
 
     def _load_all_plugins(self) -> None:
         if self._plugins is not None:
@@ -402,10 +398,20 @@ class CLIPluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._plugins` is not None"
             )
 
-        if self._plugin_apis is None:
-            raise RuntimeError("No plugin to load...")
+        eps = entry_points().select(group="variant_plugins")
+        for ep in eps:
+            logger.info(
+                "Plugin discovered via entry point: %(name)s = %(value)s; "
+                "provided by package %(package)s %(version)s",
+                {
+                    "name": ep.name,
+                    "value": ep.value,
+                    "package": ep.dist.name if ep.dist is not None else "unknown",
+                    "version": (ep.dist.version if ep.dist is not None else ""),
+                },
+            )
 
-        self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)
+        self._load_all_plugins_from_tuple(plugin_apis=[ep.value for ep in eps])
 
 
 class ManualPluginLoader(BasePluginLoader):

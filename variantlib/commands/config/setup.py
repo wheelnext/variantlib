@@ -11,13 +11,11 @@ from tomlkit.toml_file import TOMLFile
 from variantlib import __package_name__
 from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
 from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
-from variantlib.commands.plugin_arguments import add_plugin_arguments
-from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.resolver.sorting import sort_variant_properties
 
@@ -70,7 +68,6 @@ def setup(args: list[str]) -> None:
         prog=f"{__package_name__} config setup",
         description="CLI interface to interactively set configuration up",
     )
-    add_plugin_arguments(parser)
     parser.add_argument(
         "-d",
         "--default",
@@ -105,7 +102,6 @@ def setup(args: list[str]) -> None:
     )
 
     parsed_args = parser.parse_args(args)
-    plugin_apis = parse_plugin_arguments(parsed_args)
 
     if parsed_args.ui is None:
         parsed_args.ui = (
@@ -135,115 +131,115 @@ def setup(args: list[str]) -> None:
         if not ui.display_text(INSTRUCTIONS):
             return
 
-    with ExternalNonIsolatedPythonEnv() as py_ctx:  # noqa: SIM117
-        with CLIPluginLoader(plugin_apis=plugin_apis, python_ctx=py_ctx) as loader:
-            if loader.plugins:
-                known_namespaces = sorted(loader.plugins.keys())
+    with (
+        ExternalNonIsolatedPythonEnv() as py_ctx,
+        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
+    ):
+        if loader.plugins:
+            known_namespaces = sorted(loader.plugins.keys())
 
-                if parsed_args.default:
-                    toml_data["namespace_priorities"] = known_namespaces
-                    toml_data["feature_priorities"] = []
-                    toml_data["property_priorities"] = []
-                    sys.stdout.write(
-                        "Configuration reset to defaults, please edit the file to "
-                        "adjust priorities\n"
-                    )
+            if parsed_args.default:
+                toml_data["namespace_priorities"] = known_namespaces
+                toml_data["feature_priorities"] = []
+                toml_data["property_priorities"] = []
+                sys.stdout.write(
+                    "Configuration reset to defaults, please edit the file to "
+                    "adjust priorities\n"
+                )
 
-                else:
-                    supported_configs = loader.get_supported_configs()
-
-                    ui.clear()
-                    namespace_priorities = ui.update_key(
-                        toml_data,
-                        "namespace_priorities",
-                        known_namespaces,
-                        known_values_required=True,
-                    )
-
-                    message = (
-                        "**Expert-Users Only**\n\n"
-                        "~ This setting should be left empty & untouched in most cases "
-                        "~\n\nDo you wish to adjust variant-feature priorities?"
-                    )
-
-                    ui.clear()
-                    if ui.input_bool(message, default=False, height=9):
-                        known_features = [
-                            VariantFeature(namespace, config.name).to_str()
-                            for namespace, provider in sorted(
-                                supported_configs.items(),
-                                key=lambda kv: namespace_priorities.index(kv[0]),
-                            )
-                            for config in provider.configs
-                        ]
-                        ui.update_key(
-                            toml_data,
-                            "feature_priorities",
-                            known_features,
-                            known_values_required=False,
-                        )
-
-                    message = (
-                        "**Expert-Users Only**\n\n"
-                        "~ This setting should be left empty & untouched in most cases "
-                        "~\n\nDo you wish to adjust variant-property priorities?"
-                    )
-
-                    ui.clear()
-                    if ui.input_bool(message, default=False, height=9):
-                        feature_priorities = [
-                            VariantFeature.from_str(x)
-                            for x in toml_data.get("feature_priorities", [])
-                        ]
-                        known_properties = [
-                            vprop.to_str()
-                            for vprop in sort_variant_properties(
-                                [
-                                    VariantProperty(namespace, config.name, value)
-                                    for namespace, provider in supported_configs.items()
-                                    for config in provider.configs
-                                    for value in config.values
-                                ],
-                                namespace_priorities=namespace_priorities,
-                                feature_priorities=feature_priorities,
-                                property_priorities=None,
-                            )
-                        ]
-                        ui.update_key(
-                            toml_data,
-                            "property_priorities",
-                            known_properties,
-                            known_values_required=False,
-                        )
-
-                for key in (
-                    "namespace_priorities",
-                    "feature_priorities",
-                    "property_priorities",
-                ):
-                    # Always use multiline output for readability.
-                    toml_data[key].multiline(multiline=True)
+            else:
+                supported_configs = loader.get_supported_configs()
 
                 ui.clear()
-                sys.stderr.write(
-                    "Final configuration:\n"
-                    "\n"
-                    "```\n"
-                    # unwrap() converts to base Python type, effectively losing comments
-                    f"{tomlkit.dumps(toml_data.unwrap())}"
-                    "```\n"
-                    "\n"
+                namespace_priorities = ui.update_key(
+                    toml_data,
+                    "namespace_priorities",
+                    known_namespaces,
+                    known_values_required=True,
                 )
-                if parsed_args.ui != "urwid":
-                    if not ui.input_bool(
-                        "Do you want to save the configuration changes?", default=True
-                    ):
-                        sys.stdout.write("Configuration changes discarded\n")
-                        return
-            else:
-                sys.stdout.write(
-                    "No plugins found, empty configuration will be written\n"
+
+                message = (
+                    "**Expert-Users Only**\n\n"
+                    "~ This setting should be left empty & untouched in most cases "
+                    "~\n\nDo you wish to adjust variant-feature priorities?"
                 )
+
+                ui.clear()
+                if ui.input_bool(message, default=False, height=9):
+                    known_features = [
+                        VariantFeature(namespace, config.name).to_str()
+                        for namespace, provider in sorted(
+                            supported_configs.items(),
+                            key=lambda kv: namespace_priorities.index(kv[0]),
+                        )
+                        for config in provider.configs
+                    ]
+                    ui.update_key(
+                        toml_data,
+                        "feature_priorities",
+                        known_features,
+                        known_values_required=False,
+                    )
+
+                message = (
+                    "**Expert-Users Only**\n\n"
+                    "~ This setting should be left empty & untouched in most cases "
+                    "~\n\nDo you wish to adjust variant-property priorities?"
+                )
+
+                ui.clear()
+                if ui.input_bool(message, default=False, height=9):
+                    feature_priorities = [
+                        VariantFeature.from_str(x)
+                        for x in toml_data.get("feature_priorities", [])
+                    ]
+                    known_properties = [
+                        vprop.to_str()
+                        for vprop in sort_variant_properties(
+                            [
+                                VariantProperty(namespace, config.name, value)
+                                for namespace, provider in supported_configs.items()
+                                for config in provider.configs
+                                for value in config.values
+                            ],
+                            namespace_priorities=namespace_priorities,
+                            feature_priorities=feature_priorities,
+                            property_priorities=None,
+                        )
+                    ]
+                    ui.update_key(
+                        toml_data,
+                        "property_priorities",
+                        known_properties,
+                        known_values_required=False,
+                    )
+
+            for key in (
+                "namespace_priorities",
+                "feature_priorities",
+                "property_priorities",
+            ):
+                # Always use multiline output for readability.
+                toml_data[key].multiline(multiline=True)
+
+            ui.clear()
+            sys.stderr.write(
+                "Final configuration:\n"
+                "\n"
+                "```\n"
+                # unwrap() converts to base Python type, effectively losing comments
+                f"{tomlkit.dumps(toml_data.unwrap())}"
+                "```\n"
+                "\n"
+            )
+            if parsed_args.ui != "urwid":
+                if not ui.input_bool(
+                    "Do you want to save the configuration changes?", default=True
+                ):
+                    sys.stdout.write("Configuration changes discarded\n")
+                    return
+        else:
+            sys.stdout.write("No plugins found, empty configuration will be written\n")
 
     toml_file.write(toml_data)
     sys.stdout.write(f"Configuration file written to {path}\n")

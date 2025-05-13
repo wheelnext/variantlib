@@ -14,12 +14,12 @@ if TYPE_CHECKING:
     from contextlib import _GeneratorContextManager
 
     from variantlib.models.provider import ProviderConfig
-    from variantlib.plugins.loader import CLIPluginLoader
+    from variantlib.plugins.loader import BasePluginLoader
 
 
 @pytest.fixture
 def configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ) -> list[ProviderConfig]:
     with mocked_plugin_loader_ctx() as loader:
         return list(loader.get_supported_configs().values())

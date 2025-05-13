@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from dataclasses import dataclass
 from email import message_from_string
 from typing import TYPE_CHECKING
 from typing import Any
@@ -18,7 +19,8 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
-from variantlib.plugins.loader import CLIPluginLoader
+from variantlib.plugins.loader import BasePluginLoader
+from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
@@ -70,7 +72,7 @@ class ExceptionTestingPlugin(PluginType):
 
 
 def test_get_all_configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ):
     with mocked_plugin_loader_ctx() as loader:
         assert loader.get_all_configs() == {
@@ -100,7 +102,7 @@ def test_get_all_configs(
 
 
 def test_get_supported_configs(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ):
     with mocked_plugin_loader_ctx() as loader:
         assert loader.get_supported_configs() == {
@@ -280,7 +282,7 @@ def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
 
 
 def test_get_build_setup(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ):
     variant_desc = VariantDescription(
         [
@@ -300,7 +302,7 @@ def test_get_build_setup(
 
 
 def test_get_build_setup_missing_plugin(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ):
     variant_desc = VariantDescription(
         [
@@ -318,7 +320,7 @@ def test_get_build_setup_missing_plugin(
 
 
 def test_namespaces(
-    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[CLIPluginLoader]],
+    mocked_plugin_loader_ctx: Callable[[], _GeneratorContextManager[BasePluginLoader]],
 ):
     with mocked_plugin_loader_ctx() as loader:
         assert loader.namespaces == [
@@ -407,5 +409,24 @@ def test_load_plugins_from_metadata(metadata: VariantMetadata):
     with (
         ExternalNonIsolatedPythonEnv() as py_ctx,
         PluginLoader(metadata, py_ctx) as loader,
+    ):
+        assert set(loader.plugins) == {"test_namespace", "second_namespace"}
+
+
+@dataclass
+class MockedEntryPoint:
+    name: str | None
+    value: str
+    dist: None = None
+
+
+def test_load_plugins_from_entry_points(mocker):
+    mocker.patch("variantlib.plugins.loader.entry_points")().select.return_value = [
+        MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
+        MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
+    ]
+    with (
+        ExternalNonIsolatedPythonEnv() as py_ctx,
+        EntryPointPluginLoader(py_ctx) as loader,
     ):
         assert set(loader.plugins) == {"test_namespace", "second_namespace"}
