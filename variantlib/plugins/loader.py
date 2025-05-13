@@ -54,6 +54,7 @@ class BasePluginLoader:
     """Load and query plugins"""
 
     _plugins: dict[str, PluginType] | None = None
+    _plugin_api_values: dict[str, str] | None = None
     _python_ctx: BasePythonEnv | None = None
 
     def __init__(self, python_ctx: BasePythonEnv | None = None) -> None:
@@ -68,6 +69,7 @@ class BasePluginLoader:
         return self
 
     def __exit__(self, *args: object) -> None:
+        self._plugin_api_values = None
         self._plugins = None
 
         if self._python_ctx is None:
@@ -169,6 +171,8 @@ class BasePluginLoader:
 
         if self._plugins is None:
             self._plugins = {}
+        if self._plugin_api_values is None:
+            self._plugin_api_values = {}
 
         if plugin_instance.namespace in self._plugins:
             raise RuntimeError(
@@ -177,6 +181,7 @@ class BasePluginLoader:
             )
 
         self._plugins[plugin_instance.namespace] = plugin_instance
+        self._plugin_api_values[plugin_instance.namespace] = plugin_api
 
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
@@ -295,6 +300,13 @@ class BasePluginLoader:
         if self._plugins is None:
             raise RuntimeError("You can not access plugins outside of a python context")
         return self._plugins
+
+    @property
+    def plugin_api_values(self) -> dict[str, str]:
+        if self._plugins is None:
+            raise RuntimeError("You can not access plugins outside of a python context")
+        assert self._plugin_api_values is not None
+        return self._plugin_api_values
 
     @property
     def namespaces(self) -> list[str]:

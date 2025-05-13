@@ -16,14 +16,15 @@ from variantlib.api import VariantFeature
 from variantlib.api import VariantProperty
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
+from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 
 logger = logging.getLogger(__name__)
 
@@ -120,13 +121,6 @@ def make_variant(args: list[str]) -> None:
         ),
     )
 
-    parser.add_argument(
-        "--provider-api",
-        action="append",
-        default=[],
-        help="Variant provider plugin api to load (can be specified multiple times)",
-    )
-
     parsed_args = parser.parse_args(args)
 
     variant_metadata = VariantMetadata()
@@ -137,24 +131,19 @@ def make_variant(args: list[str]) -> None:
     variant_metadata.feature_priorities = parsed_args.default_feature_priorities
     variant_metadata.property_priorities = parsed_args.default_property_priorities
 
-    for provider_api in parsed_args.provider_api:
-        if (
-            match := VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX.fullmatch(
-                provider_api
+    with (
+        ExternalNonIsolatedPythonEnv() as py_ctx,
+        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
+    ):
+        namespaces = {vprop.namespace for vprop in parsed_args.properties}
+        for namespace in namespaces:
+            if namespace not in loader.namespaces:
+                raise ValueError(
+                    f"Plugin providing namespace `{namespace}` not installed."
+                )
+            variant_metadata.providers[namespace] = ProviderInfo(
+                requires=[], plugin_api=loader.plugin_api_values[namespace]
             )
-        ) is None:
-            raise ValueError(f"The provider plugin-api: `{provider_api}` is not valid")
-
-        if (namespace := match.group("namespace")) in variant_metadata.providers:
-            raise ValueError(
-                f"The following namespace `{namespace}` already has a declared "
-                "plugin-api"
-            )
-
-        variant_metadata.providers[namespace] = ProviderInfo(
-            requires=[],
-            plugin_api=match.group("plugin_api"),
-        )
 
     for provider_req in parsed_args.provider_requires:
         if (
