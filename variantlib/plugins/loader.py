@@ -423,6 +423,12 @@ class ManualPluginLoader(BasePluginLoader):
         self._plugins = {}
         super().__init__(python_ctx=ExternalNonIsolatedPythonEnv().__enter__())
 
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self._plugins = {}
+
     def __del__(self) -> None:
         self._python_ctx.__exit__()
 

@@ -341,6 +341,19 @@ def test_load_plugin():
     assert "second_namespace" in loader.plugins
 
 
+def test_manual_plugin_loader_as_context_manager():
+    with ManualPluginLoader() as loader:
+        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
+        assert "test_namespace" in loader.plugins
+        assert "second_namespace" not in loader.plugins
+
+        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
+        assert "test_namespace" in loader.plugins
+        assert "second_namespace" in loader.plugins
+
+    assert not loader.plugins
+
+
 def test_load_plugin_invalid_arg():
     with pytest.raises(ValidationError):
         ManualPluginLoader().load_plugin("tests.mocked_plugins")
