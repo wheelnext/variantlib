@@ -165,7 +165,7 @@ class PipBackend(_BaseBackend):
 
 
 def AutoInstallBackend() -> UvBackend | PipBackend:  # noqa: N802
-    if shutil.which("uv") is not None:
+    if False:
         return UvBackend()
 
     return PipBackend()
