@@ -305,6 +305,7 @@ def test_set_variant_metadata(
         metadata["Variant-Default-Namespace-Priorities"] = "ns3, ns2,ns1"
         metadata["Variant-Default-Feature-Priorities"] = "ns3 :: f1"
         metadata["Variant-Default-Property-Priorities"] = "ns2 :: f2 :: p2"
+        metadata["variant-enable-IF"] = "ns2: python_version >= '3.12'"
 
     set_variant_metadata(
         metadata,
@@ -333,6 +334,7 @@ def test_set_variant_metadata(
     if pyproject_toml is not None:
         expected += (
             "Variant-requires: ns1: ns1-provider >= 1.2.3\n"
+            "Variant-enable-if: ns1: python_version >= '3.12'\n"
             "Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin\n"
             "Variant-requires: ns2: ns2_provider; python_version >= '3.11'\n"
             "Variant-requires: ns2: old_ns2_provider; python_version < '3.11'\n"

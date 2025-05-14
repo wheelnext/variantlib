@@ -17,6 +17,7 @@ Variant-property: ns1 :: f2 :: p2
 Variant-property: ns2 :: f1 :: p1
 Variant-hash: 67fcaf38
 Variant-requires: ns1: ns1-provider >= 1.2.3
+Variant-enable-if: ns1: python_version >= '3.12'
 Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin
 Variant-requires: ns2: ns2_provider; python_version >= '3.11'
 Variant-requires: ns2: old_ns2_provider; python_version < '3.11'
@@ -52,6 +53,7 @@ def test_dist_metadata():
     assert metadata.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
+            enable_if="python_version >= '3.12'",
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(

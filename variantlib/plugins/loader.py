@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import get_type_hints
 
+from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
 
@@ -362,6 +363,16 @@ class PluginLoader(BasePluginLoader):
                 )
                 continue
 
+            if (marker := self._variant_nfo.providers[namespace].enable_if) is not None:
+                if not Marker(marker).evaluate(pyenv):
+                    logger.debug(
+                        "The variant provider plugin corresponding "
+                        "to namespace `%(ns)s` has been skipped - Not compatible with "
+                        "the environmment. Details: %(data)s.",
+                        {"ns": namespace, "data": provider_data},
+                    )
+                    continue
+
             if not (list_req_str := provider_data.requires):
                 logger.error(
                     "Impossible to install the variant provider plugin corresponding "
@@ -397,9 +408,14 @@ class PluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._plugins` is not None"
             )
 
+        # Get the current environment for marker evaluation
+        pyenv = default_environment()
+
         plugins = [
             self._variant_nfo.providers[namespace].plugin_api
             for namespace in self._variant_nfo.namespace_priorities
+            if (marker := self._variant_nfo.providers[namespace].enable_if) is None
+            or Marker(marker).evaluate(pyenv)
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)

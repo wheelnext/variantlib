@@ -354,13 +354,24 @@ def test_load_plugin_invalid_arg():
     "metadata",
     [
         VariantMetadata(
-            namespace_priorities=["test_namespace", "second_namespace"],
+            namespace_priorities=[
+                "test_namespace",
+                "second_namespace",
+                "incompatible_namespace",
+            ],
             providers={
                 "test_namespace": ProviderInfo(
                     plugin_api="tests.mocked_plugins:MockedPluginA"
                 ),
                 "second_namespace": ProviderInfo(
-                    plugin_api="tests.mocked_plugins:MockedPluginB"
+                    # always true
+                    enable_if="python_version >= '3.9'",
+                    plugin_api="tests.mocked_plugins:MockedPluginB",
+                ),
+                "incompatible_namespace": ProviderInfo(
+                    # always false (hopefully)
+                    enable_if='platform_machine == "frobnicator"',
+                    plugin_api="tests.mocked_plugins:MockedPluginC",
                 ),
             },
         ),

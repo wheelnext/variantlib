@@ -14,6 +14,7 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
@@ -188,6 +189,10 @@ def set_variant_metadata(
             for requirement in provider_info.requires:
                 metadata[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
                     f"{namespace}: {requirement}"
+                )
+            if provider_info.enable_if is not None:
+                metadata[METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER] = (
+                    f"{namespace}: {provider_info.enable_if}"
                 )
             metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
                 f"{namespace}: {provider_info.plugin_api}"

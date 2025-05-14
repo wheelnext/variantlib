@@ -7,9 +7,11 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -112,6 +114,17 @@ class DistMetadata(VariantMetadata):
                 match.group("requirement_str")
             )
 
+        provider_enable_if: dict[str, str] = {}
+        for enable_if_tag in metadata.get_all(
+            METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER, []
+        ):
+            match = validate_matches_re(
+                enable_if_tag,
+                VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX,
+                METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER,
+            )
+            provider_enable_if[match.group("namespace")] = match.group("enable_if")
+
         provider_plugin_api: dict[str, str] = {}
         for plugin_api_tag in metadata.get_all(
             METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER, []
@@ -133,7 +146,9 @@ class DistMetadata(VariantMetadata):
 
         self.providers = {
             namespace: ProviderInfo(
-                requires=provider_requires.get(namespace, []), plugin_api=plugin_api
+                requires=provider_requires.get(namespace, []),
+                enable_if=provider_enable_if.get(namespace),
+                plugin_api=plugin_api,
             )
             for namespace, plugin_api in provider_plugin_api.items()
         }

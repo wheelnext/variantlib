@@ -165,6 +165,7 @@ def test_validate_variants_json():
     assert variants_json.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
+            enable_if="python_version >= '3.12'",
             plugin_api="provider_fictional_hw.plugin:FictionalHWPlugin",
         ),
         "fictional_tech": ProviderInfo(

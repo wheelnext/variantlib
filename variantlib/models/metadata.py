@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 @dataclass
 class ProviderInfo:
     plugin_api: str
+    enable_if: str | None = None
     requires: list[str] = field(default_factory=list)
 
 

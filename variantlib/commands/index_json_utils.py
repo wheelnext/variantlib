@@ -9,8 +9,10 @@ from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
+from variantlib.constants import VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -19,6 +21,7 @@ from variantlib.constants import VARIANTS_JSON_FEATURE_KEY
 from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
 from variantlib.constants import VARIANTS_JSON_PROPERTY_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -162,6 +165,45 @@ def append_variant_info_to_json_file(
                 f"`{namespace}` does not provide any installation "
                 "requirements. Expected format: `<namespace>: <requirement>`"
             )
+
+    # ===================== Variant Provider Enable-If ====================== #
+
+    for provider_enable_if in metadata.get_all(
+        METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER, []
+    ):
+        try:
+            match = VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX.fullmatch(
+                provider_enable_if
+            )
+            if match is None:
+                raise ValidationError("Regex failure")  # noqa: TRY301
+
+            namespace = match.group("namespace").strip()
+            enable_if_str = match.group("enable_if").strip()
+
+            # no need to validate namespace or enable_if_str again
+            # as they are already validated in the regex:
+            # `VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX`
+
+        except (ValidationError, IndexError):
+            raise ValidationError(
+                f"Invalid `{VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX}` value "
+                "found: `{provider_enable_if}`. Expected format: "
+                "`<namespace>: <enable-if>`"
+            ) from None
+
+        provider_data = data[VARIANTS_JSON_PROVIDER_DATA_KEY][namespace]
+        if curr_val := provider_data.get(VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY, None):
+            if curr_val != enable_if_str:
+                raise ValidationError(
+                    "Invalid configuration found. The enable-if for the variant "
+                    f"namespace `{namespace}` is not consistent. "
+                    f"Expected: `{curr_val}`, Found: `{enable_if_str}`"
+                )
+            continue
+
+        modified = True
+        provider_data[VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY] = enable_if_str
 
     # ===================== Variant Provider Plugin API ===================== #
 

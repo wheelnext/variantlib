@@ -14,6 +14,7 @@ from typing import get_origin
 
 from packaging.requirements import InvalidRequirement
 from packaging.requirements import Requirement
+
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -189,6 +190,8 @@ def validate_requirement_str(dependency_str: str) -> None:
 class KeyTrackingValidator:
     """Helper class for validating types in nested structure"""
 
+    class RequiredKey: ...
+
     def __init__(self, top_key: str | None, top_data: dict) -> None:
         self._keys = [top_key] if top_key else []
         self._data: list[Any] = [top_data]
@@ -217,7 +220,7 @@ class KeyTrackingValidator:
         self,
         key: str,
         expected_type: type,
-        default: Any = None,
+        default: Any = RequiredKey,
         ignore_subkeys: bool = False,
     ) -> Any:
         # add to list of expected keys of current dict
@@ -227,11 +230,14 @@ class KeyTrackingValidator:
         self._keys.append(key)
         self._data.append(self._data[-1].get(key, default))
 
-        if default is None and self._data[-1] is None:
+        if self._data[-1] is self.RequiredKey:
             raise ValidationError(f"{self._key}: required key not found")
 
         self._expected_keys.append(set())
-        self.validate(self._data[-1], expected_type)
+        # validate only non-default type -- this makes optional keys easier
+        # (since type validator can't handle optional types)
+        if self._data[-1] is not default:
+            self.validate(self._data[-1], expected_type)
 
         # return the value
         yield self._data[-1]
