@@ -1,12 +1,24 @@
 from __future__ import annotations
 
+import itertools
 from email import message_from_string
 
+import pytest
+
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
+from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_HASH_HEADER
+from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
+from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.dist_metadata import DistMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import ProviderInfo
+from variantlib.validators import ValidationError
 
 TEST_METADATA = """\
 Metadata-Version: 2.1
@@ -64,3 +76,107 @@ def test_dist_metadata():
             plugin_api="ns2_provider:Plugin",
         ),
     }
+
+
+def test_missing_variant_hash():
+    mangled = "\n".join(
+        [x for x in TEST_METADATA.splitlines() if not x.startswith("Variant-hash")]
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"{METADATA_VARIANT_HASH_HEADER}: found 0 instances of header that "
+        r"is expected to occur exactly once",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+def test_incorrect_variant_hash():
+    mangled = "\n".join(
+        [x for x in TEST_METADATA.splitlines() if not x.startswith("Variant-property")]
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"{METADATA_VARIANT_HASH_HEADER} specifies incorrect hash: '67fcaf38'; "
+        r"expected: '00000000'",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+def test_incorrect_property():
+    mangled = TEST_METADATA.replace(" :: ", "/")
+    with pytest.raises(
+        ValidationError,
+        match=rf"{METADATA_VARIANT_PROPERTY_HEADER}\[0\]: Value `ns1/f1/p1` must match "
+        r"regex",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+def test_missing_plugin_api():
+    mangled = "\n".join(
+        [
+            x
+            for x in TEST_METADATA.splitlines()
+            if not x.startswith("Variant-plugin-api")
+        ]
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"{METADATA_VARIANT_PROVIDER_REQUIRES_HEADER} and "
+        rf"{METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER} include namespaces "
+        r"that are not included in Variant-plugin-api",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        METADATA_VARIANT_HASH_HEADER,
+        METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER,
+        METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER,
+        METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER,
+    ],
+)
+def test_duplicate_value(header: str):
+    mangled = "\n".join(
+        itertools.chain.from_iterable(
+            [x, x] if x.startswith(header) else [x] for x in TEST_METADATA.splitlines()
+        )
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"{header}: found 2 instances of header that is expected",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER,
+        METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER,
+    ],
+)
+def test_duplicate_provider_value(header: str):
+    mangled = "\n".join(
+        itertools.chain.from_iterable(
+            [x, x] if x.startswith(header) else [x] for x in TEST_METADATA.splitlines()
+        )
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"{header}: duplicate value for namespace ns1",
+    ):
+        DistMetadata(message_from_string(mangled))
+
+
+@pytest.mark.parametrize("new_value", ["ns1", "ns3", "ns1, ns2, ns3"])
+def test_default_namespace_mismatch(new_value: str):
+    mangled = TEST_METADATA.replace("ns1, ns2", new_value)
+    with pytest.raises(
+        ValidationError,
+        match=rf"{METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER} must specify "
+        rf"the same namespaces as {METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER} key",
+    ):
+        DistMetadata(message_from_string(mangled))

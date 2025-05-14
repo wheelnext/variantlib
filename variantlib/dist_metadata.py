@@ -30,20 +30,32 @@ if TYPE_CHECKING:
     from email.message import Message
 
 
-def get_comma_sep(val: str) -> list[str]:
-    if not val.strip():
-        return []
-    return [x.strip() for x in val.split(",")]
-
-
 class DistMetadata(VariantMetadata):
     variant_hash: str
     variant_desc: VariantDescription
 
     def __init__(self, metadata: Message) -> None:
-        # TODO: check for duplicate values
+        def get_one(key: str) -> str:
+            values = metadata.get_all(key, [])
+            if len(values) != 1:
+                raise ValidationError(
+                    f"{key}: found {len(values)} instances of header that is expected "
+                    "to occur exactly once"
+                )
+            return values[0]
 
-        variant_hash = metadata.get(METADATA_VARIANT_HASH_HEADER, "")
+        def get_priority_list(key: str) -> list[str]:
+            values = metadata.get_all(key, [])
+            if len(values) > 1:
+                raise ValidationError(
+                    f"{key}: found {len(values)} instances of header that is expected "
+                    "at most once"
+                )
+            if not values or not values[0].strip():
+                return []
+            return [x.strip() for x in values[0].split(",")]
+
+        variant_hash = get_one(METADATA_VARIANT_HASH_HEADER)
         validate_matches_re(
             variant_hash,
             VALIDATION_VARIANT_HASH_REGEX,
@@ -67,8 +79,8 @@ class DistMetadata(VariantMetadata):
                 f"{variant_hash!r}; expected: {self.variant_desc.hexdigest!r}"
             )
 
-        namespace_priorities = get_comma_sep(
-            metadata.get(METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER, "")
+        namespace_priorities = get_priority_list(
+            METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
         )
         validate_list_matches_re(
             namespace_priorities,
@@ -77,8 +89,8 @@ class DistMetadata(VariantMetadata):
         )
         self.namespace_priorities = namespace_priorities
 
-        feature_priorities = get_comma_sep(
-            metadata.get(METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER, "")
+        feature_priorities = get_priority_list(
+            METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
         )
         validate_list_matches_re(
             feature_priorities,
@@ -89,8 +101,8 @@ class DistMetadata(VariantMetadata):
             VariantFeature.from_str(x) for x in feature_priorities
         ]
 
-        property_priorities = get_comma_sep(
-            metadata.get(METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER, "")
+        property_priorities = get_priority_list(
+            METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
         )
         validate_list_matches_re(
             property_priorities,
@@ -123,6 +135,11 @@ class DistMetadata(VariantMetadata):
                 VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX,
                 METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER,
             )
+            if match.group("namespace") in provider_enable_if:
+                raise ValidationError(
+                    f"{METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER}: duplicate value "
+                    f"for namespace {match.group('namespace')}"
+                )
             provider_enable_if[match.group("namespace")] = match.group("enable_if")
 
         provider_plugin_api: dict[str, str] = {}
@@ -134,12 +151,20 @@ class DistMetadata(VariantMetadata):
                 VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX,
                 METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER,
             )
+            if match.group("namespace") in provider_plugin_api:
+                raise ValidationError(
+                    f"{METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER}: duplicate value "
+                    f"for namespace {match.group('namespace')}"
+                )
             provider_plugin_api[match.group("namespace")] = match.group("plugin_api")
 
-        missing_plugin_api = set(provider_requires) - set(provider_plugin_api)
+        missing_plugin_api = (set(provider_requires) | set(provider_enable_if)) - set(
+            provider_plugin_api
+        )
         if missing_plugin_api:
             raise ValidationError(
-                f"{METADATA_VARIANT_PROVIDER_REQUIRES_HEADER} includes namespaces that "
+                f"{METADATA_VARIANT_PROVIDER_REQUIRES_HEADER} and "
+                f"{METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER} include namespaces that "
                 f"are not included in {METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER}: "
                 f"{missing_plugin_api}"
             )
