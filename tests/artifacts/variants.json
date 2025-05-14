@@ -7,6 +7,7 @@
     "providers": {
         "fictional_hw": {
             "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin",
+            "enable-if": "python_version >= '3.12'",
             "requires": [
                 "provider-fictional-hw == 1.0.0"
             ]

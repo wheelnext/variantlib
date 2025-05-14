@@ -9,12 +9,14 @@ from variantlib.constants import PYPROJECT_TOML_FEATURE_KEY
 from variantlib.constants import PYPROJECT_TOML_NAMESPACE_KEY
 from variantlib.constants import PYPROJECT_TOML_PROPERTY_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
+from variantlib.constants import PYPROJECT_TOML_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
+from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.models.metadata import ProviderInfo
@@ -86,8 +88,15 @@ class VariantPyProjectToml(VariantMetadata):
                         PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, str
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
+                    with validator.get(
+                        PYPROJECT_TOML_PROVIDER_ENABLE_IF_KEY, str, None
+                    ) as provider_enable_if:
+                        if provider_enable_if is not None:
+                            validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        requires=provider_requires, plugin_api=provider_plugin_api
+                        requires=provider_requires,
+                        enable_if=provider_enable_if,
+                        plugin_api=provider_plugin_api,
                     )
 
         if set(self.namespace_priorities) != set(self.providers.keys()):

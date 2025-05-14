@@ -36,6 +36,7 @@ property = ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"]
 
 [variant.providers.ns1]
 requires = ["ns1-provider >= 1.2.3"]
+enable-if = "python_version >= '3.12'"
 plugin-api = "ns1_provider.plugin:NS1Plugin"
 
 [variant.providers.ns2]
@@ -70,6 +71,7 @@ def test_pyproject_toml():
     assert pyproj.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
+            enable_if="python_version >= '3.12'",
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(
@@ -90,6 +92,7 @@ def test_pyproject_toml_minimal():
     assert pyproj.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
+            enable_if="python_version >= '3.12'",
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(
