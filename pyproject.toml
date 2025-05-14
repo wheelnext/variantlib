@@ -81,7 +81,7 @@ get-supported-configs = "variantlib.commands.plugins.get_supported_configs:get_s
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
-addopts = "-vvv --cov=variantlib --cov-report=term-missing"
+addopts = "-vvv --cov=variantlib --cov-report=term-missing --no-cov-on-fail"
 
 [tool.mypy]
 disallow_untyped_defs = true
