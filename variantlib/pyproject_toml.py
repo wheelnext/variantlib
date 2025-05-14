@@ -39,8 +39,14 @@ else:
 
 
 class VariantPyProjectToml(VariantMetadata):
-    def __init__(self, toml_data: dict) -> None:
-        """Init from pre-read ``pyproject.toml`` data"""
+    def __init__(self, toml_data: dict | VariantMetadata) -> None:
+        """Init from pre-read ``pyproject.toml`` data or another class"""
+
+        if isinstance(toml_data, VariantMetadata):
+            # Convert from another related class.
+            super().__init__(**toml_data.copy_as_kwargs())
+            return
+
         self._process(toml_data.get(PYPROJECT_TOML_TOP_KEY, {}))
 
     @classmethod
@@ -56,7 +62,7 @@ class VariantPyProjectToml(VariantMetadata):
                 PYPROJECT_TOML_NAMESPACE_KEY, list[str], []
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
-                self.namespace_priorities = namespace_priorities
+                self.namespace_priorities = list(namespace_priorities)
             with validator.get(
                 PYPROJECT_TOML_FEATURE_KEY, list[str], []
             ) as feature_priorities:
@@ -94,7 +100,7 @@ class VariantPyProjectToml(VariantMetadata):
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        requires=provider_requires,
+                        requires=list(provider_requires),
                         enable_if=provider_enable_if,
                         plugin_api=provider_plugin_api,
                     )

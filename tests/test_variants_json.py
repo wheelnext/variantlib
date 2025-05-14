@@ -5,10 +5,12 @@ from pathlib import Path
 
 import pytest
 
+from variantlib.dist_metadata import DistMetadata
+from variantlib.models.metadata import ProviderInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.pyproject_toml import ProviderInfo
+from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
@@ -198,3 +200,53 @@ def test_validate_variants_json_empty():
 def test_validate_variants_json_incorrect_vhash(data: dict):
     with pytest.raises(ValidationError):
         VariantsJson(data)
+
+
+@pytest.mark.parametrize("cls", [DistMetadata, VariantPyProjectToml, VariantsJson])
+def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson]):
+    json_file = Path("tests/artifacts/variants.json")
+    assert json_file.exists(), "Expected JSON file does not exist"
+
+    # Read the Variants JSON file
+    with json_file.open() as f:
+        data = json.load(f)
+
+    # Convert
+    variants_json = VariantsJson(data)
+    converted = cls(variants_json)
+
+    # Mangle variants_json to ensure everything was copied
+    variants_json.namespace_priorities.append("ns")
+    variants_json.feature_priorities.append(VariantFeature("ns", "foo"))
+    variants_json.property_priorities.append(VariantProperty("ns", "foo", "bar"))
+    variants_json.providers["ns"] = ProviderInfo(plugin_api="foo:bar")
+    variants_json.providers["fictional_hw"].enable_if = None
+    variants_json.providers["fictional_tech"].requires.append("frobnicate")
+
+    assert converted.namespace_priorities == ["fictional_hw", "fictional_tech"]
+    assert converted.feature_priorities == [
+        VariantFeature(namespace="fictional_tech", feature="quantum")
+    ]
+    assert converted.property_priorities == [
+        VariantProperty(
+            namespace="fictional_tech", feature="technology", value="auto_chef"
+        )
+    ]
+    assert converted.providers == {
+        "fictional_hw": ProviderInfo(
+            requires=["provider-fictional-hw == 1.0.0"],
+            enable_if="python_version >= '3.12'",
+            plugin_api="provider_fictional_hw.plugin:FictionalHWPlugin",
+        ),
+        "fictional_tech": ProviderInfo(
+            requires=["provider-fictional-tech == 1.0.0"],
+            plugin_api="provider_fictional_tech.plugin:FictionalTechPlugin",
+        ),
+    }
+
+    # Non-common fields should be reset to defaults
+    if isinstance(converted, DistMetadata):
+        assert converted.variant_hash == "00000000"
+        assert converted.variant_desc == VariantDescription()
+    if isinstance(converted, VariantsJson):
+        assert converted.variants == {}

@@ -5,6 +5,8 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from variantlib.models.variant import VariantFeature
     from variantlib.models.variant import VariantProperty
 
@@ -22,3 +24,20 @@ class VariantMetadata:
     feature_priorities: list[VariantFeature] = field(default_factory=list)
     property_priorities: list[VariantProperty] = field(default_factory=list)
     providers: dict[str, ProviderInfo] = field(default_factory=dict)
+
+    def copy_as_kwargs(self) -> dict[str, Any]:
+        """Return a "kwargs" dict suitable for instantiating a copy of itself"""
+
+        return {
+            "namespace_priorities": list(self.namespace_priorities),
+            "feature_priorities": list(self.feature_priorities),
+            "property_priorities": list(self.property_priorities),
+            "providers": {
+                namespace: ProviderInfo(
+                    requires=list(provider_data.requires),
+                    enable_if=provider_data.enable_if,
+                    plugin_api=provider_data.plugin_api,
+                )
+                for namespace, provider_data in self.providers.items()
+            },
+        }

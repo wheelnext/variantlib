@@ -12,11 +12,14 @@ from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
+from variantlib.dist_metadata import DistMetadata
+from variantlib.models.metadata import ProviderInfo
+from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.pyproject_toml import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.validators import ValidationError
+from variantlib.variants_json import VariantsJson
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -343,3 +346,48 @@ def test_extra_provider_data_key():
                 }
             }
         )
+
+
+@pytest.mark.parametrize("cls", [DistMetadata, VariantPyProjectToml, VariantsJson])
+def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson]):
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
+    converted = cls(pyproj)
+
+    # Mangle the original to ensure everything was copied
+    pyproj.namespace_priorities.append("ns4")
+    pyproj.feature_priorities.append(VariantFeature("ns4", "foo"))
+    pyproj.property_priorities.append(VariantProperty("ns4", "foo", "bar"))
+    pyproj.providers["ns4"] = ProviderInfo(plugin_api="foo:bar")
+    pyproj.providers["ns1"].enable_if = None
+    pyproj.providers["ns2"].requires.append("frobnicate")
+
+    assert converted.namespace_priorities == ["ns1", "ns2"]
+    assert converted.feature_priorities == [
+        VariantFeature("ns2", "f1"),
+        VariantFeature("ns1", "f2"),
+    ]
+    assert converted.property_priorities == [
+        VariantProperty("ns1", "f2", "p1"),
+        VariantProperty("ns2", "f1", "p2"),
+    ]
+    assert converted.providers == {
+        "ns1": ProviderInfo(
+            requires=["ns1-provider >= 1.2.3"],
+            enable_if="python_version >= '3.12'",
+            plugin_api="ns1_provider.plugin:NS1Plugin",
+        ),
+        "ns2": ProviderInfo(
+            requires=[
+                "ns2_provider; python_version >= '3.11'",
+                "old_ns2_provider; python_version < '3.11'",
+            ],
+            plugin_api="ns2_provider:Plugin",
+        ),
+    }
+
+    # Non-common fields should be reset to defaults
+    if isinstance(converted, DistMetadata):
+        assert converted.variant_hash == "00000000"
+        assert converted.variant_desc == VariantDescription()
+    if isinstance(converted, VariantsJson):
+        assert converted.variants == {}

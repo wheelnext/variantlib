@@ -27,14 +27,29 @@ from variantlib.validators import validate_list_matches_re
 from variantlib.validators import validate_matches_re
 
 if TYPE_CHECKING:
+    import sys
     from email.message import Message
+
+    if sys.version_info >= (3, 11):
+        pass
+    else:
+        pass
 
 
 class DistMetadata(VariantMetadata):
     variant_hash: str
     variant_desc: VariantDescription
 
-    def __init__(self, metadata: Message) -> None:
+    def __init__(self, metadata: Message | VariantMetadata) -> None:
+        """Init from distribution metadata or another class"""
+
+        if isinstance(metadata, VariantMetadata):
+            # Convert from another related class.
+            super().__init__(**metadata.copy_as_kwargs())
+            self.variant_hash = "00000000"
+            self.variant_desc = VariantDescription()
+            return
+
         def get_one(key: str) -> str:
             values = metadata.get_all(key, [])
             if len(values) != 1:

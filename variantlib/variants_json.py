@@ -30,8 +30,15 @@ from variantlib.validators import ValidationError
 class VariantsJson(VariantMetadata):
     variants: dict[str, VariantDescription]
 
-    def __init__(self, variants_json: dict) -> None:
-        """Init from pre-read ``variants.json`` data"""
+    def __init__(self, variants_json: dict | VariantMetadata) -> None:
+        """Init from pre-read ``variants.json`` data or another class"""
+
+        if isinstance(variants_json, VariantMetadata):
+            # Convert from another related class.
+            super().__init__(**variants_json.copy_as_kwargs())
+            self.variants = {}
+            return
+
         self._process(variants_json)
 
     def _process(self, variant_table: dict) -> None:
@@ -58,7 +65,7 @@ class VariantsJson(VariantMetadata):
                 VARIANTS_JSON_NAMESPACE_KEY, list[str], []
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
-                self.namespace_priorities = namespace_priorities
+                self.namespace_priorities = list(namespace_priorities)
             with validator.get(
                 VARIANTS_JSON_FEATURE_KEY, list[str], []
             ) as feature_priorities:
@@ -96,7 +103,7 @@ class VariantsJson(VariantMetadata):
                     ) as provider_plugin_api:
                         validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     self.providers[namespace] = ProviderInfo(
-                        requires=provider_requires,
+                        requires=list(provider_requires),
                         enable_if=provider_enable_if,
                         plugin_api=provider_plugin_api,
                     )
