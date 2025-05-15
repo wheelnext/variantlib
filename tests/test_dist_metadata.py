@@ -27,18 +27,18 @@ Metadata-Version: 2.1
 Name: test-package
 Version: 1.2.3
 Variant-property: ns1 :: f1 :: p1
-Variant-property: ns1 :: f2 :: p2
+Variant-Property: ns1 :: f2 :: p2
 Variant-property: ns2 :: f1 :: p1
-Variant-hash: 67fcaf38
-Variant-requires: ns1: ns1-provider >= 1.2.3
-Variant-enable-if: ns1: python_version >= '3.12'
-Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin
-Variant-requires: ns2: ns2_provider; python_version >= '3.11'
-Variant-requires: ns2: old_ns2_provider; python_version < '3.11'
-Variant-plugin-api: ns2: ns2_provider:Plugin
-Variant-default-namespace-priorities: ns1, ns2
-Variant-default-feature-priorities: ns2 :: f1, ns1 :: f2
-Variant-default-property-priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2
+Variant-Hash: 67fcaf38
+Variant-Requires: ns1: ns1-provider >= 1.2.3
+Variant-Enable-If: ns1: python_version >= '3.12'
+Variant-Plugin-API: ns1: ns1_provider.plugin:NS1Plugin
+Variant-REQUIRES: ns2: ns2_provider; python_version >= '3.11'
+VARIANT-requires: ns2: old_ns2_provider; python_version < '3.11'
+Variant-PLUGIN-api: ns2: ns2_provider:Plugin
+Variant-DEFAULT-Namespace-priorities: ns1, ns2
+Variant-default-FEATURE-Priorities: ns2 :: f1, ns1 :: f2
+Variant-Default-property-PRIORITIES: ns1 :: f2 :: p1, ns2 :: f1 :: p2
 
 long description
 of a package
@@ -82,7 +82,11 @@ def test_dist_metadata():
 
 def test_missing_variant_hash():
     mangled = "\n".join(
-        [x for x in TEST_METADATA.splitlines() if not x.startswith("Variant-hash")]
+        [
+            x
+            for x in TEST_METADATA.splitlines()
+            if not x.lower().startswith("variant-hash")
+        ]
     )
     with pytest.raises(
         ValidationError,
@@ -94,7 +98,11 @@ def test_missing_variant_hash():
 
 def test_incorrect_variant_hash():
     mangled = "\n".join(
-        [x for x in TEST_METADATA.splitlines() if not x.startswith("Variant-property")]
+        [
+            x
+            for x in TEST_METADATA.splitlines()
+            if not x.lower().startswith("variant-property")
+        ]
     )
     with pytest.raises(
         ValidationError,
@@ -119,7 +127,7 @@ def test_missing_plugin_api():
         [
             x
             for x in TEST_METADATA.splitlines()
-            if not x.startswith("Variant-plugin-api")
+            if not x.lower().startswith("variant-plugin-api")
         ]
     )
     with pytest.raises(
@@ -143,7 +151,8 @@ def test_missing_plugin_api():
 def test_duplicate_value(header: str):
     mangled = "\n".join(
         itertools.chain.from_iterable(
-            [x, x] if x.startswith(header) else [x] for x in TEST_METADATA.splitlines()
+            [x, x] if x.lower().startswith(header.lower()) else [x]
+            for x in TEST_METADATA.splitlines()
         )
     )
     with pytest.raises(
@@ -163,7 +172,8 @@ def test_duplicate_value(header: str):
 def test_duplicate_provider_value(header: str):
     mangled = "\n".join(
         itertools.chain.from_iterable(
-            [x, x] if x.startswith(header) else [x] for x in TEST_METADATA.splitlines()
+            [x, x] if x.lower().startswith(header.lower()) else [x]
+            for x in TEST_METADATA.splitlines()
         )
     )
     with pytest.raises(
