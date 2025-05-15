@@ -41,3 +41,19 @@ class VariantMetadata:
                 for namespace, provider_data in self.providers.items()
             },
         }
+
+    def get_provider_requires(self, namespaces: set[str] | None = None) -> set[str]:
+        """
+        Get list of requirements for providers in metadata
+
+        If `namespaces` is not None, only requirements for given namespaces
+        will be returned. Otherwise, all requirements will be returned.
+        """
+
+        if namespaces is None:
+            namespaces = set(self.namespace_priorities)
+
+        requirements = set()
+        for namespace in namespaces:
+            requirements.update(self.providers[namespace].requires)
+        return requirements

@@ -391,3 +391,21 @@ def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson
         assert converted.variant_desc == VariantDescription()
     if isinstance(converted, VariantsJson):
         assert converted.variants == {}
+
+
+def test_get_provider_requires():
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
+    assert pyproj.get_provider_requires() == {
+        "ns1-provider >= 1.2.3",
+        "ns2_provider; python_version >= '3.11'",
+        "old_ns2_provider; python_version < '3.11'",
+    }
+    assert pyproj.get_provider_requires({"ns1"}) == {
+        "ns1-provider >= 1.2.3",
+    }
+    assert pyproj.get_provider_requires({"ns2"}) == {
+        "ns2_provider; python_version >= '3.11'",
+        "old_ns2_provider; python_version < '3.11'",
+    }
+    with pytest.raises(KeyError):
+        pyproj.get_provider_requires({"no_ns"})
