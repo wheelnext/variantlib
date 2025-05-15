@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from variantlib.constants import METADATA_ALL_HEADERS
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
@@ -199,4 +200,46 @@ class DistMetadata(VariantMetadata):
                 f"the same namespaces as {METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER} "
                 f"key; currently: {set(self.namespace_priorities)} vs. "
                 f"{set(self.providers.keys())}"
+            )
+
+    def update_message(self, message: Message) -> None:
+        """Update Message with headers from this class"""
+
+        # Remove old metadata
+        # NB: del on Message class does not fail if header does not exist
+        for key in METADATA_ALL_HEADERS:
+            del message[key]
+
+        # Update the hash, in case the user modified variant description
+        self.variant_hash = self.variant_desc.hexdigest
+
+        # Set new metadata
+        for vprop in self.variant_desc.properties:
+            message[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
+        message[METADATA_VARIANT_HASH_HEADER] = self.variant_hash
+
+        for namespace, provider_info in self.providers.items():
+            for requirement in provider_info.requires:
+                message[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
+                    f"{namespace}: {requirement}"
+                )
+            if provider_info.enable_if is not None:
+                message[METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER] = (
+                    f"{namespace}: {provider_info.enable_if}"
+                )
+            message[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
+                f"{namespace}: {provider_info.plugin_api}"
+            )
+
+        if self.namespace_priorities:
+            message[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = ", ".join(
+                self.namespace_priorities
+            )
+        if self.feature_priorities:
+            message[METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER] = ", ".join(
+                x.to_str() for x in self.feature_priorities
+            )
+        if self.property_priorities:
+            message[METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER] = ", ".join(
+                x.to_str() for x in self.property_priorities
             )

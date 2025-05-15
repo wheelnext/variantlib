@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from email import message_from_string
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -22,10 +23,17 @@ from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
-TEST_METADATA = """\
+if TYPE_CHECKING:
+    from email.message import Message
+
+COMMON_METADATA = """\
 Metadata-Version: 2.1
 Name: test-package
-Version: 1.2.3
+Version: 1.2.3\
+"""
+
+TEST_METADATA = f"""\
+{COMMON_METADATA}
 Variant-property: ns1 :: f1 :: p1
 Variant-Property: ns1 :: f2 :: p2
 Variant-property: ns2 :: f1 :: p1
@@ -39,6 +47,13 @@ Variant-PLUGIN-api: ns2: ns2_provider:Plugin
 Variant-DEFAULT-Namespace-priorities: ns1, ns2
 Variant-default-FEATURE-Priorities: ns2 :: f1, ns1 :: f2
 Variant-Default-property-PRIORITIES: ns1 :: f2 :: p1, ns2 :: f1 :: p2
+
+long description
+of a package
+"""
+
+UPDATE_METADATA_MINIMAL = f"""\
+{COMMON_METADATA}
 
 long description
 of a package
@@ -237,3 +252,35 @@ def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson
         assert converted.variant_desc == VariantDescription()
     if isinstance(converted, VariantsJson):
         assert converted.variants == {}
+
+
+@pytest.mark.parametrize(
+    "message",
+    [message_from_string(UPDATE_METADATA_MINIMAL), message_from_string(TEST_METADATA)],
+)
+def test_update_message(message: Message):
+    metadata = DistMetadata(message_from_string(TEST_METADATA))
+    metadata.update_message(message)
+
+    expected = (
+        "Metadata-Version: 2.1\n"
+        "Name: test-package\n"
+        "Version: 1.2.3\n"
+        "Variant-property: ns1 :: f1 :: p1\n"
+        "Variant-property: ns1 :: f2 :: p2\n"
+        "Variant-property: ns2 :: f1 :: p1\n"
+        "Variant-hash: 67fcaf38\n"
+        "Variant-requires: ns1: ns1-provider >= 1.2.3\n"
+        "Variant-enable-if: ns1: python_version >= '3.12'\n"
+        "Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin\n"
+        "Variant-requires: ns2: ns2_provider; python_version >= '3.11'\n"
+        "Variant-requires: ns2: old_ns2_provider; python_version < '3.11'\n"
+        "Variant-plugin-api: ns2: ns2_provider:Plugin\n"
+        "Variant-default-namespace-priorities: ns1, ns2\n"
+        "Variant-default-feature-priorities: ns2 :: f1, ns1 :: f2\n"
+        "Variant-default-property-priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
+        "\n"
+        "long description\n"
+        "of a package\n"
+    )
+    assert message.as_string() == expected
