@@ -8,17 +8,9 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
-from variantlib.constants import METADATA_ALL_HEADERS
-from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER
-from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
-from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.dist_metadata import DistMetadata
+from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -35,7 +27,6 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from email.message import Message
 
-    from variantlib.models.metadata import VariantMetadata
     from variantlib.plugins.loader import BasePluginLoader
 
 
@@ -174,42 +165,13 @@ def set_variant_metadata(
 ) -> None:
     """Set metadata-related keys in metadata email-dict"""
 
-    # Remove old metadata
-    for key in METADATA_ALL_HEADERS:
-        del metadata[key]
-
-    # Add variant metadata
-    for vprop in vdesc.properties:
-        metadata[METADATA_VARIANT_PROPERTY_HEADER] = vprop.to_str()
-    metadata[METADATA_VARIANT_HASH_HEADER] = vdesc.hexdigest
-
-    # Copy pyproject.toml metadata
-    if variant_metadata is not None:
-        for namespace, provider_info in variant_metadata.providers.items():
-            for requirement in provider_info.requires:
-                metadata[METADATA_VARIANT_PROVIDER_REQUIRES_HEADER] = (
-                    f"{namespace}: {requirement}"
-                )
-            if provider_info.enable_if is not None:
-                metadata[METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER] = (
-                    f"{namespace}: {provider_info.enable_if}"
-                )
-            metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
-                f"{namespace}: {provider_info.plugin_api}"
-            )
-
-        if variant_metadata.namespace_priorities:
-            metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = ", ".join(
-                variant_metadata.namespace_priorities
-            )
-        if variant_metadata.feature_priorities:
-            metadata[METADATA_VARIANT_DEFAULT_PRIO_FEATURE_HEADER] = ", ".join(
-                x.to_str() for x in variant_metadata.feature_priorities
-            )
-        if variant_metadata.property_priorities:
-            metadata[METADATA_VARIANT_DEFAULT_PRIO_PROPERTY_HEADER] = ", ".join(
-                x.to_str() for x in variant_metadata.property_priorities
-            )
+    # If we have been parsed VariantMetadata, convert it to DistMetadata.
+    # If not, start with an empty class.
+    if variant_metadata is None:
+        variant_metadata = VariantMetadata()
+    dist_metadata = DistMetadata(variant_metadata)
+    dist_metadata.variant_desc = vdesc
+    dist_metadata.update_message(metadata)
 
 
 def check_variant_supported(
