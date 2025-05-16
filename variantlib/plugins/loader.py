@@ -66,7 +66,7 @@ class BasePluginLoader:
 
     def __enter__(self) -> Self:
         if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins without a Python Context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         self._load_all_plugins()
 
@@ -84,18 +84,8 @@ class BasePluginLoader:
         self._python_ctx = None
 
     def _install_all_plugins_from_reqs(self, reqs: list[str]) -> None:
-        if not isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
-            raise TypeError
-
         if self._python_ctx is None:
-            raise RuntimeError(
-                "Impossible to install plugins outside of an installer context"
-            )
-
-        if self._plugins is not None:
-            raise RuntimeError(
-                "Impossible to install plugins - `self._plugins` is not None"
-            )
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         # Actual plugin installation
         self._python_ctx.install(reqs)
@@ -104,9 +94,7 @@ class BasePluginLoader:
         """Load a specific plugin"""
 
         if self._python_ctx is None:
-            raise RuntimeError(
-                "Impossible to load a plugin outside of a python context"
-            )
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         plugin_api_match = validate_matches_re(
             plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
@@ -225,7 +213,7 @@ class BasePluginLoader:
     def get_supported_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
         if self._python_ctx is None:
-            raise RuntimeError("Impossible to access outside of an installer context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         provider_cfgs = {}
         for namespace, plugin_instance in self.plugins.items():
@@ -250,7 +238,7 @@ class BasePluginLoader:
     def get_all_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
         if self._python_ctx is None:
-            raise RuntimeError("Impossible to access outside of an installer context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         provider_cfgs = {}
         for namespace, plugin_instance in self.plugins.items():
@@ -274,8 +262,8 @@ class BasePluginLoader:
 
     def get_build_setup(self, properties: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
-        if self._python_ctx is None or self.plugins is None:
-            raise RuntimeError("Impossible to access outside of an installer context")
+        if self._python_ctx is None:
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         ret_env: dict[str, list[str]] = {}
         for namespace, p_props in groupby(
@@ -304,17 +292,17 @@ class BasePluginLoader:
     @property
     def plugins(self) -> dict[str, PluginType]:
         if self._python_ctx is None:
-            raise RuntimeError("You can not access plugins outside of a python context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
         if self._plugins is None:
-            raise NoPluginFoundError("No plugins have been loaded in the environment.")
+            raise NoPluginFoundError("No plugin has been loaded in the environment.")
         return self._plugins
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
         if self._python_ctx is None:
-            raise RuntimeError("You can not access plugins outside of a python context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
         if self._plugin_api_values is None:
-            raise NoPluginFoundError("No plugins have been loaded in the environment.")
+            raise NoPluginFoundError("No plugin has been loaded in the environment.")
         return self._plugin_api_values
 
     @property
@@ -335,7 +323,7 @@ class PluginLoader(BasePluginLoader):
 
     def __enter__(self) -> Self:
         if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins without a Python Context")
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
 
         if isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
             self._install_all_plugins()
@@ -459,7 +447,7 @@ class EntryPointPluginLoader(BasePluginLoader):
     @property
     def plugin_provider_packages(self) -> dict[str, Distribution]:
         if self._plugins is None:
-            raise RuntimeError("You can not access plugins outside of a python context")
+            raise NoPluginFoundError("No plugin has been loaded in the environment.")
         assert self._plugin_provider_packages is not None
         return self._plugin_provider_packages
 
