@@ -87,6 +87,13 @@ class BasePluginLoader:
         if self._python_ctx is None:
             raise RuntimeError("Impossible to load plugins outside a Python Context")
 
+        if not isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
+            raise TypeError(
+                "Impossible to install a package with this type of python "
+                "environment: %s",
+                type(self._python_ctx),
+            )
+
         # Actual plugin installation
         self._python_ctx.install(reqs)
 
