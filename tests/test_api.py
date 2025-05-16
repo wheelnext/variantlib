@@ -45,6 +45,7 @@ from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
+from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -68,8 +69,10 @@ def configs(
     return list(mocked_plugin_loader.get_supported_configs().values())
 
 
+@pytest.mark.parametrize("construct", [False, True])
 def test_get_variant_hashes_by_priority_roundtrip(
     configs,
+    construct: bool,
 ):
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
@@ -84,7 +87,7 @@ def test_get_variant_hashes_by_priority_roundtrip(
     combinations: list[VariantDescription] = [
         *list(get_combinations(configs, namespace_priorities)),
     ]
-    variants_json = {
+    variants_json: dict | VariantsJson = {
         VARIANTS_JSON_DEFAULT_PRIO_KEY: {
             VARIANTS_JSON_NAMESPACE_KEY: namespace_priorities,
         },
@@ -96,6 +99,7 @@ def test_get_variant_hashes_by_priority_roundtrip(
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
         },
     }
+    variants_json = VariantsJson(variants_json)
 
     assert get_variant_hashes_by_priority(
         variants_json=variants_json, use_auto_install=False, venv_path=None

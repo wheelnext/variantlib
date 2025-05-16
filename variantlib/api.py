@@ -46,7 +46,7 @@ __all__ = [
 
 def get_variant_hashes_by_priority(
     *,
-    variants_json: dict,
+    variants_json: dict | VariantsJson,
     use_auto_install: bool = True,
     venv_path: str | pathlib.Path | None = None,
     namespace_priorities: list[str] | None = None,
@@ -57,7 +57,8 @@ def get_variant_hashes_by_priority(
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
     supported_vprops = []
-    parsed_variants_json = VariantsJson(variants_json)
+    if not isinstance(variants_json, VariantsJson):
+        variants_json = VariantsJson(variants_json)
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
@@ -65,9 +66,7 @@ def get_variant_hashes_by_priority(
         AutoPythonEnv(
             use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
         ) as python_ctx,
-        PluginLoader(
-            variant_nfo=parsed_variants_json, python_ctx=python_ctx
-        ) as plugin_loader,
+        PluginLoader(variant_nfo=variants_json, python_ctx=python_ctx) as plugin_loader,
     ):
         supported_vprops = list(
             itertools.chain.from_iterable(
@@ -105,22 +104,22 @@ def get_variant_hashes_by_priority(
     return [
         vdesc.hexdigest
         for vdesc in sort_and_filter_supported_variants(
-            list(parsed_variants_json.variants.values()),
+            list(variants_json.variants.values()),
             supported_vprops,
             namespace_priorities=aggregate_priority_lists(
                 namespace_priorities,
                 config.namespace_priorities,
-                parsed_variants_json.namespace_priorities,
+                variants_json.namespace_priorities,
             ),
             feature_priorities=aggregate_priority_lists(
                 _feature_priorities,
                 config.feature_priorities,
-                parsed_variants_json.feature_priorities,
+                variants_json.feature_priorities,
             ),
             property_priorities=aggregate_priority_lists(
                 _property_priorities,
                 config.property_priorities,
-                parsed_variants_json.property_priorities,
+                variants_json.property_priorities,
             ),
             forbidden_namespaces=forbidden_namespaces,
             forbidden_features=_forbidden_features,
