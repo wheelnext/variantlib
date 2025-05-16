@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
@@ -27,8 +29,9 @@ from variantlib.validators import KeyTrackingValidator
 from variantlib.validators import ValidationError
 
 
+@dataclass(init=False)
 class VariantsJson(VariantMetadata):
-    variants: dict[str, VariantDescription]
+    variants: dict[str, VariantDescription] = field(default_factory=dict)
 
     def __init__(self, variants_json: dict | VariantMetadata) -> None:
         """Init from pre-read ``variants.json`` data or another class"""

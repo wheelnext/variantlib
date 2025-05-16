@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -38,6 +39,7 @@ else:
     from typing_extensions import Self
 
 
+@dataclass(init=False)
 class VariantPyProjectToml(VariantMetadata):
     def __init__(self, toml_data: dict | VariantMetadata) -> None:
         """Init from pre-read ``pyproject.toml`` data or another class"""

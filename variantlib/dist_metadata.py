@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from dataclasses import field
 from typing import TYPE_CHECKING
 
 from variantlib.constants import METADATA_ALL_HEADERS
@@ -37,18 +39,21 @@ if TYPE_CHECKING:
         pass
 
 
+@dataclass(init=False)
 class DistMetadata(VariantMetadata):
-    variant_hash: str
-    variant_desc: VariantDescription
+    variant_hash: str = "00000000"
+    variant_desc: VariantDescription = field(
+        default_factory=lambda: VariantDescription([])
+    )
 
     def __init__(self, metadata: Message | VariantMetadata) -> None:
         """Init from distribution metadata or another class"""
 
         if isinstance(metadata, VariantMetadata):
             # Convert from another related class.
-            super().__init__(**metadata.copy_as_kwargs())
             self.variant_hash = "00000000"
-            self.variant_desc = VariantDescription()
+            self.variant_desc = VariantDescription([])
+            super().__init__(**metadata.copy_as_kwargs())
             return
 
         def get_one(key: str) -> str:
