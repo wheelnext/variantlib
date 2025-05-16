@@ -18,6 +18,7 @@ from packaging.markers import default_environment
 from packaging.requirements import Requirement
 
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
+from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
@@ -302,15 +303,18 @@ class BasePluginLoader:
 
     @property
     def plugins(self) -> dict[str, PluginType]:
-        if self._plugins is None:
+        if self._python_ctx is None:
             raise RuntimeError("You can not access plugins outside of a python context")
+        if self._plugins is None:
+            raise NoPluginFoundError("No plugins have been loaded in the environment.")
         return self._plugins
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
-        if self._plugins is None:
+        if self._python_ctx is None:
             raise RuntimeError("You can not access plugins outside of a python context")
-        assert self._plugin_api_values is not None
+        if self._plugin_api_values is None:
+            raise NoPluginFoundError("No plugins have been loaded in the environment.")
         return self._plugin_api_values
 
     @property
