@@ -55,7 +55,7 @@ def make_variant(args: list[str]) -> None:
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument(
-        "-P",
+        "-p",
         "--property",
         dest="properties",
         type=VariantProperty.from_str,

@@ -60,13 +60,14 @@ test = [
 variantlib = "variantlib.commands.main:main"
 
 [project.entry-points."variantlib.actions"]
-analyze-wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
 analyze-platform = "variantlib.commands.analyze_platform:analyze_platform"
+analyze-wheel = "variantlib.commands.analyze_wheel:analyze_wheel"
 config = "variantlib.commands.config.main:main"
 generate-index-json = "variantlib.commands.generate_index_json:generate_index_json"
+get-variant-hash = "variantlib.commands.get_variant_hash:get_variant_hash"
 make-variant = "variantlib.commands.make_variant:make_variant"
-unmake-variant = "variantlib.commands.unmake_variant:unmake_variant"
 plugins = "variantlib.commands.plugins.main:main"
+unmake-variant = "variantlib.commands.unmake_variant:unmake_variant"
 update-pyproject-toml = "variantlib.commands.update_pyproject_toml:update_pyproject_toml"
 
 [project.entry-points."variantlib.actions.config"]
