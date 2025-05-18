@@ -141,28 +141,36 @@ def test_namespace_clash():
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_type(method: str, mocker):
     mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader.plugins",
+        "variantlib.plugins.loader.BasePluginLoader._plugins",
         new_callable=mocker.PropertyMock,
-    ).return_value = (
-        VariantFeatureConfig("k1", ["v1"]),
-        VariantFeatureConfig("k2", ["v2"]),
-    )
+    ).return_value = {
+        "exception_test": ExceptionTestingPlugin(
+            (
+                VariantFeatureConfig("k1", ["v1"]),
+                VariantFeatureConfig("k2", ["v2"]),
+            )
+        )
+    }
 
-    loader = ManualPluginLoader()
     with pytest.raises(
-        AttributeError,
-        match="tuple' object has no attribute 'items'",
+        TypeError,
+        match=re.escape(
+            f"Provider exception_test, {method}() method returned incorrect type. "
+            "Expected list[variantlib.protocols.VariantFeatureConfigType], "
+            "got <class 'tuple'>"
+        ),
     ):
-        getattr(loader, method)()
+        getattr(ManualPluginLoader(), method)()
 
 
 def test_get_all_configs_incorrect_list_length(mocker):
     mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader.plugins",
-        new={
-            "exception_test": ExceptionTestingPlugin([]),
-        },
-    )
+        "variantlib.plugins.loader.BasePluginLoader._plugins",
+        new_callable=mocker.PropertyMock,
+    ).return_value = {
+        "exception_test": ExceptionTestingPlugin([]),
+    }
+
     with pytest.raises(
         ValueError,
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
@@ -174,11 +182,12 @@ def test_get_all_configs_incorrect_list_length(mocker):
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_member_type(method: str, mocker):
     mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader.plugins",
-        new={
-            "exception_test": ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
-        },
-    )
+        "variantlib.plugins.loader.BasePluginLoader._plugins",
+        new_callable=mocker.PropertyMock,
+    ).return_value = {
+        "exception_test": ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
+    }
+
     with pytest.raises(
         TypeError,
         match=re.escape(
@@ -324,25 +333,21 @@ def test_namespaces(
 def test_load_plugin():
     loader = ManualPluginLoader()
     loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
-    assert "test_namespace" in loader.plugins
-    assert "second_namespace" not in loader.plugins
+    assert loader.namespaces == ["test_namespace"]
 
     loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
-    assert "test_namespace" in loader.plugins
-    assert "second_namespace" in loader.plugins
+    assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
 def test_manual_plugin_loader_as_context_manager():
     with ManualPluginLoader() as loader:
         loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
-        assert "test_namespace" in loader.plugins
-        assert "second_namespace" not in loader.plugins
+        assert loader.namespaces == ["test_namespace"]
 
         loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
-        assert "test_namespace" in loader.plugins
-        assert "second_namespace" in loader.plugins
+        assert loader.namespaces == ["test_namespace", "second_namespace"]
 
-    assert not loader.plugins
+    assert not loader.namespaces
 
 
 def test_load_plugin_invalid_arg():
@@ -425,7 +430,7 @@ def test_load_plugins_from_metadata(metadata: VariantMetadata):
         ExternalNonIsolatedPythonEnv() as py_ctx,
         PluginLoader(metadata, py_ctx) as loader,
     ):
-        assert set(loader.plugins) == {"test_namespace", "second_namespace"}
+        assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
 @dataclass
@@ -444,4 +449,4 @@ def test_load_plugins_from_entry_points(mocker):
         ExternalNonIsolatedPythonEnv() as py_ctx,
         EntryPointPluginLoader(py_ctx) as loader,
     ):
-        assert set(loader.plugins) == {"test_namespace", "second_namespace"}
+        assert set(loader.namespaces) == {"test_namespace", "second_namespace"}

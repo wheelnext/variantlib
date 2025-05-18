@@ -217,13 +217,19 @@ class BasePluginLoader:
 
         return value
 
-    def get_supported_configs(self) -> dict[str, ProviderConfig]:
-        """Get a mapping of namespaces to supported configs"""
+    def _check_plugins_loaded(self) -> None:
         if self._python_ctx is None:
             raise RuntimeError("Impossible to load plugins outside a Python Context")
+        if self._plugins is None:
+            raise NoPluginFoundError("No plugin has been loaded in the environment.")
+
+    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to supported configs"""
+        self._check_plugins_loaded()
+        assert self._plugins is not None
 
         provider_cfgs = {}
-        for namespace, plugin_instance in self.plugins.items():
+        for namespace, plugin_instance in self._plugins.items():
             vfeat_configs: list[VariantFeatureConfigType] = self._call(
                 plugin_instance.get_supported_configs
             )
@@ -244,11 +250,11 @@ class BasePluginLoader:
 
     def get_all_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
-        if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins outside a Python Context")
+        self._check_plugins_loaded()
+        assert self._plugins is not None
 
         provider_cfgs = {}
-        for namespace, plugin_instance in self.plugins.items():
+        for namespace, plugin_instance in self._plugins.items():
             vfeat_configs = self._call(plugin_instance.get_all_configs)
 
             if not vfeat_configs:
@@ -269,14 +275,14 @@ class BasePluginLoader:
 
     def get_build_setup(self, properties: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
-        if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins outside a Python Context")
+        self._check_plugins_loaded()
+        assert self._plugins is not None
 
         ret_env: dict[str, list[str]] = {}
         for namespace, p_props in groupby(
             sorted(properties.properties), lambda prop: prop.namespace
         ):
-            if (plugin := self.plugins.get(namespace)) is None:
+            if (plugin := self._plugins.get(namespace)) is None:
                 raise PluginMissingError(f"No plugin found for namespace {namespace}")
 
             if hasattr(plugin, "get_build_setup"):
@@ -297,24 +303,16 @@ class BasePluginLoader:
         return ret_env
 
     @property
-    def plugins(self) -> dict[str, PluginType]:
-        if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins outside a Python Context")
-        if self._plugins is None:
-            raise NoPluginFoundError("No plugin has been loaded in the environment.")
-        return self._plugins
-
-    @property
     def plugin_api_values(self) -> dict[str, str]:
-        if self._python_ctx is None:
-            raise RuntimeError("Impossible to load plugins outside a Python Context")
-        if self._plugin_api_values is None:
-            raise NoPluginFoundError("No plugin has been loaded in the environment.")
+        self._check_plugins_loaded()
+        assert self._plugin_api_values is not None
         return self._plugin_api_values
 
     @property
     def namespaces(self) -> list[str]:
-        return list(self.plugins.keys())
+        self._check_plugins_loaded()
+        assert self._plugins is not None
+        return list(self._plugins.keys())
 
 
 class PluginLoader(BasePluginLoader):
