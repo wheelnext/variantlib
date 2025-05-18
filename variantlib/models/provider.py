@@ -12,12 +12,12 @@ from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import validate_and
-from variantlib.validators import validate_list_all_unique
-from variantlib.validators import validate_list_matches_re
-from variantlib.validators import validate_list_min_len
-from variantlib.validators import validate_matches_re
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_list_all_unique
+from variantlib.validators.base import validate_list_matches_re
+from variantlib.validators.base import validate_list_min_len
+from variantlib.validators.base import validate_matches_re
+from variantlib.validators.base import validate_type
+from variantlib.validators.combining import validate_and
 
 if TYPE_CHECKING:
     from collections.abc import Generator

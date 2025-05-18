@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator

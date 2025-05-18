@@ -8,9 +8,9 @@ from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import validate_and
-from variantlib.validators import validate_list_matches_re
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_list_matches_re
+from variantlib.validators.base import validate_type
+from variantlib.validators.combining import validate_and
 
 if sys.version_info >= (3, 11):
     from typing import Self

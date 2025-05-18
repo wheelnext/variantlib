@@ -6,12 +6,12 @@ from pathlib import Path
 import pytest
 
 from variantlib.dist_metadata import DistMetadata
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
-from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
 

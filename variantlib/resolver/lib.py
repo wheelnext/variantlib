@@ -11,7 +11,7 @@ from variantlib.resolver.filtering import filter_variants_by_property
 from variantlib.resolver.filtering import remove_duplicates
 from variantlib.resolver.sorting import sort_variant_properties
 from variantlib.resolver.sorting import sort_variants_descriptions
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator

@@ -17,10 +17,10 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
-from variantlib.validators import validate_and
-from variantlib.validators import validate_list_all_unique
-from variantlib.validators import validate_matches_re
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_list_all_unique
+from variantlib.validators.base import validate_matches_re
+from variantlib.validators.base import validate_type
+from variantlib.validators.combining import validate_and
 
 if sys.version_info >= (3, 11):
     from typing import Self

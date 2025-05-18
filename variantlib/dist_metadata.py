@@ -20,14 +20,14 @@ from variantlib.constants import VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import ValidationError
-from variantlib.validators import validate_list_matches_re
-from variantlib.validators import validate_matches_re
+from variantlib.validators.base import validate_list_matches_re
+from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
     import sys

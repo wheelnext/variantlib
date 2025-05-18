@@ -7,8 +7,8 @@ from typing import runtime_checkable
 
 import pytest
 
-from variantlib.validators import ValidationError
-from variantlib.validators import validate_type
+from variantlib.errors import ValidationError
+from variantlib.validators.base import validate_type
 
 
 @runtime_checkable

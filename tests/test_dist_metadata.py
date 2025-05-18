@@ -15,12 +15,12 @@ from variantlib.constants import METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import METADATA_VARIANT_PROVIDER_REQUIRES_HEADER
 from variantlib.dist_metadata import DistMetadata
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
-from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:

@@ -20,12 +20,12 @@ from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import KeyTrackingValidator
-from variantlib.validators import ValidationError
+from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
     from pathlib import Path

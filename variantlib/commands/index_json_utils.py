@@ -28,8 +28,8 @@ from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import validate_matches_re
-from variantlib.validators import validate_requirement_str
+from variantlib.validators.base import validate_matches_re
+from variantlib.validators.packaging import validate_requirement_str
 
 if TYPE_CHECKING:
     import pathlib

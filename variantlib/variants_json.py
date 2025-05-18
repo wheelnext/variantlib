@@ -20,13 +20,13 @@ from variantlib.constants import VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.validators import KeyTrackingValidator
-from variantlib.validators import ValidationError
+from variantlib.validators.keytracking import KeyTrackingValidator
 
 
 @dataclass(init=False)

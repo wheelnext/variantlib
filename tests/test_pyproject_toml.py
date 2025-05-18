@@ -13,12 +13,12 @@ from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.dist_metadata import DistMetadata
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
-from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
 if sys.version_info >= (3, 11):

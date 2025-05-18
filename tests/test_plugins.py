@@ -12,6 +12,7 @@ import pytest
 from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
+from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
@@ -26,7 +27,6 @@ from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.pyproject_toml import VariantPyProjectToml
-from variantlib.validators import ValidationError
 from variantlib.variants_json import VariantsJson
 
 if sys.version_info >= (3, 11):

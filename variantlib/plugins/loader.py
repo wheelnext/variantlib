@@ -21,6 +21,7 @@ from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
+from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
@@ -29,9 +30,8 @@ from variantlib.plugins.py_envs import BasePythonEnv
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
-from variantlib.validators import ValidationError
-from variantlib.validators import validate_matches_re
-from variantlib.validators import validate_type
+from variantlib.validators.base import validate_matches_re
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
