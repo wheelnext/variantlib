@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import importlib
+import importlib.resources
 import importlib.util
+import json
 import logging
 import sys
 from abc import abstractmethod
 from functools import reduce
 from importlib.machinery import PathFinder
 from itertools import groupby
+from pathlib import Path
+from subprocess import run
+from tempfile import TemporaryDirectory
 from types import MethodType
 from typing import TYPE_CHECKING
 from typing import Any
@@ -52,6 +57,25 @@ else:
     from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+
+def _call_subprocess(plugin_apis: list[str], command: str) -> Any:
+    with TemporaryDirectory(prefix="variantlib") as temp_dir:
+        script = Path(temp_dir) / "loader.py"
+        script.write_bytes(
+            (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
+        )
+        args = []
+        for plugin_api in plugin_apis:
+            args += ["-p", plugin_api]
+        process = run(  # noqa: S603
+            [sys.executable, script, *args, command], capture_output=True, check=False
+        )
+        if process.returncode != 0:
+            raise PluginError(
+                f"Plugin invocation failed:\n{process.stderr.decode('utf8')}"
+            )
+        return json.loads(process.stdout)
 
 
 class BasePluginLoader:
@@ -106,9 +130,12 @@ class BasePluginLoader:
         plugin_api_match = validate_matches_re(
             plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
         )
-        try:
-            import_name: str = plugin_api_match.group("module")
+        import_name: str = plugin_api_match.group("module")
+        attr_path: str = plugin_api_match.group("attr")
+        # make sure to normalize it
+        subprocess_ns = _call_subprocess([f"{import_name}:{attr_path}"], "namespace")
 
+        try:
             if isinstance(self._python_ctx, ISOLATED_PYTHON_ENVS):
                 # We need to load the module first to allow `importlib` to find it
                 pkg_name = import_name.split(".", maxsplit=1)[0]
@@ -125,7 +152,7 @@ class BasePluginLoader:
             # We load the complete module
             module = importlib.import_module(import_name)
 
-            attr_chain = plugin_api_match.group("attr").split(".")
+            attr_chain = attr_path.split(".")
             plugin_callable = reduce(getattr, attr_chain, module)
 
         except Exception as exc:
@@ -162,6 +189,9 @@ class BasePluginLoader:
                 f"{plugin_instance!r} (missing attributes: "
                 f"{', '.join(sorted(missing_attributes))})"
             )
+
+        # sanity check the subprocess loader until we switch fully to it
+        assert plugin_instance.namespace == subprocess_ns
 
         return plugin_instance
 
