@@ -135,9 +135,7 @@ def setup(args: list[str]) -> None:
         ExternalNonIsolatedPythonEnv() as py_ctx,
         EntryPointPluginLoader(python_ctx=py_ctx) as loader,
     ):
-        if loader.plugins:
-            known_namespaces = sorted(loader.plugins.keys())
-
+        if known_namespaces := sorted(loader.namespaces):
             if parsed_args.default:
                 toml_data["namespace_priorities"] = known_namespaces
                 toml_data["feature_priorities"] = []

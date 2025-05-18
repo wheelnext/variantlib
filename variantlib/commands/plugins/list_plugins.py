@@ -21,5 +21,5 @@ def list_plugins(args: list[str], plugin_loader: BasePluginLoader) -> None:
 
     parser.parse_args(args)
 
-    for plugin_name in plugin_loader.plugins:
+    for plugin_name in plugin_loader.namespaces:
         sys.stdout.write(f"{plugin_name}\n")
