@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
 from abc import ABC
@@ -23,7 +24,7 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.plugins.loader import ListPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
@@ -113,26 +114,18 @@ def test_get_supported_configs(
     }
 
 
-def test_manual_loading(mocked_plugin_apis: list[str]):
-    loader = ManualPluginLoader()
-    for plugin_api in mocked_plugin_apis:
-        loader.load_plugin(plugin_api)
-
-    assert list(loader.get_supported_configs().keys()) == [
-        "test_namespace",
-        "second_namespace",
-    ]
-
-
 def test_namespace_clash():
-    loader = ManualPluginLoader()
-    loader.load_plugin("tests.mocked_plugins:MockedPluginA")
-    with pytest.raises(
-        RuntimeError,
-        match="Two plugins found using the same namespace test_namespace. Refusing to "
-        "proceed.",
+    with (
+        pytest.raises(
+            RuntimeError,
+            match="Two plugins found using the same namespace test_namespace. Refusing "
+            "to proceed.",
+        ),
+        ListPluginLoader(
+            ["tests.mocked_plugins:MockedPluginA", "tests.test_plugins:ClashingPlugin"]
+        ),
     ):
-        loader.load_plugin("tests.test_plugins:ClashingPlugin")
+        pass
 
 
 class IncorrectListTypePlugin(ExceptionPluginBase):
@@ -144,16 +137,16 @@ class IncorrectListTypePlugin(ExceptionPluginBase):
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_type(method: str):
-    loader = ManualPluginLoader()
-    loader.load_plugin("tests.test_plugins:IncorrectListTypePlugin")
-
-    with pytest.raises(
-        PluginError,
-        match=r".*"
-        + re.escape(
-            f"Provider exception_test, {method}() method returned incorrect type. "
-            "Expected list[variantlib.protocols.VariantFeatureConfigType], "
-            "got <class 'tuple'>"
+    with (
+        ListPluginLoader(["tests.test_plugins:IncorrectListTypePlugin"]) as loader,
+        pytest.raises(
+            PluginError,
+            match=r".*"
+            + re.escape(
+                f"Provider exception_test, {method}() method returned incorrect type. "
+                "Expected list[variantlib.protocols.VariantFeatureConfigType], "
+                "got <class 'tuple'>"
+            ),
         ),
     ):
         getattr(loader, method)()
@@ -164,13 +157,13 @@ class IncorrectListLengthPlugin(ExceptionPluginBase):
 
 
 def test_get_all_configs_incorrect_list_length():
-    loader = ManualPluginLoader()
-    loader.load_plugin("tests.test_plugins:IncorrectListLengthPlugin")
-
-    with pytest.raises(
-        ValueError,
-        match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
-        r"configs",
+    with (
+        ListPluginLoader(["tests.test_plugins:IncorrectListLengthPlugin"]) as loader,
+        pytest.raises(
+            ValueError,
+            match=r"Provider exception_test, get_all_configs\(\) method returned "
+            r"no valid configs",
+        ),
     ):
         loader.get_all_configs()
 
@@ -181,38 +174,44 @@ class IncorrectListMemberTypePlugin(ExceptionPluginBase):
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_member_type(method: str):
-    loader = ManualPluginLoader()
-    loader.load_plugin("tests.test_plugins:IncorrectListMemberTypePlugin")
-
-    with pytest.raises(
-        PluginError,
-        match=r".*"
-        + re.escape(
-            f"Provider exception_test, {method}() method returned incorrect type. "
-            "Expected list[variantlib.protocols.VariantFeatureConfigType], "
-            "got list[typing.Union[variantlib.protocols.VariantFeatureConfigType, "
-        )
-        + r"(dict, int|int, dict)",
+    with (
+        ListPluginLoader(
+            ["tests.test_plugins:IncorrectListMemberTypePlugin"]
+        ) as loader,
+        pytest.raises(
+            PluginError,
+            match=r".*"
+            + re.escape(
+                f"Provider exception_test, {method}() method returned incorrect type. "
+                "Expected list[variantlib.protocols.VariantFeatureConfigType], "
+                "got list[typing.Union[variantlib.protocols.VariantFeatureConfigType, "
+            )
+            + r"(dict, int|int, dict)",
+        ),
     ):
         getattr(loader, method)()
 
 
-def test_namespace_missing_module():
-    with pytest.raises(
-        PluginError,
-        match=r"Loading the plugin from 'tests.no_such_module:foo' failed: "
-        r"No module named 'tests.no_such_module'",
-    ):
-        ManualPluginLoader().load_plugin("tests.no_such_module:foo")
+def test_namespace_missing_module(caplog: pytest.CapLogFixture):
+    caplog.set_level(logging.DEBUG)
+    with ListPluginLoader(["tests.no_such_module:foo"]):
+        pass
+    assert caplog.records[-1].exc_info[0] == PluginError
+    assert (
+        "Loading the plugin from 'tests.no_such_module:foo' failed: "
+        "No module named 'tests.no_such_module'"
+    ) in str(caplog.records[-1].exc_info[1])
 
 
-def test_namespace_incorrect_name():
-    with pytest.raises(
-        PluginError,
-        match=r"Loading the plugin from 'tests.test_plugins:no_such_name' "
-        r"failed: module 'tests.test_plugins' has no attribute 'no_such_name'",
-    ):
-        ManualPluginLoader().load_plugin("tests.test_plugins:no_such_name")
+def test_namespace_incorrect_name(caplog: pytest.CapLogFixture):
+    caplog.set_level(logging.DEBUG)
+    with ListPluginLoader([("tests.test_plugins:no_such_name")]):
+        pass
+    assert caplog.records[-1].exc_info[0] == PluginError
+    assert (
+        "Loading the plugin from 'tests.test_plugins:no_such_name' "
+        "failed: module 'tests.test_plugins' has no attribute 'no_such_name'"
+    ) in str(caplog.records[-1].exc_info[1])
 
 
 class IncompletePlugin:
@@ -222,13 +221,14 @@ class IncompletePlugin:
         return []
 
 
-def test_namespace_incorrect_type():
-    with pytest.raises(
-        PluginError,
-        match=r"'tests.test_plugins:RANDOM_STUFF' points at a value that "
-        r"is not callable: 123",
-    ):
-        ManualPluginLoader().load_plugin("tests.test_plugins:RANDOM_STUFF")
+def test_namespace_incorrect_type(caplog: pytest.CapLogFixture):
+    caplog.set_level(logging.DEBUG)
+    with ListPluginLoader(["tests.test_plugins:RANDOM_STUFF"]):
+        pass
+    assert caplog.records[-1].exc_info[0] == PluginError
+    assert (
+        "'tests.test_plugins:RANDOM_STUFF' points at a value that is not callable: 123"
+    ) in str(caplog.records[-1].exc_info[1])
 
 
 class RaisingInstantiationPlugin:
@@ -244,16 +244,15 @@ class RaisingInstantiationPlugin:
         return []
 
 
-def test_namespace_instantiation_raises():
-    with pytest.raises(
-        PluginError,
-        match=r"Instantiating the plugin from "
-        r"'tests.test_plugins:RaisingInstantiationPlugin' failed: "
-        r"I failed to initialize",
-    ):
-        ManualPluginLoader().load_plugin(
-            "tests.test_plugins:RaisingInstantiationPlugin"
-        )
+def test_namespace_instantiation_raises(caplog: pytest.CapLogFixture):
+    caplog.set_level(logging.DEBUG)
+    with ListPluginLoader(["tests.test_plugins:RaisingInstantiationPlugin"]):
+        pass
+    assert (
+        "Instantiating the plugin from "
+        "'tests.test_plugins:RaisingInstantiationPlugin' failed: "
+        "I failed to initialize"
+    ) in str(caplog.records[-1].exc_info[1])
 
 
 class CrossTypeInstantiationPlugin:
@@ -270,15 +269,20 @@ class CrossTypeInstantiationPlugin:
 
 
 @pytest.mark.parametrize("cls", ["IncompletePlugin", "CrossTypeInstantiationPlugin"])
-def test_namespace_instantiation_returns_incorrect_type(cls: type):
-    with pytest.raises(
-        PluginError,
-        match=rf"Instantiating the plugin from 'tests.test_plugins:{cls}' "
-        r"returned an object that does not meet the PluginType prototype: "
-        r"<tests.test_plugins.IncompletePlugin object at .*> "
-        r"\(missing attributes: get_all_configs\)",
-    ):
-        ManualPluginLoader().load_plugin(f"tests.test_plugins:{cls}")
+def test_namespace_instantiation_returns_incorrect_type(
+    cls: type, caplog: pytest.CapLogFixture
+):
+    caplog.set_level(logging.DEBUG)
+    with ListPluginLoader([f"tests.test_plugins:{cls}"]):
+        pass
+    assert (
+        f"Instantiating the plugin from 'tests.test_plugins:{cls}' "
+        "returned an object that does not meet the PluginType prototype: "
+        "<tests.test_plugins.IncompletePlugin object at "
+    ) in str(caplog.records[-1].exc_info[1])
+    assert ("(missing attributes: get_all_configs)") in str(
+        caplog.records[-1].exc_info[1]
+    )
 
 
 def test_get_build_setup(
@@ -327,29 +331,19 @@ def test_namespaces(
     ]
 
 
-def test_load_plugin():
-    loader = ManualPluginLoader()
-    loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
-    assert loader.namespaces == ["test_namespace"]
-
-    loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
-    assert loader.namespaces == ["test_namespace", "second_namespace"]
-
-
-def test_manual_plugin_loader_as_context_manager():
-    with ManualPluginLoader() as loader:
-        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a")
-        assert loader.namespaces == ["test_namespace"]
-
-        loader.load_plugin("tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b")
+def test_non_class_attrs():
+    with ListPluginLoader(
+        [
+            "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a",
+            "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b",
+        ]
+    ) as loader:
         assert loader.namespaces == ["test_namespace", "second_namespace"]
-
-    assert not loader.namespaces
 
 
 def test_load_plugin_invalid_arg():
-    with pytest.raises(ValidationError):
-        ManualPluginLoader().load_plugin("tests.mocked_plugins")
+    with pytest.raises(ValidationError), ListPluginLoader(["tests.mocked_plugins"]):
+        pass
 
 
 @pytest.mark.parametrize(

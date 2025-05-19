@@ -166,7 +166,9 @@ class BasePluginLoader:
             try:
                 self.load_plugin(plugin_api=plugin_api)
             except PluginError:  # noqa: PERF203
-                logger.debug("Impossible to load `%s`", plugin_api)
+                logger.debug(
+                    "Impossible to load `%s`", plugin_api, exc_info=sys.exc_info()
+                )
 
     def _call(self, method: Callable[[], Any]) -> Any:
         """Call plugin method and verify the return type"""
@@ -435,7 +437,7 @@ class EntryPointPluginLoader(BasePluginLoader):
             try:
                 namespace = self.load_plugin(plugin_api=ep.value)
             except PluginError:
-                logger.debug("Impossible to load `%s`", ep)
+                logger.debug("Impossible to load `%s`", ep, exc_info=sys.exc_info())
             else:
                 if ep.dist is not None:
                     self._plugin_provider_packages[namespace] = ep.dist
@@ -446,6 +448,46 @@ class EntryPointPluginLoader(BasePluginLoader):
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
         assert self._plugin_provider_packages is not None
         return self._plugin_provider_packages
+
+
+class ListPluginLoader(BasePluginLoader):
+    """Load plugins from an explicit plugin-api list"""
+
+    _plugin_apis: list[str]
+
+    def __init__(
+        self,
+        plugin_apis: list[str],
+        venv_path: Path | None = None,
+    ) -> None:
+        self._plugin_apis = list(plugin_apis)
+        super().__init__(
+            python_ctx=AutoPythonEnv(
+                use_auto_install=False, isolated=False, venv_path=venv_path
+            )
+        )
+
+    def __enter__(self) -> Self:
+        if self._python_ctx is None:
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
+
+        self._python_ctx.__enter__()
+        return super().__enter__()
+
+    def __exit__(self, *args: object) -> None:
+        ret = super().__exit__(*args)
+        if self._python_ctx is not None:
+            self._python_ctx.__exit__(*args)
+            self._python_ctx = None
+        return ret
+
+    def _load_all_plugins(self) -> None:
+        if self._namespace_map is not None:
+            raise RuntimeError(
+                "Impossible to load plugins - `self._namespace_map` is not None"
+            )
+
+        self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)
 
 
 class ManualPluginLoader(BasePluginLoader):

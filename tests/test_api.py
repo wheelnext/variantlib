@@ -43,7 +43,7 @@ from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
-from variantlib.plugins.loader import ManualPluginLoader
+from variantlib.plugins.loader import ListPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -236,26 +236,24 @@ def test_validation_result_properties():
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]):
-    plugin_loader = ManualPluginLoader()
-    for plugin_api in mocked_plugin_apis:
-        plugin_loader.load_plugin(plugin_api)
-    # Verify whether the variant properties are valid
-    res = validate_variant(
-        VariantDescription(
-            [
-                VariantProperty("test_namespace", "name1", "val1d"),
-                VariantProperty("test_namespace", "name2", "val2d"),
-                VariantProperty("test_namespace", "name3", "val3a"),
-                VariantProperty("second_namespace", "name3", "val3a"),
-                VariantProperty("incompatible_namespace", "flag1", "on"),
-                VariantProperty("incompatible_namespace", "flag2", "off"),
-                VariantProperty("incompatible_namespace", "flag5", "on"),
-                VariantProperty("missing_namespace", "name", "val"),
-                VariantProperty("private", "build_type", "debug"),
-            ]
-        ),
-        plugin_loader=plugin_loader,
-    )
+    with ListPluginLoader(mocked_plugin_apis) as plugin_loader:
+        # Verify whether the variant properties are valid
+        res = validate_variant(
+            VariantDescription(
+                [
+                    VariantProperty("test_namespace", "name1", "val1d"),
+                    VariantProperty("test_namespace", "name2", "val2d"),
+                    VariantProperty("test_namespace", "name3", "val3a"),
+                    VariantProperty("second_namespace", "name3", "val3a"),
+                    VariantProperty("incompatible_namespace", "flag1", "on"),
+                    VariantProperty("incompatible_namespace", "flag2", "off"),
+                    VariantProperty("incompatible_namespace", "flag5", "on"),
+                    VariantProperty("missing_namespace", "name", "val"),
+                    VariantProperty("private", "build_type", "debug"),
+                ]
+            ),
+            plugin_loader=plugin_loader,
+        )
 
     assert res == VariantValidationResult(
         {
