@@ -33,17 +33,17 @@ Installer = typing.Literal["pip", "uv"]
 INSTALLERS = typing.get_args(Installer)
 
 
-def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
+def _find_executable(path: pathlib.Path) -> pathlib.Path:
     """
-    Detect the Python executable and script folder of a virtual environment.
+    Detect the Python executable of a virtual environment.
 
     :param path: The location of the virtual environment
-    :return: The Python executable, script folder, and purelib folder
+    :return: The Python executable
     """
     config_vars = (
         sysconfig.get_config_vars().copy()
     )  # globally cached, copy before altering it
-    config_vars["base"] = path
+    config_vars["base"] = str(path)
     scheme_names = sysconfig.get_scheme_names()
 
     if "venv" in scheme_names:
@@ -74,14 +74,14 @@ def _find_executable_and_scripts(path: str) -> tuple[str, str, str]:
     else:
         paths = sysconfig.get_paths(vars=config_vars)
 
-    executable = os.path.join(  # noqa: PTH118
-        paths["scripts"], "python.exe" if os.name == "nt" else "python"
+    executable = pathlib.Path(paths["scripts"]) / (
+        "python.exe" if os.name == "nt" else "python"
     )
-    if not os.path.exists(executable):  # noqa: PTH110
+    if not executable.exists():
         msg = f"Virtual environment creation failed, executable {executable} missing"
         raise RuntimeError(msg)
 
-    return executable, paths["scripts"], paths["purelib"]
+    return executable
 
 
 @functools.cache
@@ -125,21 +125,9 @@ class IsolatedPythonEnvMixin:
 
     @property
     def python_executable(self) -> pathlib.Path:
-        return self._get_venv_path(0)
-
-    @property
-    def script_dir(self) -> pathlib.Path:
-        return self._get_venv_path(1)
-
-    @property
-    def package_dir(self) -> pathlib.Path:
-        return self._get_venv_path(2)
-
-    def _get_venv_path(self, idx: int) -> pathlib.Path:
         if self._venv_path is None or not self._venv_path.exists():
             raise FileNotFoundError
-        assert 0 <= idx <= 2
-        return pathlib.Path(_find_executable_and_scripts(str(self._venv_path))[idx])
+        return pathlib.Path(_find_executable(self._venv_path))
 
 
 class BasePythonInstallerEnv(BasePythonEnv):
