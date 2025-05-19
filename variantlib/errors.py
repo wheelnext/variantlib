@@ -2,7 +2,6 @@ from variantlib.validators.base import ValidationError
 
 __all__ = [
     "ConfigurationError",
-    "InvalidVariantEnvSpecError",
     "NoPluginFoundError",
     "PluginError",
     "PluginMissingError",
@@ -20,10 +19,6 @@ class PluginMissingError(RuntimeError):
 
 class NoPluginFoundError(RuntimeError):
     """A required plugin is missing"""
-
-
-class InvalidVariantEnvSpecError(ValueError):
-    """Environment specifier for variants is invalid"""
 
 
 class ConfigurationError(ValueError):
