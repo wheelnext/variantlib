@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 import sys
+from abc import ABC
+from abc import abstractproperty
 from dataclasses import dataclass
 from email import message_from_string
 from typing import Any
@@ -50,21 +52,17 @@ class ClashingPlugin(PluginType):
         return []
 
 
-class ExceptionTestingPlugin(PluginType):
+class ExceptionPluginBase(PluginType, ABC):
     namespace = "exception_test"
 
-    def __init__(self, returned_value: Any) -> None:
-        self.returned_value = returned_value
+    @abstractproperty
+    def returned_value(self) -> Any: ...
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return self.returned_value
-
-    def __call__(self) -> ExceptionTestingPlugin:
-        """Fake instantiation"""
-        return self
 
 
 def test_get_all_configs(
@@ -138,19 +136,17 @@ def test_namespace_clash():
         loader.load_plugin("tests.test_plugins:ClashingPlugin")
 
 
+class IncorrectListTypePlugin(ExceptionPluginBase):
+    returned_value = (
+        VariantFeatureConfig("k1", ["v1"]),
+        VariantFeatureConfig("k2", ["v2"]),
+    )
+
+
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_type(method: str, mocker):
-    mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader._plugins",
-        new_callable=mocker.PropertyMock,
-    ).return_value = {
-        "exception_test": ExceptionTestingPlugin(
-            (
-                VariantFeatureConfig("k1", ["v1"]),
-                VariantFeatureConfig("k2", ["v2"]),
-            )
-        )
-    }
+def test_get_configs_incorrect_list_type(method: str):
+    loader = ManualPluginLoader()
+    loader.load_plugin("tests.test_plugins:IncorrectListTypePlugin")
 
     with pytest.raises(
         TypeError,
@@ -160,33 +156,33 @@ def test_get_configs_incorrect_list_type(method: str, mocker):
             "got <class 'tuple'>"
         ),
     ):
-        getattr(ManualPluginLoader(), method)()
+        getattr(loader, method)()
 
 
-def test_get_all_configs_incorrect_list_length(mocker):
-    mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader._plugins",
-        new_callable=mocker.PropertyMock,
-    ).return_value = {
-        "exception_test": ExceptionTestingPlugin([]),
-    }
+class IncorrectListLengthPlugin(ExceptionPluginBase):
+    returned_value = []
+
+
+def test_get_all_configs_incorrect_list_length():
+    loader = ManualPluginLoader()
+    loader.load_plugin("tests.test_plugins:IncorrectListLengthPlugin")
 
     with pytest.raises(
         ValueError,
         match=r"Provider exception_test, get_all_configs\(\) method returned no valid "
         r"configs",
     ):
-        ManualPluginLoader().get_all_configs()
+        loader.get_all_configs()
+
+
+class IncorrectListMemberTypePlugin(ExceptionPluginBase):
+    returned_value = [{"k1": ["v1"], "k2": ["v2"]}, 1]
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_member_type(method: str, mocker):
-    mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader._plugins",
-        new_callable=mocker.PropertyMock,
-    ).return_value = {
-        "exception_test": ExceptionTestingPlugin([{"k1": ["v1"], "k2": ["v2"]}, 1]),
-    }
+def test_get_configs_incorrect_list_member_type(method: str):
+    loader = ManualPluginLoader()
+    loader.load_plugin("tests.test_plugins:IncorrectListMemberTypePlugin")
 
     with pytest.raises(
         TypeError,
@@ -197,7 +193,7 @@ def test_get_configs_incorrect_list_member_type(method: str, mocker):
         )
         + r"(dict, int|int, dict)",
     ):
-        getattr(ManualPluginLoader(), method)()
+        getattr(loader, method)()
 
 
 def test_namespace_missing_module():
@@ -273,7 +269,7 @@ class CrossTypeInstantiationPlugin:
 
 
 @pytest.mark.parametrize("cls", ["IncompletePlugin", "CrossTypeInstantiationPlugin"])
-def test_namespace_instantiation_returns_incorrect_type(cls: type, mocker):
+def test_namespace_instantiation_returns_incorrect_type(cls: type):
     with pytest.raises(
         PluginError,
         match=rf"Instantiating the plugin from 'tests.test_plugins:{cls}' "
