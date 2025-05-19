@@ -56,16 +56,25 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-p", "--plugin-api", action="append", help="Load specified plugin API"
+        "-p",
+        "--plugin-api",
+        action="append",
+        help="Load specified plugin API",
     )
-    parser.add_argument("command", choices={"namespaces"})
+    parser.add_argument(
+        "command", nargs="+", choices={"namespaces"}, help="Commands to run"
+    )
     args = parser.parse_args()
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
-    if args.command == "namespaces":
-        json.dump(
-            {plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()},
-            sys.stdout,
-        )
+
+    retval = {}
+    for command in args.command:
+        if command == "namespaces":
+            retval[command] = {
+                plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
+            }
+
+    json.dump(retval, sys.stdout)
 
     return 0
 

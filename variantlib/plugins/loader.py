@@ -135,7 +135,7 @@ class BasePluginLoader:
         # make sure to normalize it
         subprocess_namespaces = _call_subprocess(
             [f"{import_name}:{attr_path}"], "namespaces"
-        )
+        )["namespaces"]
 
         try:
             if isinstance(self._python_ctx, ISOLATED_PYTHON_ENVS):
