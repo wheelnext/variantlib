@@ -4,6 +4,9 @@ from abc import abstractmethod
 from typing import Protocol
 from typing import runtime_checkable
 
+# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
+# and therefore must not import any other variantlib modules.
+
 
 @runtime_checkable
 class VariantFeatureConfigType(Protocol):

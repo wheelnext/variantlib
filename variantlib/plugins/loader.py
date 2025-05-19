@@ -62,6 +62,14 @@ def _call_subprocess(plugin_apis: list[str], commands: dict[str, Any]) -> Any:
         script.write_bytes(
             (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
         )
+        (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
+            (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
+        )
+        (Path(temp_dir) / "_variantlib_validators_base.py").write_bytes(
+            (
+                importlib.resources.files("variantlib.validators") / "base.py"
+            ).read_bytes()
+        )
         args = []
         for plugin_api in plugin_apis:
             args += ["-p", plugin_api]

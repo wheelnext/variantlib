@@ -144,7 +144,7 @@ def test_get_configs_incorrect_list_type(method: str):
             match=r".*"
             + re.escape(
                 f"Provider exception_test, {method}() method returned incorrect type. "
-                "Expected list[variantlib.protocols.VariantFeatureConfigType], "
+                "Expected list[_variantlib_protocols.VariantFeatureConfigType], "
                 "got <class 'tuple'>"
             ),
         ),
@@ -183,8 +183,8 @@ def test_get_configs_incorrect_list_member_type(method: str):
             match=r".*"
             + re.escape(
                 f"Provider exception_test, {method}() method returned incorrect type. "
-                "Expected list[variantlib.protocols.VariantFeatureConfigType], "
-                "got list[typing.Union[variantlib.protocols.VariantFeatureConfigType, "
+                "Expected list[_variantlib_protocols.VariantFeatureConfigType], "
+                "got list[typing.Union[_variantlib_protocols.VariantFeatureConfigType, "
             )
             + r"(dict, int|int, dict)",
         ),

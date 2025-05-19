@@ -1,5 +1,13 @@
-class ValidationError(ValueError):
-    pass
+from variantlib.validators.base import ValidationError
+
+__all__ = [
+    "ConfigurationError",
+    "InvalidVariantEnvSpecError",
+    "NoPluginFoundError",
+    "PluginError",
+    "PluginMissingError",
+    "ValidationError",
+]
 
 
 class PluginError(RuntimeError):

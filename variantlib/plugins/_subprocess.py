@@ -8,11 +8,10 @@ from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
 
-# TODO: inline these dependencies somehow
-from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
-from variantlib.validators.base import ValidationError
-from variantlib.validators.base import validate_type
+from _variantlib_protocols import PluginType
+from _variantlib_protocols import VariantFeatureConfigType
+from _variantlib_validators_base import ValidationError
+from _variantlib_validators_base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator

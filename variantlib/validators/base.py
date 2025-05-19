@@ -9,7 +9,12 @@ from typing import Union
 from typing import get_args
 from typing import get_origin
 
-from variantlib.errors import ValidationError
+# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
+# and therefore must not import any other variantlib modules.
+
+
+class ValidationError(ValueError):
+    pass
 
 
 def validate_matches_re(
