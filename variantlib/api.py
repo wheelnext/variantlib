@@ -47,6 +47,7 @@ def get_variant_hashes_by_priority(
     *,
     variants_json: dict | VariantsJson,
     use_auto_install: bool = True,
+    isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
     namespace_priorities: list[str] | None = None,
     feature_priorities: list[str] | None = None,
@@ -64,7 +65,7 @@ def get_variant_hashes_by_priority(
     with PluginLoader(
         variant_nfo=variants_json,
         use_auto_install=use_auto_install,
-        isolated=False,
+        isolated=isolated,
         venv_path=venv_path,
     ) as plugin_loader:
         supported_vprops = list(

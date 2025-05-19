@@ -7,7 +7,6 @@ import os
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 import typing
 from itertools import chain
@@ -118,7 +117,7 @@ class UvBackend(_BaseBackend):
                 "pip",
                 "install",
                 "--python",
-                sys.executable if py_exec is None else str(py_exec),
+                str(py_exec),
                 "--no-config",
                 "--no-managed-python",
                 "--no-progress",
@@ -141,7 +140,7 @@ class PipBackend(_BaseBackend):
 
         with self.prepare_requirements(requirements) as req_file:
             cmd: list[str] = [
-                sys.executable if py_exec is None else str(py_exec),
+                str(py_exec),
                 "-m",
                 "pip",
                 "install",

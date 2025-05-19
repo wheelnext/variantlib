@@ -56,36 +56,6 @@ else:
 logger = logging.getLogger(__name__)
 
 
-def _call_subprocess(plugin_apis: list[str], commands: dict[str, Any]) -> Any:
-    with TemporaryDirectory(prefix="variantlib") as temp_dir:
-        script = Path(temp_dir) / "loader.py"
-        script.write_bytes(
-            (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
-        )
-        (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
-            (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
-        )
-        (Path(temp_dir) / "_variantlib_validators_base.py").write_bytes(
-            (
-                importlib.resources.files("variantlib.validators") / "base.py"
-            ).read_bytes()
-        )
-        args = []
-        for plugin_api in plugin_apis:
-            args += ["-p", plugin_api]
-        process = run(  # noqa: S603
-            [sys.executable, script, *args],
-            input=json.dumps(commands).encode("utf8"),
-            capture_output=True,
-            check=False,
-        )
-        if process.returncode != 0:
-            raise PluginError(
-                f"Plugin invocation failed:\n{process.stderr.decode('utf8')}"
-            )
-        return json.loads(process.stdout)
-
-
 class BasePluginLoader:
     """Load and query plugins"""
 
@@ -124,6 +94,37 @@ class BasePluginLoader:
         # Actual plugin installation
         self._python_ctx.install(reqs)
 
+    def _call_subprocess(self, plugin_apis: list[str], commands: dict[str, Any]) -> Any:
+        assert self._python_ctx is not None
+
+        with TemporaryDirectory(prefix="variantlib") as temp_dir:
+            script = Path(temp_dir) / "loader.py"
+            script.write_bytes(
+                (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
+            )
+            (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
+                (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
+            )
+            (Path(temp_dir) / "_variantlib_validators_base.py").write_bytes(
+                (
+                    importlib.resources.files("variantlib.validators") / "base.py"
+                ).read_bytes()
+            )
+            args = []
+            for plugin_api in plugin_apis:
+                args += ["-p", plugin_api]
+            process = run(  # noqa: S603
+                [self._python_ctx.python_executable, script, *args],
+                input=json.dumps(commands).encode("utf8"),
+                capture_output=True,
+                check=False,
+            )
+            if process.returncode != 0:
+                raise PluginError(
+                    f"Plugin invocation failed:\n{process.stderr.decode('utf8')}"
+                )
+            return json.loads(process.stdout)
+
     def load_plugin(self, plugin_api: str) -> str:
         """Load a specific plugin"""
 
@@ -148,9 +149,9 @@ class BasePluginLoader:
         )
 
         # make sure to normalize it
-        namespace = _call_subprocess([plugin_api], {"namespaces": {}})["namespaces"][
-            plugin_api
-        ]
+        namespace = self._call_subprocess([plugin_api], {"namespaces": {}})[
+            "namespaces"
+        ][plugin_api]
 
         if namespace in self._namespace_map.values():
             raise RuntimeError(
@@ -208,7 +209,7 @@ class BasePluginLoader:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
-        configs = _call_subprocess(list(self._namespace_map.keys()), {method: {}})[
+        configs = self._call_subprocess(list(self._namespace_map.keys()), {method: {}})[
             method
         ]
 
@@ -253,7 +254,7 @@ class BasePluginLoader:
             ]
         except KeyError as err:
             raise PluginMissingError(f"No plugin found for namespace {err}") from None
-        return _call_subprocess(
+        return self._call_subprocess(
             plugin_apis,
             {
                 "get_build_setup": {

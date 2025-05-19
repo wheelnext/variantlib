@@ -115,12 +115,13 @@ class BasePythonEnv(abc.ABC):
         Exit the environment.
         """
 
+    @property
+    def python_executable(self) -> pathlib.Path:
+        return pathlib.Path(sys.executable)
+
 
 class IsolatedPythonEnvMixin:
     _venv_path: pathlib.Path | None = None
-
-    def __init__(self) -> None:
-        raise NotImplementedError("This path is not yet supported")
 
     @property
     def python_executable(self) -> pathlib.Path:
@@ -168,10 +169,6 @@ class BasePythonInstallerEnv(BasePythonEnv):
             requirements, py_exec=self.python_executable
         )
 
-    @property
-    @abc.abstractmethod
-    def python_executable(self) -> pathlib.Path | None: ...
-
 
 class NonIsolatedPythonInstallerEnv(BasePythonInstallerEnv):
     """
@@ -190,10 +187,6 @@ class NonIsolatedPythonInstallerEnv(BasePythonInstallerEnv):
     def __exit__(self, *args: object) -> None:
         pass
 
-    @property
-    def python_executable(self) -> None:
-        return None
-
 
 class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv):
     """
@@ -201,17 +194,13 @@ class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv)
     implementations.
     """
 
-    def __init__(self) -> None:
-        raise NotImplementedError("This path is not yet supported")
-        super().__init__()
-
     def __enter__(self) -> Self:
         try:
             self._venv_path = pathlib.Path(tempfile.mkdtemp(prefix="variant-env-"))
 
             logger.info(
                 "Creating isolated environment: %(env)s ...",
-                {"env": self._env_backend.display_name},
+                {"env": self._venv_path},
             )
             self._create_venv(self._venv_path)
 
@@ -234,13 +223,11 @@ class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv)
             venv.EnvBuilder(
                 symlinks=_fs_supports_symlink(),
                 with_pip=True,
-                system_site_packages=True,
+                system_site_packages=False,
                 clear=True,
             ).create(path)
         except subprocess.CalledProcessError as exc:
-            raise RuntimeError(
-                exc, "Failed to create venv. Maybe try installing virtualenv."
-            ) from None
+            raise RuntimeError(exc, "Failed to create venv") from None
 
     def install(self, requirements: Collection[str]) -> None:
         if self._venv_path is None:
@@ -251,15 +238,7 @@ class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv)
 def PythonInstallerEnv(  # noqa: N802
     isolated: bool,
 ) -> IsolatedPythonInstallerEnv | NonIsolatedPythonInstallerEnv:
-    if isolated:
-        # original_sys_path = sys.path.copy()
-        # with IsolatedPythonInstallerEnv() as ctx:
-        #     sys.path.insert(0, str(ctx.package_dir))
-        #     yield ctx
-        #     sys.path = original_sys_path
-        raise NotImplementedError("This path is not yet supported")
-    with NonIsolatedPythonInstallerEnv() as ctx:
-        return ctx
+    return IsolatedPythonInstallerEnv() if isolated else NonIsolatedPythonInstallerEnv()
 
 
 class ExternalNonIsolatedPythonEnv(BasePythonEnv):
@@ -300,14 +279,11 @@ class ExternalIsolatedPythonEnv(IsolatedPythonEnvMixin, BasePythonEnv):
 def ExternalPythonEnv(  # noqa: N802
     venv_path: pathlib.Path | None,
 ) -> ExternalIsolatedPythonEnv | ExternalNonIsolatedPythonEnv:
-    if venv_path is not None:
-        # original_sys_path = sys.path.copy()
-        # with ExternalIsolatedPythonEnv(venv_path=venv_path) as ctx:
-        #     sys.path.insert(0, str(ctx.package_dir))
-        #     yield ctx
-        #     sys.path = original_sys_path
-        raise NotImplementedError("This path is not yet supported")
-    return ExternalNonIsolatedPythonEnv()
+    return (
+        ExternalIsolatedPythonEnv(venv_path=venv_path)
+        if venv_path is not None
+        else ExternalNonIsolatedPythonEnv()
+    )
 
 
 def AutoPythonEnv(  # noqa: N802
