@@ -84,8 +84,8 @@ def _call_subprocess(plugin_apis: list[str], commands: dict[str, Any]) -> Any:
 class BasePluginLoader:
     """Load and query plugins"""
 
+    _namespace_map: dict[str, str]
     _plugins: dict[str, PluginType] | None = None
-    _plugin_api_values: dict[str, str] | None = None
     _python_ctx: BasePythonEnv | None = None
 
     def __init__(self, python_ctx: BasePythonEnv | None = None) -> None:
@@ -100,8 +100,8 @@ class BasePluginLoader:
         return self
 
     def __exit__(self, *args: object) -> None:
-        self._plugin_api_values = None
         self._plugins = None
+        self._namespace_map = {}
 
         if self._python_ctx is None:
             logger.warning("The Python installer is None. Should not happen.")
@@ -136,7 +136,7 @@ class BasePluginLoader:
         import_name: str = plugin_api_match.group("module")
         attr_path: str = plugin_api_match.group("attr")
         # make sure to normalize it
-        subprocess_namespaces = _call_subprocess(
+        subprocess_namespace_map = _call_subprocess(
             [f"{import_name}:{attr_path}"], {"namespaces": {}}
         )["namespaces"]
 
@@ -196,7 +196,7 @@ class BasePluginLoader:
             )
 
         # sanity check the subprocess loader until we switch fully to it
-        assert subprocess_namespaces == {plugin_api: plugin_instance.namespace}
+        assert subprocess_namespace_map == {plugin_api: plugin_instance.namespace}
 
         return plugin_instance
 
@@ -205,8 +205,7 @@ class BasePluginLoader:
 
         if self._plugins is None:
             self._plugins = {}
-        if self._plugin_api_values is None:
-            self._plugin_api_values = {}
+            self._namespace_map = {}
 
         if plugin_instance.namespace in self._plugins:
             raise RuntimeError(
@@ -214,8 +213,8 @@ class BasePluginLoader:
                 f"{plugin_instance.namespace}. Refusing to proceed."
             )
 
+        self._namespace_map[plugin_api] = plugin_instance.namespace
         self._plugins[plugin_instance.namespace] = plugin_instance
-        self._plugin_api_values[plugin_instance.namespace] = plugin_api
 
         return plugin_instance
 
@@ -340,8 +339,11 @@ class BasePluginLoader:
     @property
     def plugin_api_values(self) -> dict[str, str]:
         self._check_plugins_loaded()
-        assert self._plugin_api_values is not None
-        return self._plugin_api_values
+        assert self._plugins is not None
+        return {
+            namespace: plugin_api
+            for plugin_api, namespace in self._namespace_map.items()
+        }
 
     @property
     def namespaces(self) -> list[str]:
@@ -498,6 +500,7 @@ class ManualPluginLoader(BasePluginLoader):
     _python_ctx: ExternalNonIsolatedPythonEnv
 
     def __init__(self) -> None:
+        self._namespace_map = {}
         self._plugins = {}
         super().__init__(python_ctx=ExternalNonIsolatedPythonEnv().__enter__())
 
@@ -505,6 +508,7 @@ class ManualPluginLoader(BasePluginLoader):
         return self
 
     def __exit__(self, *args: object) -> None:
+        self._namespace_map = {}
         self._plugins = {}
 
     def __del__(self) -> None:
