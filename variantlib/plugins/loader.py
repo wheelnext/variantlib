@@ -59,7 +59,7 @@ else:
 logger = logging.getLogger(__name__)
 
 
-def _call_subprocess(plugin_apis: list[str], command: str) -> Any:
+def _call_subprocess(plugin_apis: list[str], commands: dict[str, Any]) -> Any:
     with TemporaryDirectory(prefix="variantlib") as temp_dir:
         script = Path(temp_dir) / "loader.py"
         script.write_bytes(
@@ -69,7 +69,10 @@ def _call_subprocess(plugin_apis: list[str], command: str) -> Any:
         for plugin_api in plugin_apis:
             args += ["-p", plugin_api]
         process = run(  # noqa: S603
-            [sys.executable, script, *args, command], capture_output=True, check=False
+            [sys.executable, script, *args],
+            input=json.dumps(commands).encode("utf8"),
+            capture_output=True,
+            check=False,
         )
         if process.returncode != 0:
             raise PluginError(
@@ -134,7 +137,7 @@ class BasePluginLoader:
         attr_path: str = plugin_api_match.group("attr")
         # make sure to normalize it
         subprocess_namespaces = _call_subprocess(
-            [f"{import_name}:{attr_path}"], "namespaces"
+            [f"{import_name}:{attr_path}"], {"namespaces": {}}
         )["namespaces"]
 
         try:

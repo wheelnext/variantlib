@@ -61,18 +61,19 @@ def main() -> int:
         action="append",
         help="Load specified plugin API",
     )
-    parser.add_argument(
-        "command", nargs="+", choices={"namespaces"}, help="Commands to run"
-    )
     args = parser.parse_args()
+    commands = json.load(sys.stdin)
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
 
     retval = {}
-    for command in args.command:
+    for command, command_args in commands.items():
         if command == "namespaces":
+            assert not command_args
             retval[command] = {
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
             }
+        else:
+            raise ValueError(f"Invalid command: {command}")
 
     json.dump(retval, sys.stdout)
 
