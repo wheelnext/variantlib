@@ -8,8 +8,6 @@ import json
 import logging
 import sys
 from abc import abstractmethod
-from functools import reduce
-from importlib.machinery import PathFinder
 from pathlib import Path
 from subprocess import run
 from tempfile import TemporaryDirectory
@@ -30,7 +28,6 @@ from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
-from variantlib.plugins.py_envs import ISOLATED_PYTHON_ENVS
 from variantlib.plugins.py_envs import BasePythonEnv
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
@@ -83,8 +80,7 @@ def _call_subprocess(plugin_apis: list[str], commands: dict[str, Any]) -> Any:
 class BasePluginLoader:
     """Load and query plugins"""
 
-    _namespace_map: dict[str, str]
-    _plugins: dict[str, PluginType] | None = None
+    _namespace_map: dict[str, str] | None = None
     _python_ctx: BasePythonEnv | None = None
 
     def __init__(self, python_ctx: BasePythonEnv | None = None) -> None:
@@ -99,8 +95,7 @@ class BasePluginLoader:
         return self
 
     def __exit__(self, *args: object) -> None:
-        self._plugins = None
-        self._namespace_map = {}
+        self._namespace_map = None
 
         if self._python_ctx is None:
             logger.warning("The Python installer is None. Should not happen.")
@@ -123,9 +118,11 @@ class BasePluginLoader:
         # Actual plugin installation
         self._python_ctx.install(reqs)
 
-    def _load_plugin(self, plugin_api: str) -> PluginType:
+    def load_plugin(self, plugin_api: str) -> str:
         """Load a specific plugin"""
 
+        if self._namespace_map is None:
+            self._namespace_map = {}
         if self._python_ctx is None:
             raise RuntimeError("Impossible to load plugins outside a Python Context")
 
@@ -134,35 +131,8 @@ class BasePluginLoader:
         )
         import_name: str = plugin_api_match.group("module")
         attr_path: str = plugin_api_match.group("attr")
-        # make sure to normalize it
-        subprocess_namespace_map = _call_subprocess(
-            [f"{import_name}:{attr_path}"], {"namespaces": {}}
-        )["namespaces"]
-
-        try:
-            if isinstance(self._python_ctx, ISOLATED_PYTHON_ENVS):
-                # We need to load the module first to allow `importlib` to find it
-                pkg_name = import_name.split(".", maxsplit=1)[0]
-                spec = PathFinder.find_spec(
-                    pkg_name, path=[str(self._python_ctx.package_dir)]
-                )
-                if spec is None or spec.loader is None:
-                    raise ModuleNotFoundError  # noqa: TRY301
-
-                _module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(_module)
-                sys.modules[pkg_name] = _module
-
-            # We load the complete module
-            module = importlib.import_module(import_name)
-
-            attr_chain = attr_path.split(".")
-            plugin_callable = reduce(getattr, attr_chain, module)
-
-        except Exception as exc:
-            raise PluginError(
-                f"Loading the plugin from {plugin_api!r} failed: {exc}"
-            ) from exc
+        # normalize it before passing to the subprocess
+        plugin_api = f"{import_name}:{attr_path}"
 
         logger.info(
             "Loading plugin via %(plugin_api)s",
@@ -171,59 +141,27 @@ class BasePluginLoader:
             },
         )
 
-        if not callable(plugin_callable):
-            raise PluginError(
-                f"{plugin_api!r} points at a value that is not callable: "
-                f"{plugin_callable!r}"
-            )
+        # make sure to normalize it
+        namespace = _call_subprocess([plugin_api], {"namespaces": {}})["namespaces"][
+            plugin_api
+        ]
 
-        try:
-            # Instantiate the plugin
-            plugin_instance = plugin_callable()
-        except Exception as exc:
-            raise PluginError(
-                f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
-            ) from exc
-
-        required_attributes = PluginType.__abstractmethods__
-        if missing_attributes := required_attributes.difference(dir(plugin_instance)):
-            raise PluginError(
-                f"Instantiating the plugin from {plugin_api!r} "
-                "returned an object that does not meet the PluginType prototype: "
-                f"{plugin_instance!r} (missing attributes: "
-                f"{', '.join(sorted(missing_attributes))})"
-            )
-
-        # sanity check the subprocess loader until we switch fully to it
-        assert subprocess_namespace_map == {plugin_api: plugin_instance.namespace}
-
-        return plugin_instance
-
-    def load_plugin(self, plugin_api: str) -> PluginType:
-        plugin_instance = self._load_plugin(plugin_api)
-
-        if self._plugins is None:
-            self._plugins = {}
-            self._namespace_map = {}
-
-        if plugin_instance.namespace in self._plugins:
+        if namespace in self._namespace_map.values():
             raise RuntimeError(
                 "Two plugins found using the same namespace "
-                f"{plugin_instance.namespace}. Refusing to proceed."
+                f"{namespace}. Refusing to proceed."
             )
 
-        self._namespace_map[plugin_api] = plugin_instance.namespace
-        self._plugins[plugin_instance.namespace] = plugin_instance
-
-        return plugin_instance
+        self._namespace_map[plugin_api] = namespace
+        return namespace
 
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
 
     def _load_all_plugins_from_tuple(self, plugin_apis: list[str]) -> None:
-        if self._plugins is not None:
+        if self._namespace_map is not None:
             raise RuntimeError(
-                "Impossible to load plugins - `self._plugins` is not None"
+                "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
         for plugin_api in plugin_apis:
@@ -253,14 +191,14 @@ class BasePluginLoader:
     def _check_plugins_loaded(self) -> None:
         if self._python_ctx is None:
             raise RuntimeError("Impossible to load plugins outside a Python Context")
-        if self._plugins is None:
+        if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
     def _get_configs(
         self, method: str, require_non_empty: bool
     ) -> dict[str, ProviderConfig]:
         self._check_plugins_loaded()
-        assert self._plugins is not None
+        assert self._namespace_map is not None
 
         configs = _call_subprocess(list(self._namespace_map.keys()), {method: {}})[
             method
@@ -298,7 +236,7 @@ class BasePluginLoader:
     def get_build_setup(self, variant_desc: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
         self._check_plugins_loaded()
-        assert self._plugins is not None
+        assert self._namespace_map is not None
 
         namespaces = {vprop.namespace for vprop in variant_desc.properties}
         try:
@@ -321,6 +259,7 @@ class BasePluginLoader:
     @property
     def plugin_api_values(self) -> dict[str, str]:
         self._check_plugins_loaded()
+        assert self._namespace_map is not None
         return {
             namespace: plugin_api
             for plugin_api, namespace in self._namespace_map.items()
@@ -329,6 +268,7 @@ class BasePluginLoader:
     @property
     def namespaces(self) -> list[str]:
         self._check_plugins_loaded()
+        assert self._namespace_map is not None
         return list(self._namespace_map.values())
 
 
@@ -417,9 +357,9 @@ class PluginLoader(BasePluginLoader):
         self._install_all_plugins_from_reqs(reqs)
 
     def _load_all_plugins(self) -> None:
-        if self._plugins is not None:
+        if self._namespace_map is not None:
             raise RuntimeError(
-                "Impossible to load plugins - `self._plugins` is not None"
+                "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
         # Get the current environment for marker evaluation
@@ -439,9 +379,9 @@ class EntryPointPluginLoader(BasePluginLoader):
     _plugin_provider_packages: dict[str, Distribution] | None = None
 
     def _load_all_plugins(self) -> None:
-        if self._plugins is not None:
+        if self._namespace_map is not None:
             raise RuntimeError(
-                "Impossible to load plugins - `self._plugins` is not None"
+                "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
         self._plugin_provider_packages = {}
@@ -459,16 +399,16 @@ class EntryPointPluginLoader(BasePluginLoader):
             )
 
             try:
-                plugin_instance = self.load_plugin(plugin_api=ep.value)
+                namespace = self.load_plugin(plugin_api=ep.value)
             except PluginError:
                 logger.debug("Impossible to load `%s`", ep)
             else:
                 if ep.dist is not None:
-                    self._plugin_provider_packages[plugin_instance.namespace] = ep.dist
+                    self._plugin_provider_packages[namespace] = ep.dist
 
     @property
     def plugin_provider_packages(self) -> dict[str, Distribution]:
-        if self._plugins is None:
+        if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
         assert self._plugin_provider_packages is not None
         return self._plugin_provider_packages
@@ -481,7 +421,6 @@ class ManualPluginLoader(BasePluginLoader):
 
     def __init__(self) -> None:
         self._namespace_map = {}
-        self._plugins = {}
         super().__init__(python_ctx=ExternalNonIsolatedPythonEnv().__enter__())
 
     def __enter__(self) -> Self:
@@ -489,7 +428,6 @@ class ManualPluginLoader(BasePluginLoader):
 
     def __exit__(self, *args: object) -> None:
         self._namespace_map = {}
-        self._plugins = {}
 
     def __del__(self) -> None:
         self._python_ctx.__exit__()
