@@ -18,7 +18,6 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.plugins.loader import PluginLoader
-from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
@@ -62,12 +61,12 @@ def get_variant_hashes_by_priority(
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
-    with (
-        AutoPythonEnv(
-            use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
-        ) as python_ctx,
-        PluginLoader(variant_nfo=variants_json, python_ctx=python_ctx) as plugin_loader,
-    ):
+    with PluginLoader(
+        variant_nfo=variants_json,
+        use_auto_install=use_auto_install,
+        isolated=False,
+        venv_path=venv_path,
+    ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
@@ -198,12 +197,12 @@ def check_variant_supported(
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
-    with (
-        AutoPythonEnv(
-            use_auto_install=use_auto_install, isolated=False, venv_path=venv_path
-        ) as python_ctx,
-        PluginLoader(variant_nfo=metadata, python_ctx=python_ctx) as plugin_loader,
-    ):
+    with PluginLoader(
+        variant_nfo=metadata,
+        use_auto_install=use_auto_install,
+        isolated=False,
+        venv_path=venv_path,
+    ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()

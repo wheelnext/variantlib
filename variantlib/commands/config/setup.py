@@ -16,7 +16,6 @@ from variantlib.configuration import get_configuration_files
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.resolver.sorting import sort_variant_properties
 
 logger = logging.getLogger(__name__)
@@ -131,10 +130,7 @@ def setup(args: list[str]) -> None:
         if not ui.display_text(INSTRUCTIONS):
             return
 
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
-    ):
+    with EntryPointPluginLoader() as loader:
         if known_namespaces := sorted(loader.namespaces):
             if parsed_args.default:
                 toml_data["namespace_priorities"] = known_namespaces

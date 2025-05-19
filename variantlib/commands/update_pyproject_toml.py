@@ -14,7 +14,6 @@ from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 
 
 def update_pyproject_toml(args: list[str]) -> None:
@@ -64,10 +63,7 @@ def update_pyproject_toml(args: list[str]) -> None:
     namespace_prio_key = default_prio_table.setdefault(PYPROJECT_TOML_NAMESPACE_KEY, [])
     provider_table = variant_table.setdefault(PYPROJECT_TOML_PROVIDER_DATA_KEY, {})
 
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
-    ):
+    with EntryPointPluginLoader() as loader:
         for namespace in parsed_args.delete:
             while namespace in namespace_prio_key:
                 namespace_prio_key.remove(namespace)

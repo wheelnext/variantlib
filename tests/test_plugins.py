@@ -25,7 +25,6 @@ from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ManualPluginLoader
 from variantlib.plugins.loader import PluginLoader
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -424,10 +423,7 @@ plugin-api = "tests.mocked_plugins:MockedPluginB"
     ],
 )
 def test_load_plugins_from_metadata(metadata: VariantMetadata):
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        PluginLoader(metadata, py_ctx) as loader,
-    ):
+    with PluginLoader(metadata, use_auto_install=False) as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
@@ -443,8 +439,5 @@ def test_load_plugins_from_entry_points(mocker):
         MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
         MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
     ]
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        EntryPointPluginLoader(py_ctx) as loader,
-    ):
+    with EntryPointPluginLoader() as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}

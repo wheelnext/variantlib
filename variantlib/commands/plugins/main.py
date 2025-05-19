@@ -7,7 +7,6 @@ import sys
 
 from variantlib import __package_name__
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
@@ -34,9 +33,6 @@ def main(args: list[str]) -> None:
     namespace = argparse.Namespace()
     parser.parse_args(args=args, namespace=namespace)
 
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
-    ):
+    with EntryPointPluginLoader() as loader:
         main_fn = registered_commands[namespace.command].load()
         return main_fn(namespace.args, plugin_loader=loader)

@@ -28,6 +28,7 @@ from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
+from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.plugins.py_envs import BasePythonEnv
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
@@ -100,9 +101,6 @@ class BasePluginLoader:
         if self._python_ctx is None:
             logger.warning("The Python installer is None. Should not happen.")
             return
-
-        self._python_ctx.__exit__()
-        self._python_ctx = None
 
     def _install_all_plugins_from_reqs(self, reqs: list[str]) -> None:
         if self._python_ctx is None:
@@ -278,19 +276,31 @@ class PluginLoader(BasePluginLoader):
     def __init__(
         self,
         variant_nfo: VariantMetadata,
-        python_ctx: BasePythonEnv | None = None,
+        use_auto_install: bool,
+        isolated: bool = True,
+        venv_path: Path | None = None,
     ) -> None:
         self._variant_nfo = variant_nfo
-        super().__init__(python_ctx=python_ctx)
+        super().__init__(
+            python_ctx=AutoPythonEnv(use_auto_install, isolated, venv_path)
+        )
 
     def __enter__(self) -> Self:
         if self._python_ctx is None:
             raise RuntimeError("Impossible to load plugins outside a Python Context")
 
+        self._python_ctx.__enter__()
         if isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
             self._install_all_plugins()
 
         return super().__enter__()
+
+    def __exit__(self, *args: object) -> None:
+        ret = super().__exit__(*args)
+        if self._python_ctx is not None:
+            self._python_ctx.__exit__(*args)
+            self._python_ctx = None
+        return ret
 
     def _install_all_plugins(self) -> None:
         if not isinstance(self._python_ctx, INSTALLER_PYTHON_ENVS):
@@ -377,6 +387,30 @@ class PluginLoader(BasePluginLoader):
 
 class EntryPointPluginLoader(BasePluginLoader):
     _plugin_provider_packages: dict[str, Distribution] | None = None
+
+    def __init__(
+        self,
+        venv_path: Path | None = None,
+    ) -> None:
+        super().__init__(
+            python_ctx=AutoPythonEnv(
+                use_auto_install=False, isolated=False, venv_path=venv_path
+            )
+        )
+
+    def __enter__(self) -> Self:
+        if self._python_ctx is None:
+            raise RuntimeError("Impossible to load plugins outside a Python Context")
+
+        self._python_ctx.__enter__()
+        return super().__enter__()
+
+    def __exit__(self, *args: object) -> None:
+        ret = super().__exit__(*args)
+        if self._python_ctx is not None:
+            self._python_ctx.__exit__(*args)
+            self._python_ctx = None
+        return ret
 
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:

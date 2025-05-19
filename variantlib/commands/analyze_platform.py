@@ -8,7 +8,6 @@ from variantlib import __package_name__
 from variantlib.commands.plugin_arguments import add_plugin_arguments
 from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +23,7 @@ def analyze_platform(args: list[str]) -> None:
     parsed_args = parser.parse_args(args)
     parse_plugin_arguments(parsed_args)
 
-    with (
-        ExternalNonIsolatedPythonEnv() as py_ctx,
-        EntryPointPluginLoader(python_ctx=py_ctx) as loader,
-    ):
+    with EntryPointPluginLoader() as loader:
         logger.info("Analyzing the platform ...\n")
         variant_cfgs = loader.get_supported_configs().values()
 

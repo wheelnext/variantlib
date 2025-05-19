@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-import contextlib
 import functools
 import logging
 import os
@@ -20,7 +19,6 @@ from variantlib.plugins.py_backends import UvBackend
 
 if TYPE_CHECKING:
     from collections.abc import Collection
-    from collections.abc import Generator
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -250,24 +248,18 @@ class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv)
         super().install(requirements)
 
 
-@contextlib.contextmanager
 def PythonInstallerEnv(  # noqa: N802
     isolated: bool,
-) -> Generator[IsolatedPythonInstallerEnv | NonIsolatedPythonInstallerEnv]:
-    try:
-        if isolated:
-            # original_sys_path = sys.path.copy()
-            # with IsolatedPythonInstallerEnv() as ctx:
-            #     sys.path.insert(0, str(ctx.package_dir))
-            #     yield ctx
-            #     sys.path = original_sys_path
-            raise NotImplementedError("This path is not yet supported")  # noqa: TRY301
-        else:
-            with NonIsolatedPythonInstallerEnv() as ctx:
-                yield ctx
-
-    except Exception:
-        logger.exception("An error occured during plugin installation.")
+) -> IsolatedPythonInstallerEnv | NonIsolatedPythonInstallerEnv:
+    if isolated:
+        # original_sys_path = sys.path.copy()
+        # with IsolatedPythonInstallerEnv() as ctx:
+        #     sys.path.insert(0, str(ctx.package_dir))
+        #     yield ctx
+        #     sys.path = original_sys_path
+        raise NotImplementedError("This path is not yet supported")
+    with NonIsolatedPythonInstallerEnv() as ctx:
+        return ctx
 
 
 class ExternalNonIsolatedPythonEnv(BasePythonEnv):
@@ -305,43 +297,32 @@ class ExternalIsolatedPythonEnv(IsolatedPythonEnvMixin, BasePythonEnv):
         pass
 
 
-@contextlib.contextmanager
 def ExternalPythonEnv(  # noqa: N802
     venv_path: pathlib.Path | None,
-) -> Generator[ExternalIsolatedPythonEnv | ExternalNonIsolatedPythonEnv]:
-    try:
-        if venv_path is not None:
-            # original_sys_path = sys.path.copy()
-            # with ExternalIsolatedPythonEnv(venv_path=venv_path) as ctx:
-            #     sys.path.insert(0, str(ctx.package_dir))
-            #     yield ctx
-            #     sys.path = original_sys_path
-            raise NotImplementedError("This path is not yet supported")  # noqa: TRY301
-        else:
-            with ExternalNonIsolatedPythonEnv() as ctx:
-                yield ctx
-
-    except Exception:
-        logger.exception("An error occured during plugin installation.")
+) -> ExternalIsolatedPythonEnv | ExternalNonIsolatedPythonEnv:
+    if venv_path is not None:
+        # original_sys_path = sys.path.copy()
+        # with ExternalIsolatedPythonEnv(venv_path=venv_path) as ctx:
+        #     sys.path.insert(0, str(ctx.package_dir))
+        #     yield ctx
+        #     sys.path = original_sys_path
+        raise NotImplementedError("This path is not yet supported")
+    return ExternalNonIsolatedPythonEnv()
 
 
-@contextlib.contextmanager
 def AutoPythonEnv(  # noqa: N802
     use_auto_install: bool, isolated: bool = True, venv_path: pathlib.Path | None = None
-) -> Generator[
+) -> (
     IsolatedPythonInstallerEnv
     | NonIsolatedPythonInstallerEnv
     | ExternalIsolatedPythonEnv
     | ExternalNonIsolatedPythonEnv
-]:
+):
     if use_auto_install:
         if venv_path is not None:
             raise ValueError("`venv_path` must be None if `use_auto_install` is True.")
-        with PythonInstallerEnv(isolated=isolated) as ctx:
-            yield ctx
-    else:
-        with ExternalPythonEnv(venv_path=venv_path) as ctx:
-            yield ctx
+        return PythonInstallerEnv(isolated=isolated)
+    return ExternalPythonEnv(venv_path=venv_path)
 
 
 # Helper Tuples
