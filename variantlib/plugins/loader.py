@@ -34,7 +34,6 @@ from variantlib.plugins.py_envs import ISOLATED_PYTHON_ENVS
 from variantlib.plugins.py_envs import BasePythonEnv
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
 from variantlib.validators.base import validate_matches_re
 from variantlib.validators.base import validate_type
 
@@ -257,55 +256,44 @@ class BasePluginLoader:
         if self._plugins is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
-    def get_supported_configs(self) -> dict[str, ProviderConfig]:
-        """Get a mapping of namespaces to supported configs"""
+    def _get_configs(
+        self, method: str, require_non_empty: bool
+    ) -> dict[str, ProviderConfig]:
         self._check_plugins_loaded()
         assert self._plugins is not None
 
-        provider_cfgs = {}
-        for namespace, plugin_instance in self._plugins.items():
-            vfeat_configs: list[VariantFeatureConfigType] = self._call(
-                plugin_instance.get_supported_configs
-            )
+        configs = _call_subprocess(list(self._namespace_map.keys()), {method: {}})[
+            method
+        ]
 
-            # skip providers that do not return any supported configs
-            if not vfeat_configs:
+        provider_cfgs = {}
+        for plugin_api, plugin_configs in configs.items():
+            namespace = self._namespace_map[plugin_api]
+
+            if not plugin_configs:
+                if require_non_empty:
+                    raise ValueError(
+                        f"Provider {namespace}, {method}() method returned no valid "
+                        "configs"
+                    )
                 continue
 
             provider_cfgs[namespace] = ProviderConfig(
-                plugin_instance.namespace,
+                namespace,
                 configs=[
-                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
-                    for vfeat_cfg in vfeat_configs
+                    VariantFeatureConfig(**vfeat_cfg) for vfeat_cfg in plugin_configs
                 ],
             )
 
         return provider_cfgs
+
+    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to supported configs"""
+        return self._get_configs("get_supported_configs", require_non_empty=False)
 
     def get_all_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
-        self._check_plugins_loaded()
-        assert self._plugins is not None
-
-        provider_cfgs = {}
-        for namespace, plugin_instance in self._plugins.items():
-            vfeat_configs = self._call(plugin_instance.get_all_configs)
-
-            if not vfeat_configs:
-                raise ValueError(
-                    f"Provider {namespace}, get_all_configs() method returned no valid "
-                    "configs"
-                )
-
-            provider_cfgs[namespace] = ProviderConfig(
-                plugin_instance.namespace,
-                configs=[
-                    VariantFeatureConfig(name=vfeat_cfg.name, values=vfeat_cfg.values)
-                    for vfeat_cfg in vfeat_configs
-                ],
-            )
-
-        return provider_cfgs
+        return self._get_configs("get_all_configs", require_non_empty=True)
 
     def get_build_setup(self, properties: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""

@@ -149,8 +149,9 @@ def test_get_configs_incorrect_list_type(method: str):
     loader.load_plugin("tests.test_plugins:IncorrectListTypePlugin")
 
     with pytest.raises(
-        TypeError,
-        match=re.escape(
+        PluginError,
+        match=r".*"
+        + re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
             "Expected list[variantlib.protocols.VariantFeatureConfigType], "
             "got <class 'tuple'>"
@@ -185,8 +186,9 @@ def test_get_configs_incorrect_list_member_type(method: str):
     loader.load_plugin("tests.test_plugins:IncorrectListMemberTypePlugin")
 
     with pytest.raises(
-        TypeError,
-        match=re.escape(
+        PluginError,
+        match=r".*"
+        + re.escape(
             f"Provider exception_test, {method}() method returned incorrect type. "
             "Expected list[variantlib.protocols.VariantFeatureConfigType], "
             "got list[typing.Union[variantlib.protocols.VariantFeatureConfigType, "

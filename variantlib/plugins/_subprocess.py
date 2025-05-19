@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING
 
 # TODO: inline these dependencies somehow
 from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
+from variantlib.validators.base import ValidationError
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -53,6 +56,20 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
         yield plugin_instance
 
 
+def process_configs(
+    configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
+) -> list[dict[str, str | list[str]]]:
+    try:
+        validate_type(configs, list[VariantFeatureConfigType])
+    except ValidationError as err:
+        raise TypeError(
+            f"Provider {plugin_instance.namespace}, {method}() "
+            f"method returned incorrect type. {err}"
+        ) from None
+
+    return [{"name": vfeat.name, "values": vfeat.values} for vfeat in configs]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -71,6 +88,20 @@ def main() -> int:
             assert not command_args
             retval[command] = {
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
+            }
+        elif command == "get_all_configs":
+            assert not command_args
+            retval[command] = {
+                plugin_api: process_configs(plugin.get_all_configs(), plugin, command)
+                for plugin_api, plugin in plugins.items()
+            }
+        elif command == "get_supported_configs":
+            assert not command_args
+            retval[command] = {
+                plugin_api: process_configs(
+                    plugin.get_supported_configs(), plugin, command
+                )
+                for plugin_api, plugin in plugins.items()
             }
         else:
             raise ValueError(f"Invalid command: {command}")
