@@ -5,6 +5,7 @@ import importlib
 import json
 import sys
 from functools import reduce
+from itertools import groupby
 from typing import TYPE_CHECKING
 
 # TODO: inline these dependencies somehow
@@ -81,6 +82,7 @@ def main() -> int:
     args = parser.parse_args()
     commands = json.load(sys.stdin)
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
+    namespace_map = {plugin.namespace: plugin for plugin in plugins.values()}
 
     retval = {}
     for command, command_args in commands.items():
@@ -103,6 +105,33 @@ def main() -> int:
                 )
                 for plugin_api, plugin in plugins.items()
             }
+        elif command == "get_build_setup":
+            assert command_args
+            assert "properties" in command_args
+            ret_env: dict[str, list[str]] = {}
+            for namespace, p_props in groupby(
+                sorted(command_args["properties"], key=lambda prop: prop["namespace"]),
+                lambda prop: prop["namespace"],
+            ):
+                plugin = namespace_map[namespace]
+                if hasattr(plugin, "get_build_setup"):
+                    plugin_env = plugin.get_build_setup(
+                        [argparse.Namespace(**prop) for prop in p_props]
+                    )
+
+                    try:
+                        validate_type(plugin_env, dict[str, list[str]])
+                    except ValidationError as err:
+                        raise TypeError(
+                            f"Provider {namespace}, get_build_setup() "
+                            f"method returned incorrect type. {err}"
+                        ) from None
+                else:
+                    plugin_env = {}
+
+                for k, v in plugin_env.items():
+                    ret_env.setdefault(k, []).extend(v)
+            retval = {command: ret_env}
         else:
             raise ValueError(f"Invalid command: {command}")
 

@@ -313,7 +313,7 @@ def test_get_build_setup_missing_plugin(
 
     with pytest.raises(
         PluginMissingError,
-        match=r"No plugin found for namespace missing_plugin",
+        match=r"No plugin found for namespace 'missing_plugin'",
     ):
         assert mocked_plugin_loader.get_build_setup(variant_desc)
 

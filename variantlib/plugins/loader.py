@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import importlib
 import importlib.resources
 import importlib.util
@@ -9,7 +10,6 @@ import sys
 from abc import abstractmethod
 from functools import reduce
 from importlib.machinery import PathFinder
-from itertools import groupby
 from pathlib import Path
 from subprocess import run
 from tempfile import TemporaryDirectory
@@ -295,34 +295,28 @@ class BasePluginLoader:
         """Get a mapping of namespaces to all valid configs"""
         return self._get_configs("get_all_configs", require_non_empty=True)
 
-    def get_build_setup(self, properties: VariantDescription) -> dict[str, list[str]]:
+    def get_build_setup(self, variant_desc: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
         self._check_plugins_loaded()
         assert self._plugins is not None
 
-        ret_env: dict[str, list[str]] = {}
-        for namespace, p_props in groupby(
-            sorted(properties.properties), lambda prop: prop.namespace
-        ):
-            if (plugin := self._plugins.get(namespace)) is None:
-                raise PluginMissingError(f"No plugin found for namespace {namespace}")
-
-            if hasattr(plugin, "get_build_setup"):
-                plugin_env = plugin.get_build_setup(list(p_props))
-
-                try:
-                    validate_type(plugin_env, dict[str, list[str]])
-                except ValidationError as err:
-                    raise TypeError(
-                        f"Provider {namespace}, get_build_setup() "
-                        f"method returned incorrect type. {err}"
-                    ) from None
-            else:
-                plugin_env = {}
-
-            for k, v in plugin_env.items():
-                ret_env.setdefault(k, []).extend(v)
-        return ret_env
+        namespaces = {vprop.namespace for vprop in variant_desc.properties}
+        try:
+            plugin_apis = [
+                self.plugin_api_values[namespace] for namespace in namespaces
+            ]
+        except KeyError as err:
+            raise PluginMissingError(f"No plugin found for namespace {err}") from None
+        return _call_subprocess(
+            plugin_apis,
+            {
+                "get_build_setup": {
+                    "properties": [
+                        dataclasses.asdict(vprop) for vprop in variant_desc.properties
+                    ]
+                }
+            },
+        )["get_build_setup"]
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
