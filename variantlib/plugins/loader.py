@@ -321,7 +321,6 @@ class BasePluginLoader:
     @property
     def plugin_api_values(self) -> dict[str, str]:
         self._check_plugins_loaded()
-        assert self._plugins is not None
         return {
             namespace: plugin_api
             for plugin_api, namespace in self._namespace_map.items()
@@ -330,8 +329,7 @@ class BasePluginLoader:
     @property
     def namespaces(self) -> list[str]:
         self._check_plugins_loaded()
-        assert self._plugins is not None
-        return list(self._plugins.keys())
+        return list(self._namespace_map.values())
 
 
 class PluginLoader(BasePluginLoader):
