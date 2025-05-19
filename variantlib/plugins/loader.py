@@ -133,7 +133,9 @@ class BasePluginLoader:
         import_name: str = plugin_api_match.group("module")
         attr_path: str = plugin_api_match.group("attr")
         # make sure to normalize it
-        subprocess_ns = _call_subprocess([f"{import_name}:{attr_path}"], "namespace")
+        subprocess_namespaces = _call_subprocess(
+            [f"{import_name}:{attr_path}"], "namespaces"
+        )
 
         try:
             if isinstance(self._python_ctx, ISOLATED_PYTHON_ENVS):
@@ -191,7 +193,7 @@ class BasePluginLoader:
             )
 
         # sanity check the subprocess loader until we switch fully to it
-        assert plugin_instance.namespace == subprocess_ns
+        assert subprocess_namespaces == {plugin_api: plugin_instance.namespace}
 
         return plugin_instance
 

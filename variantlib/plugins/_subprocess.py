@@ -58,12 +58,14 @@ def main() -> int:
     parser.add_argument(
         "-p", "--plugin-api", action="append", help="Load specified plugin API"
     )
-    parser.add_argument("command", choices={"namespace"})
+    parser.add_argument("command", choices={"namespaces"})
     args = parser.parse_args()
-    plugins = list(load_plugins(args.plugin_api))
-    if args.command == "namespace":
-        assert len(plugins) == 1
-        json.dump(plugins[0].namespace, sys.stdout)
+    plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
+    if args.command == "namespaces":
+        json.dump(
+            {plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()},
+            sys.stdout,
+        )
 
     return 0
 
