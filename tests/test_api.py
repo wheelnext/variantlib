@@ -43,7 +43,6 @@ from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
-from variantlib.plugins.loader import ListPluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -236,24 +235,43 @@ def test_validation_result_properties():
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]):
-    with ListPluginLoader(mocked_plugin_apis) as plugin_loader:
-        # Verify whether the variant properties are valid
-        res = validate_variant(
-            VariantDescription(
-                [
-                    VariantProperty("test_namespace", "name1", "val1d"),
-                    VariantProperty("test_namespace", "name2", "val2d"),
-                    VariantProperty("test_namespace", "name3", "val3a"),
-                    VariantProperty("second_namespace", "name3", "val3a"),
-                    VariantProperty("incompatible_namespace", "flag1", "on"),
-                    VariantProperty("incompatible_namespace", "flag2", "off"),
-                    VariantProperty("incompatible_namespace", "flag5", "on"),
-                    VariantProperty("missing_namespace", "name", "val"),
-                    VariantProperty("private", "build_type", "debug"),
-                ]
+    vmeta = VariantMetadata(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+            "incompatible_namespace",
+        ],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
             ),
-            plugin_loader=plugin_loader,
-        )
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+            "incompatible_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginC"
+            ),
+        },
+    )
+
+    # Verify whether the variant properties are valid
+    res = validate_variant(
+        VariantDescription(
+            [
+                VariantProperty("test_namespace", "name1", "val1d"),
+                VariantProperty("test_namespace", "name2", "val2d"),
+                VariantProperty("test_namespace", "name3", "val3a"),
+                VariantProperty("second_namespace", "name3", "val3a"),
+                VariantProperty("incompatible_namespace", "flag1", "on"),
+                VariantProperty("incompatible_namespace", "flag2", "off"),
+                VariantProperty("incompatible_namespace", "flag5", "on"),
+                VariantProperty("missing_namespace", "name", "val"),
+                VariantProperty("private", "build_type", "debug"),
+            ]
+        ),
+        metadata=vmeta,
+        use_auto_install=False,
+    )
 
     assert res == VariantValidationResult(
         {

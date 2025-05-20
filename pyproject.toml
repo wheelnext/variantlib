@@ -103,3 +103,10 @@ extras = ["test"]
 commands = [
     ["pytest"],
 ]
+
+[variant.default-priorities]
+namespace = ["x86_64"]
+
+[variant.providers.x86_64]
+plugin-api = "provider_variant_x86_64.plugin:X8664Plugin"
+requires = ["provider-variant-x86-64 >=0.0.1.post1"]

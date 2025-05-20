@@ -17,7 +17,6 @@ from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.errors import ValidationError
-from variantlib.plugins.loader import PluginLoader
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 logger = logging.getLogger(__name__)
@@ -134,27 +133,24 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
-            with PluginLoader(
-                variant_metadata, use_auto_install=False
-            ) as plugin_loader:
-                # Verify whether the variant properties are valid
-                vdesc_valid = validate_variant(vdesc, plugin_loader=plugin_loader)
-                if vdesc_valid.invalid_properties:
-                    invalid_str = ", ".join(
-                        x.to_str() for x in vdesc_valid.invalid_properties
-                    )
-                    raise ValidationError(
-                        "The following variant properties are invalid according to the "
-                        f"plugins: {invalid_str}"
-                    )
-                if vdesc_valid.unknown_properties:
-                    unknown_str = ", ".join(
-                        x.to_str() for x in vdesc_valid.unknown_properties
-                    )
-                    raise ValidationError(
-                        "The following variant properties use namespaces that are not "
-                        f"provided by any installed plugin: {unknown_str}"
-                    )
+            # Verify whether the variant properties are valid
+            vdesc_valid = validate_variant(vdesc, metadata=variant_metadata)
+            if vdesc_valid.invalid_properties:
+                invalid_str = ", ".join(
+                    x.to_str() for x in vdesc_valid.invalid_properties
+                )
+                raise ValidationError(
+                    "The following variant properties are invalid according to the "
+                    f"plugins: {invalid_str}"
+                )
+            if vdesc_valid.unknown_properties:
+                unknown_str = ", ".join(
+                    x.to_str() for x in vdesc_valid.unknown_properties
+                )
+                raise ValidationError(
+                    "The following variant properties use namespaces that are not "
+                    f"provided by any installed plugin: {unknown_str}"
+                )
     else:
         # Create a null variant
         vdesc = VariantDescription()

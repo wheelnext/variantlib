@@ -26,8 +26,6 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from email.message import Message
 
-    from variantlib.plugins.loader import BasePluginLoader
-
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +127,11 @@ def get_variant_hashes_by_priority(
 
 
 def validate_variant(
-    variant_desc: VariantDescription, plugin_loader: BasePluginLoader
+    variant_desc: VariantDescription,
+    metadata: VariantMetadata,
+    use_auto_install: bool = True,
+    isolated: bool = True,
+    venv_path: str | pathlib.Path | None = None,
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -141,7 +143,15 @@ def validate_variant(
     be verified.
     """
 
-    provider_cfgs = plugin_loader.get_all_configs()
+    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+
+    with PluginLoader(
+        variant_nfo=metadata,
+        use_auto_install=use_auto_install,
+        isolated=isolated,
+        venv_path=venv_path,
+    ) as plugin_loader:
+        provider_cfgs = plugin_loader.get_all_configs()
 
     def _validate_variant(vprop: VariantProperty) -> bool | None:
         provider_cfg = provider_cfgs.get(vprop.namespace)
@@ -178,6 +188,7 @@ def check_variant_supported(
     vdesc: VariantDescription | None = None,
     metadata: VariantMetadata,
     use_auto_install: bool = True,
+    isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
     forbidden_namespaces: list[str] | None = None,
     forbidden_features: list[str] | None = None,
@@ -201,7 +212,7 @@ def check_variant_supported(
     with PluginLoader(
         variant_nfo=metadata,
         use_auto_install=use_auto_install,
-        isolated=False,
+        isolated=isolated,
         venv_path=venv_path,
     ) as plugin_loader:
         supported_vprops = list(
