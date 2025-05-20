@@ -5,7 +5,9 @@ import contextlib
 import logging
 import os
 import pathlib
+import random
 import shutil
+import string
 import subprocess
 import tempfile
 import typing
@@ -76,13 +78,12 @@ class _BaseBackend(abc.ABC):
         """
         # pip does not honour environment markers in command line arguments
         # but it does from requirement files.
-        with tempfile.NamedTemporaryFile(
-            "w",
-            prefix="variants-plugins-reqs-",
-            suffix=".txt",
-            encoding="utf-8",
-        ) as _req_file:
-            req_file = pathlib.Path(_req_file.name)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            req_file = pathlib.Path(tmp_dir) / (
+                "variants-plugins-reqs-"
+                f"{''.join(random.choice(string.ascii_letters) for _ in range(12))}"
+                ".txt"
+            )
 
             with req_file.open("w", encoding="utf-8") as rf:
                 rf.write(os.linesep.join(requirements))
