@@ -1,9 +1,14 @@
+import os
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import ListPluginLoader
+
+# Set PYTHONPATH to ensure that tests can find plugins
+os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
 
 
 @pytest.fixture(scope="session")
