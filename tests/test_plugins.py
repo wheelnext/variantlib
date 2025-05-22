@@ -376,12 +376,12 @@ def test_load_plugin_invalid_arg():
 Metadata-Version: 2.1
 Name: test-package
 Version: 1.2.3
-Variant-property: test_namespace :: name1 :: val1a
-Variant-property: second_namespace :: name3 :: val3c
-Variant-hash: faf70e73
-Variant-plugin-api: test_namespace: tests.mocked_plugins:MockedPluginA
-Variant-plugin-api: second_namespace: tests.mocked_plugins:MockedPluginB
-Variant-default-namespace-priorities: test_namespace, second_namespace
+Variant-Property: test_namespace :: name1 :: val1a
+Variant-Property: second_namespace :: name3 :: val3c
+Variant-Hash: faf70e73
+Variant-Plugin-API: test_namespace: tests.mocked_plugins:MockedPluginA
+Variant-Plugin-API: second_namespace: tests.mocked_plugins:MockedPluginB
+Variant-Default-Namespace-Priorities: test_namespace, second_namespace
 """)
         ),
         VariantPyProjectToml(

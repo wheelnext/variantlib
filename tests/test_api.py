@@ -317,7 +317,7 @@ def test_set_variant_metadata(
         metadata["variant-property"] = "a :: b :: c"
         metadata["VARIANT-REQUIRES"] = "ns1: frobnicate"
         metadata["variant-requires"] = "ns2: barnicate"
-        metadata["Variant-requires"] = "ns3: baznicate"
+        metadata["Variant-Requires"] = "ns3: baznicate"
         metadata["variant-property"] = "d :: e :: f"
         metadata["VARIANT-plugin-API"] = "ns1: frobnicate:Plugin"
         metadata["variant-Plugin-apI"] = "ns2: barnicate.plugin:BarPlugin"
@@ -345,26 +345,26 @@ def test_set_variant_metadata(
         "Metadata-Version: 2.1\n"
         "Name: test-package\n"
         "Version: 1.2.3\n"
-        "Variant-property: ns1 :: f1 :: p1\n"
-        "Variant-property: ns1 :: f2 :: p2\n"
-        "Variant-property: ns2 :: f1 :: p1\n"
-        "Variant-hash: 67fcaf38\n"
+        "Variant-Property: ns1 :: f1 :: p1\n"
+        "Variant-Property: ns1 :: f2 :: p2\n"
+        "Variant-Property: ns2 :: f1 :: p1\n"
+        "Variant-Hash: 67fcaf38\n"
     )
 
     if pyproject_toml is not None:
         expected += (
-            "Variant-requires: ns1: ns1-provider >= 1.2.3\n"
-            "Variant-enable-if: ns1: python_version >= '3.12'\n"
-            "Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin\n"
-            "Variant-requires: ns2: ns2_provider; python_version >= '3.11'\n"
-            "Variant-requires: ns2: old_ns2_provider; python_version < '3.11'\n"
-            "Variant-plugin-api: ns2: ns2_provider:Plugin\n"
-            "Variant-default-namespace-priorities: ns1, ns2\n"
+            "Variant-Requires: ns1: ns1-provider >= 1.2.3\n"
+            "Variant-Enable-If: ns1: python_version >= '3.12'\n"
+            "Variant-Plugin-API: ns1: ns1_provider.plugin:NS1Plugin\n"
+            "Variant-Requires: ns2: ns2_provider; python_version >= '3.11'\n"
+            "Variant-Requires: ns2: old_ns2_provider; python_version < '3.11'\n"
+            "Variant-Plugin-API: ns2: ns2_provider:Plugin\n"
+            "Variant-Default-Namespace-Priorities: ns1, ns2\n"
         )
     if pyproject_toml is PYPROJECT_TOML:
         expected += (
-            "Variant-default-feature-priorities: ns2 :: f1, ns1 :: f2\n"
-            "Variant-default-property-priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
+            "Variant-Default-Feature-Priorities: ns2 :: f1, ns1 :: f2\n"
+            "Variant-Default-Property-Priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
         )
 
     expected += "\nlong description\nof a package\n"

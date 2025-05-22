@@ -34,9 +34,9 @@ Version: 1.2.3\
 
 TEST_METADATA = f"""\
 {COMMON_METADATA}
-Variant-property: ns1 :: f1 :: p1
+Variant-Property: ns1 :: f1 :: p1
 Variant-Property: ns1 :: f2 :: p2
-Variant-property: ns2 :: f1 :: p1
+Variant-Property: ns2 :: f1 :: p1
 Variant-Hash: 67fcaf38
 Variant-Requires: ns1: ns1-provider >= 1.2.3
 Variant-Enable-If: ns1: python_version >= '3.12'
@@ -149,7 +149,7 @@ def test_missing_plugin_api():
         ValidationError,
         match=rf"{METADATA_VARIANT_PROVIDER_REQUIRES_HEADER} and "
         rf"{METADATA_VARIANT_PROVIDER_ENABLE_IF_HEADER} include namespaces "
-        r"that are not included in Variant-plugin-api",
+        r"that are not included in Variant-Plugin-API",
     ):
         DistMetadata(message_from_string(mangled))
 
@@ -266,19 +266,19 @@ def test_update_message(message: Message):
         "Metadata-Version: 2.1\n"
         "Name: test-package\n"
         "Version: 1.2.3\n"
-        "Variant-property: ns1 :: f1 :: p1\n"
-        "Variant-property: ns1 :: f2 :: p2\n"
-        "Variant-property: ns2 :: f1 :: p1\n"
-        "Variant-hash: 67fcaf38\n"
-        "Variant-requires: ns1: ns1-provider >= 1.2.3\n"
-        "Variant-enable-if: ns1: python_version >= '3.12'\n"
-        "Variant-plugin-api: ns1: ns1_provider.plugin:NS1Plugin\n"
-        "Variant-requires: ns2: ns2_provider; python_version >= '3.11'\n"
-        "Variant-requires: ns2: old_ns2_provider; python_version < '3.11'\n"
-        "Variant-plugin-api: ns2: ns2_provider:Plugin\n"
-        "Variant-default-namespace-priorities: ns1, ns2\n"
-        "Variant-default-feature-priorities: ns2 :: f1, ns1 :: f2\n"
-        "Variant-default-property-priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
+        "Variant-Property: ns1 :: f1 :: p1\n"
+        "Variant-Property: ns1 :: f2 :: p2\n"
+        "Variant-Property: ns2 :: f1 :: p1\n"
+        "Variant-Hash: 67fcaf38\n"
+        "Variant-Requires: ns1: ns1-provider >= 1.2.3\n"
+        "Variant-Enable-If: ns1: python_version >= '3.12'\n"
+        "Variant-Plugin-API: ns1: ns1_provider.plugin:NS1Plugin\n"
+        "Variant-Requires: ns2: ns2_provider; python_version >= '3.11'\n"
+        "Variant-Requires: ns2: old_ns2_provider; python_version < '3.11'\n"
+        "Variant-Plugin-API: ns2: ns2_provider:Plugin\n"
+        "Variant-Default-Namespace-Priorities: ns1, ns2\n"
+        "Variant-Default-Feature-Priorities: ns2 :: f1, ns1 :: f2\n"
+        "Variant-Default-Property-Priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
         "\n"
         "long description\n"
         "of a package\n"
