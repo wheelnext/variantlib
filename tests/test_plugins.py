@@ -8,7 +8,9 @@ from abc import ABC
 from abc import abstractproperty
 from dataclasses import dataclass
 from email import message_from_string
+from pathlib import Path
 from typing import Any
+from urllib.request import pathname2url
 
 import pytest
 
@@ -435,3 +437,21 @@ def test_load_plugins_from_entry_points(mocker):
     ]
     with EntryPointPluginLoader() as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
+
+
+def test_install_plugin():
+    installable_package = pathname2url(
+        str(Path("tests/artifacts/test-plugin-package").absolute())
+    )
+    metadata = VariantMetadata(
+        namespace_priorities=["installable_plugin"],
+        providers={
+            "installable_plugin": ProviderInfo(
+                plugin_api="test_plugin_package:TestPlugin",
+                requires=[f"test-plugin-package @ file:{installable_package}"],
+            ),
+        },
+    )
+
+    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+        assert set(loader.namespaces) == {"installable_plugin"}
