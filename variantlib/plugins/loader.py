@@ -11,10 +11,8 @@ from abc import abstractmethod
 from pathlib import Path
 from subprocess import run
 from tempfile import TemporaryDirectory
-from types import MethodType
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import get_type_hints
 
 from packaging.markers import Marker
 from packaging.markers import default_environment
@@ -24,20 +22,15 @@ from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
-from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
 from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.plugins.py_envs import BasePythonEnv
 from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
-from variantlib.protocols import PluginType
 from variantlib.validators.base import validate_matches_re
-from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from variantlib.models.metadata import VariantMetadata
     from variantlib.models.variant import VariantDescription
 
@@ -178,24 +171,6 @@ class BasePluginLoader:
                 logger.debug(
                     "Impossible to load `%s`", plugin_api, exc_info=sys.exc_info()
                 )
-
-    def _call(self, method: Callable[[], Any]) -> Any:
-        """Call plugin method and verify the return type"""
-
-        value = method()
-
-        try:
-            validate_type(value, get_type_hints(method)["return"])
-        except ValidationError as err:
-            assert isinstance(method, MethodType)
-            plugin_instance = method.__self__
-            assert isinstance(plugin_instance, PluginType)
-            raise TypeError(
-                f"Provider {plugin_instance.namespace}, {method.__func__.__name__}() "
-                f"method returned incorrect type. {err}"
-            ) from None
-
-        return value
 
     def _check_plugins_loaded(self) -> None:
         if self._python_ctx is None:
