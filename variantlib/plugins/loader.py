@@ -27,7 +27,6 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.plugins.py_envs import INSTALLER_PYTHON_ENVS
 from variantlib.plugins.py_envs import AutoPythonEnv
 from variantlib.plugins.py_envs import BasePythonEnv
-from variantlib.plugins.py_envs import ExternalNonIsolatedPythonEnv
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
@@ -472,25 +471,3 @@ class ListPluginLoader(BasePluginLoader):
             )
 
         self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)
-
-
-class ManualPluginLoader(BasePluginLoader):
-    """Load and query plugins"""
-
-    _python_ctx: ExternalNonIsolatedPythonEnv
-
-    def __init__(self) -> None:
-        self._namespace_map = {}
-        super().__init__(python_ctx=ExternalNonIsolatedPythonEnv().__enter__())
-
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        self._namespace_map = {}
-
-    def __del__(self) -> None:
-        self._python_ctx.__exit__()
-
-    def _load_all_plugins(self) -> None:
-        raise NotImplementedError("This Plugin Loader doesn't support this behavior")
