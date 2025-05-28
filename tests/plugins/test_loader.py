@@ -124,7 +124,10 @@ def test_namespace_clash():
             "to proceed.",
         ),
         ListPluginLoader(
-            ["tests.mocked_plugins:MockedPluginA", "tests.test_plugins:ClashingPlugin"]
+            [
+                "tests.mocked_plugins:MockedPluginA",
+                "tests.plugins.test_loader:ClashingPlugin",
+            ]
         ),
     ):
         pass
@@ -140,7 +143,9 @@ class IncorrectListTypePlugin(ExceptionPluginBase):
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
 def test_get_configs_incorrect_list_type(method: str):
     with (
-        ListPluginLoader(["tests.test_plugins:IncorrectListTypePlugin"]) as loader,
+        ListPluginLoader(
+            ["tests.plugins.test_loader:IncorrectListTypePlugin"]
+        ) as loader,
         pytest.raises(
             PluginError,
             match=r".*"
@@ -160,7 +165,9 @@ class IncorrectListLengthPlugin(ExceptionPluginBase):
 
 def test_get_all_configs_incorrect_list_length():
     with (
-        ListPluginLoader(["tests.test_plugins:IncorrectListLengthPlugin"]) as loader,
+        ListPluginLoader(
+            ["tests.plugins.test_loader:IncorrectListLengthPlugin"]
+        ) as loader,
         pytest.raises(
             ValueError,
             match=r"Provider exception_test, get_all_configs\(\) method returned "
@@ -178,7 +185,7 @@ class IncorrectListMemberTypePlugin(ExceptionPluginBase):
 def test_get_configs_incorrect_list_member_type(method: str):
     with (
         ListPluginLoader(
-            ["tests.test_plugins:IncorrectListMemberTypePlugin"]
+            ["tests.plugins.test_loader:IncorrectListMemberTypePlugin"]
         ) as loader,
         pytest.raises(
             PluginError,
@@ -207,12 +214,12 @@ def test_namespace_missing_module(caplog: pytest.CapLogFixture):
 
 def test_namespace_incorrect_name(caplog: pytest.CapLogFixture):
     caplog.set_level(logging.DEBUG)
-    with ListPluginLoader([("tests.test_plugins:no_such_name")]):
+    with ListPluginLoader([("tests.plugins.test_loader:no_such_name")]):
         pass
     assert caplog.records[-1].exc_info[0] == PluginError
     assert (
-        "Loading the plugin from 'tests.test_plugins:no_such_name' "
-        "failed: module 'tests.test_plugins' has no attribute 'no_such_name'"
+        "Loading the plugin from 'tests.plugins.test_loader:no_such_name' "
+        "failed: module 'tests.plugins.test_loader' has no attribute 'no_such_name'"
     ) in str(caplog.records[-1].exc_info[1])
 
 
@@ -225,11 +232,12 @@ class IncompletePlugin:
 
 def test_namespace_incorrect_type(caplog: pytest.CapLogFixture):
     caplog.set_level(logging.DEBUG)
-    with ListPluginLoader(["tests.test_plugins:RANDOM_STUFF"]):
+    with ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]):
         pass
     assert caplog.records[-1].exc_info[0] == PluginError
     assert (
-        "'tests.test_plugins:RANDOM_STUFF' points at a value that is not callable: 123"
+        "'tests.plugins.test_loader:RANDOM_STUFF' points at a value that is "
+        "not callable: 123"
     ) in str(caplog.records[-1].exc_info[1])
 
 
@@ -248,11 +256,11 @@ class RaisingInstantiationPlugin:
 
 def test_namespace_instantiation_raises(caplog: pytest.CapLogFixture):
     caplog.set_level(logging.DEBUG)
-    with ListPluginLoader(["tests.test_plugins:RaisingInstantiationPlugin"]):
+    with ListPluginLoader(["tests.plugins.test_loader:RaisingInstantiationPlugin"]):
         pass
     assert (
         "Instantiating the plugin from "
-        "'tests.test_plugins:RaisingInstantiationPlugin' failed: "
+        "'tests.plugins.test_loader:RaisingInstantiationPlugin' failed: "
         "I failed to initialize"
     ) in str(caplog.records[-1].exc_info[1])
 
@@ -275,12 +283,12 @@ def test_namespace_instantiation_returns_incorrect_type(
     cls: type, caplog: pytest.CapLogFixture
 ):
     caplog.set_level(logging.DEBUG)
-    with ListPluginLoader([f"tests.test_plugins:{cls}"]):
+    with ListPluginLoader([f"tests.plugins.test_loader:{cls}"]):
         pass
     assert (
-        f"Instantiating the plugin from 'tests.test_plugins:{cls}' "
+        f"Instantiating the plugin from 'tests.plugins.test_loader:{cls}' "
         "returned an object that does not meet the PluginType prototype: "
-        "<tests.test_plugins.IncompletePlugin object at "
+        "<tests.plugins.test_loader.IncompletePlugin object at "
     ) in str(caplog.records[-1].exc_info[1])
     assert ("(missing attributes: get_all_configs)") in str(
         caplog.records[-1].exc_info[1]
