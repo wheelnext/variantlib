@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import sysconfig
 import venv
@@ -33,7 +34,9 @@ def test_isolated_env(custom: bool, tmp_path: Path, test_package_req: str):
         assert env.venv_path is not None
         if custom:
             assert env.venv_path == tmp_path
-        assert env.python_executable == env.venv_path / "bin/python"
+        assert env.python_executable == env.venv_path / "bin" / (
+            "python.exe" if os.name == "nt" else "python"
+        )
 
         env.install([test_package_req])
 
