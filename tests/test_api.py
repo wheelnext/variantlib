@@ -172,6 +172,9 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
     }
 
     mocker.patch(
+        "variantlib.plugins.loader.BasePluginLoader._load_all_plugins_from_tuple"
+    ).return_value = None
+    mocker.patch(
         "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 

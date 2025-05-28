@@ -144,59 +144,47 @@ class BasePluginLoader:
                 )
             return json.loads(process.stdout)
 
-    def load_plugin(self, plugin_api: str) -> str:
-        """Load a specific plugin"""
-
-        if self._namespace_map is None:
-            self._namespace_map = {}
-        if self._python_ctx is None:
-            raise RuntimeError("Context manager not entered!")
-
-        plugin_api_match = validate_matches_re(
-            plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
-        )
-        import_name: str = plugin_api_match.group("module")
-        attr_path: str = plugin_api_match.group("attr")
-        # normalize it before passing to the subprocess
-        plugin_api = f"{import_name}:{attr_path}"
-
-        logger.info(
-            "Loading plugin via %(plugin_api)s",
-            {
-                "plugin_api": plugin_api,
-            },
-        )
-
-        # make sure to normalize it
-        namespace = self._call_subprocess([plugin_api], {"namespaces": {}})[
-            "namespaces"
-        ][plugin_api]
-
-        if namespace in self._namespace_map.values():
-            raise RuntimeError(
-                "Two plugins found using the same namespace "
-                f"{namespace}. Refusing to proceed."
-            )
-
-        self._namespace_map[plugin_api] = namespace
-        return namespace
-
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
 
     def _load_all_plugins_from_tuple(self, plugin_apis: list[str]) -> None:
+        if self._python_ctx is None:
+            raise RuntimeError("Context manager not entered!")
         if self._namespace_map is not None:
             raise RuntimeError(
                 "Impossible to load plugins - `self._namespace_map` is not None"
             )
+        self._namespace_map = {}
 
+        normalized_plugin_apis = []
         for plugin_api in plugin_apis:
-            try:
-                self.load_plugin(plugin_api=plugin_api)
-            except PluginError:  # noqa: PERF203
-                logger.debug(
-                    "Impossible to load `%s`", plugin_api, exc_info=sys.exc_info()
+            plugin_api_match = validate_matches_re(
+                plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
+            )
+            import_name: str = plugin_api_match.group("module")
+            attr_path: str = plugin_api_match.group("attr")
+            # normalize it before passing to the subprocess
+            normalized_plugin_apis.append(f"{import_name}:{attr_path}")
+
+            logger.info(
+                "Loading plugin via %(plugin_api)s",
+                {
+                    "plugin_api": plugin_api,
+                },
+            )
+
+        namespaces = self._call_subprocess(normalized_plugin_apis, {"namespaces": {}})[
+            "namespaces"
+        ]
+
+        for plugin_api, namespace in namespaces.items():
+            if namespace in self._namespace_map.values():
+                raise RuntimeError(
+                    "Two plugins found using the same namespace "
+                    f"{namespace}. Refusing to proceed."
                 )
+
+            self._namespace_map[plugin_api] = namespace
 
     def _check_plugins_loaded(self) -> None:
         if self._python_ctx is None:
