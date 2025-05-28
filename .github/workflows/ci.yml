@@ -45,4 +45,4 @@ jobs:
           uv pip install --upgrade pip
           uv pip install -e '.[test]'
       - name: Run tests
-        run: uv run --no-project pytest
+        run: uv run --no-project pytest -nauto
