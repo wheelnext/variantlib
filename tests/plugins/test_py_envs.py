@@ -34,7 +34,10 @@ def test_isolated_env(custom: bool, tmp_path: Path, test_package_req: str):
         assert env.venv_path is not None
         if custom:
             assert env.venv_path == tmp_path
-        assert env.python_executable == env.venv_path / "bin" / (
+        script_dir = Path(
+            sysconfig.get_path("scripts", vars={"base": str(env.venv_path)})
+        )
+        assert env.python_executable == script_dir / (
             "python.exe" if os.name == "nt" else "python"
         )
 
