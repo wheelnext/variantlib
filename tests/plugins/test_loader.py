@@ -456,7 +456,7 @@ def test_install_plugin():
         providers={
             "installable_plugin": ProviderInfo(
                 plugin_api="test_plugin_package:TestPlugin",
-                requires=[f"test-plugin-package @ file:{installable_package}"],
+                requires=[f"test-plugin-package @ file://{installable_package}"],
             ),
         },
     )

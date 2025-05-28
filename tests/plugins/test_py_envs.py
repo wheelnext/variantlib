@@ -16,7 +16,7 @@ def test_package_req() -> str:
     installable_package = pathname2url(
         str(Path("tests/artifacts/test-plugin-package").absolute())
     )
-    return f"test-plugin-package @ file:{installable_package}"
+    return f"test-plugin-package @ file://{installable_package}"
 
 
 def test_system_env():
