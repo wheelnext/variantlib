@@ -37,9 +37,5 @@ def test_isolated_env(custom: bool, tmp_path: Path, test_package_req: str):
 
         env.install([test_package_req])
 
-        purelib = Path(
-            sysconfig.get_path(
-                "purelib", scheme="venv", vars={"base": str(env.venv_path)}
-            )
-        )
+        purelib = Path(sysconfig.get_path("purelib", vars={"base": str(env.venv_path)}))
         assert (purelib / "test_plugin_package.py").exists()
