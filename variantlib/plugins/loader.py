@@ -389,6 +389,7 @@ class EntryPointPluginLoader(BasePluginLoader):
             )
 
         self._plugin_provider_packages = {}
+        plugin_apis = []
         eps = entry_points().select(group="variant_plugins")
         for ep in eps:
             logger.info(
@@ -402,13 +403,11 @@ class EntryPointPluginLoader(BasePluginLoader):
                 },
             )
 
-            try:
-                self.load_plugin(plugin_api=ep.value)
-            except PluginError:
-                logger.debug("Impossible to load `%s`", ep, exc_info=sys.exc_info())
-            else:
-                if ep.dist is not None:
-                    self._plugin_provider_packages[ep.value] = ep.dist
+            plugin_apis.append(ep.value)
+            if ep.dist is not None:
+                self._plugin_provider_packages[ep.value] = ep.dist
+
+        self._load_all_plugins_from_tuple(plugin_apis=plugin_apis)
 
     @property
     def plugin_provider_packages(self) -> dict[str, Distribution]:
