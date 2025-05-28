@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from email import message_from_string
 from pathlib import Path
 from typing import Any
-from urllib.request import pathname2url
 
 import pytest
 
@@ -448,8 +447,8 @@ def test_load_plugins_from_entry_points(mocker):
 
 
 def test_install_plugin():
-    installable_package = pathname2url(
-        str(Path("tests/artifacts/test-plugin-package").absolute())
+    installable_package = (
+        Path("tests/artifacts/test-plugin-package").absolute().as_posix()
     )
     metadata = VariantMetadata(
         namespace_priorities=["installable_plugin"],
