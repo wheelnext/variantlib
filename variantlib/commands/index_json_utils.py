@@ -24,6 +24,8 @@ from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -62,6 +64,7 @@ def append_variant_info_to_json_file(
         data = json.loads(path.read_text())
 
     for key, default_val in [  # type: ignore[var-annotated]
+        (VARIANTS_JSON_SCHEMA_KEY, VARIANTS_JSON_SCHEMA_URL),
         (VARIANTS_JSON_VARIANT_DATA_KEY, {}),
         (
             VARIANTS_JSON_PROVIDER_DATA_KEY,
