@@ -5,7 +5,6 @@ import sys
 import sysconfig
 import venv
 from pathlib import Path
-from urllib.request import pathname2url
 
 import pytest
 
@@ -14,8 +13,8 @@ from variantlib.plugins.py_envs import python_env
 
 @pytest.fixture(scope="session")
 def test_package_req() -> str:
-    installable_package = pathname2url(
-        str(Path("tests/artifacts/test-plugin-package").absolute())
+    installable_package = (
+        Path("tests/artifacts/test-plugin-package").absolute().as_posix()
     )
     return f"test-plugin-package @ file://{installable_package}"
 
