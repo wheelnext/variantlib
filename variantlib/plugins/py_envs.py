@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import abc
 import functools
 import logging
 import os
 import pathlib
-import shutil
-import subprocess
 import sys
 import sysconfig
 import tempfile
 import typing
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from variantlib.plugins.py_backends import AutoInstallBackend
@@ -19,12 +17,8 @@ from variantlib.plugins.py_backends import UvBackend
 
 if TYPE_CHECKING:
     from collections.abc import Collection
+    from collections.abc import Generator
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-
-else:
-    from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -102,38 +96,11 @@ def _fs_supports_symlink() -> bool:
         return True
 
 
-class BasePythonEnv(abc.ABC):
-    @abc.abstractmethod
-    def __enter__(self) -> Self:
-        """
-        Enter the environment.
-        """
-
-    @abc.abstractmethod
-    def __exit__(self, *args: object) -> None:
-        """
-        Exit the environment.
-        """
-
-    @property
-    def python_executable(self) -> pathlib.Path:
-        return pathlib.Path(sys.executable)
-
-
-class IsolatedPythonEnvMixin:
-    _venv_path: pathlib.Path | None = None
-
-    @property
-    def python_executable(self) -> pathlib.Path:
-        if self._venv_path is None or not self._venv_path.exists():
-            raise FileNotFoundError
-        return pathlib.Path(_find_executable(self._venv_path))
-
-
-class BasePythonInstallerEnv(BasePythonEnv):
-    """Base Installation Environment."""
-
+class PythonEnv:
     _env_backend: UvBackend | PipBackend = AutoInstallBackend()
+
+    def __init__(self, venv_path: pathlib.Path | None = None):
+        self.venv_path = venv_path
 
     def install(self, requirements: Collection[str]) -> None:
         """
@@ -157,140 +124,33 @@ class BasePythonInstallerEnv(BasePythonEnv):
             requirements, py_exec=self.python_executable
         )
 
-
-class NonIsolatedPythonInstallerEnv(BasePythonInstallerEnv):
-    """
-    Non-Isolated environment which supports several different underlying
-    implementations.
-    """
-
-    def __enter__(self) -> Self:
-        logger.info(
-            "Using environment: %(env)s ...",
-            {"env": self._env_backend.display_name},
-        )
-
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
+    @property
+    def python_executable(self) -> pathlib.Path:
+        if self.venv_path is not None:
+            if not self.venv_path.exists():
+                raise FileNotFoundError
+            return pathlib.Path(_find_executable(self.venv_path))
+        return pathlib.Path(sys.executable)
 
 
-class IsolatedPythonInstallerEnv(IsolatedPythonEnvMixin, BasePythonInstallerEnv):
-    """
-    Isolated environment which supports several different underlying
-    implementations.
-    """
-
-    def __enter__(self) -> Self:
-        try:
-            self._venv_path = pathlib.Path(tempfile.mkdtemp(prefix="variant-env-"))
-
-            logger.info(
-                "Creating isolated environment: %(env)s ...",
-                {"env": self._venv_path},
-            )
-            self._create_venv(self._venv_path)
-
-        except Exception:  # cleanup folder if creation fails
-            self.__exit__(*sys.exc_info())
-            raise
-
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        # in case the user already deleted skip remove
-        if self._venv_path is None or not self._venv_path.exists():
-            return
-        shutil.rmtree(self._venv_path)
-
-    def _create_venv(self, path: pathlib.Path) -> None:
+@contextmanager
+def python_env(
+    isolated: bool = True, venv_path: pathlib.Path | None = None
+) -> Generator[PythonEnv]:
+    if venv_path is None and isolated:
         import venv
 
-        try:
+        with tempfile.TemporaryDirectory(prefix="variantlib-venv") as temp_dir:
+            logger.info(
+                "Creating virtual environment in %(path)s ...",
+                {"path": str(temp_dir)},
+            )
             venv.EnvBuilder(
                 symlinks=_fs_supports_symlink(),
                 with_pip=True,
                 system_site_packages=False,
                 clear=True,
-            ).create(path)
-        except subprocess.CalledProcessError as exc:
-            raise RuntimeError(exc, "Failed to create venv") from None
-
-    def install(self, requirements: Collection[str]) -> None:
-        if self._venv_path is None:
-            raise RuntimeError("The virtual environment is not created yet.")
-        super().install(requirements)
-
-
-def PythonInstallerEnv(  # noqa: N802
-    isolated: bool,
-) -> IsolatedPythonInstallerEnv | NonIsolatedPythonInstallerEnv:
-    return IsolatedPythonInstallerEnv() if isolated else NonIsolatedPythonInstallerEnv()
-
-
-class ExternalNonIsolatedPythonEnv(BasePythonEnv):
-    """
-    Externally managed non-isolated python environment.
-    """
-
-    def __enter__(self) -> Self:
-        logger.info("Using externally managed python environment")
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
-
-
-class ExternalIsolatedPythonEnv(IsolatedPythonEnvMixin, BasePythonEnv):
-    """
-    Externally managed isolated python environment.
-    """
-
-    def __init__(self, venv_path: pathlib.Path | None) -> None:
-        raise NotImplementedError("This path is not yet supported")
-        if venv_path is None or not (venv_path := pathlib.Path(venv_path)).exists():
-            raise FileNotFoundError
-        self._venv_path = venv_path
-
-    def __enter__(self) -> Self:
-        logger.info(
-            "Using externally managed python environment isolated at `%s`",
-            self._venv_path,
-        )
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
-
-
-def ExternalPythonEnv(  # noqa: N802
-    venv_path: pathlib.Path | None,
-) -> ExternalIsolatedPythonEnv | ExternalNonIsolatedPythonEnv:
-    return (
-        ExternalIsolatedPythonEnv(venv_path=venv_path)
-        if venv_path is not None
-        else ExternalNonIsolatedPythonEnv()
-    )
-
-
-def AutoPythonEnv(  # noqa: N802
-    use_auto_install: bool, isolated: bool = True, venv_path: pathlib.Path | None = None
-) -> (
-    IsolatedPythonInstallerEnv
-    | NonIsolatedPythonInstallerEnv
-    | ExternalIsolatedPythonEnv
-    | ExternalNonIsolatedPythonEnv
-):
-    if use_auto_install:
-        if venv_path is not None:
-            raise ValueError("`venv_path` must be None if `use_auto_install` is True.")
-        return PythonInstallerEnv(isolated=isolated)
-    return ExternalPythonEnv(venv_path=venv_path)
-
-
-# Helper Tuples
-ISOLATED_PYTHON_ENVS = (IsolatedPythonInstallerEnv, ExternalIsolatedPythonEnv)
-NON_ISOLATED_PYTHON_ENVS = (NonIsolatedPythonInstallerEnv, ExternalNonIsolatedPythonEnv)
-INSTALLER_PYTHON_ENVS = (IsolatedPythonInstallerEnv, NonIsolatedPythonInstallerEnv)
-EXTERNAL_PYTHON_ENVS = (ExternalIsolatedPythonEnv, ExternalNonIsolatedPythonEnv)
+            ).create(temp_dir)
+            yield PythonEnv(pathlib.Path(temp_dir))
+    else:
+        yield PythonEnv(venv_path)
