@@ -80,11 +80,10 @@ def update_pyproject_toml(args: list[str]) -> None:
                 namespace_prio_key.append(namespace)
 
             namespace_table = provider_table.setdefault(namespace, {})
-            namespace_table[PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY] = (
-                loader.plugin_api_values[namespace]
-            )
+            plugin_api = loader.plugin_api_values[namespace]
+            namespace_table[PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY] = plugin_api
             default_requires = []
-            if (dist := loader.plugin_provider_packages.get(namespace)) is not None:
+            if (dist := loader.plugin_provider_packages.get(plugin_api)) is not None:
                 default_requires.append(f"{dist.name} >={dist.version}")
             namespace_table.setdefault(
                 PYPROJECT_TOML_PROVIDER_REQUIRES_KEY, default_requires

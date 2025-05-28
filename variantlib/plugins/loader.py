@@ -403,15 +403,16 @@ class EntryPointPluginLoader(BasePluginLoader):
             )
 
             try:
-                namespace = self.load_plugin(plugin_api=ep.value)
+                self.load_plugin(plugin_api=ep.value)
             except PluginError:
                 logger.debug("Impossible to load `%s`", ep, exc_info=sys.exc_info())
             else:
                 if ep.dist is not None:
-                    self._plugin_provider_packages[namespace] = ep.dist
+                    self._plugin_provider_packages[ep.value] = ep.dist
 
     @property
     def plugin_provider_packages(self) -> dict[str, Distribution]:
+        """plugin_api -> provider Distribution mapping"""
         if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
         assert self._plugin_provider_packages is not None
