@@ -5,7 +5,6 @@ import re
 import sys
 from abc import ABC
 from abc import abstractproperty
-from dataclasses import dataclass
 from email import message_from_string
 from pathlib import Path
 from typing import Any
@@ -437,20 +436,13 @@ def test_load_plugins_from_metadata(metadata: VariantMetadata):
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
-@dataclass
-class MockedEntryPoint:
-    name: str | None
-    value: str
-    dist: None = None
-
-
-def test_load_plugins_from_entry_points(mocker):
-    mocker.patch("variantlib.plugins.loader.entry_points")().select.return_value = [
-        MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
-        MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
-    ]
+def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
     with EntryPointPluginLoader() as loader:
-        assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
+        assert set(loader.namespaces) == {
+            "test_namespace",
+            "second_namespace",
+            "incompatible_namespace",
+        }
 
 
 def test_install_plugin():
