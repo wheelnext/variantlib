@@ -5,8 +5,6 @@ import logging
 import sys
 
 from variantlib import __package_name__
-from variantlib.commands.plugin_arguments import add_plugin_arguments
-from variantlib.commands.plugin_arguments import parse_plugin_arguments
 from variantlib.plugins.loader import EntryPointPluginLoader
 
 logger = logging.getLogger(__name__)
@@ -17,11 +15,7 @@ def analyze_platform(args: list[str]) -> None:
         prog=f"{__package_name__} analyze-platform",
         description="Analyze the platform and return the variant hashes compatible",
     )
-
-    add_plugin_arguments(parser)
-
-    parsed_args = parser.parse_args(args)
-    parse_plugin_arguments(parsed_args)
+    parser.parse_args(args)
 
     with EntryPointPluginLoader() as loader:
         logger.info("Analyzing the platform ...\n")
