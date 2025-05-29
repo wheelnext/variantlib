@@ -37,7 +37,7 @@ __all__ = [
 
 def get_variant_hashes_by_priority(
     *,
-    variants_json: dict | VariantsJson,
+    variants_json: dict[str, VariantDescription] | VariantsJson,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,

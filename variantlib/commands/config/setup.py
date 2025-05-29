@@ -225,7 +225,7 @@ def setup(args: list[str]) -> None:
                 "property_priorities",
             ):
                 # Always use multiline output for readability.
-                toml_data[key].multiline(multiline=True)
+                toml_data[key].multiline(multiline=True)  # type: ignore[union-attr]
 
             ui.clear()
             sys.stderr.write(

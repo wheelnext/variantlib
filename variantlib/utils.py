@@ -1,15 +1,30 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+from typing import Generic
 from typing import TypeVar
 
-
-class classproperty(property):  # noqa: N801
-    def __get__(self, cls: Any, owner: type | None = None) -> Any:
-        return classmethod(self.fget).__get__(None, owner)()  # type: ignore[arg-type]
-
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 T = TypeVar("T")
+RT = TypeVar("RT")
+
+
+class _ClassPropertyDescriptor(Generic[T, RT]):
+    def __init__(self, fget: Callable[[type[T]], RT]) -> None:
+        self.fget = fget
+
+    def __get__(self, instance: T | None, owner: type[T] | None = None, /) -> RT:
+        if owner is None:
+            if instance is None:
+                raise ValueError
+            owner = type(instance)
+        return self.fget(owner)
+
+
+def classproperty(func: Callable[[T], RT]) -> _ClassPropertyDescriptor[T, RT]:
+    return _ClassPropertyDescriptor(func)  # type: ignore[arg-type]
 
 
 def aggregate_priority_lists(*lists: list[T] | None) -> list[T]:

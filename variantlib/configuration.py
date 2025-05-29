@@ -8,7 +8,6 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import TypeVar
 
 import platformdirs
@@ -20,6 +19,8 @@ from variantlib.models.configuration import VariantConfiguration as Configuratio
 from variantlib.utils import classproperty
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from variantlib.models.variant import VariantFeature
     from variantlib.models.variant import VariantProperty
 

@@ -41,7 +41,7 @@ else:
 
 @dataclass(init=False)
 class VariantPyProjectToml(VariantMetadata):
-    def __init__(self, toml_data: dict | VariantMetadata) -> None:
+    def __init__(self, toml_data: dict[str, Any] | VariantMetadata) -> None:
         """Init from pre-read ``pyproject.toml`` data or another class"""
 
         if isinstance(toml_data, VariantMetadata):
@@ -56,7 +56,7 @@ class VariantPyProjectToml(VariantMetadata):
         with path.open("rb") as f:
             return cls(tomllib.load(f))
 
-    def _process(self, variant_table: dict) -> None:
+    def _process(self, variant_table: dict[str, dict[str, dict[str, Any]]]) -> None:
         validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)
 
         with validator.get(PYPROJECT_TOML_DEFAULT_PRIO_KEY, dict[str, Any], {}):

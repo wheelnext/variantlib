@@ -3,13 +3,16 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import Callable
+from typing import TypeVar
 
 from variantlib.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
 
-def validate_or(validators: list[Callable], value: Any) -> None:
+
+def validate_or(validators: list[Callable[[T], Any]], value: Any) -> None:
     """
     Validate a value using a list of validators. If any validator raises an
     exception, the next one is tried. If all validators fail, the last exception
@@ -39,7 +42,7 @@ def validate_or(validators: list[Callable], value: Any) -> None:
             raise exceptions[-1]
 
 
-def validate_and(validators: list[Callable], value: Any) -> None:
+def validate_and(validators: list[Callable[[T], Any]], value: Any) -> None:
     """
     Validate a value using a list of validators. If any validator raises an
     exception, the next one is tried. If all validators fail, the last exception
