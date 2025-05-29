@@ -43,10 +43,11 @@ def mocked_entry_points(
 
 
 @pytest.fixture(scope="session")
-def test_plugin_package_req() -> str:
-    installable_package = (
-        Path("tests/artifacts/test_plugin_package-0-py3-none-any.whl")
-        .absolute()
-        .as_posix()
-    )
+def test_plugin_package_wheel_path() -> Path:
+    return Path("tests/artifacts/test_plugin_package-0-py3-none-any.whl").absolute()
+
+
+@pytest.fixture(scope="session")
+def test_plugin_package_req(test_plugin_package_wheel_path: Path) -> str:
+    installable_package = test_plugin_package_wheel_path.as_posix()
     return f"test-plugin-package @ file://{installable_package}"

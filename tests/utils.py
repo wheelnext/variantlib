@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from zipfile import ZipFile
 
 from variantlib.api import ProviderConfig
 from variantlib.api import VariantDescription
@@ -9,6 +10,7 @@ from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from pathlib import Path
 
 
 def get_combinations(
@@ -53,3 +55,11 @@ def get_combinations(
 
     # Finish by the null variant
     yield VariantDescription()
+
+
+def assert_zips_equal(p1: Path, p2: Path) -> None:
+    with ZipFile(p1) as zip1, ZipFile(p2) as zip2:
+        assert zip1.namelist() == zip2.namelist()
+        for filename in zip1.namelist():
+            with zip1.open(filename) as f1, zip2.open(filename) as f2:
+                assert f1.read() == f2.read()
