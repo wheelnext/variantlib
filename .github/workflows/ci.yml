@@ -12,10 +12,18 @@ jobs:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "latest"
           python-version: "3.13"
+          activate-environment: true
+        env:
+          UV_VENV_SEED: 1
+
+      - name: Install Dependencies
+        run: uv sync --extra dev --extra test
+
 
       # Consider using pre-commit.ci for open source project
       - name: Run pre-commit
@@ -29,20 +37,21 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "latest"
           python-version: ${{ matrix.python-version }}
-      - name: Install the package and test dependencies
-        run: |
-          uv venv
-          uv pip install --upgrade pip
-          uv pip install -e '.[test]'
+          activate-environment: true
+        env:
+          UV_VENV_SEED: 1
+
+      - name: Install Dependencies
+        run: uv sync --extra dev --extra test
+
       - name: Run tests
         run: uv run --no-project pytest -nauto
