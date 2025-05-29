@@ -15,7 +15,7 @@ else:
     from importlib_metadata import entry_points
 
 
-def main() -> None:
+def main(args: list[str] | None = None) -> None:
     logger = logging.getLogger(__package_name__)
     handler = logging.StreamHandler()
     formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
@@ -43,7 +43,7 @@ def main() -> None:
     )
 
     namespace = argparse.Namespace()
-    parser.parse_args(namespace=namespace)
+    parser.parse_args(args=args, namespace=namespace)
 
     main_fn = registered_commands[namespace.command].load()
     return main_fn(namespace.args)
