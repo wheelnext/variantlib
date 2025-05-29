@@ -40,3 +40,13 @@ def mocked_entry_points(
         MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
         MockedEntryPoint("third", "tests.mocked_plugins:MockedPluginC"),
     ]
+
+
+@pytest.fixture(scope="session")
+def test_plugin_package_req() -> str:
+    installable_package = (
+        Path("tests/artifacts/test_plugin_package-0-py3-none-any.whl")
+        .absolute()
+        .as_posix()
+    )
+    return f"test-plugin-package @ file://{installable_package}"

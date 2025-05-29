@@ -6,7 +6,6 @@ import sys
 from abc import ABC
 from abc import abstractproperty
 from email import message_from_string
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -445,16 +444,13 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
         }
 
 
-def test_install_plugin():
-    installable_package = (
-        Path("tests/artifacts/test-plugin-package").absolute().as_posix()
-    )
+def test_install_plugin(test_plugin_package_req: str):
     metadata = VariantMetadata(
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
                 plugin_api="test_plugin_package:TestPlugin",
-                requires=[f"test-plugin-package @ file://{installable_package}"],
+                requires=[test_plugin_package_req],
             ),
         },
     )
