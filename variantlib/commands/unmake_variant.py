@@ -11,8 +11,7 @@ import shutil
 import zipfile
 
 from variantlib import __package_name__
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
+from variantlib.constants import METADATA_ALL_HEADERS
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 
 logger = logging.getLogger(__name__)
@@ -107,8 +106,9 @@ def _unmake_variant(
                     metadata = metadata_parser.parse(input_file)
 
                     # Remove old metadata
-                    del metadata[METADATA_VARIANT_PROPERTY_HEADER]
-                    del metadata[METADATA_VARIANT_HASH_HEADER]
+                    # NB: del on Message class does not fail if header does not exist
+                    for key in METADATA_ALL_HEADERS:
+                        del metadata[key]
 
                     # Write the serialized metadata
                     new_metadata = metadata.as_bytes(policy=METADATA_POLICY)
