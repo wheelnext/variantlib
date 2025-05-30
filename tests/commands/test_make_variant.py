@@ -2,35 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
 
 
-def test_make_null_variant(
-    test_plugin_package_wheel_path: Path,
-    tmp_path: Path,
-) -> None:
-    main(
-        [
-            "make-variant",
-            "-f",
-            str(test_plugin_package_wheel_path),
-            "-o",
-            str(tmp_path),
-            "--null-variant",
-        ]
-    )
-    assert_zips_equal(
-        Path("tests/artifacts/test_plugin_package-0-py3-none-any-00000000.whl"),
-        tmp_path / "test_plugin_package-0-py3-none-any-00000000.whl",
-    )
-
-
-def test_make_variant(
-    test_plugin_package_wheel_path: Path,
+@pytest.fixture
+def pyproject_toml(
     test_plugin_package_req: str,
     tmp_path: Path,
-) -> None:
+) -> Path:
     pyproject_toml = tmp_path / "pyproject.toml"
     pyproject_toml.write_text(f"""
 [variant.default-priorities]
@@ -42,7 +24,37 @@ requires = [
 ]
 plugin-api = "test_plugin_package:TestPlugin"
 """)
+    return pyproject_toml
 
+
+def test_make_null_variant(
+    test_plugin_package_wheel_path: Path,
+    pyproject_toml: Path,
+    tmp_path: Path,
+) -> None:
+    main(
+        [
+            "make-variant",
+            "-f",
+            str(test_plugin_package_wheel_path),
+            "-o",
+            str(tmp_path),
+            "--pyproject-toml",
+            str(pyproject_toml),
+            "--null-variant",
+        ]
+    )
+    assert_zips_equal(
+        Path("tests/artifacts/test_plugin_package-0-py3-none-any-00000000.whl"),
+        tmp_path / "test_plugin_package-0-py3-none-any-00000000.whl",
+    )
+
+
+def test_make_variant(
+    test_plugin_package_wheel_path: Path,
+    pyproject_toml: Path,
+    tmp_path: Path,
+) -> None:
     main(
         [
             "make-variant",
