@@ -48,6 +48,7 @@ def test_make_null_variant(
     assert_zips_equal(
         Path("tests/artifacts/test_plugin_package-0-py3-none-any-00000000.whl"),
         tmp_path / "test_plugin_package-0-py3-none-any-00000000.whl",
+        replace_plugin_path=test_plugin_package_wheel_path.parent,
     )
 
 
@@ -74,6 +75,7 @@ def test_make_variant(
     assert_zips_equal(
         Path("tests/artifacts/test_plugin_package-0-py3-none-any-5d8be4b9.whl"),
         tmp_path / "test_plugin_package-0-py3-none-any-5d8be4b9.whl",
+        replace_plugin_path=test_plugin_package_wheel_path.parent,
     )
 
 
@@ -120,4 +122,5 @@ def test_make_variant_no_validate(
     assert_zips_equal(
         Path("tests/artifacts/test_plugin_package-0-py3-none-any-ac31c899.whl"),
         tmp_path / "test_plugin_package-0-py3-none-any-ac31c899.whl",
+        replace_plugin_path=test_plugin_package_wheel_path.parent,
     )

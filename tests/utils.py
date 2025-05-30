@@ -57,9 +57,18 @@ def get_combinations(
     yield VariantDescription()
 
 
-def assert_zips_equal(p1: Path, p2: Path) -> None:
-    with ZipFile(p1) as zip1, ZipFile(p2) as zip2:
-        assert zip1.namelist() == zip2.namelist()
-        for filename in zip1.namelist():
-            with zip1.open(filename) as f1, zip2.open(filename) as f2:
-                assert f1.read() == f2.read()
+def assert_zips_equal(
+    ref_path: Path, new_path: Path, replace_plugin_path: Path
+) -> None:
+    with ZipFile(ref_path) as ref_zip, ZipFile(new_path) as new_zip:
+        assert set(ref_zip.namelist()) == set(new_zip.namelist())
+        for filename in ref_zip.namelist():
+            with ref_zip.open(filename) as ref_file, new_zip.open(filename) as new_file:
+                ref_data = ref_file.read().decode("utf8").splitlines()
+                new_data = (
+                    new_file.read()
+                    .decode("utf8")
+                    .replace(replace_plugin_path.as_posix(), "{plugin_path}")
+                    .splitlines()
+                )
+                assert new_data == ref_data

@@ -36,4 +36,5 @@ def test_unmake_variant(
     assert_zips_equal(
         test_plugin_package_wheel_path,
         tmp_path / "test_plugin_package-0-py3-none-any.whl",
+        replace_plugin_path=test_plugin_package_wheel_path.parent,
     )

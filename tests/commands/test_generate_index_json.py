@@ -37,7 +37,7 @@ def test_generate_index_json(
                 "plugin-api": "test_plugin_package:TestPlugin",
                 "requires": [
                     "test-plugin-package @ "
-                    "file:///home/mgorny/git/wheelnext/pep_xxx_wheel_variants/variantlib/tests/artifacts/test_plugin_package-0-py3-none-any.whl",
+                    "file://{plugin_path}/test_plugin_package-0-py3-none-any.whl",
                 ],
             },
         },
