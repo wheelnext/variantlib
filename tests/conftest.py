@@ -12,6 +12,8 @@ from variantlib.plugins.loader import ListPluginLoader
 # Set PYTHONPATH to ensure that tests can find plugins
 os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
 
+pytest.register_assert_rewrite("tests.utils")
+
 
 @pytest.fixture(scope="session")
 def mocked_plugin_apis() -> list[str]:
