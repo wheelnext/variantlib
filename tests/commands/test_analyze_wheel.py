@@ -40,3 +40,26 @@ def test_analyze_wheel_null_variant(
 ################################################################################
 """
     )
+
+
+def test_analyze_wheel_variant(
+    capsys: pytest.CaptureFixture[str],
+    mocked_entry_points: None,
+    test_plugin_package_wheel_path: Path,
+) -> None:
+    main(
+        [
+            "analyze-wheel",
+            "-i",
+            "tests/artifacts/test_plugin_package-0-py3-none-any-5d8be4b9.whl",
+        ]
+    )
+    assert (
+        capsys.readouterr().out
+        == """\
+############################## Variant: `5d8be4b9` #############################
+Variant-Property: installable_plugin :: feat1 :: val1c
+Variant-Property: installable_plugin :: feat2 :: val2b
+################################################################################
+"""
+    )

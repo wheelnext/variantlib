@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     "filename",
     [
         "test_plugin_package-0-py3-none-any-00000000.whl",
+        "test_plugin_package-0-py3-none-any-5d8be4b9.whl",
     ],
 )
 def test_unmake_variant(
