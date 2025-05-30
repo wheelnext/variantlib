@@ -63,6 +63,9 @@ def assert_zips_equal(
     with ZipFile(ref_path) as ref_zip, ZipFile(new_path) as new_zip:
         assert set(ref_zip.namelist()) == set(new_zip.namelist())
         for filename in ref_zip.namelist():
+            # ignore RECORD file, checksums will differ depending on plugin paths
+            if filename.endswith("RECORD"):
+                continue
             with ref_zip.open(filename) as ref_file, new_zip.open(filename) as new_file:
                 ref_data = ref_file.read().decode("utf8").splitlines()
                 new_data = (
