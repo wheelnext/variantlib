@@ -10,13 +10,20 @@ from tomlkit.toml_file import TOMLFile
 
 from variantlib import __package_name__
 from variantlib.commands.config.setup_interfaces.console_ui import ConsoleUI
-from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import get_configuration_files
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.resolver.sorting import sort_variant_properties
+
+try:
+    from variantlib.commands.config.setup_interfaces.urwid_ui import UrwidUI
+except ImportError:
+    HAS_URWID = False
+else:
+    HAS_URWID = True
+
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +111,12 @@ def setup(args: list[str]) -> None:
 
     if parsed_args.ui is None:
         parsed_args.ui = (
-            "urwid" if sys.stdin.isatty() and sys.stdout.isatty() else "text"
+            "urwid"
+            if HAS_URWID and sys.stdin.isatty() and sys.stdout.isatty()
+            else "text"
         )
+    if parsed_args.ui == "urwid" and not HAS_URWID:
+        parser.error("--ui=urwid requires urwid package")
     ui = UrwidUI() if parsed_args.ui == "urwid" else ConsoleUI()
 
     # note: due to default= above, parsed_args.environment will never be None
