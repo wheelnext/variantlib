@@ -68,4 +68,4 @@ def show(args: list[str]) -> None:
         # Add a blank line
         doc.add(tomlkit.nl())
 
-    tomlkit.dump(doc, sys.stderr)
+    tomlkit.dump(doc, sys.stdout)
