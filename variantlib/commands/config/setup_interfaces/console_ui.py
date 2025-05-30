@@ -70,7 +70,8 @@ class ConsoleUI:
             sys.stderr.write("Invalid reply!\n\n")
 
     def input_with_default(self, prompt: str, default: str) -> str:
-        if readline is not None:
+        # readline.set_pre_input_hook() is not found in PyPy
+        if readline is not None and hasattr(readline, "set_pre_input_hook"):
 
             def readline_hook() -> None:
                 readline.insert_text(default.strip())
