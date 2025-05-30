@@ -185,6 +185,13 @@ class BasePluginLoader:
                 )
 
             self._namespace_map[plugin_api] = namespace
+            logger.info(
+                "Namespace %(namespace)s provided by plugin %(plugin_api)s",
+                {
+                    "namespace": namespace,
+                    "plugin_api": plugin_api,
+                },
+            )
 
     def _check_plugins_loaded(self) -> None:
         if self._python_ctx is None:
