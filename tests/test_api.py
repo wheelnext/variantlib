@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import string
 from collections.abc import Generator
 from email.message import EmailMessage
 from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
 from hypothesis import HealthCheck
@@ -22,6 +24,7 @@ from variantlib.api import VariantFeatureConfig
 from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
+from variantlib.api import get_variant_dist_info_files
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
@@ -373,6 +376,78 @@ def test_set_variant_metadata(
     expected += "\nlong description\nof a package\n"
 
     assert metadata.as_string() == expected
+
+
+@pytest.mark.parametrize(
+    "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
+)
+def test_get_variant_dist_info_files(
+    pyproject_toml: dict | None,
+):
+    expected: dict[str, Any] = {
+        "$schema": "https://variants-schema.wheelnext.dev/",
+        "default-priorities": {
+            "namespace": [],
+            "feature": [],
+            "property": [],
+        },
+        "providers": {},
+        "variants": {
+            "67fcaf38": {
+                "ns1": {
+                    "f1": "p1",
+                    "f2": "p2",
+                },
+                "ns2": {"f1": "p1"},
+            },
+        },
+    }
+
+    if pyproject_toml is not None:
+        expected["providers"].update(
+            {
+                "ns1": {
+                    "requires": ["ns1-provider >= 1.2.3"],
+                    "enable-if": "python_version >= '3.12'",
+                    "plugin-api": "ns1_provider.plugin:NS1Plugin",
+                },
+                "ns2": {
+                    "requires": [
+                        "ns2_provider; python_version >= '3.11'",
+                        "old_ns2_provider; python_version < '3.11'",
+                    ],
+                    "plugin-api": "ns2_provider:Plugin",
+                },
+            }
+        )
+        expected["default-priorities"].update(
+            {
+                "namespace": ["ns1", "ns2"],
+            },
+        )
+    if pyproject_toml is PYPROJECT_TOML:
+        expected["default-priorities"].update(
+            {
+                "feature": ["ns2 :: f1", "ns1 :: f2"],
+                "property": ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"],
+            }
+        )
+
+    dist_info_files = get_variant_dist_info_files(
+        VariantDescription(
+            [
+                VariantProperty("ns1", "f1", "p1"),
+                VariantProperty("ns1", "f2", "p2"),
+                VariantProperty("ns2", "f1", "p1"),
+            ]
+        ),
+        variant_metadata=VariantPyProjectToml(pyproject_toml)
+        if pyproject_toml is not None
+        else None,
+    )
+
+    assert dist_info_files.keys() == {"variant.json"}
+    assert json.loads(dist_info_files["variant.json"]) == expected
 
 
 def test_check_variant_supported_dist(

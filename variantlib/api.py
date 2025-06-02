@@ -183,6 +183,24 @@ def set_variant_metadata(
     dist_metadata.update_message(metadata)
 
 
+def get_variant_dist_info_files(
+    vdesc: VariantDescription,
+    variant_metadata: VariantMetadata | None = None,
+) -> dict[str, str]:
+    """Return dict of filename -> content mapping for .dist-info metadata"""
+
+    # If we have been parsed VariantMetadata, convert it to DistMetadata.
+    # If not, start with an empty class.
+    if variant_metadata is None:
+        variant_metadata = VariantMetadata()
+    variant_json = VariantsJson(variant_metadata)
+    variant_json.variants[vdesc.hexdigest] = vdesc
+
+    return {
+        "variant.json": variant_json.to_str(),
+    }
+
+
 def check_variant_supported(
     *,
     vdesc: VariantDescription | None = None,
