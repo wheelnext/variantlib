@@ -8,6 +8,7 @@ import pytest
 from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
+from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -250,3 +251,102 @@ def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson
         assert converted.variant_desc == VariantDescription()
     if isinstance(converted, VariantsJson):
         assert converted.variants == {}
+
+
+def test_to_str() -> None:
+    variants_json = VariantsJson(
+        VariantMetadata(
+            namespace_priorities=["ns2", "ns1"],
+            feature_priorities=[
+                VariantFeature("ns2", "f2"),
+                VariantFeature("ns1", "f1"),
+            ],
+            property_priorities=[
+                VariantProperty("ns2", "f2", "v2"),
+                VariantProperty("ns1", "f1", "v1"),
+            ],
+            providers={
+                "ns1": ProviderInfo(
+                    requires=["ns1-pkg >= 1.0.0", "ns1-dep"],
+                    enable_if="python_version >= '3.12'",
+                    plugin_api="ns1_pkg:Plugin",
+                ),
+                "ns2": ProviderInfo(requires=["ns2_pkg"], plugin_api="ns2_pkg:Plugin"),
+            },
+        )
+    )
+    vdesc1 = VariantDescription(
+        [
+            VariantProperty("ns1", "f1", "v1"),
+            VariantProperty("ns2", "f2", "v1"),
+        ]
+    )
+    vdesc2 = VariantDescription(
+        [
+            VariantProperty("ns2", "f2", "v2"),
+        ]
+    )
+    variants_json.variants = {
+        vdesc1.hexdigest: vdesc1,
+        vdesc2.hexdigest: vdesc2,
+    }
+    assert (
+        variants_json.to_str()
+        == """\
+{
+    "$schema": "https://variants-schema.wheelnext.dev/",
+    "default-priorities": {
+        "namespace": [
+            "ns2",
+            "ns1"
+        ],
+        "feature": [
+            "ns2 :: f2",
+            "ns1 :: f1"
+        ],
+        "property": [
+            "ns2 :: f2 :: v2",
+            "ns1 :: f1 :: v1"
+        ]
+    },
+    "providers": {
+        "ns1": {
+            "requires": [
+                "ns1-pkg >= 1.0.0",
+                "ns1-dep"
+            ],
+            "enable-if": "python_version >= '3.12'",
+            "plugin-api": "ns1_pkg:Plugin"
+        },
+        "ns2": {
+            "requires": [
+                "ns2_pkg"
+            ],
+            "plugin-api": "ns2_pkg:Plugin"
+        }
+    },
+    "variants": {
+        "b3b0305c": {
+            "ns1": {
+                "f1": "v1"
+            },
+            "ns2": {
+                "f2": "v1"
+            }
+        },
+        "9177ff3f": {
+            "ns2": {
+                "f2": "v2"
+            }
+        }
+    }
+}\
+"""
+    )
+
+
+def test_roundtrip() -> None:
+    json_file = Path("tests/artifacts/variants.json")
+    data = json_file.read_text()
+    variants_json = VariantsJson(json.loads(data))
+    assert variants_json.to_str() == data.rstrip()

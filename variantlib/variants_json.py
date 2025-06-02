@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from dataclasses import field
+from typing import TYPE_CHECKING
 from typing import Any
 
 from variantlib.constants import VALIDATION_FEATURE_REGEX
@@ -19,6 +21,8 @@ from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
@@ -27,6 +31,9 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.validators.keytracking import KeyTrackingValidator
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @dataclass(init=False)
@@ -43,6 +50,40 @@ class VariantsJson(VariantMetadata):
             return
 
         self._process(variants_json)
+
+    @staticmethod
+    def _provider_info_to_json(
+        provider_info: ProviderInfo,
+    ) -> Generator[tuple[str, str | list[str]]]:
+        if provider_info.requires:
+            yield (VARIANTS_JSON_PROVIDER_REQUIRES_KEY, provider_info.requires)
+        if provider_info.enable_if is not None:
+            yield (VARIANTS_JSON_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
+        yield (VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
+
+    def to_str(self) -> str:
+        """Serialize variants.json as a JSON string"""
+
+        data = {
+            VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+            VARIANTS_JSON_DEFAULT_PRIO_KEY: {
+                VARIANTS_JSON_NAMESPACE_KEY: self.namespace_priorities,
+                VARIANTS_JSON_FEATURE_KEY: [
+                    x.to_str() for x in self.feature_priorities
+                ],
+                VARIANTS_JSON_PROPERTY_KEY: [
+                    x.to_str() for x in self.property_priorities
+                ],
+            },
+            VARIANTS_JSON_PROVIDER_DATA_KEY: {
+                namespace: dict(self._provider_info_to_json(provider_info))
+                for namespace, provider_info in self.providers.items()
+            },
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
+                vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
+            },
+        }
+        return json.dumps(data, indent=4)
 
     def _process(self, variant_table: dict) -> None:
         validator = KeyTrackingValidator(None, variant_table)

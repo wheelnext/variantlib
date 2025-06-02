@@ -1,22 +1,30 @@
 {
+    "$schema": "https://variants-schema.wheelnext.dev/",
     "default-priorities": {
-        "namespace": ["fictional_hw", "fictional_tech"],
-        "feature": ["fictional_tech :: quantum"],
-        "property": ["fictional_tech :: technology :: auto_chef"]
+        "namespace": [
+            "fictional_hw",
+            "fictional_tech"
+        ],
+        "feature": [
+            "fictional_tech :: quantum"
+        ],
+        "property": [
+            "fictional_tech :: technology :: auto_chef"
+        ]
     },
     "providers": {
         "fictional_hw": {
-            "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin",
-            "enable-if": "python_version >= '3.12'",
             "requires": [
                 "provider-fictional-hw == 1.0.0"
-            ]
+            ],
+            "enable-if": "python_version >= '3.12'",
+            "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin"
         },
         "fictional_tech": {
-            "plugin-api": "provider_fictional_tech.plugin:FictionalTechPlugin",
             "requires": [
                 "provider-fictional-tech == 1.0.0"
-            ]
+            ],
+            "plugin-api": "provider_fictional_tech.plugin:FictionalTechPlugin"
         }
     },
     "variants": {
