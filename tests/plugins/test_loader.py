@@ -5,12 +5,10 @@ import re
 import sys
 from abc import ABC
 from abc import abstractproperty
-from email import message_from_string
 from typing import Any
 
 import pytest
 
-from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.errors import ValidationError
@@ -384,19 +382,6 @@ def test_load_plugin_invalid_arg():
                     plugin_api="tests.mocked_plugins:MockedPluginC",
                 ),
             },
-        ),
-        DistMetadata(
-            message_from_string("""\
-Metadata-Version: 2.1
-Name: test-package
-Version: 1.2.3
-Variant-Property: test_namespace :: name1 :: val1a
-Variant-Property: second_namespace :: name3 :: val3c
-Variant-Hash: faf70e73
-Variant-Plugin-API: test_namespace: tests.mocked_plugins:MockedPluginA
-Variant-Plugin-API: second_namespace: tests.mocked_plugins:MockedPluginB
-Variant-Default-Namespace-Priorities: test_namespace, second_namespace
-""")
         ),
         VariantPyProjectToml(
             tomllib.loads("""

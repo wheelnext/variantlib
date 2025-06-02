@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import string
 from collections.abc import Generator
-from email.message import EmailMessage
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -27,10 +26,6 @@ from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
-from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -39,7 +34,6 @@ from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
-from variantlib.dist_metadata import DistMetadata
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
@@ -294,19 +288,6 @@ def test_validate_variant(mocked_plugin_apis: list[str]):
     assert not res.is_valid()
 
 
-@pytest.fixture
-def metadata() -> EmailMessage:
-    metadata = EmailMessage()
-    metadata.set_content("long description\nof a package")
-    # remove implicitly added Content-* headers to match Python metadata
-    for key in metadata:
-        del metadata[key]
-    metadata["Metadata-Version"] = "2.1"
-    metadata["Name"] = "test-package"
-    metadata["Version"] = "1.2.3"
-    return metadata
-
-
 @pytest.mark.parametrize(
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
@@ -381,39 +362,54 @@ def test_make_variant_dist_info(
     )
 
 
+@pytest.fixture
+def common_metadata() -> VariantMetadata:
+    return VariantMetadata(
+        namespace_priorities=["test_namespace", "second_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("vdesc", "expected"),
+    [
+        (VariantDescription(), True),
+        (
+            VariantDescription(
+                [
+                    VariantProperty("test_namespace", "name2", "val2c"),
+                    VariantProperty("second_namespace", "name3", "val3a"),
+                ]
+            ),
+            True,
+        ),
+        (
+            VariantDescription(
+                [
+                    VariantProperty("test_namespace", "name1", "val1c"),
+                ]
+            ),
+            False,
+        ),
+    ],
+)
 def test_check_variant_supported_dist(
-    metadata: EmailMessage,
-):
-    # set the common plugin data
-    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
-        "test_namespace: tests.mocked_plugins:MockedPluginA"
-    )
-    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
-        "second_namespace: tests.mocked_plugins:MockedPluginB"
-    )
-    metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = (
-        "test_namespace, second_namespace"
-    )
-
-    # test the null variant
-    metadata[METADATA_VARIANT_HASH_HEADER] = "00000000"
-    assert check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
-    )
-
-    # test a supported variant
-    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "51c2ca68")
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name2 :: val2c"
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "second_namespace :: name3 :: val3a"
-    assert check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
-    )
-
-    # test an unsupported variant
-    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "acb7cd38")
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name1 :: val1c"
-    assert not check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
+    common_metadata: VariantMetadata, vdesc: VariantDescription, expected: bool
+) -> None:
+    variant_json = VariantsJson(common_metadata)
+    variant_json.variants[vdesc.hexdigest] = vdesc
+    assert (
+        check_variant_supported(
+            metadata=variant_json, use_auto_install=False, venv_path=None
+        )
+        is expected
     )
 
 

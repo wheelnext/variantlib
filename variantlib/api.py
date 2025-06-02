@@ -8,7 +8,6 @@ import pathlib
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.dist_metadata import DistMetadata
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
@@ -198,9 +197,13 @@ def check_variant_supported(
     """
 
     if vdesc is None:
-        if metadata is None or not isinstance(metadata, DistMetadata):
-            raise TypeError("vdesc or metadata=DistMetadata(...) must be provided")
-        vdesc = metadata.variant_desc
+        if metadata is None or not isinstance(metadata, VariantsJson):
+            raise TypeError("vdesc or metadata=VariantsJson(...) must be provided")
+        if len(metadata.variants) != 1:
+            raise ValueError(
+                "metadata=VariantsJson(...) must describe exactly one variant"
+            )
+        vdesc = next(iter(metadata.variants.values()))
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 

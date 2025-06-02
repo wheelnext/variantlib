@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
@@ -203,8 +202,8 @@ def test_validate_variants_json_incorrect_vhash(data: dict):
         VariantsJson(data)
 
 
-@pytest.mark.parametrize("cls", [DistMetadata, VariantPyProjectToml, VariantsJson])
-def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson]):
+@pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
+def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]):
     json_file = Path("tests/artifacts/variants.json")
     assert json_file.exists(), "Expected JSON file does not exist"
 
@@ -246,9 +245,6 @@ def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson
     }
 
     # Non-common fields should be reset to defaults
-    if isinstance(converted, DistMetadata):
-        assert converted.variant_hash == "00000000"
-        assert converted.variant_desc == VariantDescription()
     if isinstance(converted, VariantsJson):
         assert converted.variants == {}
 
