@@ -35,6 +35,7 @@ __all__ = [
     "VariantDescription",
     "VariantFeatureConfig",
     "VariantProperty",
+    "get_variant_dist_info_files",
     "get_variant_hashes_by_priority",
     "set_variant_metadata",
     "validate_variant",
