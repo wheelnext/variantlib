@@ -26,7 +26,6 @@ from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
-from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
 from variantlib.constants import METADATA_VARIANT_HASH_HEADER
@@ -306,76 +305,6 @@ def metadata() -> EmailMessage:
     metadata["Name"] = "test-package"
     metadata["Version"] = "1.2.3"
     return metadata
-
-
-@pytest.mark.parametrize("replace", [False, True])
-@pytest.mark.parametrize(
-    "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
-)
-def test_set_variant_metadata(
-    metadata: EmailMessage,
-    replace: bool,
-    pyproject_toml: dict | None,
-):
-    if replace:
-        # deliberately using different case
-        metadata["Variant-Hash"] = "12345678"
-        metadata["variant-property"] = "a :: b :: c"
-        metadata["VARIANT-REQUIRES"] = "ns1: frobnicate"
-        metadata["variant-requires"] = "ns2: barnicate"
-        metadata["Variant-Requires"] = "ns3: baznicate"
-        metadata["variant-property"] = "d :: e :: f"
-        metadata["VARIANT-plugin-API"] = "ns1: frobnicate:Plugin"
-        metadata["variant-Plugin-apI"] = "ns2: barnicate.plugin:BarPlugin"
-        metadata["Variant-Plugin-Api"] = "ns3: baz:Nicate"
-        metadata["Variant-Default-Namespace-Priorities"] = "ns3, ns2,ns1"
-        metadata["Variant-Default-Feature-Priorities"] = "ns3 :: f1"
-        metadata["Variant-Default-Property-Priorities"] = "ns2 :: f2 :: p2"
-        metadata["variant-enable-IF"] = "ns2: python_version >= '3.12'"
-
-    set_variant_metadata(
-        metadata,
-        VariantDescription(
-            [
-                VariantProperty("ns1", "f1", "p1"),
-                VariantProperty("ns1", "f2", "p2"),
-                VariantProperty("ns2", "f1", "p1"),
-            ]
-        ),
-        variant_metadata=VariantPyProjectToml(pyproject_toml)
-        if pyproject_toml is not None
-        else None,
-    )
-
-    expected = (
-        "Metadata-Version: 2.1\n"
-        "Name: test-package\n"
-        "Version: 1.2.3\n"
-        "Variant-Property: ns1 :: f1 :: p1\n"
-        "Variant-Property: ns1 :: f2 :: p2\n"
-        "Variant-Property: ns2 :: f1 :: p1\n"
-        "Variant-Hash: 67fcaf38\n"
-    )
-
-    if pyproject_toml is not None:
-        expected += (
-            "Variant-Requires: ns1: ns1-provider >= 1.2.3\n"
-            "Variant-Enable-If: ns1: python_version >= '3.12'\n"
-            "Variant-Plugin-API: ns1: ns1_provider.plugin:NS1Plugin\n"
-            "Variant-Requires: ns2: ns2_provider; python_version >= '3.11'\n"
-            "Variant-Requires: ns2: old_ns2_provider; python_version < '3.11'\n"
-            "Variant-Plugin-API: ns2: ns2_provider:Plugin\n"
-            "Variant-Default-Namespace-Priorities: ns1, ns2\n"
-        )
-    if pyproject_toml is PYPROJECT_TOML:
-        expected += (
-            "Variant-Default-Feature-Priorities: ns2 :: f1, ns1 :: f2\n"
-            "Variant-Default-Property-Priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
-        )
-
-    expected += "\nlong description\nof a package\n"
-
-    assert metadata.as_string() == expected
 
 
 @pytest.mark.parametrize(

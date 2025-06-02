@@ -5,7 +5,6 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
-from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
@@ -23,10 +22,6 @@ from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
 
-if TYPE_CHECKING:
-    from email.message import Message
-
-
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -37,7 +32,6 @@ __all__ = [
     "VariantProperty",
     "get_variant_hashes_by_priority",
     "make_variant_dist_info",
-    "set_variant_metadata",
     "validate_variant",
 ]
 
@@ -166,22 +160,6 @@ def validate_variant(
     return VariantValidationResult(
         {vprop: _validate_variant(vprop) for vprop in variant_desc.properties}
     )
-
-
-def set_variant_metadata(
-    metadata: Message,
-    vdesc: VariantDescription,
-    variant_metadata: VariantMetadata | None = None,
-) -> None:
-    """Set metadata-related keys in metadata email-dict"""
-
-    # If we have been parsed VariantMetadata, convert it to DistMetadata.
-    # If not, start with an empty class.
-    if variant_metadata is None:
-        variant_metadata = VariantMetadata()
-    dist_metadata = DistMetadata(variant_metadata)
-    dist_metadata.variant_desc = vdesc
-    dist_metadata.update_message(metadata)
 
 
 def make_variant_dist_info(
