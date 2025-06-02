@@ -24,8 +24,8 @@ from variantlib.api import VariantFeatureConfig
 from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
-from variantlib.api import get_variant_dist_info_files
 from variantlib.api import get_variant_hashes_by_priority
+from variantlib.api import make_variant_dist_info
 from variantlib.api import set_variant_metadata
 from variantlib.api import validate_variant
 from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
@@ -381,7 +381,7 @@ def test_set_variant_metadata(
 @pytest.mark.parametrize(
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
-def test_get_variant_dist_info_files(
+def test_make_variant_dist_info(
     pyproject_toml: dict | None,
 ):
     expected: dict[str, Any] = {
@@ -433,21 +433,23 @@ def test_get_variant_dist_info_files(
             }
         )
 
-    dist_info_files = get_variant_dist_info_files(
-        VariantDescription(
-            [
-                VariantProperty("ns1", "f1", "p1"),
-                VariantProperty("ns1", "f2", "p2"),
-                VariantProperty("ns2", "f1", "p1"),
-            ]
-        ),
-        variant_metadata=VariantPyProjectToml(pyproject_toml)
-        if pyproject_toml is not None
-        else None,
+    assert (
+        json.loads(
+            make_variant_dist_info(
+                VariantDescription(
+                    [
+                        VariantProperty("ns1", "f1", "p1"),
+                        VariantProperty("ns1", "f2", "p2"),
+                        VariantProperty("ns2", "f1", "p1"),
+                    ]
+                ),
+                variant_metadata=VariantPyProjectToml(pyproject_toml)
+                if pyproject_toml is not None
+                else None,
+            )
+        )
+        == expected
     )
-
-    assert dist_info_files.keys() == {"variant.json"}
-    assert json.loads(dist_info_files["variant.json"]) == expected
 
 
 def test_check_variant_supported_dist(

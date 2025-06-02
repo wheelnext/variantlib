@@ -35,8 +35,8 @@ __all__ = [
     "VariantDescription",
     "VariantFeatureConfig",
     "VariantProperty",
-    "get_variant_dist_info_files",
     "get_variant_hashes_by_priority",
+    "make_variant_dist_info",
     "set_variant_metadata",
     "validate_variant",
 ]
@@ -184,11 +184,11 @@ def set_variant_metadata(
     dist_metadata.update_message(metadata)
 
 
-def get_variant_dist_info_files(
+def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_metadata: VariantMetadata | None = None,
-) -> dict[str, str]:
-    """Return dict of filename -> content mapping for .dist-info metadata"""
+) -> str:
+    """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
     # If we have been parsed VariantMetadata, convert it to DistMetadata.
     # If not, start with an empty class.
@@ -197,9 +197,7 @@ def get_variant_dist_info_files(
     variant_json = VariantsJson(variant_metadata)
     variant_json.variants[vdesc.hexdigest] = vdesc
 
-    return {
-        "variant.json": variant_json.to_str(),
-    }
+    return variant_json.to_str()
 
 
 def check_variant_supported(

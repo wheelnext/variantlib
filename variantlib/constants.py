@@ -4,6 +4,7 @@ import re
 
 VARIANT_HASH_LEN = 8
 CONFIG_FILENAME = "variants.toml"
+VARIANT_DIST_INFO_FILENAME = "variant.json"
 
 PYPROJECT_TOML_DEFAULT_PRIO_KEY = "default-priorities"
 PYPROJECT_TOML_FEATURE_KEY = "feature"

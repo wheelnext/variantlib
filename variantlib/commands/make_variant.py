@@ -13,9 +13,10 @@ import zipfile
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.api import get_variant_dist_info_files
+from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
+from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
 from variantlib.pyproject_toml import VariantPyProjectToml
 
@@ -161,8 +162,6 @@ def _make_variant(
         / f"{wheel_info.group('base_wheel_name')}-{vdesc.hexdigest}.whl"
     )
 
-    metadata_file_dict = get_variant_dist_info_files(vdesc, variant_metadata)
-
     with (
         zipfile.ZipFile(input_filepath, "r") as input_zip,
         zipfile.ZipFile(output_filepath, "w") as output_zip,
@@ -175,44 +174,42 @@ def _make_variant(
                 if (
                     len(components) != 2
                     or not components[0].endswith(".dist-info")
-                    or components[1] not in ("RECORD", *metadata_file_dict)
+                    or components[1] not in ("RECORD", VARIANT_DIST_INFO_FILENAME)
                 ):
                     with output_zip.open(file_info, "w") as output_file:
                         shutil.copyfileobj(input_file, output_file)
-                elif components[1] != "RECORD":
+                elif components[1] == VARIANT_DIST_INFO_FILENAME:
                     # If a wheel metadata file exists already, discard the existing
                     # copy.
                     continue
                 else:  # RECORD
-                    # First, add all new metadata files prior to RECORD (not strictly
+                    assert components[1] == "RECORD"
+                    # First, add new metadata file prior to RECORD (not strictly
                     # required, but a nice convention).
-                    for filename, data in metadata_file_dict.items():
-                        output_zip.writestr(f"{components[0]}/{filename}", data)
+                    metadata_file_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
+                    metadata_file_data = make_variant_dist_info(vdesc, variant_metadata)
+                    output_zip.writestr(metadata_file_path, metadata_file_data)
 
                     # Update RECORD for the new checksums.
-                    full_metadata_paths = {
-                        f"{components[0]}/{filename}" for filename in metadata_file_dict
-                    }
                     with output_zip.open(file_info, "w") as output_file:
                         for line in input_file:
                             new_line = line
                             rec_filename, sha256, size = line.split(b",")
-                            # Skip existing hashes for the discarded copies.
-                            if rec_filename in full_metadata_paths:
+                            # Skip existing hash for the discarded copy.
+                            if rec_filename == metadata_file_path:
                                 continue
                             output_file.write(new_line)
 
-                        # Write hashes for the new files.
-                        for filename, data in metadata_file_dict.items():
-                            new_sha256 = base64.urlsafe_b64encode(
-                                hashlib.sha256(data.encode("utf8")).digest()
-                            ).rstrip(b"=")
-                            output_file.write(
-                                (
-                                    f"{components[0]}/{filename},"
-                                    f"sha256={new_sha256.decode()},"
-                                    f"{len(data)}\n"
-                                ).encode()
-                            )
+                        # Write hash for the new files.
+                        new_sha256 = base64.urlsafe_b64encode(
+                            hashlib.sha256(metadata_file_data.encode("utf8")).digest()
+                        ).rstrip(b"=")
+                        output_file.write(
+                            (
+                                f"{metadata_file_path},"
+                                f"sha256={new_sha256.decode()},"
+                                f"{len(metadata_file_data)}\n"
+                            ).encode()
+                        )
 
     logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())
