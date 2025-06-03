@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import string
 from collections.abc import Generator
-from email.message import EmailMessage
 from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
 from hypothesis import HealthCheck
@@ -23,12 +24,8 @@ from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
-from variantlib.api import set_variant_metadata
+from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
-from variantlib.constants import METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
-from variantlib.constants import METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -37,7 +34,6 @@ from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
-from variantlib.dist_metadata import DistMetadata
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
@@ -292,122 +288,128 @@ def test_validate_variant(mocked_plugin_apis: list[str]):
     assert not res.is_valid()
 
 
-@pytest.fixture
-def metadata() -> EmailMessage:
-    metadata = EmailMessage()
-    metadata.set_content("long description\nof a package")
-    # remove implicitly added Content-* headers to match Python metadata
-    for key in metadata:
-        del metadata[key]
-    metadata["Metadata-Version"] = "2.1"
-    metadata["Name"] = "test-package"
-    metadata["Version"] = "1.2.3"
-    return metadata
-
-
-@pytest.mark.parametrize("replace", [False, True])
 @pytest.mark.parametrize(
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
-def test_set_variant_metadata(
-    metadata: EmailMessage,
-    replace: bool,
+def test_make_variant_dist_info(
     pyproject_toml: dict | None,
 ):
-    if replace:
-        # deliberately using different case
-        metadata["Variant-Hash"] = "12345678"
-        metadata["variant-property"] = "a :: b :: c"
-        metadata["VARIANT-REQUIRES"] = "ns1: frobnicate"
-        metadata["variant-requires"] = "ns2: barnicate"
-        metadata["Variant-Requires"] = "ns3: baznicate"
-        metadata["variant-property"] = "d :: e :: f"
-        metadata["VARIANT-plugin-API"] = "ns1: frobnicate:Plugin"
-        metadata["variant-Plugin-apI"] = "ns2: barnicate.plugin:BarPlugin"
-        metadata["Variant-Plugin-Api"] = "ns3: baz:Nicate"
-        metadata["Variant-Default-Namespace-Priorities"] = "ns3, ns2,ns1"
-        metadata["Variant-Default-Feature-Priorities"] = "ns3 :: f1"
-        metadata["Variant-Default-Property-Priorities"] = "ns2 :: f2 :: p2"
-        metadata["variant-enable-IF"] = "ns2: python_version >= '3.12'"
-
-    set_variant_metadata(
-        metadata,
-        VariantDescription(
-            [
-                VariantProperty("ns1", "f1", "p1"),
-                VariantProperty("ns1", "f2", "p2"),
-                VariantProperty("ns2", "f1", "p1"),
-            ]
-        ),
-        variant_metadata=VariantPyProjectToml(pyproject_toml)
-        if pyproject_toml is not None
-        else None,
-    )
-
-    expected = (
-        "Metadata-Version: 2.1\n"
-        "Name: test-package\n"
-        "Version: 1.2.3\n"
-        "Variant-Property: ns1 :: f1 :: p1\n"
-        "Variant-Property: ns1 :: f2 :: p2\n"
-        "Variant-Property: ns2 :: f1 :: p1\n"
-        "Variant-Hash: 67fcaf38\n"
-    )
+    expected: dict[str, Any] = {
+        "$schema": "https://variants-schema.wheelnext.dev/",
+        "default-priorities": {
+            "namespace": [],
+            "feature": [],
+            "property": [],
+        },
+        "providers": {},
+        "variants": {
+            "67fcaf38": {
+                "ns1": {
+                    "f1": "p1",
+                    "f2": "p2",
+                },
+                "ns2": {"f1": "p1"},
+            },
+        },
+    }
 
     if pyproject_toml is not None:
-        expected += (
-            "Variant-Requires: ns1: ns1-provider >= 1.2.3\n"
-            "Variant-Enable-If: ns1: python_version >= '3.12'\n"
-            "Variant-Plugin-API: ns1: ns1_provider.plugin:NS1Plugin\n"
-            "Variant-Requires: ns2: ns2_provider; python_version >= '3.11'\n"
-            "Variant-Requires: ns2: old_ns2_provider; python_version < '3.11'\n"
-            "Variant-Plugin-API: ns2: ns2_provider:Plugin\n"
-            "Variant-Default-Namespace-Priorities: ns1, ns2\n"
+        expected["providers"].update(
+            {
+                "ns1": {
+                    "requires": ["ns1-provider >= 1.2.3"],
+                    "enable-if": "python_version >= '3.12'",
+                    "plugin-api": "ns1_provider.plugin:NS1Plugin",
+                },
+                "ns2": {
+                    "requires": [
+                        "ns2_provider; python_version >= '3.11'",
+                        "old_ns2_provider; python_version < '3.11'",
+                    ],
+                    "plugin-api": "ns2_provider:Plugin",
+                },
+            }
+        )
+        expected["default-priorities"].update(
+            {
+                "namespace": ["ns1", "ns2"],
+            },
         )
     if pyproject_toml is PYPROJECT_TOML:
-        expected += (
-            "Variant-Default-Feature-Priorities: ns2 :: f1, ns1 :: f2\n"
-            "Variant-Default-Property-Priorities: ns1 :: f2 :: p1, ns2 :: f1 :: p2\n"
+        expected["default-priorities"].update(
+            {
+                "feature": ["ns2 :: f1", "ns1 :: f2"],
+                "property": ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"],
+            }
         )
 
-    expected += "\nlong description\nof a package\n"
+    assert (
+        json.loads(
+            make_variant_dist_info(
+                VariantDescription(
+                    [
+                        VariantProperty("ns1", "f1", "p1"),
+                        VariantProperty("ns1", "f2", "p2"),
+                        VariantProperty("ns2", "f1", "p1"),
+                    ]
+                ),
+                variant_metadata=VariantPyProjectToml(pyproject_toml)
+                if pyproject_toml is not None
+                else None,
+            )
+        )
+        == expected
+    )
 
-    assert metadata.as_string() == expected
+
+@pytest.fixture
+def common_metadata() -> VariantMetadata:
+    return VariantMetadata(
+        namespace_priorities=["test_namespace", "second_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+        },
+    )
 
 
+@pytest.mark.parametrize(
+    ("vdesc", "expected"),
+    [
+        (VariantDescription(), True),
+        (
+            VariantDescription(
+                [
+                    VariantProperty("test_namespace", "name2", "val2c"),
+                    VariantProperty("second_namespace", "name3", "val3a"),
+                ]
+            ),
+            True,
+        ),
+        (
+            VariantDescription(
+                [
+                    VariantProperty("test_namespace", "name1", "val1c"),
+                ]
+            ),
+            False,
+        ),
+    ],
+)
 def test_check_variant_supported_dist(
-    metadata: EmailMessage,
-):
-    # set the common plugin data
-    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
-        "test_namespace: tests.mocked_plugins:MockedPluginA"
-    )
-    metadata[METADATA_VARIANT_PROVIDER_PLUGIN_API_HEADER] = (
-        "second_namespace: tests.mocked_plugins:MockedPluginB"
-    )
-    metadata[METADATA_VARIANT_DEFAULT_PRIO_NAMESPACE_HEADER] = (
-        "test_namespace, second_namespace"
-    )
-
-    # test the null variant
-    metadata[METADATA_VARIANT_HASH_HEADER] = "00000000"
-    assert check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
-    )
-
-    # test a supported variant
-    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "51c2ca68")
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name2 :: val2c"
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "second_namespace :: name3 :: val3a"
-    assert check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
-    )
-
-    # test an unsupported variant
-    metadata.replace_header(METADATA_VARIANT_HASH_HEADER, "acb7cd38")
-    metadata[METADATA_VARIANT_PROPERTY_HEADER] = "test_namespace :: name1 :: val1c"
-    assert not check_variant_supported(
-        metadata=DistMetadata(metadata), use_auto_install=False, venv_path=None
+    common_metadata: VariantMetadata, vdesc: VariantDescription, expected: bool
+) -> None:
+    variant_json = VariantsJson(common_metadata)
+    variant_json.variants[vdesc.hexdigest] = vdesc
+    assert (
+        check_variant_supported(
+            metadata=variant_json, use_auto_install=False, venv_path=None
+        )
+        is expected
     )
 
 

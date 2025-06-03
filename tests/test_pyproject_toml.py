@@ -12,10 +12,8 @@ from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.dist_metadata import DistMetadata
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -348,8 +346,8 @@ def test_extra_provider_data_key():
         )
 
 
-@pytest.mark.parametrize("cls", [DistMetadata, VariantPyProjectToml, VariantsJson])
-def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson]):
+@pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
+def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]):
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     converted = cls(pyproj)
 
@@ -386,9 +384,6 @@ def test_conversion(cls: type[DistMetadata | VariantPyProjectToml | VariantsJson
     }
 
     # Non-common fields should be reset to defaults
-    if isinstance(converted, DistMetadata):
-        assert converted.variant_hash == "00000000"
-        assert converted.variant_desc == VariantDescription()
     if isinstance(converted, VariantsJson):
         assert converted.variants == {}
 

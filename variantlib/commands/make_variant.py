@@ -13,9 +13,10 @@ import zipfile
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.api import set_variant_metadata
+from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
+from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
 from variantlib.pyproject_toml import VariantPyProjectToml
 
@@ -161,62 +162,54 @@ def _make_variant(
         / f"{wheel_info.group('base_wheel_name')}-{vdesc.hexdigest}.whl"
     )
 
-    with zipfile.ZipFile(input_filepath, "r") as input_zip:
-        # First, find METADATA file
-        for filename in input_zip.namelist():
-            components = filename.split("/", 2)
-            if (
-                len(components) == 2
-                and components[0].endswith(".dist-info")
-                and components[1] == "METADATA"
+    with (
+        zipfile.ZipFile(input_filepath, "r") as input_zip,
+        zipfile.ZipFile(output_filepath, "w") as output_zip,
+    ):
+        for file_info in input_zip.infolist():
+            components = file_info.filename.split("/", 2)
+            with (
+                input_zip.open(file_info, "r") as input_file,
             ):
-                metadata_filename = filename.encode()
-                with input_zip.open(filename, "r") as input_file:
-                    # Parse the metadata
-                    metadata_parser = email.parser.BytesParser()
-                    metadata = metadata_parser.parse(input_file)
-
-                    # Update the metadata
-                    set_variant_metadata(
-                        metadata, vdesc, variant_metadata=variant_metadata
-                    )
-
-                    # Write the serialized metadata
-                    new_metadata = metadata.as_bytes(policy=METADATA_POLICY)
-                    break
-        else:
-            raise FileNotFoundError("No *.dist-info/METADATA file found in wheel")
-
-        with zipfile.ZipFile(output_filepath, "w") as output_zip:
-            for file_info in input_zip.infolist():
-                components = file_info.filename.split("/", 2)
-                with (
-                    input_zip.open(file_info, "r") as input_file,
-                    output_zip.open(file_info, "w") as output_file,
+                if (
+                    len(components) != 2
+                    or not components[0].endswith(".dist-info")
+                    or components[1] not in ("RECORD", VARIANT_DIST_INFO_FILENAME)
                 ):
-                    if (
-                        len(components) != 2
-                        or not components[0].endswith(".dist-info")
-                        or components[1] not in ("METADATA", "RECORD")
-                    ):
+                    with output_zip.open(file_info, "w") as output_file:
                         shutil.copyfileobj(input_file, output_file)
-                    elif components[1] == "METADATA":
-                        # Write the new metadata
-                        output_file.write(new_metadata)
-                    else:
-                        # Update RECORD for the new metadata checksum
+                elif components[1] == VARIANT_DIST_INFO_FILENAME:
+                    # If a wheel metadata file exists already, discard the existing
+                    # copy.
+                    continue
+                else:  # RECORD
+                    assert components[1] == "RECORD"
+                    # First, add new metadata file prior to RECORD (not strictly
+                    # required, but a nice convention).
+                    metadata_file_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
+                    metadata_file_data = make_variant_dist_info(vdesc, variant_metadata)
+                    output_zip.writestr(metadata_file_path, metadata_file_data)
+
+                    # Update RECORD for the new checksums.
+                    with output_zip.open(file_info, "w") as output_file:
                         for line in input_file:
                             new_line = line
                             rec_filename, sha256, size = line.split(b",")
-                            if rec_filename == metadata_filename:
-                                new_sha256 = base64.urlsafe_b64encode(
-                                    hashlib.sha256(new_metadata).digest()
-                                ).rstrip(b"=")
-                                new_line = (
-                                    f"{rec_filename.decode()},"
-                                    f"sha256={new_sha256.decode()},"
-                                    f"{len(new_metadata)}\n"
-                                ).encode()
+                            # Skip existing hash for the discarded copy.
+                            if rec_filename == metadata_file_path:
+                                continue
                             output_file.write(new_line)
 
-        logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())
+                        # Write hash for the new files.
+                        new_sha256 = base64.urlsafe_b64encode(
+                            hashlib.sha256(metadata_file_data.encode("utf8")).digest()
+                        ).rstrip(b"=")
+                        output_file.write(
+                            (
+                                f"{metadata_file_path},"
+                                f"sha256={new_sha256.decode()},"
+                                f"{len(metadata_file_data)}\n"
+                            ).encode()
+                        )
+
+    logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())

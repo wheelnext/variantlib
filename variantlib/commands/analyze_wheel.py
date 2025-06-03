@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import pathlib
-import re
 import sys
 import zipfile
+from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
+from variantlib.constants import VARIANT_DIST_INFO_FILENAME
+from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from variantlib.models.variant import VariantDescription
 
 logger = logging.getLogger(__name__)
 
@@ -67,42 +70,29 @@ def analyze_wheel(args: list[str]) -> None:
     )
 
     with zipfile.ZipFile(input_file, "r") as zip_file:
-        # original_xml_data = xmltodict.parse(zip_file.open("Data.xml").read())
         for name in zip_file.namelist():
-            if name.endswith(".dist-info/METADATA"):
-                metadata_str = zip_file.open(name).read().decode("utf-8")
+            if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
+                with zip_file.open(name) as metadata_file:
+                    metadata = VariantsJson(json.load(metadata_file))
                 break
+        else:
+            raise ValueError(f"Invalid wheel -- no {VARIANT_DIST_INFO_FILENAME} found")
 
-        # Extract the hash value
-        hash_match = re.search(rf"{METADATA_VARIANT_HASH_HEADER}: (\w+)", metadata_str)
-        hash_value = hash_match.group(1) if hash_match else None
-        assert hash_value == variant_hash, (
-            "Hash value does not match - this variant is not valid"
-        )
-
-        # Extract all variant strings
-        variant_matches = re.findall(
-            rf"{METADATA_VARIANT_PROPERTY_HEADER}: (.+)", metadata_str
-        )
-        vprop = variant_matches if variant_matches else []
-
-        vdesc = VariantDescription(
-            [VariantProperty.from_str(variant) for variant in vprop]
-        )
-
-        # Extract all variant provider strings``
-        # TODO: REMOVE
-        # providers = [
-        #     ProviderPackage.from_str(provider_str)
-        #     for provider_str in re.findall(
-        #         rf"{METADATA_VARIANT_PROVIDER_HEADER}: (.+)", metadata_str
-        #     )
-        # ]
+        if len(metadata.variants) != 1:
+            raise ValueError(
+                f"Invalid wheel -- {VARIANT_DIST_INFO_FILENAME} specifies "
+                f"len(metadata.variants) variants, expected exactly one."
+            )
+        if variant_hash not in metadata.variants:
+            raise ValueError(
+                f"Invalid wheel -- {VARIANT_DIST_INFO_FILENAME} specifies "
+                f"hash {next(iter(metadata.variants))}, expected {variant_hash}."
+            )
 
         # We have to flush the logger handlers to ensure that all logs are printed
         for handler in logger.handlers:
             handler.flush()
 
         # for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
-        for line in pretty_print(vdesc=vdesc).splitlines():
+        for line in pretty_print(vdesc=metadata.variants[variant_hash]).splitlines():
             sys.stdout.write(f"{line}\n")

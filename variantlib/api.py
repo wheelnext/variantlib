@@ -5,11 +5,9 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
-from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
-from variantlib.dist_metadata import DistMetadata
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
@@ -23,10 +21,6 @@ from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
 
-if TYPE_CHECKING:
-    from email.message import Message
-
-
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -36,7 +30,7 @@ __all__ = [
     "VariantFeatureConfig",
     "VariantProperty",
     "get_variant_hashes_by_priority",
-    "set_variant_metadata",
+    "make_variant_dist_info",
     "validate_variant",
 ]
 
@@ -167,20 +161,20 @@ def validate_variant(
     )
 
 
-def set_variant_metadata(
-    metadata: Message,
+def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_metadata: VariantMetadata | None = None,
-) -> None:
-    """Set metadata-related keys in metadata email-dict"""
+) -> str:
+    """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
     # If we have been parsed VariantMetadata, convert it to DistMetadata.
     # If not, start with an empty class.
     if variant_metadata is None:
         variant_metadata = VariantMetadata()
-    dist_metadata = DistMetadata(variant_metadata)
-    dist_metadata.variant_desc = vdesc
-    dist_metadata.update_message(metadata)
+    variant_json = VariantsJson(variant_metadata)
+    variant_json.variants[vdesc.hexdigest] = vdesc
+
+    return variant_json.to_str()
 
 
 def check_variant_supported(
@@ -203,9 +197,13 @@ def check_variant_supported(
     """
 
     if vdesc is None:
-        if metadata is None or not isinstance(metadata, DistMetadata):
-            raise TypeError("vdesc or metadata=DistMetadata(...) must be provided")
-        vdesc = metadata.variant_desc
+        if metadata is None or not isinstance(metadata, VariantsJson):
+            raise TypeError("vdesc or metadata=VariantsJson(...) must be provided")
+        if len(metadata.variants) != 1:
+            raise ValueError(
+                "metadata=VariantsJson(...) must describe exactly one variant"
+            )
+        vdesc = next(iter(metadata.variants.values()))
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
