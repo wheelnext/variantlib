@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from dataclasses import field
 from typing import TYPE_CHECKING
@@ -34,6 +35,11 @@ from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 
 @dataclass(init=False)
@@ -84,6 +90,48 @@ class VariantsJson(VariantMetadata):
             },
         }
         return json.dumps(data, indent=4)
+
+    def merge(self, wheel_metadata: Self) -> None:
+        """Merge metadata from another wheel (VariantsJson instance)"""
+
+        # Merge the variant properties
+        self.variants.update(wheel_metadata.variants)
+
+        # Verify consistency of default priorities
+        for attribute in (
+            "namespace_priorities",
+            "feature_priorities",
+            "property_priorities",
+        ):
+            new_value = getattr(wheel_metadata, attribute)
+            old_value = getattr(self, attribute)
+            if old_value != new_value:
+                raise ValidationError(
+                    f"Inconsistency in {attribute!r} when merging variants. "
+                    f"Expected: {old_value!r}, found {new_value!r}"
+                )
+
+        for namespace, provider_info in wheel_metadata.providers.items():
+            if (old_provider_info := self.providers.get(namespace)) is None:
+                # If provider not yet specified, just copy it
+                self.providers[namespace] = provider_info
+            else:
+                # Otherwise, merge requirements and verify consistency
+                for req_str in provider_info.requires:
+                    if req_str not in old_provider_info.requires:
+                        old_provider_info.requires.append(req_str)
+                if provider_info.enable_if != old_provider_info.enable_if:
+                    raise ValidationError(
+                        f"Inconsistency in providers[{namespace!r}].enable_if. "
+                        f"Expected: {old_provider_info.enable_if!r}, "
+                        f"Found: {provider_info.enable_if!r}"
+                    )
+                if provider_info.plugin_api != old_provider_info.plugin_api:
+                    raise ValidationError(
+                        f"Inconsistency in providers[{namespace!r}].plugin_api. "
+                        f"Expected: {old_provider_info.plugin_api!r}, "
+                        f"Found: {provider_info.plugin_api!r}"
+                    )
 
     def _process(self, variant_table: dict) -> None:
         validator = KeyTrackingValidator(None, variant_table)

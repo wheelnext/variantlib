@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -13,6 +14,9 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 def test_validate_variants_json():
@@ -346,3 +350,142 @@ def test_roundtrip() -> None:
     data = json_file.read_text()
     variants_json = VariantsJson(json.loads(data))
     assert variants_json.to_str() == data.rstrip()
+
+
+def test_merge_variants() -> None:
+    default_prios = {
+        "namespace": ["a", "b"],
+        "feature": ["a::a", "b::b"],
+        "property": ["a::a::a", "b::b::b"],
+    }
+    provider_b = {
+        "requires": ["b"],
+        "enable-if": "python_version > '3.12'",
+        "plugin-api": "b:B",
+    }
+    json_a: dict[str, Any] = {
+        "default-priorities": dict(default_prios),
+        "providers": {
+            "a": {
+                "requires": ["a"],
+                "plugin-api": "a:A",
+            },
+            "b": dict(provider_b),
+        },
+        "variants": {
+            "54357fe4": {
+                "a": {
+                    "a": "a",
+                },
+                "b": {
+                    "b": "c",
+                },
+            }
+        },
+    }
+    json_b: dict[str, Any] = {
+        "default-priorities": dict(default_prios),
+        "providers": {
+            "a": {
+                "requires": ["a2"],
+                "plugin-api": "a:A",
+            },
+            "b": dict(provider_b),
+        },
+        "variants": {
+            "48b561bc": {
+                "a": {
+                    "a": "c",
+                },
+                "b": {
+                    "b": "b",
+                },
+            }
+        },
+    }
+    merged = VariantsJson(
+        {
+            "default-priorities": default_prios,
+            "providers": {
+                "a": {
+                    "requires": ["a", "a2"],
+                    "plugin-api": "a:A",
+                },
+                "b": dict(provider_b),
+            },
+            "variants": {
+                "48b561bc": {
+                    "a": {
+                        "a": "c",
+                    },
+                    "b": {
+                        "b": "b",
+                    },
+                },
+                "54357fe4": {
+                    "a": {
+                        "a": "a",
+                    },
+                    "b": {
+                        "b": "c",
+                    },
+                },
+            },
+        }
+    )
+
+    # Test that merging itself does not change anything.
+    v1 = VariantsJson(json_a)
+    v2 = VariantsJson(json_a)
+    v1.merge(v2)
+    assert v1 == v2
+
+    # Test merging json_b.
+    v2 = VariantsJson(json_b)
+    v1.merge(v2)
+    assert v1 == merged
+
+    # Merging stuff again should not change anything.
+    v1.merge(v2)
+    assert v1 == merged
+    v1.merge(v1)
+    assert v1 == merged
+
+    # If we merge the other way around, we should get requires reversed.
+    merged.providers["a"].requires.reverse()
+    v2.merge(v1)
+    assert v2 == merged
+    v2.merge(v2)
+    assert v2 == merged
+
+    # Merging it back to v1 should not affect order.
+    merged.providers["a"].requires.reverse()
+    v1.merge(v2)
+    assert v1 == merged
+
+    # Test for mismatches in default priorities.
+    overrides = {
+        "namespace": ["b", "a"],
+        "feature": ["b :: b"],
+        "property": ["b :: b :: b"],
+    }
+    for key in json_a["default-priorities"]:
+        json_b["default-priorities"][key] = overrides[key]
+        with pytest.raises(ValidationError, match=rf"Inconsistency in '{key}"):
+            v1.merge(VariantsJson(json_b))
+        json_b["default-priorities"][key] = json_a["default-priorities"][key]
+
+    # Test for mismatches in provider information.
+    del json_b["providers"]["b"]["enable-if"]
+    with pytest.raises(
+        ValidationError, match=r"Inconsistency in providers\['b'\].enable_if"
+    ):
+        v1.merge(VariantsJson(json_b))
+    json_b["providers"]["b"]["enable-if"] = json_a["providers"]["b"]["enable-if"]
+
+    json_b["providers"]["a"]["plugin-api"] = "test:Test"
+    with pytest.raises(
+        ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
+    ):
+        v1.merge(VariantsJson(json_b))
+    json_b["providers"]["a"]["plugin-api"] = json_a["providers"]["a"]["plugin-api"]
