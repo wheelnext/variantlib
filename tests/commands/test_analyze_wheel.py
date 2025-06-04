@@ -13,7 +13,13 @@ def test_analyze_wheel_regular(
     capsys: pytest.CaptureFixture[str],
     mocked_entry_points: None,
 ) -> None:
-    main(["analyze-wheel", "-i", "tests/artifacts/test_package-0-py3-none-any.whl"])
+    main(
+        [
+            "analyze-wheel",
+            "-i",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any.whl",
+        ]
+    )
     assert capsys.readouterr().out == ""
     assert "Standard Wheel" in caplog.text
 
@@ -26,7 +32,7 @@ def test_analyze_wheel_null_variant(
         [
             "analyze-wheel",
             "-i",
-            "tests/artifacts/test_package-0-py3-none-any-00000000.whl",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-00000000.whl",
         ]
     )
     assert (
@@ -46,7 +52,7 @@ def test_analyze_wheel_variant(
         [
             "analyze-wheel",
             "-i",
-            "tests/artifacts/test_package-0-py3-none-any-5d8be4b9.whl",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-5d8be4b9.whl",
         ]
     )
     assert (

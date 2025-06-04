@@ -20,13 +20,25 @@ VARIANT_INFO_PROVIDER_REQUIRES_KEY = "requires"
 PYPROJECT_TOML_TOP_KEY = "variant"
 
 VARIANTS_JSON_SCHEMA_KEY = "$schema"
-VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/"
+# VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/"
+VARIANTS_JSON_SCHEMA_URL = "https://raw.githubusercontent.com/wheelnext/pep_xxx_wheel_variants/refs/heads/version_specifier_support/schema/variants.schema.json"
 VARIANTS_JSON_VARIANT_DATA_KEY = "variants"
 
 VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
+
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.]+")
+
+# For `Property value` there is two regexes:
+# 1. `VALIDATION_VALUE_VSPEC_REGEX` - if `packaging.specifiers.SpecifierSet` is used
+# Note: for clarity - only "full version" are allowed
+#       i.e. so no "a|b|alpha|beta|rc|post|etc." versions
+VALIDATION_VALUE_VSPEC_REGEX = re.compile(r"[0-9_.,!>~<=]+")
+# 2. `VALIDATION_VALUE_STR_REGEX` - if string matching is used
+VALIDATION_VALUE_STR_REGEX = re.compile(r"[a-z0-9_.]+")
+VALIDATION_VALUE_REGEX = re.compile(
+    rf"{VALIDATION_VALUE_VSPEC_REGEX.pattern}|{VALIDATION_VALUE_STR_REGEX.pattern}"
+)
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""
@@ -113,7 +125,7 @@ ProviderPluginJsonDict = TypedDict(
     total=False,
 )
 
-VariantInfoJsonDict = dict[str, dict[str, str]]
+VariantInfoJsonDict = dict[str, dict[str, list[str]]]
 
 
 VariantsJsonDict = TypedDict(

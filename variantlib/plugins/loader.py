@@ -3,14 +3,13 @@ from __future__ import annotations
 import dataclasses
 import importlib
 import importlib.resources
-import importlib.util
 import json
 import logging
+import subprocess
 import sys
 from abc import abstractmethod
 from functools import partial
 from pathlib import Path
-from subprocess import run
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 from typing import Any
@@ -18,6 +17,7 @@ from typing import Any
 from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -136,10 +136,12 @@ class BasePluginLoader:
                     importlib.resources.files("variantlib.validators") / "base.py"
                 ).read_bytes()
             )
+
             args = []
             for plugin_api in plugin_apis:
                 args += ["-p", plugin_api]
-            process = run(  # noqa: S603
+
+            process = subprocess.run(  # noqa: S603
                 [self._python_ctx.python_executable, script, *args],
                 input=json.dumps(commands).encode("utf8"),
                 capture_output=True,

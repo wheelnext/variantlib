@@ -169,9 +169,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-
 variantlib/example.json
-
 variants.toml
 
+# MacOS
 .DS_Store
+
+# Artifacts
+!tests/artifacts/**/dist/
+!tests/artifacts/**/*.json
+!tests/artifacts/**/*.whl

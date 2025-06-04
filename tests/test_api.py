@@ -29,7 +29,7 @@ from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VALIDATION_VALUE_STR_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
@@ -161,7 +161,9 @@ def test_get_variant_hashes_by_priority_roundtrip(
                         min_size=1,
                         max_size=3,
                         unique=True,
-                        elements=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
+                        elements=st.from_regex(
+                            VALIDATION_VALUE_STR_REGEX, fullmatch=True
+                        ),
                     ),
                 ),
             ),
@@ -323,20 +325,18 @@ def test_make_variant_dist_info(
     pyproject_toml: VariantsJsonDict | None,
 ) -> None:
     expected: VariantsJsonDict = {
-        "$schema": "https://variants-schema.wheelnext.dev/",
+        "$schema": VARIANTS_JSON_SCHEMA_URL,
         "default-priorities": {
             "namespace": [],
-            "feature": {},
-            "property": {},
         },
         "providers": {},
         "variants": {
             "67fcaf38": {
                 "ns1": {
-                    "f1": "p1",
-                    "f2": "p2",
+                    "f1": ["p1"],
+                    "f2": ["p2"],
                 },
-                "ns2": {"f1": "p1"},
+                "ns2": {"f1": ["p1"]},
             },
         },
     }

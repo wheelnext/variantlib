@@ -3,24 +3,19 @@
 from __future__ import annotations
 
 import argparse
-import sys
 
 from variantlib import __package_name__
-
-if sys.version_info >= (3, 10):
-    from importlib.metadata import entry_points
-else:
-    from importlib_metadata import entry_points
+from variantlib.commands.utils import get_registered_commands
 
 
 def main(args: list[str]) -> None:
-    registered_commands = entry_points(group="variantlib.actions.config")
+    registered_commands = get_registered_commands(group="variantlib.actions.config")
 
     parser = argparse.ArgumentParser(prog=f"{__package_name__} config")
 
     parser.add_argument(
         "command",
-        choices=sorted(registered_commands.names),
+        choices=sorted(registered_commands.keys()),
     )
 
     parser.add_argument(

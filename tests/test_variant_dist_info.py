@@ -18,9 +18,7 @@ VARIANT_JSON = """
     "default-priorities": {
         "namespace": [
             "ns"
-        ],
-        "feature": {},
-        "property": {}
+        ]
     },
     "providers": {
         "ns": {
@@ -32,7 +30,7 @@ VARIANT_JSON = """
     "variants": {
         "bdbc6ca0": {
             "ns": {
-                "f": "v"
+                "f": ["v"]
             }
         }
     }
@@ -66,13 +64,15 @@ def test_variant_dist_info_wrong_hash() -> None:
 
 
 def test_variant_dist_info_multiple_variants() -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     assert json_file.exists(), "Expected JSON file does not exist"
 
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            f"{VARIANT_DIST_INFO_FILENAME} specifies 6 variants, expected exactly one"
+            f"{VARIANT_DIST_INFO_FILENAME} specifies 10 variants, expected exactly one"
         ),
     ):
         VariantDistInfo(json_file.read_text())

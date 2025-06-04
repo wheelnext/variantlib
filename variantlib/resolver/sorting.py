@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 from itertools import chain
 from itertools import groupby
+
+from packaging.specifiers import InvalidSpecifier
+from packaging.specifiers import SpecifierSet
 
 from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
@@ -121,6 +125,7 @@ def sort_variant_properties(
 
     if namespace_priorities is not None:
         validate_type(namespace_priorities, list[VariantNamespace])
+
     if feature_priorities is not None:
         validate_type(
             feature_priorities, dict[VariantNamespace, list[VariantFeatureName]]
@@ -194,6 +199,20 @@ def sort_variants_descriptions(
     """
     validate_type(vdescs, list[VariantDescription])
     validate_type(property_priorities, list[VariantProperty])
+
+    vprops: set[VariantProperty] = set()
+    for vdesc in vdescs:
+        vprops.update(vdesc.properties)
+
+    for vprop in vprops:
+        with contextlib.suppress(InvalidSpecifier):
+            SpecifierSet(vprop.value)
+            # NOTE: IF ONE OF THE PROPERTIES IS A VERSION SPECIFIER,
+            #
+            # TODO: Implement smthg that makes sense here.
+            # Temporary sorting - doesn't matter for now
+            # sort by descending hash to ensure that the null variant is always last
+            return sorted(vdescs, key=lambda v: v.hexdigest, reverse=True)
 
     # Pre-compute the property hash for the property priorities
     # This is used to speed up the sorting process.

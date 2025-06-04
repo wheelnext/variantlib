@@ -1,0 +1,42 @@
+{
+    "$schema": "https://raw.githubusercontent.com/wheelnext/pep_xxx_wheel_variants/refs/heads/version_specifier_support/schema/variants.schema.json",
+    "default-priorities": {
+        "namespace": [
+            "installable_plugin"
+        ]
+    },
+    "providers": {
+        "installable_plugin": {
+            "requires": [
+                "test-plugin-package"
+            ]
+        }
+    },
+    "variants": {
+        "00000000": {},
+        "5d8be4b9": {
+            "installable_plugin": {
+                "feat1": [
+                    "val1c"
+                ],
+                "feat2": [
+                    "val2b"
+                ]
+            }
+        },
+        "60567bd9": {
+            "installable_plugin": {
+                "feat1": [
+                    "val1c"
+                ]
+            }
+        },
+        "fbe82642": {
+            "installable_plugin": {
+                "feat2": [
+                    "val2b"
+                ]
+            }
+        }
+    }
+}

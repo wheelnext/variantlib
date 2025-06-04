@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
@@ -22,7 +23,9 @@ if TYPE_CHECKING:
 
 
 def test_validate_variants_json() -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     assert json_file.exists(), "Expected JSON file does not exist"
 
     # Read the Variants JSON file
@@ -31,6 +34,7 @@ def test_validate_variants_json() -> None:
 
     variants_json = VariantsJson(data)
     assert variants_json.variants == {
+        "00000000": VariantDescription(),
         "03e04d5e": VariantDescription(
             properties=[
                 VariantProperty(
@@ -160,6 +164,33 @@ def test_validate_variants_json() -> None:
                 ),
             ],
         ),
+        "1d836653": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=4,<6",
+                )
+            ]
+        ),
+        "a0d8855a": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=4,<8",
+                )
+            ]
+        ),
+        "092f6ea8": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=7",
+                )
+            ]
+        ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]
     assert variants_json.feature_priorities == {
@@ -209,7 +240,9 @@ def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
 
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
 def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     assert json_file.exists(), "Expected JSON file does not exist"
 
     # Read the Variants JSON file
@@ -290,78 +323,35 @@ def test_to_str() -> None:
         vdesc1.hexdigest: vdesc1,
         vdesc2.hexdigest: vdesc2,
     }
-    assert (
-        variants_json.to_str()
-        == """\
-{
-    "$schema": "https://variants-schema.wheelnext.dev/",
-    "default-priorities": {
-        "namespace": [
-            "ns2",
-            "ns1"
-        ],
-        "feature": {
-            "ns1": [
-                "f1"
-            ],
-            "ns2": [
-                "f2"
-            ]
+    assert json.loads(variants_json.to_str()) == {
+        "$schema": VARIANTS_JSON_SCHEMA_URL,
+        "default-priorities": {
+            "namespace": ["ns2", "ns1"],
+            "feature": {"ns1": ["f1"], "ns2": ["f2"]},
+            "property": {"ns2": {"f2": ["v2"]}, "ns1": {"f1": ["v1"]}},
         },
-        "property": {
-            "ns2": {
-                "f2": [
-                    "v2"
-                ]
-            },
+        "providers": {
             "ns1": {
-                "f1": [
-                    "v1"
-                ]
-            }
-        }
-    },
-    "providers": {
-        "ns1": {
-            "requires": [
-                "ns1-pkg >= 1.0.0",
-                "ns1-dep"
-            ],
-            "enable-if": "python_version >= '3.12'",
-            "plugin-api": "ns1_pkg:Plugin"
-        },
-        "ns2": {
-            "requires": [
-                "ns2_pkg"
-            ],
-            "plugin-api": "ns2_pkg:Plugin"
-        }
-    },
-    "variants": {
-        "b3b0305c": {
-            "ns1": {
-                "f1": "v1"
+                "requires": ["ns1-pkg >= 1.0.0", "ns1-dep"],
+                "enable-if": "python_version >= '3.12'",
+                "plugin-api": "ns1_pkg:Plugin",
             },
-            "ns2": {
-                "f2": "v1"
-            }
+            "ns2": {"requires": ["ns2_pkg"], "plugin-api": "ns2_pkg:Plugin"},
         },
-        "9177ff3f": {
-            "ns2": {
-                "f2": "v2"
-            }
-        }
+        "variants": {
+            "b3b0305c": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
+            "9177ff3f": {"ns2": {"f2": ["v2"]}},
+        },
     }
-}\
-"""
-    )
 
 
 def test_roundtrip() -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     data = json_file.read_text()
     variants_json = VariantsJson(json.loads(data))
-    assert variants_json.to_str() == data.rstrip()
+    assert json.loads(variants_json.to_str()) == json.loads(data)
 
 
 def test_merge_variants() -> None:
@@ -389,10 +379,10 @@ def test_merge_variants() -> None:
         "variants": {
             "54357fe4": {
                 "a": {
-                    "a": "a",
+                    "a": ["a"],
                 },
                 "b": {
-                    "b": "c",
+                    "b": ["c"],
                 },
             }
         },
@@ -409,10 +399,10 @@ def test_merge_variants() -> None:
         "variants": {
             "48b561bc": {
                 "a": {
-                    "a": "c",
+                    "a": ["c"],
                 },
                 "b": {
-                    "b": "b",
+                    "b": ["b"],
                 },
             }
         },
@@ -430,18 +420,18 @@ def test_merge_variants() -> None:
             "variants": {
                 "48b561bc": {
                     "a": {
-                        "a": "c",
+                        "a": ["c"],
                     },
                     "b": {
-                        "b": "b",
+                        "b": ["b"],
                     },
                 },
                 "54357fe4": {
                     "a": {
-                        "a": "a",
+                        "a": ["a"],
                     },
                     "b": {
-                        "b": "c",
+                        "b": ["c"],
                     },
                 },
             },

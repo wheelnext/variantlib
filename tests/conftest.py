@@ -46,5 +46,8 @@ def mocked_entry_points(
 
 @pytest.fixture(scope="session")
 def test_plugin_package_req() -> str:
-    wheel_path = Path("tests/artifacts/test_plugin_package-0-py3-none-any.whl")
+    wheel_path = Path(
+        "tests/artifacts/test-plugin-package/dist/test_plugin_package-0-py3-none-any.whl"
+    )
+    assert wheel_path.exists(), f"Test plugin package wheel not found: {wheel_path}"
     return f"test-plugin-package @ file://{wheel_path.absolute().as_posix()}"

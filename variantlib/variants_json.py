@@ -5,6 +5,7 @@ import sys
 from dataclasses import dataclass
 from dataclasses import field
 from typing import TYPE_CHECKING
+from typing import Any
 
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
@@ -64,7 +65,7 @@ class VariantsJson(VariantInfo):
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
-        data = {
+        data: dict[str, Any] = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
             VARIANT_INFO_DEFAULT_PRIO_KEY: {
                 VARIANT_INFO_NAMESPACE_KEY: self.namespace_priorities,
@@ -79,7 +80,16 @@ class VariantsJson(VariantInfo):
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
-        return json.dumps(data, indent=4)
+
+        if not data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY]:
+            # Remove empty feature priorities
+            del data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY]
+
+        if not data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY]:
+            # Remove empty property priorities
+            del data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY]
+
+        return json.dumps(data, indent=4, sort_keys=True, ensure_ascii=True)
 
     def merge(self, variant_dist_info: Self) -> None:
         """Merge info from another wheel (VariantsJson instance)"""
@@ -134,6 +144,7 @@ class VariantsJson(VariantInfo):
             validator.list_matches_re(VALIDATION_VARIANT_HASH_REGEX)
             variant_hashes = list(variants.keys())
             self.variants = {}
+
             for variant_hash in variant_hashes:
                 with validator.get(
                     variant_hash,
@@ -141,9 +152,11 @@ class VariantsJson(VariantInfo):
                     ignore_subkeys=True,
                 ) as packed_vdesc:
                     vdesc = VariantDescription.from_dict(packed_vdesc)
+
                     if variant_hash != vdesc.hexdigest:
                         raise ValidationError(
                             f"Variant hash mismatch: {variant_hash=!r} != "
                             f"{vdesc.hexdigest=!r}"
                         )
+
                     self.variants[variant_hash] = vdesc

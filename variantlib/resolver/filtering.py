@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import logging
+from collections import defaultdict
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
+
+from packaging.specifiers import InvalidSpecifier
+from packaging.specifiers import SpecifierSet
+from packaging.version import InvalidVersion
+from packaging.version import Version
 
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -11,6 +18,8 @@ from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from variantlib.protocols import VariantFeatureValue
 
 logger = logging.getLogger(__name__)
 
@@ -173,8 +182,25 @@ def filter_variants_by_property(
     validate_type(forbidden_properties, list[VariantProperty])
 
     # for performance reasons we convert the list to a set to avoid O(n) lookups
-    allowed_properties_hexs = {vfeat.property_hash for vfeat in allowed_properties}
-    forbidden_properties_hexs = {vfeat.property_hash for vfeat in forbidden_properties}
+    forbidden_properties_hexs = {vprop.property_hash for vprop in forbidden_properties}
+
+    # We filter out any properties that are in the forbidden list.
+    allowed_properties = list(
+        filter(
+            lambda vprop: vprop.property_hash not in forbidden_properties_hexs,
+            allowed_properties,
+        )
+    )
+
+    # We group allowed properties by their namespace and feature:
+    #   => only one match per group is required.
+    allowed_props_dict: dict[VariantFeature, set[VariantFeatureValue]] = defaultdict(
+        set
+    )
+    for vprop in allowed_properties:
+        allowed_props_dict[VariantFeature(vprop.namespace, vprop.feature)].add(
+            vprop.value
+        )
 
     def _should_include(vdesc: VariantDescription) -> bool:
         """
@@ -182,24 +208,68 @@ def filter_variants_by_property(
         """
         validate_type(vdesc, VariantDescription)
 
-        if forbidden_vprops := [
-            vprop
-            for vprop in vdesc.properties
+        vprops_dict: dict[VariantFeature, set[VariantFeatureValue]] = defaultdict(set)
+        for vprop in vdesc.properties:
+            vprops_dict[VariantFeature(vprop.namespace, vprop.feature)].add(vprop.value)
+
+        for vfeat_tuple, property_values in vprops_dict.items():
             if (
-                vprop.property_hash not in allowed_properties_hexs
-                or vprop.property_hash in forbidden_properties_hexs
-            )
-        ]:
-            logger.info(
-                "Variant `%(vhash)s` has been rejected because one or many of the "
-                "variant properties `[%(vprops)s]` are not supported or have been "
-                "explicitly rejected.",
-                {
-                    "vhash": vdesc.hexdigest,
-                    "vprops": ", ".join([vprop.to_str() for vprop in forbidden_vprops]),
-                },
-            )
-            return False
+                allowed_props := allowed_props_dict.get(vfeat_tuple)
+            ) is None or not allowed_props:
+                # If there are no allowed properties for this feature, we reject
+                # the variant.
+                logger.info(
+                    "Variant `%(vhash)s` has been rejected because the feature "
+                    "`%(feature)s` is not supported by any of the allowed properties.",
+                    {
+                        "vhash": vdesc.hexdigest,
+                        "feature": vfeat_tuple.feature,
+                    },
+                )
+                return False
+
+            for property_value in property_values:
+                try:
+                    # If `property_value` is not a `SpecifierSet` valid value:
+                    #     => will raise InvalidSpecifier
+                    vspec = SpecifierSet(property_value)
+
+                    # 1. Tentatively convert `variant_prop` to `Version`
+                    # Not all/any values given by the Provider Plugins will be
+                    # convertible to `Version`, so we use `contextlib.suppress`.
+                    # 2. Check if the `Version` is in the `SpecifierSet`.
+                    for variant_prop in allowed_props:
+                        with contextlib.suppress(InvalidVersion):
+                            if Version(variant_prop) in vspec:
+                                # We found one or more allowed properties that match
+                                # the specifier, so we can include this variant.
+                                break
+                    else:
+                        continue
+
+                    # Match was found, so we can break out of the loop.
+                    break
+
+                except InvalidSpecifier:
+                    # We treat the property value as a simple string
+                    # and check if it is in the allowed properties.
+                    # If it is, we can include this variant.
+                    if property_value in allowed_props:
+                        break
+
+            else:
+                # We never broke out of the loop, meaning no allowed property
+                # matched. Consequently, we reject this variant.
+                logger.info(
+                    "Variant `%(vhash)s` has been rejected because the feature "
+                    "`%(feature)s` is not supported by any of the allowed "
+                    "properties.",
+                    {
+                        "vhash": vdesc.hexdigest,
+                        "feature": vfeat_tuple.feature,
+                    },
+                )
+                return False
 
         return True
 

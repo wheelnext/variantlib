@@ -93,6 +93,11 @@ def _unmake_variant(
         zipfile.ZipFile(output_filepath, "w") as output_zip,
     ):
         for file_info in input_zip.infolist():
+            if file_info.filename.endswith(".dist-info/variant.json"):
+                # This is the variant.json file, we skip it.
+                # Skip the variant.json file.
+                continue
+
             components = file_info.filename.split("/", 2)
             with input_zip.open(file_info, "r") as input_file:
                 if (
