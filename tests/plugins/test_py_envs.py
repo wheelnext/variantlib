@@ -11,14 +11,16 @@ import pytest
 from variantlib.plugins.py_envs import python_env
 
 
-def test_system_env():
+def test_system_env() -> None:
     with python_env(isolated=False) as env:
         assert env.venv_path is None
         assert env.python_executable == Path(sys.executable)
 
 
 @pytest.mark.parametrize("custom", [False, True])
-def test_isolated_env(custom: bool, tmp_path: Path, test_plugin_package_req: str):
+def test_isolated_env(
+    custom: bool, tmp_path: Path, test_plugin_package_req: str
+) -> None:
     if custom:
         venv.create(tmp_path, with_pip=True)
     with python_env(isolated=True, venv_path=tmp_path if custom else None) as env:

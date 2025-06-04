@@ -35,4 +35,4 @@ def main(args: list[str]) -> None:
 
     with EntryPointPluginLoader() as loader:
         main_fn = registered_commands[namespace.command].load()
-        return main_fn(namespace.args, plugin_loader=loader)
+        main_fn(namespace.args, plugin_loader=loader)

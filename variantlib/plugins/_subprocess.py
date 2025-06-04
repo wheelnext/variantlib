@@ -8,10 +8,10 @@ from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
 
-from _variantlib_protocols import PluginType
-from _variantlib_protocols import VariantFeatureConfigType
-from _variantlib_validators_base import ValidationError
-from _variantlib_validators_base import validate_type
+from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
+from variantlib.validators.base import ValidationError
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -92,13 +92,13 @@ def main() -> int:
             }
         elif command == "get_all_configs":
             assert not command_args
-            retval[command] = {
+            retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(plugin.get_all_configs(), plugin, command)
                 for plugin_api, plugin in plugins.items()
             }
         elif command == "get_supported_configs":
             assert not command_args
-            retval[command] = {
+            retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
                     plugin.get_supported_configs(), plugin, command
                 )

@@ -4,7 +4,6 @@ import json
 import string
 from collections.abc import Generator
 from typing import TYPE_CHECKING
-from typing import Any
 
 import pytest
 from hypothesis import HealthCheck
@@ -13,6 +12,7 @@ from hypothesis import example
 from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
+from trycast import trycast
 
 from tests.test_pyproject_toml import PYPROJECT_TOML
 from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
@@ -26,6 +26,7 @@ from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
+from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -33,7 +34,9 @@ from variantlib.constants import VARIANTS_JSON_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VariantsJsonDict
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
@@ -45,10 +48,12 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from pytest_mock import MockerFixture
+
     from variantlib.plugins.loader import BasePluginLoader
 
 
-def test_api_accessible():
+def test_api_accessible() -> None:
     """Test that the API is accessible."""
     assert get_variant_hashes_by_priority is not None
     assert pconfig.VariantFeatureConfig is VariantFeatureConfig
@@ -60,15 +65,15 @@ def test_api_accessible():
 @pytest.fixture
 def configs(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> list[ProviderConfig]:
     return list(mocked_plugin_loader.get_supported_configs().values())
 
 
 @pytest.mark.parametrize("construct", [False, True])
 def test_get_variant_hashes_by_priority_roundtrip(
-    configs,
+    configs: list[ProviderConfig],
     construct: bool,
-):
+) -> None:
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
 
@@ -82,22 +87,33 @@ def test_get_variant_hashes_by_priority_roundtrip(
     combinations: list[VariantDescription] = [
         *list(get_combinations(configs, namespace_priorities)),
     ]
-    variants_json: dict | VariantsJson = {
+
+    variants_json = {
+        "$schema": VARIANTS_JSON_SCHEMA_URL,
         VARIANTS_JSON_DEFAULT_PRIO_KEY: {
             VARIANTS_JSON_NAMESPACE_KEY: namespace_priorities,
         },
         VARIANTS_JSON_PROVIDER_DATA_KEY: {
-            namespace: {VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY: plugin_api}
+            namespace: {
+                VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY: plugin_api,
+                PYPROJECT_TOML_PROVIDER_REQUIRES_KEY: [],
+            }
             for namespace, plugin_api in plugin_apis.items()
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
         },
     }
-    variants_json = VariantsJson(variants_json)
+
+    if (typed_variants_json := trycast(VariantsJsonDict, variants_json)) is None:
+        raise ValueError(
+            f"Did not conform the `VariantsJsonDict` format: {variants_json}"
+        )
+
+    # variants_json = VariantsJson(typed_variants_json)
 
     assert get_variant_hashes_by_priority(
-        variants_json=variants_json, use_auto_install=False, venv_path=None
+        variants_json=typed_variants_json, use_auto_install=False, venv_path=None
     ) == [vdesc.hexdigest for vdesc in combinations]
 
 
@@ -146,8 +162,8 @@ def test_get_variant_hashes_by_priority_roundtrip(
     )
 )
 def test_get_variant_hashes_by_priority_roundtrip_fuzz(
-    mocker, configs: list[ProviderConfig]
-):
+    mocker: MockerFixture, configs: list[ProviderConfig]
+) -> None:
     namespace_priorities = list({provider_cfg.namespace for provider_cfg in configs})
     mocker.patch(
         "variantlib.configuration.VariantConfiguration.get_config"
@@ -167,6 +183,11 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
         }
     }
 
+    if (typed_variants_json := trycast(VariantsJsonDict, variants_json)) is None:
+        raise ValueError(
+            f"Did not conform the `VariantsJsonDict` format: {variants_json}"
+        )
+
     mocker.patch(
         "variantlib.plugins.loader.BasePluginLoader._load_all_plugins_from_tuple"
     ).return_value = None
@@ -175,7 +196,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
     assert get_variant_hashes_by_priority(
-        variants_json=variants_json, use_auto_install=False, venv_path=None
+        variants_json=typed_variants_json, use_auto_install=False, venv_path=None
     ) == [vdesc.hexdigest for vdesc in combinations]
 
 
@@ -197,7 +218,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
 )
 def test_validation_result_is_valid(
     bools: tuple[bool, ...], valid: bool, valid_strict: bool
-):
+) -> None:
     res = VariantValidationResult(
         {
             VariantProperty(
@@ -212,7 +233,7 @@ def test_validation_result_is_valid(
     assert res.is_valid(allow_unknown_plugins=False) == valid_strict
 
 
-def test_validation_result_properties():
+def test_validation_result_properties() -> None:
     res = VariantValidationResult(
         {
             VariantProperty("blas", "variant", "mkl"): True,
@@ -233,7 +254,7 @@ def test_validation_result_properties():
     ]
 
 
-def test_validate_variant(mocked_plugin_apis: list[str]):
+def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
     vmeta = VariantMetadata(
         namespace_priorities=[
             "test_namespace",
@@ -292,9 +313,9 @@ def test_validate_variant(mocked_plugin_apis: list[str]):
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
 def test_make_variant_dist_info(
-    pyproject_toml: dict | None,
-):
-    expected: dict[str, Any] = {
+    pyproject_toml: VariantsJsonDict | None,
+) -> None:
+    expected: VariantsJsonDict = {
         "$schema": "https://variants-schema.wheelnext.dev/",
         "default-priorities": {
             "namespace": [],
@@ -335,6 +356,7 @@ def test_make_variant_dist_info(
                 "namespace": ["ns1", "ns2"],
             },
         )
+
     if pyproject_toml is PYPROJECT_TOML:
         expected["default-priorities"].update(
             {
@@ -353,7 +375,7 @@ def test_make_variant_dist_info(
                         VariantProperty("ns2", "f1", "p1"),
                     ]
                 ),
-                variant_metadata=VariantPyProjectToml(pyproject_toml)
+                variant_metadata=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
                 if pyproject_toml is not None
                 else None,
             )
@@ -413,7 +435,7 @@ def test_check_variant_supported_dist(
     )
 
 
-def test_check_variant_supported_generic():
+def test_check_variant_supported_generic() -> None:
     # metadata should only be used to load plugins
     vmeta = VariantMetadata(
         namespace_priorities=["test_namespace", "second_namespace"],

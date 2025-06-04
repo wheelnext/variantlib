@@ -9,10 +9,10 @@ from variantlib import __package_name__
 from variantlib.configuration import get_configuration_files
 
 try:
-    from tzlocal import get_localzone
+    from tzlocal import get_localzone  # pyright: ignore[reportAssignmentType]
 except ImportError:
 
-    def get_localzone() -> None:
+    def get_localzone() -> None:  # type: ignore[misc]
         return None
 
 

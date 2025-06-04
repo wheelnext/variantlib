@@ -9,16 +9,16 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 T = TypeVar("T")
+RT = TypeVar("RT")
 
 
-class VariantCache(Generic[T]):
+class VariantCache(Generic[RT]):
     """This class is not necessary today - can be used for finer cache control later."""
 
-    def __init__(self) -> None:
-        self.cache: T | None = None
+    cache: RT | None = None
 
-    def __call__(self, func: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: dict[str, Any]) -> T:
+    def __call__(self, func: Callable[[T], RT]) -> Callable[[T], RT]:
+        def wrapper(*args: Any, **kwargs: dict[str, Any]) -> RT:
             if self.cache is None:
                 self.cache = func(*args, **kwargs)
             return self.cache

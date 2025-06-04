@@ -58,7 +58,7 @@ PYPROJECT_TOML_MINIMAL = tomllib.loads(
 )
 
 
-def test_pyproject_toml():
+def test_pyproject_toml() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
     assert pyproj.feature_priorities == [
@@ -85,7 +85,7 @@ def test_pyproject_toml():
     }
 
 
-def test_pyproject_toml_minimal():
+def test_pyproject_toml_minimal() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML_MINIMAL)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
     assert pyproj.feature_priorities == []
@@ -106,7 +106,7 @@ def test_pyproject_toml_minimal():
     }
 
 
-def test_invalid_top_type():
+def test_invalid_top_type() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\: expected dict\[str, typing\.Any\], "
@@ -118,7 +118,7 @@ def test_invalid_top_type():
 @pytest.mark.parametrize(
     "table", [PYPROJECT_TOML_DEFAULT_PRIO_KEY, PYPROJECT_TOML_PROVIDER_DATA_KEY]
 )
-def test_invalid_table_type(table: str):
+def test_invalid_table_type(table: str) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{table}: expected dict\[str, "
@@ -135,7 +135,7 @@ def test_invalid_table_type(table: str):
         PYPROJECT_TOML_PROPERTY_KEY,
     ],
 )
-def test_invalid_priority_type(key: str):
+def test_invalid_priority_type(key: str) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
@@ -158,7 +158,7 @@ def test_invalid_priority_type(key: str):
         (PYPROJECT_TOML_PROPERTY_KEY, ["ns :: feature :: property", "ns :: feature"]),
     ],
 )
-def test_invalid_priority_value(key: str, value: list[str]):
+def test_invalid_priority_value(key: str, value: list[str]) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
@@ -169,7 +169,7 @@ def test_invalid_priority_value(key: str, value: list[str]):
         )
 
 
-def test_invalid_provider_namespace():
+def test_invalid_provider_namespace() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}"
@@ -184,7 +184,7 @@ def test_invalid_provider_namespace():
         )
 
 
-def test_invalid_provider_table_type():
+def test_invalid_provider_table_type() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\."
@@ -202,7 +202,7 @@ def test_invalid_provider_table_type():
         (PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY, r"<class 'str'>"),
     ],
 )
-def test_invalid_provider_data_type(key: str, expected: str):
+def test_invalid_provider_data_type(key: str, expected: str) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
@@ -217,7 +217,7 @@ def test_invalid_provider_data_type(key: str, expected: str):
         )
 
 
-def test_invalid_provider_requires():
+def test_invalid_provider_requires() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
@@ -239,7 +239,7 @@ def test_invalid_provider_requires():
         )
 
 
-def test_invalid_provider_plugin_api():
+def test_invalid_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
@@ -257,7 +257,7 @@ def test_invalid_provider_plugin_api():
         )
 
 
-def test_missing_provider_plugin_api():
+def test_missing_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\.ns\."
@@ -274,7 +274,7 @@ def test_missing_provider_plugin_api():
         )
 
 
-def test_missing_namespace_priority():
+def test_missing_namespace_priority() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
@@ -296,7 +296,7 @@ def test_missing_namespace_priority():
         )
 
 
-def test_missing_namespace_provider():
+def test_missing_namespace_provider() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
@@ -315,7 +315,7 @@ def test_missing_namespace_provider():
         )
 
 
-def test_extra_default_priority_key():
+def test_extra_default_priority_key() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}: "
@@ -326,7 +326,7 @@ def test_extra_default_priority_key():
         )
 
 
-def test_extra_provider_data_key():
+def test_extra_provider_data_key() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY}\."
@@ -347,7 +347,7 @@ def test_extra_provider_data_key():
 
 
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
-def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]):
+def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     converted = cls(pyproj)
 
@@ -388,7 +388,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]):
         assert converted.variants == {}
 
 
-def test_get_provider_requires():
+def test_get_provider_requires() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     assert pyproj.get_provider_requires() == {
         "ns1-provider >= 1.2.3",

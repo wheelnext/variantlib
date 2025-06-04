@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import random
 from functools import cached_property
+from typing import Any
 
 import pytest
 from deepdiff import DeepDiff
@@ -22,7 +23,9 @@ from variantlib.resolver.lib import sort_and_filter_supported_variants
 
 
 def deep_diff(
-    a: list[VariantDescription], b: list[VariantDescription], ignore_ordering=False
+    a: list[VariantDescription],
+    b: list[VariantDescription],
+    ignore_ordering: bool = False,
 ) -> DeepDiff:
     """Helper function to compare two objects using DeepDiff."""
     assert isinstance(a, list)
@@ -31,7 +34,9 @@ def deep_diff(
     assert all(isinstance(vdesc, VariantDescription) for vdesc in b)
 
     class HexDigestOperator(BaseOperator):
-        def normalize_value_for_hashing(self, parent, obj: VariantDescription) -> str:
+        def normalize_value_for_hashing(
+            self, parent: Any, obj: VariantDescription
+        ) -> str:
             """Required for ignore_order=True compatibility"""
             if isinstance(obj, VariantDescription):
                 return obj.hexdigest
@@ -182,7 +187,7 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
 
 def test_filter_variants_only_one_prop_allowed(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     _, _, _, vprop4, _, _ = vprops
 
@@ -242,7 +247,7 @@ def test_filter_variants_only_one_prop_allowed(
 
 def test_filter_variants_forbidden_feature_allowed_prop(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     _, vprop2, _, vprop4, _, _ = vprops
 
@@ -260,7 +265,7 @@ def test_filter_variants_forbidden_feature_allowed_prop(
 
 def test_filter_variants_forbidden_namespace_allowed_prop(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     vprop1, _, _, vprop4, _, _ = vprops
 
@@ -286,7 +291,7 @@ def test_filter_variants_forbidden_namespace_allowed_prop(
 
 def test_filter_variants_only_remove_duplicates(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
 
     # Shuffling the list & creating duplicates
@@ -307,7 +312,7 @@ def test_filter_variants_only_remove_duplicates(
 
 def test_filter_variants_remove_duplicates_and_namespaces(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     _, _, vprop3, vprop4, vprop5, vprop6 = vprops
 
@@ -365,7 +370,7 @@ def test_filter_variants_remove_duplicates_and_namespaces(
 
 def test_filter_variants_remove_duplicates_and_features(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
 
@@ -420,7 +425,7 @@ def test_filter_variants_remove_duplicates_and_features(
 
 def test_filter_variants_remove_duplicates_and_properties(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
     vprop1, vprop2, _, vprop4, vprop5, _ = vprops
 
@@ -475,7 +480,7 @@ def test_filter_variants_remove_duplicates_and_properties(
 
 def test_sort_and_filter_supported_variants(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 6
 
     # Let's remove vprop2 [not supported]
@@ -581,7 +586,7 @@ def test_sort_and_filter_supported_variants(
 )
 def test_sort_and_filter_supported_variants_validation_errors(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     feature_priorities = []
     with contextlib.suppress(TypeError, AttributeError):
         feature_priorities = list({vprop.feature_object for vprop in vprops})
@@ -596,7 +601,7 @@ def test_sort_and_filter_supported_variants_validation_errors(
 
 def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     # This one specifies no ordering/priority => can't sort
     with pytest.raises(ConfigurationError, match="The variant environment needs"):
         sort_and_filter_supported_variants(

@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+# =============================================================================== #
+# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
+#
+# This file **MUST NOT** import any other `variantlib` module.
+# Must be standalone.
+# =============================================================================== #
+
 from __future__ import annotations
 
 import re
@@ -9,17 +18,14 @@ from typing import Union
 from typing import get_args
 from typing import get_origin
 
-# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
-# and therefore must not import any other variantlib modules.
-
 
 class ValidationError(ValueError):
     pass
 
 
 def validate_matches_re(
-    value: str, pattern: str | re.Pattern, message_prefix: str | None = None
-) -> re.Match:
+    value: str, pattern: str | re.Pattern[str], message_prefix: str | None = None
+) -> re.Match[str]:
     if (match := re.fullmatch(pattern, value)) is None:
         raise ValidationError(
             f"{message_prefix + ': ' if message_prefix is not None else ''}"
@@ -29,7 +35,7 @@ def validate_matches_re(
 
 
 def validate_list_matches_re(
-    values: list[str], pattern: str | re.Pattern, message_prefix: str | None = None
+    values: list[str], pattern: str | re.Pattern[str], message_prefix: str | None = None
 ) -> None:
     for i, value in enumerate(values):
         validate_matches_re(
@@ -41,7 +47,7 @@ def validate_list_matches_re(
         )
 
 
-def validate_list_min_len(values: list, min_length: int) -> None:
+def validate_list_min_len(values: list[Any], min_length: int) -> None:
     if len(values) < min_length:
         raise ValidationError(
             f"List must have at least {min_length} elements, got {len(values)}"
@@ -94,7 +100,7 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
             if incorrect_key_types or incorrect_value_types:
                 key_ored = Union.__getitem__((key_type, *incorrect_key_types))
                 value_ored = Union.__getitem__((value_type, *incorrect_value_types))
-                return list_type[key_ored, value_ored]  # type: ignore[index]
+                return list_type[key_ored, value_ored]  # type: ignore[no-any-return,index]
 
         else:
             (item_type,) = get_args(expected_type)
@@ -104,7 +110,7 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
                 incorrect_types.discard(None)
                 if incorrect_types:
                     ored = Union.__getitem__((item_type, *incorrect_types))
-                    return list_type[ored]  # type: ignore[index]
+                    return list_type[ored]  # type: ignore[no-any-return,index]
 
     # Protocols and Iterable must enable subclassing to pass
     elif issubclass(expected_type, (Protocol, Iterable)):  # type: ignore[arg-type]

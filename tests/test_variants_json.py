@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -16,10 +17,12 @@ from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
-    from typing import Any
+    from variantlib.constants import PriorityJsonDict
+    from variantlib.constants import ProviderPluginJsonDict
+    from variantlib.constants import VariantsJsonDict
 
 
-def test_validate_variants_json():
+def test_validate_variants_json() -> None:
     json_file = Path("tests/artifacts/variants.json")
     assert json_file.exists(), "Expected JSON file does not exist"
 
@@ -181,7 +184,7 @@ def test_validate_variants_json():
     }
 
 
-def test_validate_variants_json_empty():
+def test_validate_variants_json_empty() -> None:
     assert VariantsJson({"variants": {}}).variants == {}
 
 
@@ -201,13 +204,13 @@ def test_validate_variants_json_empty():
         {"variants": {"abcd1234": {"namesp@ce": {"feature": "value"}}}},
     ],
 )
-def test_validate_variants_json_incorrect_vhash(data: dict):
+def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
     with pytest.raises(ValidationError):
         VariantsJson(data)
 
 
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
-def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]):
+def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     json_file = Path("tests/artifacts/variants.json")
     assert json_file.exists(), "Expected JSON file does not exist"
 
@@ -353,24 +356,26 @@ def test_roundtrip() -> None:
 
 
 def test_merge_variants() -> None:
-    default_prios = {
+    default_prios: PriorityJsonDict = {
         "namespace": ["a", "b"],
         "feature": ["a::a", "b::b"],
         "property": ["a::a::a", "b::b::b"],
     }
-    provider_b = {
+
+    provider_b: ProviderPluginJsonDict = {
         "requires": ["b"],
         "enable-if": "python_version > '3.12'",
         "plugin-api": "b:B",
     }
-    json_a: dict[str, Any] = {
-        "default-priorities": dict(default_prios),
+
+    json_a: VariantsJsonDict = {
+        "default-priorities": default_prios,
         "providers": {
             "a": {
                 "requires": ["a"],
                 "plugin-api": "a:A",
             },
-            "b": dict(provider_b),
+            "b": provider_b,
         },
         "variants": {
             "54357fe4": {
@@ -383,14 +388,14 @@ def test_merge_variants() -> None:
             }
         },
     }
-    json_b: dict[str, Any] = {
-        "default-priorities": dict(default_prios),
+    json_b: VariantsJsonDict = {
+        "default-priorities": default_prios,
         "providers": {
             "a": {
                 "requires": ["a2"],
                 "plugin-api": "a:A",
             },
-            "b": dict(provider_b),
+            "b": provider_b,
         },
         "variants": {
             "48b561bc": {
@@ -411,7 +416,7 @@ def test_merge_variants() -> None:
                     "requires": ["a", "a2"],
                     "plugin-api": "a:A",
                 },
-                "b": dict(provider_b),
+                "b": provider_b,
             },
             "variants": {
                 "48b561bc": {
@@ -469,23 +474,24 @@ def test_merge_variants() -> None:
         "feature": ["b :: b"],
         "property": ["b :: b :: b"],
     }
+
     for key in json_a["default-priorities"]:
-        json_b["default-priorities"][key] = overrides[key]
+        _json_data = copy.deepcopy(json_b)
+        _json_data["default-priorities"][key] = overrides[key]  # type: ignore[literal-required]
         with pytest.raises(ValidationError, match=rf"Inconsistency in '{key}"):
-            v1.merge(VariantsJson(json_b))
-        json_b["default-priorities"][key] = json_a["default-priorities"][key]
+            v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
-    del json_b["providers"]["b"]["enable-if"]
+    _json_data = copy.deepcopy(json_b)
+    del _json_data["providers"]["b"]["enable-if"]
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['b'\].enable_if"
     ):
-        v1.merge(VariantsJson(json_b))
-    json_b["providers"]["b"]["enable-if"] = json_a["providers"]["b"]["enable-if"]
+        v1.merge(VariantsJson(_json_data))
 
-    json_b["providers"]["a"]["plugin-api"] = "test:Test"
+    _json_data = copy.deepcopy(json_b)
+    _json_data["providers"]["a"]["plugin-api"] = "test:Test"
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
     ):
-        v1.merge(VariantsJson(json_b))
-    json_b["providers"]["a"]["plugin-api"] = json_a["providers"]["a"]["plugin-api"]
+        v1.merge(VariantsJson(_json_data))

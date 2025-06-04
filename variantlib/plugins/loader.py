@@ -55,7 +55,7 @@ class BasePluginLoader:
     """Load and query plugins"""
 
     _namespace_map: dict[str, str] | None = None
-    _python_ctx_manager: AbstractContextManager | None = None
+    _python_ctx_manager: AbstractContextManager[PythonEnv] | None = None
     _python_ctx: PythonEnv | None = None
 
     def __init__(
@@ -113,13 +113,21 @@ class BasePluginLoader:
         # Actual plugin installation
         self._python_ctx.install(reqs)
 
-    def _call_subprocess(self, plugin_apis: list[str], commands: dict[str, Any]) -> Any:
+    def _call_subprocess(
+        self, plugin_apis: list[str], commands: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
         assert self._python_ctx is not None
 
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
             script = Path(temp_dir) / "loader.py"
             script.write_bytes(
-                (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
+                (importlib.resources.files(__package__) / "_subprocess.py")
+                .read_bytes()
+                .replace(b"from variantlib.protocols", b"from _variantlib_protocols")
+                .replace(
+                    b"from variantlib.validators.base",
+                    b"from _variantlib_validators_base",
+                )
             )
             (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
                 (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
@@ -142,7 +150,7 @@ class BasePluginLoader:
                 raise PluginError(
                     f"Plugin invocation failed:\n{process.stderr.decode('utf8')}"
                 )
-            return json.loads(process.stdout)
+            return json.loads(process.stdout)  # type: ignore[no-any-return]
 
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
@@ -311,7 +319,7 @@ class PluginLoader(BasePluginLoader):
                 continue
 
             if (marker := self._variant_nfo.providers[namespace].enable_if) is not None:
-                if not Marker(marker).evaluate(pyenv):
+                if not Marker(marker).evaluate(pyenv):  # type: ignore[arg-type]
                     logger.debug(
                         "The variant provider plugin corresponding "
                         "to namespace `%(ns)s` has been skipped - Not compatible with "
@@ -331,7 +339,7 @@ class PluginLoader(BasePluginLoader):
 
             for req_str in list_req_str:
                 pyreq = Requirement(req_str)
-                if not (pyreq.marker.evaluate(pyenv) if pyreq.marker else True):
+                if not (pyreq.marker.evaluate(pyenv) if pyreq.marker else True):  # type: ignore[arg-type]
                     continue
 
                 # If there's at least one requirement compatible - break
@@ -362,7 +370,7 @@ class PluginLoader(BasePluginLoader):
             self._variant_nfo.providers[namespace].plugin_api
             for namespace in self._variant_nfo.namespace_priorities
             if (marker := self._variant_nfo.providers[namespace].enable_if) is None
-            or Marker(marker).evaluate(pyenv)
+            or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)

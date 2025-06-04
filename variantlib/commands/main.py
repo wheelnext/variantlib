@@ -46,4 +46,4 @@ def main(args: list[str] | None = None) -> None:
     parser.parse_args(args=args, namespace=namespace)
 
     main_fn = registered_commands[namespace.command].load()
-    return main_fn(namespace.args)
+    main_fn(namespace.args)

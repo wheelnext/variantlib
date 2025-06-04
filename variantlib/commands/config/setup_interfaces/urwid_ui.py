@@ -1,3 +1,8 @@
+# URWID doesn't explicitly export symbols at the top level
+# Disabling errors to prevent noise.
+
+# mypy: disable-error-code="attr-defined,name-defined"
+
 from __future__ import annotations
 
 import sys
@@ -92,10 +97,11 @@ class UrwidUI:
         )
         listbox = urwid.ListBox(urwid.SimpleListWalker([text_widget]))
         scrollable = urwid.ScrollBar(
-            listbox, trough_char=urwid.ScrollBar.Symbols.LITE_SHADE
+            listbox,  # pyright: ignore[reportArgumentType]
+            trough_char=urwid.ScrollBar.Symbols.LITE_SHADE,
         )
-        frame = urwid.Frame(scrollable, footer=footer)
-        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)
+        frame = urwid.Frame(scrollable, footer=footer)  # type: ignore[var-annotated]
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)  # type: ignore[arg-type]
         try:
             loop.run()
         except KeyboardInterrupt:
@@ -156,11 +162,11 @@ class UrwidUI:
             urwid.Padding(
                 urwid.AttrMap(urwid.LineBox(listbox), "dialog"),
                 align=urwid.CENTER,
-                width=(urwid.RELATIVE, 50),
+                width=(urwid.RELATIVE, 50),  # type: ignore[arg-type]
             ),
             height=height,
         )
-        loop = urwid.MainLoop(frame, self.palette, unhandled_input=State.input_handler)
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=State.input_handler)  # type: ignore[arg-type]
         loop.run()
         return State.retval
 
@@ -178,7 +184,7 @@ class UrwidUI:
         ]
         required_values_set = set(known_values) if known_values_required else set()
 
-        class MovableCheckBox(urwid.CheckBox):
+        class MovableCheckBox(urwid.CheckBox):  # type: ignore[misc]
             def __init__(self, *args: Any, required: bool, **kwargs: Any):
                 super().__init__(*args, **kwargs)
                 self.mcb_required = required
@@ -191,27 +197,21 @@ class UrwidUI:
                 if key in ("f7", "tab"):
                     old_pos = value_box.focus_position
                     if old_pos != 0:
-                        item = value_box.body.pop(old_pos)
-                        value_box.body.insert(old_pos - 1, item)
-                        if old_pos != len(value_box.body) - 1:
+                        item = value_box.body.pop(old_pos)  # pyright: ignore[reportAttributeAccessIssue]
+                        value_box.body.insert(old_pos - 1, item)  # pyright: ignore[reportAttributeAccessIssue]
+                        if old_pos != len(value_box.body) - 1:  # type: ignore[arg-type]
                             value_box.focus_position -= 1
                     return None
 
                 if key in ("f8",):
                     old_pos = value_box.focus_position
-                    if old_pos != len(value_box.body) - 1:
-                        item = value_box.body.pop(old_pos)
-                        value_box.body.insert(old_pos + 1, item)
+                    if old_pos != len(value_box.body) - 1:  # type: ignore[arg-type]
+                        item = value_box.body.pop(old_pos)  # pyright: ignore[reportAttributeAccessIssue]
+                        value_box.body.insert(old_pos + 1, item)  # pyright: ignore[reportAttributeAccessIssue]
                         value_box.focus_position += 1
                     return None
 
-                return super().keypress(size, key)
-
-        def input_handler(key: str) -> None:
-            if key in ("s", "S"):
-                value_box.focus_position = len(value_box) - 2
-            if key in ("esc", "a", "A"):
-                value_box.focus_position = len(value_box) - 1
+                return super().keypress(size, key)  # type: ignore[no-any-return]
 
         def save_button(_: Any) -> None:
             raise urwid.ExitMainLoop
@@ -242,32 +242,39 @@ class UrwidUI:
                 ]
             )
         )
-        listbox = urwid.Frame(
+        listbox = urwid.Frame(  # type: ignore[var-annotated]
             urwid.ScrollBar(
-                urwid.AttrMap(value_box, "list"),
+                urwid.AttrMap(value_box, "list"),  # pyright: ignore[reportArgumentType]
                 trough_char=urwid.ScrollBar.Symbols.LITE_SHADE,
             ),
-            header=urwid.Text(INSTRUCTIONS[key]),
+            header=urwid.Text(INSTRUCTIONS[key]),  # type: ignore[arg-type]
         )
         frame = urwid.Filler(
             urwid.Padding(
                 urwid.AttrMap(urwid.LineBox(listbox, title=key), "dialog"),
                 align=urwid.CENTER,
-                width=(urwid.RELATIVE, 100),
+                width=(urwid.RELATIVE, 100),  # type: ignore[arg-type]
                 left=2,
                 right=2,
             ),
             valign=urwid.MIDDLE,
-            height=(urwid.RELATIVE, 100),
+            height=(urwid.RELATIVE, 100),  # type: ignore[arg-type]
             top=2,
             bottom=2,
         )
-        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)
+
+        def input_handler(key: str) -> None:
+            if key in ("s", "S"):
+                value_box.focus_position = len(value_box) - 2  # pyright: ignore[reportArgumentType]
+            if key in ("esc", "a", "A"):
+                value_box.focus_position = len(value_box) - 1  # pyright: ignore[reportArgumentType]
+
+        loop = urwid.MainLoop(frame, self.palette, unhandled_input=input_handler)  # type: ignore[arg-type]
         loop.run()
 
         new_values = [
             item.base_widget.label
-            for item in value_box.body
+            for item in value_box.body  # pyright: ignore[reportGeneralTypeIssues]
             if isinstance(item, urwid.AttrMap)
             and isinstance(item.base_widget, MovableCheckBox)
             and item.base_widget.get_state()

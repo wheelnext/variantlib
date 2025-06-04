@@ -42,7 +42,7 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
 # =========================== `remove_duplicates` =========================== #
 
 
-def test_remove_duplicates(vdescs: list[VariantDescription]):
+def test_remove_duplicates(vdescs: list[VariantDescription]) -> None:
     assert len(vdescs) == 3
 
     # using `copy.deepcopy` to ensure that all objects are actually unique
@@ -55,7 +55,7 @@ def test_remove_duplicates(vdescs: list[VariantDescription]):
         assert vdesc in filtered_vdescs
 
 
-def test_remove_duplicates_empty():
+def test_remove_duplicates_empty() -> None:
     assert list(remove_duplicates([])) == []
 
 
@@ -63,7 +63,7 @@ def test_remove_duplicates_empty():
     "vdescs",
     ["not a list", ["not a VariantDescription"]],
 )
-def test_remove_duplicates_validation_error(vdescs: list[VariantDescription]):
+def test_remove_duplicates_validation_error(vdescs: list[VariantDescription]) -> None:
     with pytest.raises(ValidationError):
         deque(remove_duplicates(vdescs=vdescs), maxlen=0)
 
@@ -71,7 +71,7 @@ def test_remove_duplicates_validation_error(vdescs: list[VariantDescription]):
 # ===================== `filter_variants_by_namespaces` ===================== #
 
 
-def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]):
+def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]) -> None:
     assert len(vdescs) == 3
     vdesc1, vdesc2, _ = vdescs
 
@@ -153,7 +153,7 @@ def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]):
 )
 def test_filter_variants_by_namespaces_validation_error(
     vdescs: list[VariantDescription], forbidden_namespaces: list[str]
-):
+) -> None:
     with pytest.raises(ValidationError):
         deque(
             filter_variants_by_namespaces(
@@ -169,7 +169,7 @@ def test_filter_variants_by_namespaces_validation_error(
 
 def test_filter_variants_by_features(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
-):
+) -> None:
     assert len(vprops) == 2
     vprop1, vprop2 = vprops
 
@@ -259,7 +259,7 @@ def test_filter_variants_by_features(
 )
 def test_filter_variants_by_features_validation_error(
     vdescs: list[VariantDescription], forbidden_features: list[VariantFeature]
-):
+) -> None:
     with pytest.raises(ValidationError):
         deque(
             filter_variants_by_features(
@@ -275,7 +275,7 @@ def test_filter_variants_by_features_validation_error(
 def test_filter_variants_by_property(
     vdescs: list[VariantDescription],
     vprops: list[VariantProperty],
-):
+) -> None:
     assert len(vprops) == 2
     vprop1, vprop2 = vprops
 
@@ -479,7 +479,7 @@ def test_filter_variants_by_property_validation_error(
     vdescs: list[VariantDescription],
     allowed_properties: list[VariantProperty],
     forbidden_properties: list[VariantProperty],
-):
+) -> None:
     with pytest.raises(ValidationError):
         deque(
             filter_variants_by_property(

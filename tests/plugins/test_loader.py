@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 import re
 import sys
-from abc import ABC
-from abc import abstractproperty
-from typing import Any
 
 import pytest
 
@@ -48,11 +45,10 @@ class ClashingPlugin(PluginType):
         return []
 
 
-class ExceptionPluginBase(PluginType, ABC):
+class ExceptionPluginBase(PluginType):
     namespace = "exception_test"
 
-    @abstractproperty
-    def returned_value(self) -> Any: ...
+    returned_value: list[VariantFeatureConfigType]
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return self.returned_value
@@ -63,7 +59,7 @@ class ExceptionPluginBase(PluginType, ABC):
 
 def test_get_all_configs(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> None:
     assert mocked_plugin_loader.get_all_configs() == {
         "incompatible_namespace": ProviderConfig(
             namespace="incompatible_namespace",
@@ -92,7 +88,7 @@ def test_get_all_configs(
 
 def test_get_supported_configs(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> None:
     assert mocked_plugin_loader.get_supported_configs() == {
         "second_namespace": ProviderConfig(
             namespace="second_namespace",
@@ -110,7 +106,7 @@ def test_get_supported_configs(
     }
 
 
-def test_namespace_clash():
+def test_namespace_clash() -> None:
     with (
         pytest.raises(
             RuntimeError,
@@ -131,11 +127,11 @@ class IncorrectListTypePlugin(ExceptionPluginBase):
     returned_value = (
         VariantFeatureConfig("k1", ["v1"]),
         VariantFeatureConfig("k2", ["v2"]),
-    )
+    )  # type: ignore[assignment]
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_type(method: str):
+def test_get_configs_incorrect_list_type(method: str) -> None:
     with (
         ListPluginLoader(
             ["tests.plugins.test_loader:IncorrectListTypePlugin"]
@@ -157,7 +153,7 @@ class IncorrectListLengthPlugin(ExceptionPluginBase):
     returned_value = []
 
 
-def test_get_all_configs_incorrect_list_length():
+def test_get_all_configs_incorrect_list_length() -> None:
     with (
         ListPluginLoader(
             ["tests.plugins.test_loader:IncorrectListLengthPlugin"]
@@ -172,11 +168,11 @@ def test_get_all_configs_incorrect_list_length():
 
 
 class IncorrectListMemberTypePlugin(ExceptionPluginBase):
-    returned_value = [{"k1": ["v1"], "k2": ["v2"]}, 1]
+    returned_value = [{"k1": ["v1"], "k2": ["v2"]}, 1]  # type: ignore[list-item]
 
 
 @pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_member_type(method: str):
+def test_get_configs_incorrect_list_member_type(method: str) -> None:
     with (
         ListPluginLoader(
             ["tests.plugins.test_loader:IncorrectListMemberTypePlugin"]
@@ -195,7 +191,7 @@ def test_get_configs_incorrect_list_member_type(method: str):
         getattr(loader, method)()
 
 
-def test_namespace_missing_module():
+def test_namespace_missing_module() -> None:
     with (
         pytest.raises(
             PluginError,
@@ -207,7 +203,7 @@ def test_namespace_missing_module():
         pass
 
 
-def test_namespace_incorrect_name():
+def test_namespace_incorrect_name() -> None:
     with (
         pytest.raises(
             PluginError,
@@ -227,7 +223,7 @@ class IncompletePlugin:
         return []
 
 
-def test_namespace_incorrect_type():
+def test_namespace_incorrect_type() -> None:
     with (
         pytest.raises(
             PluginError,
@@ -252,7 +248,7 @@ class RaisingInstantiationPlugin:
         return []
 
 
-def test_namespace_instantiation_raises():
+def test_namespace_instantiation_raises() -> None:
     with (
         pytest.raises(
             PluginError,
@@ -281,7 +277,7 @@ class CrossTypeInstantiationPlugin:
 @pytest.mark.parametrize("cls", ["IncompletePlugin", "CrossTypeInstantiationPlugin"])
 def test_namespace_instantiation_returns_incorrect_type(
     cls: type,
-):
+) -> None:
     with (
         pytest.raises(
             PluginError,
@@ -299,7 +295,7 @@ def test_namespace_instantiation_returns_incorrect_type(
 
 def test_get_build_setup(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> None:
     variant_desc = VariantDescription(
         [
             VariantProperty("test_namespace", "name1", "val1b"),
@@ -318,7 +314,7 @@ def test_get_build_setup(
 
 def test_get_build_setup_missing_plugin(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> None:
     variant_desc = VariantDescription(
         [
             VariantProperty("test_namespace", "name1", "val1b"),
@@ -335,7 +331,7 @@ def test_get_build_setup_missing_plugin(
 
 def test_namespaces(
     mocked_plugin_loader: BasePluginLoader,
-):
+) -> None:
     assert mocked_plugin_loader.namespaces == [
         "test_namespace",
         "second_namespace",
@@ -343,7 +339,7 @@ def test_namespaces(
     ]
 
 
-def test_non_class_attrs():
+def test_non_class_attrs() -> None:
     with ListPluginLoader(
         [
             "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a",
@@ -353,7 +349,7 @@ def test_non_class_attrs():
         assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
-def test_load_plugin_invalid_arg():
+def test_load_plugin_invalid_arg() -> None:
     with pytest.raises(ValidationError), ListPluginLoader(["tests.mocked_plugins"]):
         pass
 
@@ -415,7 +411,7 @@ plugin-api = "tests.mocked_plugins:MockedPluginB"
         ),
     ],
 )
-def test_load_plugins_from_metadata(metadata: VariantMetadata):
+def test_load_plugins_from_metadata(metadata: VariantMetadata) -> None:
     with PluginLoader(metadata, use_auto_install=False) as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
@@ -429,7 +425,7 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
         }
 
 
-def test_install_plugin(test_plugin_package_req: str):
+def test_install_plugin(test_plugin_package_req: str) -> None:
     metadata = VariantMetadata(
         namespace_priorities=["installable_plugin"],
         providers={

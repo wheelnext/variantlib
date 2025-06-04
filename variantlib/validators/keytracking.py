@@ -18,7 +18,7 @@ class KeyTrackingValidator:
 
     class RequiredKey: ...
 
-    def __init__(self, top_key: str | None, top_data: dict) -> None:
+    def __init__(self, top_key: str | None, top_data: dict[str, Any]) -> None:
         self._keys = [top_key] if top_key else []
         self._data: list[Any] = [top_data]
         self._expected_keys: list[set[str]] = [set()]
@@ -35,10 +35,10 @@ class KeyTrackingValidator:
                 f"{self._key}: expected {expected_type}, got {wrong_type}"
             )
 
-    def matches_re(self, pattern: str | re.Pattern) -> re.Match:
+    def matches_re(self, pattern: str | re.Pattern[str]) -> re.Match[str]:
         return validate_matches_re(self._data[-1], pattern, self._key)
 
-    def list_matches_re(self, pattern: str | re.Pattern) -> None:
+    def list_matches_re(self, pattern: str | re.Pattern[str]) -> None:
         return validate_list_matches_re(self._data[-1], pattern, self._key)
 
     @contextmanager

@@ -111,7 +111,7 @@ def _unmake_variant(
                     with output_zip.open(file_info, "w") as output_file:
                         variant_dist_info_path = (
                             f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
-                        )
+                        ).encode()
                         for line in input_file:
                             rec_filename, sha256, size = line.split(b",")
                             if rec_filename != variant_dist_info_path:

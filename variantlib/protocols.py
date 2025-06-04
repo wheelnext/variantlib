@@ -1,11 +1,17 @@
+# -*- coding: utf-8 -*-
+
+# =============================================================================== #
+# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
+#
+# This file **MUST NOT** import any other `variantlib` module.
+# Must be standalone.
+# =============================================================================== #
+
 from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Protocol
 from typing import runtime_checkable
-
-# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
-# and therefore must not import any other variantlib modules.
 
 
 @runtime_checkable
@@ -55,7 +61,7 @@ class PluginType(Protocol):
     @property
     @abstractmethod
     def namespace(self) -> str:
-        """Get provider namespace"""
+        """Plugin namespace"""
         raise NotImplementedError
 
     @abstractmethod

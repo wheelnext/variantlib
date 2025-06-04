@@ -7,6 +7,7 @@ import pytest
 from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.models.provider import ProviderConfig
 from variantlib.utils import aggregate_priority_lists
 
 if TYPE_CHECKING:
@@ -21,7 +22,7 @@ def configs(
     return list(mocked_plugin_loader.get_supported_configs().values())
 
 
-def test_get_combinations(configs):
+def test_get_combinations(configs: list[ProviderConfig]) -> None:
     """Test `get_combinations` yields the expected result in the right order."""
     val1a = VariantProperty("test_namespace", "name1", "val1a")
     val1b = VariantProperty("test_namespace", "name1", "val1b")
@@ -63,7 +64,7 @@ def test_get_combinations(configs):
     ]
 
 
-def test_get_combinations_flipped_order(configs):
+def test_get_combinations_flipped_order(configs: list[ProviderConfig]) -> None:
     """Test `get_combinations` yields the expected result in the right order."""
     val1a = VariantProperty("test_namespace", "name1", "val1a")
     val1b = VariantProperty("test_namespace", "name1", "val1b")
@@ -105,7 +106,7 @@ def test_get_combinations_flipped_order(configs):
     ]
 
 
-def test_get_combinations_one_one_namespace_one(configs):
+def test_get_combinations_one_one_namespace_one(configs: list[ProviderConfig]) -> None:
     """Test `get_combinations` yields the expected result in the right order."""
 
     namespace_priorities = ["second_namespace"]
@@ -120,7 +121,7 @@ def test_get_combinations_one_one_namespace_one(configs):
     ]
 
 
-def test_get_combinations_one_one_namespace_two(configs):
+def test_get_combinations_one_one_namespace_two(configs: list[ProviderConfig]) -> None:
     """Test `get_combinations` yields the expected result in the right order."""
     val1a = VariantProperty("test_namespace", "name1", "val1a")
     val1b = VariantProperty("test_namespace", "name1", "val1b")
@@ -162,5 +163,7 @@ def test_get_combinations_one_one_namespace_two(configs):
         ([None, None, [2, 3, 1]], [2, 3, 1]),
     ],
 )
-def test_aggregate_priority_lists(lists: list[list | None], expected: list):
+def test_aggregate_priority_lists(
+    lists: list[list[int] | None], expected: list[int]
+) -> None:
     assert aggregate_priority_lists(*lists) == expected
