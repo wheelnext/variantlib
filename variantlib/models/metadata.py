@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
     from variantlib.models.variant import VariantFeature
     from variantlib.models.variant import VariantProperty
+    from variantlib.protocols import VariantNamespace
 
 
 @dataclass
@@ -20,10 +21,10 @@ class ProviderInfo:
 
 @dataclass
 class VariantMetadata:
-    namespace_priorities: list[str] = field(default_factory=list)
+    namespace_priorities: list[VariantNamespace] = field(default_factory=list)
     feature_priorities: list[VariantFeature] = field(default_factory=list)
     property_priorities: list[VariantProperty] = field(default_factory=list)
-    providers: dict[str, ProviderInfo] = field(default_factory=dict)
+    providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
 
     def copy_as_kwargs(self) -> dict[str, Any]:
         """Return a "kwargs" dict suitable for instantiating a copy of itself"""
@@ -42,7 +43,9 @@ class VariantMetadata:
             },
         }
 
-    def get_provider_requires(self, namespaces: set[str] | None = None) -> set[str]:
+    def get_provider_requires(
+        self, namespaces: set[VariantNamespace] | None = None
+    ) -> set[str]:
         """
         Get list of requirements for providers in metadata
 

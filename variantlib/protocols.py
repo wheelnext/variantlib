@@ -11,7 +11,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Protocol
+from typing import TypeAlias
 from typing import runtime_checkable
+
+VariantNamespace: TypeAlias = str
+VariantFeatureName: TypeAlias = str
+VariantFeatureValue: TypeAlias = str
 
 
 @runtime_checkable
@@ -20,13 +25,13 @@ class VariantFeatureConfigType(Protocol):
 
     @property
     @abstractmethod
-    def name(self) -> str:
+    def name(self) -> VariantFeatureName:
         """feature name"""
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def values(self) -> list[str]:
+    def values(self) -> list[VariantFeatureValue]:
         """Ordered list of values, most preferred first"""
         raise NotImplementedError
 
@@ -37,19 +42,19 @@ class VariantPropertyType(Protocol):
 
     @property
     @abstractmethod
-    def namespace(self) -> str:
+    def namespace(self) -> VariantNamespace:
         """Namespace (from plugin)"""
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def feature(self) -> str:
+    def feature(self) -> VariantFeatureName:
         """Feature name (within the namespace)"""
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def value(self) -> str:
+    def value(self) -> VariantFeatureValue:
         """Feature value"""
         raise NotImplementedError
 
@@ -60,7 +65,7 @@ class PluginType(Protocol):
 
     @property
     @abstractmethod
-    def namespace(self) -> str:
+    def namespace(self) -> VariantNamespace:
         """Plugin namespace"""
         raise NotImplementedError
 

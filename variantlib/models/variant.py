@@ -17,6 +17,9 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
+from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantFeatureValue
+from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_list_all_unique
 from variantlib.validators.base import validate_matches_re
 from variantlib.validators.base import validate_type
@@ -30,22 +33,22 @@ else:
 
 @dataclass(frozen=True, order=True)
 class VariantFeature(BaseModel):
-    namespace: str = field(
+    namespace: VariantNamespace = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantNamespace),
                     lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
             )
         }
     )
-    feature: str = field(
+    feature: VariantFeatureName = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantFeatureName),
                     lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
                 ],
                 value=val,
@@ -93,11 +96,11 @@ class VariantFeature(BaseModel):
 
 @dataclass(frozen=True, order=True)
 class VariantProperty(VariantFeature):
-    value: str = field(
+    value: VariantFeatureValue = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantFeatureValue),
                     lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
                 ],
                 value=val,

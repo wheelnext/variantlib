@@ -8,6 +8,7 @@ from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_list_matches_re
 from variantlib.validators.base import validate_type
 from variantlib.validators.combining import validate_and
@@ -35,11 +36,11 @@ class VariantConfiguration(BaseModel):
         property_priorities (list): Sorted list of `VariantProperty` by priority.
     """
 
-    namespace_priorities: list[str] = field(
+    namespace_priorities: list[VariantNamespace] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, list[str]),
+                    lambda v: validate_type(v, list[VariantNamespace]),
                     lambda v: validate_list_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,

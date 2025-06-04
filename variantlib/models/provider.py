@@ -12,6 +12,9 @@ from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantProperty
+from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantFeatureValue
+from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_list_all_unique
 from variantlib.validators.base import validate_list_matches_re
 from variantlib.validators.base import validate_list_min_len
@@ -30,11 +33,11 @@ else:
 
 @dataclass(frozen=True)
 class VariantFeatureConfig(BaseModel):
-    name: str = field(
+    name: VariantFeatureName = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantFeatureName),
                     lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
                 ],
                 value=val,
@@ -43,11 +46,11 @@ class VariantFeatureConfig(BaseModel):
     )
 
     # Acceptable values in priority order
-    values: list[str] = field(
+    values: list[VariantFeatureValue] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, list[str]),
+                    lambda v: validate_type(v, list[VariantFeatureValue]),
                     lambda v: validate_list_matches_re(v, VALIDATION_VALUE_REGEX),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v),
@@ -60,11 +63,11 @@ class VariantFeatureConfig(BaseModel):
 
 @dataclass(frozen=True)
 class ProviderConfig(BaseModel):
-    namespace: str = field(
+    namespace: VariantNamespace = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantNamespace),
                     lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
@@ -108,11 +111,11 @@ class ProviderConfig(BaseModel):
 
 @dataclass(frozen=True)
 class ProviderPackage(BaseModel):
-    namespace: str = field(
+    namespace: VariantNamespace = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, str),
+                    lambda v: validate_type(v, VariantNamespace),
                     lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
                 ],
                 value=val,
