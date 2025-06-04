@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-===============================================================================
-IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
-
-This file **MUST NOT** import any other `variantlib` module.
-Must be standalone.
-===============================================================================
-"""
+# =============================================================================== #
+# IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
+#
+# This file **MUST NOT** import any other `variantlib` module.
+# Must be standalone.
+# =============================================================================== #
 
 from __future__ import annotations
 
