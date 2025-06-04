@@ -116,7 +116,6 @@ exclude = [
   "**/__pycache__/**",
   "assets",
   "dist",
-  "tests",
 ]
 enable_incomplete_feature = ["InlineTypedDict"]
 check_untyped_defs = true
