@@ -19,27 +19,27 @@ class KeyTrackingValidator:
     class RequiredKey: ...
 
     def __init__(self, top_key: str | None, top_data: dict[str, Any]) -> None:
-        self._keys = [top_key] if top_key else []
+        self.keys = [top_key] if top_key else []
         self._data: list[Any] = [top_data]
         self._expected_keys: list[set[str]] = [set()]
         self.validate(top_data, dict[str, Any])
 
     @property
-    def _key(self) -> str:
-        return ".".join(self._keys)
+    def key(self) -> str:
+        return ".".join(self.keys)
 
     def validate(self, value: Any, expected_type: type) -> None:
         wrong_type = _validate_type(value, expected_type)
         if wrong_type is not None:
             raise ValidationError(
-                f"{self._key}: expected {expected_type}, got {wrong_type}"
+                f"{self.key}: expected {expected_type}, got {wrong_type}"
             )
 
     def matches_re(self, pattern: str | re.Pattern[str]) -> re.Match[str]:
-        return validate_matches_re(self._data[-1], pattern, self._key)
+        return validate_matches_re(self._data[-1], pattern, self.key)
 
     def list_matches_re(self, pattern: str | re.Pattern[str]) -> None:
-        return validate_list_matches_re(self._data[-1], pattern, self._key)
+        return validate_list_matches_re(self._data[-1], pattern, self.key)
 
     @contextmanager
     def get(
@@ -53,11 +53,11 @@ class KeyTrackingValidator:
         self._expected_keys[-1].add(key)
 
         # push the value to the stack
-        self._keys.append(key)
+        self.keys.append(key)
         self._data.append(self._data[-1].get(key, default))
 
         if self._data[-1] is self.RequiredKey:
-            raise ValidationError(f"{self._key}: required key not found")
+            raise ValidationError(f"{self.key}: required key not found")
 
         self._expected_keys.append(set())
         # validate only non-default type -- this makes optional keys easier
@@ -76,7 +76,7 @@ class KeyTrackingValidator:
             unexpected_keys = last_data.keys() - expected_keys
             if unexpected_keys:
                 raise ValidationError(
-                    f"{self._key}: unexpected subkeys: {unexpected_keys}; "
+                    f"{self.key}: unexpected subkeys: {unexpected_keys}; "
                     f"expected only: {expected_keys}"
                 )
-        self._keys.pop()
+        self.keys.pop()
