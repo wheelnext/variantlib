@@ -8,6 +8,9 @@ from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
 
+# The following imports are replaced with temporary paths by the plugin
+# loader. We are using the original imports here to facilitate static
+# checkers and easier debugging.
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.validators.base import ValidationError
