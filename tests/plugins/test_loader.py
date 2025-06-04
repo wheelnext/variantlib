@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import sys
-from abc import ABC
 
 import pytest
 
@@ -46,7 +45,7 @@ class ClashingPlugin(PluginType):
         return []
 
 
-class ExceptionPluginBase(PluginType, ABC):
+class ExceptionPluginBase(PluginType):
     namespace = "exception_test"
 
     returned_value: list[VariantFeatureConfigType]
