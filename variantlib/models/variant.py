@@ -154,9 +154,9 @@ class VariantDescription(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, list[VariantProperty]),
-                    lambda v: validate_list_all_unique(
-                        v, keys=["namespace", "feature"]
-                    ),
+                    # lambda v: validate_list_all_unique(
+                    #     v, keys=["namespace", "feature"]
+                    # ),
                 ],
                 value=val,
             ),
