@@ -7,12 +7,12 @@ from pathlib import Path
 from tomlkit.toml_file import TOMLFile
 
 from variantlib import __package_name__
-from variantlib.constants import PYPROJECT_TOML_DEFAULT_PRIO_KEY
-from variantlib.constants import PYPROJECT_TOML_NAMESPACE_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_DATA_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
+from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
 from variantlib.plugins.loader import EntryPointPluginLoader
 
 
@@ -59,9 +59,11 @@ def update_pyproject_toml(args: list[str]) -> None:
 
     # prepare all relevant tables
     variant_table = toml_data.setdefault(PYPROJECT_TOML_TOP_KEY, {})
-    default_prio_table = variant_table.setdefault(PYPROJECT_TOML_DEFAULT_PRIO_KEY, {})
-    namespace_prio_key = default_prio_table.setdefault(PYPROJECT_TOML_NAMESPACE_KEY, [])
-    provider_table = variant_table.setdefault(PYPROJECT_TOML_PROVIDER_DATA_KEY, {})
+    default_prio_table = variant_table.setdefault(VARIANT_METADATA_DEFAULT_PRIO_KEY, {})
+    namespace_prio_key = default_prio_table.setdefault(
+        VARIANT_METADATA_NAMESPACE_KEY, []
+    )
+    provider_table = variant_table.setdefault(VARIANT_METADATA_PROVIDER_DATA_KEY, {})
 
     with EntryPointPluginLoader() as loader:
         for namespace in parsed_args.delete:
@@ -81,12 +83,12 @@ def update_pyproject_toml(args: list[str]) -> None:
 
             namespace_table = provider_table.setdefault(namespace, {})
             plugin_api = loader.plugin_api_values[namespace]
-            namespace_table[PYPROJECT_TOML_PROVIDER_PLUGIN_API_KEY] = plugin_api
+            namespace_table[VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY] = plugin_api
             default_requires = []
             if (dist := loader.plugin_provider_packages.get(plugin_api)) is not None:
                 default_requires.append(f"{dist.name} >={dist.version}")
             namespace_table.setdefault(
-                PYPROJECT_TOML_PROVIDER_REQUIRES_KEY, default_requires
+                VARIANT_METADATA_PROVIDER_REQUIRES_KEY, default_requires
             )
 
     toml_file.write(toml_data)

@@ -26,14 +26,14 @@ from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
-from variantlib.constants import PYPROJECT_TOML_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANTS_JSON_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANTS_JSON_NAMESPACE_KEY
-from variantlib.constants import VARIANTS_JSON_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
@@ -90,13 +90,13 @@ def test_get_variant_hashes_by_priority_roundtrip(
 
     variants_json = {
         "$schema": VARIANTS_JSON_SCHEMA_URL,
-        VARIANTS_JSON_DEFAULT_PRIO_KEY: {
-            VARIANTS_JSON_NAMESPACE_KEY: namespace_priorities,
+        VARIANT_METADATA_DEFAULT_PRIO_KEY: {
+            VARIANT_METADATA_NAMESPACE_KEY: namespace_priorities,
         },
-        VARIANTS_JSON_PROVIDER_DATA_KEY: {
+        VARIANT_METADATA_PROVIDER_DATA_KEY: {
             namespace: {
-                VARIANTS_JSON_PROVIDER_PLUGIN_API_KEY: plugin_api,
-                PYPROJECT_TOML_PROVIDER_REQUIRES_KEY: [],
+                VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: plugin_api,
+                VARIANT_METADATA_PROVIDER_REQUIRES_KEY: [],
             }
             for namespace, plugin_api in plugin_apis.items()
         },
