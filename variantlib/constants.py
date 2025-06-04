@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import TypedDict
 
 VARIANT_HASH_LEN = 8
 CONFIG_FILENAME = "variants.toml"
@@ -134,4 +135,45 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
     r"\.whl                               "  # ".whl" suffix
     r"                                    ",
     re.VERBOSE,
+)
+
+
+# ======================== Json TypedDict for the JSON format ======================== #
+
+# NOTE: Unfortunately, it is not possible as of today to use variables in the definition
+#       of TypedDict. Similarly also impossible to use the normal "class format" if a
+#       key uses the characted `-`.
+#
+#       For all these reasons and easier future maintenance - these classes have been
+#       added to this file instead of a more "format definition" file.
+
+
+class PriorityJsonDict(TypedDict, total=False):
+    namespace: list[str]
+    feature: list[str]
+    property: list[str]
+
+
+ProviderPluginJsonDict = TypedDict(
+    "ProviderPluginJsonDict",
+    {
+        "plugin-api": str,
+        "requires": list[str],
+        "enable-if": str,
+    },
+    total=False,
+)
+
+VariantInfoJsonDict = dict[str, dict[str, str]]
+
+
+VariantsJsonDict = TypedDict(
+    "VariantsJsonDict",
+    {
+        "$schema": str,
+        "default-priorities": PriorityJsonDict,
+        "providers": dict[str, ProviderPluginJsonDict],
+        "variants": dict[str, VariantInfoJsonDict],
+    },
+    total=False,
 )

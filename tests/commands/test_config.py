@@ -42,7 +42,7 @@ def test_config_list_paths(
 
 def test_config_show(
     config_toml: Path,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(config_toml.parent)
@@ -70,7 +70,7 @@ property_priorities = []
 def test_config_setup_defaults(
     config_toml: Path,
     mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("sys.stdin", StringIO("y\n"))
     main(["config", "setup", "--ui", "text", "-d", "-P", str(config_toml)])
@@ -87,7 +87,7 @@ def test_config_setup_defaults(
 
 def test_config_setup(
     mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\n\n\ny\n"))
@@ -105,7 +105,7 @@ def test_config_setup(
 
 def test_config_setup_all(
     mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\ny\n2 3\ny\n4 1\ny\n"))
@@ -129,7 +129,7 @@ def test_config_setup_all(
 
 def test_config_setup_defaults_no_save(
     mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr("sys.stdin", StringIO("n\n"))
@@ -140,7 +140,7 @@ def test_config_setup_defaults_no_save(
 def test_config_setup_update(
     config_toml: Path,
     mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatcher,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\n\n\ny\n"))
     main(["config", "setup", "--ui", "text", "-P", str(config_toml)])

@@ -55,7 +55,7 @@ class MyClass(HalfClass):
         ({"a": 1, 1: 2, False: 3}, dict[Any, int]),
     ],
 )
-def test_validate_type_good(value: Any, expected: type):
+def test_validate_type_good(value: Any, expected: type) -> None:
     validate_type(value, expected)
 
 
@@ -83,7 +83,7 @@ def test_validate_type_good(value: Any, expected: type):
             list[list[int]],
             list[Union[list[int], list[Union[int, str]]]],
         ),
-        ([[1], {2, 3}, [4, 5]], list[list[int]], list[Union[list[int], set]]),
+        ([[1], {2, 3}, [4, 5]], list[list[int]], list[Union[list[int], set]]),  # type: ignore[type-arg]
         ([1, 2, 3], list[list[int]], list[Union[list[int], int]]),
         (
             [[[1], [2, "3"], ["4", 5]]],
@@ -105,7 +105,7 @@ def test_validate_type_good(value: Any, expected: type):
         ({"a": 1, 1: "foo", False: 3}, dict[Any, int], dict[Any, Union[int, str]]),
     ],
 )
-def test_validate_type_bad(value: Any, expected: type, have: type):
+def test_validate_type_bad(value: Any, expected: type, have: type) -> None:
     with pytest.raises(
         ValidationError, match=re.escape(f"Expected {expected}, got {have}")
     ):

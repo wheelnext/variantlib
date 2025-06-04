@@ -17,7 +17,7 @@ from variantlib.models.variant import VariantProperty
 # -----------------------------------------------
 
 
-def test_variantprop_initialization():
+def test_variantprop_initialization() -> None:
     # Valid initialization
     vprop = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -27,7 +27,7 @@ def test_variantprop_initialization():
     assert vprop.value == "secret_value"
 
 
-def test_variantprop_invalid_type():
+def test_variantprop_invalid_type() -> None:
     # Invalid initialization for provider (should raise ValidationError)
     with pytest.raises(ValidationError):
         VariantProperty(namespace="omnicorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
@@ -41,7 +41,7 @@ def test_variantprop_invalid_type():
         VariantProperty(namespace="omnicorp", feature="custom_feat", value=123)  # type: ignore[arg-type]
 
 
-def test_variantprop_data():
+def test_variantprop_data() -> None:
     # Test the repr method of VariantProperty
     vprop = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -50,7 +50,7 @@ def test_variantprop_data():
     assert vprop.to_str() == expected_data
 
 
-def test_variantprop_hexdigest():
+def test_variantprop_hexdigest() -> None:
     # Test the hashing functionality of VariantProperty
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="value1"
@@ -68,7 +68,7 @@ def test_variantprop_hexdigest():
     assert vprop1.feature_hash == vprop3.feature_hash
 
 
-def test_variantprop_to_str():
+def test_variantprop_to_str() -> None:
     vprop = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
@@ -76,7 +76,7 @@ def test_variantprop_to_str():
     assert vprop.to_str() == "omnicorp :: custom_feat :: secret_value"
 
 
-def test_failing_regex_namespace():
+def test_failing_regex_namespace() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="", feature="feature", value="value")
 
@@ -87,7 +87,7 @@ def test_failing_regex_namespace():
             )
 
 
-def test_failing_regex_feature():
+def test_failing_regex_feature() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="provider", feature="", value="value")
 
@@ -98,7 +98,7 @@ def test_failing_regex_feature():
             )
 
 
-def test_failing_regex_value():
+def test_failing_regex_value() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="provider", feature="feature", value="")
 
@@ -117,7 +117,7 @@ def test_failing_regex_value():
         "omnicorp ::custom_feat::     secret_value",
     ],
 )
-def test_from_str_valid(input_str: str):
+def test_from_str_valid(input_str: str) -> None:
     # Test case: Valid string input
     vprop = VariantProperty.from_str(input_str)
 
@@ -127,27 +127,27 @@ def test_from_str_valid(input_str: str):
     assert vprop.value == "secret_value"
 
 
-def test_from_str_missing_parts():
+def test_from_str_missing_parts() -> None:
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantProperty.from_str("omnicorp :: custom_feat")
 
 
-def test_from_str_extra_colons():
+def test_from_str_extra_colons() -> None:
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantProperty.from_str("omnicorp :: custom_feat :: secret_value :: extra")
 
 
-def test_from_str_empty_value():
+def test_from_str_empty_value() -> None:
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantProperty.from_str("omnicorp :: custom_feat ::")
 
 
-def test_from_str_edge_case_empty_string():
+def test_from_str_edge_case_empty_string() -> None:
     with pytest.raises(ValidationError, match="Invalid format"):
         VariantProperty.from_str("")
 
 
-def test_from_str_trailing_spaces():
+def test_from_str_trailing_spaces() -> None:
     # Test case: Input with leading/trailing spaces
     input_str = "   omnicorp :: custom_feat :: secret_value   "
     vprop = VariantProperty.from_str(input_str.strip())
@@ -158,7 +158,7 @@ def test_from_str_trailing_spaces():
     assert vprop.value == "secret_value"
 
 
-def test_from_str_invalid_format():
+def test_from_str_invalid_format() -> None:
     # Test case: Input with invalid format
     input_str = "omnicorp, custom_feat, secret_value"
 
@@ -166,7 +166,7 @@ def test_from_str_invalid_format():
         VariantProperty.from_str(input_str)
 
 
-def test_variantprop_serialization():
+def test_variantprop_serialization() -> None:
     vprop = VariantProperty(namespace="provider", feature="feature", value="value")
     assert vprop.serialize() == {
         "namespace": "provider",
@@ -175,7 +175,7 @@ def test_variantprop_serialization():
     }
 
 
-def test_variantprop_deserialization():
+def test_variantprop_deserialization() -> None:
     data = {
         "namespace": "provider",
         "feature": "feature",
@@ -189,7 +189,7 @@ def test_variantprop_deserialization():
     assert vprop.value == data["value"]
 
 
-def test_variantprop_sorting():
+def test_variantprop_sorting() -> None:
     data = [
         VariantProperty("z", "a", "a"),
         VariantProperty("z", "a", "b"),
@@ -222,13 +222,13 @@ def test_variantprop_sorting():
 # -----------------------------------------------
 
 
-def test_null_variant():
+def test_null_variant() -> None:
     vdesc = VariantDescription()
     assert vdesc.properties == []
     assert vdesc.hexdigest == "00000000"
 
 
-def test_variantdescription_initialization():
+def test_variantdescription_initialization() -> None:
     # Valid input: List of VariantProperty instances
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -244,7 +244,7 @@ def test_variantdescription_initialization():
     assert vdesc.properties == [vprop1, vprop2]
 
 
-def test_variantdescription_invalid_data():
+def test_variantdescription_invalid_data() -> None:
     # Test invalid data (not a list or tuple)
     with pytest.raises(ValidationError):
         VariantDescription("invalid_data")  # type: ignore[arg-type]
@@ -259,7 +259,7 @@ def test_variantdescription_invalid_data():
         VariantDescription([invalid_vprop])  # type: ignore[list-item]
 
 
-def test_variantdescription_duplicate_data():
+def test_variantdescription_duplicate_data() -> None:
     # Test that duplicate VariantProperty instances are removed
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -268,7 +268,7 @@ def test_variantdescription_duplicate_data():
         _ = VariantDescription([vprop1, vprop1])
 
 
-def test_variantdescription_partial_duplicate_data():
+def test_variantdescription_partial_duplicate_data() -> None:
     # Test that duplicate VariantProperty instances are removed
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -280,7 +280,7 @@ def test_variantdescription_partial_duplicate_data():
         _ = VariantDescription([vprop1, vprop2])
 
 
-def test_variantdescription_sorted_data():
+def test_variantdescription_sorted_data() -> None:
     # Ensure that the data is sorted by namespace, feature, value
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -300,7 +300,7 @@ def test_variantdescription_sorted_data():
     assert vdesc.properties == sorted_vprops
 
 
-def test_variantdescription_hexdigest():
+def test_variantdescription_hexdigest() -> None:
     # Ensure that the hexdigest property works correctly
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
@@ -321,7 +321,7 @@ def test_variantdescription_hexdigest():
     assert vdesc.hexdigest == expected_hexdigest
 
 
-def test_variantdescription_hexdigest_adjacent_strings():
+def test_variantdescription_hexdigest_adjacent_strings() -> None:
     assert (
         VariantDescription(
             [
@@ -338,7 +338,7 @@ def test_variantdescription_hexdigest_adjacent_strings():
     )
 
 
-def test_variantdescription_serialization():
+def test_variantdescription_serialization() -> None:
     vprop = VariantProperty(namespace="provider", feature="feature", value="value")
     vdesc = VariantDescription(properties=[vprop])
 
@@ -351,7 +351,7 @@ def test_variantdescription_serialization():
     ]
 
 
-def test_variantdescription_deserialization():
+def test_variantdescription_deserialization() -> None:
     data = [
         {
             "namespace": "provider",
@@ -385,7 +385,7 @@ def test_variantdescription_deserialization():
         ("cyberdyne_systems", "version", "10.1.4"),
     ],
 )
-def test_fuzzy_variantprop(namespace, feature, value):
+def test_fuzzy_variantprop(namespace: str, feature: str, value: str) -> None:
     # Fuzzy test for random combinations of VariantProperty
     variant = VariantProperty(namespace=namespace, feature=feature, value=value)
     assert variant.namespace == namespace
@@ -432,7 +432,7 @@ def test_fuzzy_variantprop(namespace, feature, value):
         ),
     ],
 )
-def test_fuzzy_variantdescription(vprop: list[VariantProperty]):
+def test_fuzzy_variantdescription(vprop: list[VariantProperty]) -> None:
     # Fuzzy test for random combinations of VariantDescription
     vdesc = VariantDescription(vprop)
     assert isinstance(vdesc.properties, list)
@@ -460,6 +460,6 @@ def test_fuzzy_variantdescription(vprop: list[VariantProperty]):
         ),
     )
 )
-def test_random_hexdigest(vdesc: VariantDescription):
+def test_random_hexdigest(vdesc: VariantDescription) -> None:
     assert isinstance(vdesc.hexdigest, str)
     assert len(vdesc.hexdigest) == VARIANT_HASH_LEN

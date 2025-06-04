@@ -114,7 +114,7 @@ def _unmake_variant(
                         )
                         for line in input_file:
                             rec_filename, sha256, size = line.split(b",")
-                            if rec_filename != variant_dist_info_path:
+                            if rec_filename.decode("utf-8") != variant_dist_info_path:
                                 output_file.write(line)
 
     logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())

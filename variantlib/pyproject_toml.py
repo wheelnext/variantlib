@@ -20,6 +20,7 @@ from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
+from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
@@ -56,7 +57,7 @@ class VariantPyProjectToml(VariantMetadata):
         with path.open("rb") as f:
             return cls(tomllib.load(f))
 
-    def _process(self, variant_table: dict[str, dict[str, dict[str, Any]]]) -> None:
+    def _process(self, variant_table: dict[str, VariantInfoJsonDict]) -> None:
         validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)
 
         with validator.get(PYPROJECT_TOML_DEFAULT_PRIO_KEY, dict[str, Any], {}):

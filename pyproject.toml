@@ -52,6 +52,7 @@ test = [
     "pytest-xdist>=3.7.0,<4.0.0",
     "virtualenv>=20.0.0,<21.0.0",
     "tomlkit>=0.13,<0.14",
+    "trycast==1.2.1",
     "uv>=0.7,<0.8",
 ]
 
@@ -117,6 +118,7 @@ exclude = [
   "dist",
   "tests",
 ]
+enable_incomplete_feature = ["InlineTypedDict"]
 check_untyped_defs = true
 disable_error_code = "method-assign"
 disallow_untyped_defs = true

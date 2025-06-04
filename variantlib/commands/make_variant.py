@@ -196,7 +196,7 @@ def _make_variant(
                             new_line = line
                             rec_filename, sha256, size = line.split(b",")
                             # Skip existing hash for the discarded copy.
-                            if rec_filename == metadata_file_path:
+                            if rec_filename.decode("utf-8") == metadata_file_path:
                                 continue
                             output_file.write(new_line)
 

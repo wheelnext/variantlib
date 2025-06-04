@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -15,7 +17,7 @@ from variantlib.models.variant import VariantProperty
 # ======================== VariantFeatureConfig ======================== #
 
 
-def test_vfeat_config_creation_valid():
+def test_vfeat_config_creation_valid() -> None:
     """Test valid creation of VariantFeatureConfig."""
     vfeat_config = VariantFeatureConfig(
         name="attr_name_a", values=["7", "4", "8", "12"]
@@ -24,7 +26,7 @@ def test_vfeat_config_creation_valid():
     assert vfeat_config.values == ["7", "4", "8", "12"]
 
 
-def test_provider_config_creation_valid():
+def test_provider_config_creation_valid() -> None:
     """Test valid creation of ProviderConfig."""
     vfeat_config1 = VariantFeatureConfig(
         name="attr_name_a", values=["7", "4", "8", "12"]
@@ -42,7 +44,7 @@ def test_provider_config_creation_valid():
     assert provider_config.configs[1].name == "attr_name_b"
 
 
-def test_duplicate_vfeat_config():
+def test_duplicate_vfeat_config() -> None:
     """Test that a duplicate name raises a ValueError in ProviderConfig."""
     vfeat_config_1 = VariantFeatureConfig(
         name="attr_name_a", values=["7", "4", "8", "12"]
@@ -57,7 +59,7 @@ def test_duplicate_vfeat_config():
         )
 
 
-def test_empty_values_list_in_vfeat_config():
+def test_empty_values_list_in_vfeat_config() -> None:
     """Test VariantFeatureConfig creation with empty values."""
     with pytest.raises(
         ValidationError, match="List must have at least 1 elements, got 0"
@@ -65,27 +67,27 @@ def test_empty_values_list_in_vfeat_config():
         _ = VariantFeatureConfig(name="attr_name_a", values=[])
 
 
-def test_single_item_values_list_in_vfeat_config():
+def test_single_item_values_list_in_vfeat_config() -> None:
     """Test VariantFeatureConfig creation with a single value."""
     vfeat_config = VariantFeatureConfig(name="attr_name_a", values=["7"])
     assert vfeat_config.name == "attr_name_a"
     assert vfeat_config.values == ["7"]
 
 
-def test_duplicate_values_in_vfeat_config():
+def test_duplicate_values_in_vfeat_config() -> None:
     """Test that duplicate values in VariantFeatureConfig do not raise an error."""
     with pytest.raises(ValidationError, match="Duplicate value found: `7` in list"):
         _ = VariantFeatureConfig(name="attr_name_a", values=["7", "7", "8", "12"])
 
 
-def test_invalid_name_type_in_vfeat_config():
+def test_invalid_name_type_in_vfeat_config() -> None:
     """Test an invalid name - VariantFeatureConfig raises a ValidationError."""
     with pytest.raises(ValidationError):
         # Expecting string for `name`
         VariantFeatureConfig(name=1, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
 
 
-def test_invalid_values_type_in_vfeat_config():
+def test_invalid_values_type_in_vfeat_config() -> None:
     """Test invalid values - VariantFeatureConfig raises a ValidationError."""
     with pytest.raises(ValidationError):
         VariantFeatureConfig(
@@ -94,19 +96,19 @@ def test_invalid_values_type_in_vfeat_config():
         )  # Expecting a list for `values`
 
 
-def test_vfeat_config_invalid_values_type():
+def test_vfeat_config_invalid_values_type() -> None:
     """Test a invalid values VariantFeatureConfig raises a ValidationError."""
     with pytest.raises(ValidationError):
         VariantFeatureConfig(name="attr_name_a", values="invalid_values")  # type: ignore[arg-type]
 
 
-def test_vfeat_config_non_string_name():
+def test_vfeat_config_non_string_name() -> None:
     """Test that non-string name in VariantFeatureConfig raise an error."""
     with pytest.raises(ValidationError):
         VariantFeatureConfig(name=12345, values=["7", "4", "8", "12"])  # type: ignore[arg-type]
 
 
-def test_name_config_repr():
+def test_name_config_repr() -> None:
     """Test the __repr__ method of VariantFeatureConfig."""
     vfeat_config = VariantFeatureConfig(
         name="attr_name_a", values=["7", "4", "8.4.3", "12.1"]
@@ -117,7 +119,7 @@ def test_name_config_repr():
     assert repr(vfeat_config) == expected_repr
 
 
-def test_failing_regex_name():
+def test_failing_regex_name() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantFeatureConfig(name="", values=["7", "4", "8", "12"])
 
@@ -126,7 +128,7 @@ def test_failing_regex_name():
             _ = VariantFeatureConfig(name=f"name{c}value", values=["7", "4", "8", "12"])
 
 
-def test_failing_regex_value():
+def test_failing_regex_value() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantFeatureConfig(name="name", values=[""])
 
@@ -138,7 +140,7 @@ def test_failing_regex_value():
 # ======================== ProviderConfig ======================== #
 
 
-def test_provider_config_invalid_namespace_type():
+def test_provider_config_invalid_namespace_type() -> None:
     """Test that an invalid namespace type raises a validation error."""
     with pytest.raises(ValidationError):
         ProviderConfig(
@@ -149,7 +151,7 @@ def test_provider_config_invalid_namespace_type():
         )
 
 
-def test_provider_config_invalid_configs_type():
+def test_provider_config_invalid_configs_type() -> None:
     """Test that an invalid configs type raises a validation error."""
     with pytest.raises(ValidationError):
         ProviderConfig(
@@ -158,7 +160,7 @@ def test_provider_config_invalid_configs_type():
         )
 
 
-def test_provider_config_invalid_name_type_in_configs():
+def test_provider_config_invalid_name_type_in_configs() -> None:
     """Test that invalid `VariantFeatureConfig` inside `ProviderConfig` raises a
     ValidationError."""
     with pytest.raises(ValidationError):
@@ -168,7 +170,7 @@ def test_provider_config_invalid_name_type_in_configs():
         )
 
 
-def test_empty_provider_config():
+def test_empty_provider_config() -> None:
     """Test creation of ProviderConfig with an empty list of VariantFeatureConfigs."""
     with pytest.raises(
         ValidationError, match="List must have at least 1 elements, got 0"
@@ -176,7 +178,7 @@ def test_empty_provider_config():
         _ = ProviderConfig(namespace="provider_name", configs=[])
 
 
-def test_provider_config_invalid_vfeat_config_type():
+def test_provider_config_invalid_vfeat_config_type() -> None:
     """Test that invalid `VariantFeatureConfig` types within ProviderConfig raise an
     error."""
     from types import SimpleNamespace
@@ -191,7 +193,7 @@ def test_provider_config_invalid_vfeat_config_type():
         )
 
 
-def test_provider_config_repr():
+def test_provider_config_repr() -> None:
     """Test the __repr__ method of ProviderConfig."""
     vfeat_config_1 = VariantFeatureConfig(
         name="attr_name_a", values=["7", "4", "8", "12"]
@@ -211,7 +213,7 @@ def test_provider_config_repr():
     assert repr(provider_config) == expected_repr
 
 
-def test_to_list_of_properties():
+def test_to_list_of_properties() -> None:
     provider_cfg = ProviderConfig(
         namespace="ns",
         configs=[
@@ -236,16 +238,18 @@ def test_to_list_of_properties():
 
 
 @pytest.fixture
-def valid_namespace():
+def valid_namespace() -> Literal["namespace"]:
     return "namespace"
 
 
 @pytest.fixture
-def valid_package_name():
+def valid_package_name() -> Literal["package_name"]:
     return "package_name"
 
 
-def test_provider_package_init(valid_namespace, valid_package_name):
+def test_provider_package_init(
+    valid_namespace: Literal["namespace"], valid_package_name: Literal["package_name"]
+) -> None:
     provider_package = ProviderPackage(
         namespace=valid_namespace, package_name=valid_package_name
     )
@@ -267,7 +271,7 @@ def test_provider_package_init(valid_namespace, valid_package_name):
         | st.characters(min_codepoint=123, max_codepoint=127)
     ),
 )
-def test_provider_package_init_invalid(namespace, package_name):
+def test_provider_package_init_invalid(namespace: str, package_name: str) -> None:
     with pytest.raises(ValidationError):
         ProviderPackage(namespace=namespace, package_name=package_name)
 
@@ -276,7 +280,7 @@ def test_provider_package_init_invalid(namespace, package_name):
     namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
     package_name=st.from_regex(VALIDATION_PYTHON_PACKAGE_NAME_REGEX, fullmatch=True),
 )
-def test_provider_package(namespace: str, package_name: str):
+def test_provider_package(namespace: str, package_name: str) -> None:
     provider_package = ProviderPackage(namespace=namespace, package_name=package_name)
     assert provider_package.namespace == namespace
     assert provider_package.package_name == package_name

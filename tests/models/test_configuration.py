@@ -12,7 +12,7 @@ from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
 
-def test_default_configuration():
+def test_default_configuration() -> None:
     config = VariantConfiguration.default()
     assert config.namespace_priorities == []
     assert config.feature_priorities == []
@@ -43,7 +43,7 @@ def test_default_configuration():
         },
     ],
 )
-def test_from_toml_config(config_params: dict[str, list[str]]):
+def test_from_toml_config(config_params: dict[str, list[str]]) -> None:
     _ = VariantConfiguration.from_toml_config(
         namespace_priorities=config_params["namespaces"],
         feature_priorities=config_params["features"],
@@ -52,7 +52,7 @@ def test_from_toml_config(config_params: dict[str, list[str]]):
 
 
 @given(st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)))
-def test_namespace_priorities_validation(namespaces: list[str]):
+def test_namespace_priorities_validation(namespaces: list[str]) -> None:
     config = VariantConfiguration(namespace_priorities=namespaces)
     assert config.namespace_priorities == namespaces
 
@@ -69,7 +69,7 @@ def test_namespace_priorities_validation(namespaces: list[str]):
 )
 def test_feature_priorities_validation(
     namespaces: list[str], features: list[VariantFeature]
-):
+) -> None:
     config = VariantConfiguration(
         namespace_priorities=namespaces, feature_priorities=features
     )
@@ -98,7 +98,7 @@ def test_property_priorities_validation(
     namespaces: list[str],
     features: list[VariantFeature],
     properties: list[VariantProperty],
-):
+) -> None:
     config = VariantConfiguration(
         namespace_priorities=namespaces,
         feature_priorities=features,

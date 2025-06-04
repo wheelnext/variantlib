@@ -61,11 +61,7 @@ class VariantPropertyType(Protocol):
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
-    @property
-    @abstractmethod
-    def namespace(self) -> str:
-        """Get provider namespace"""
-        raise NotImplementedError
+    namespace: str
 
     @abstractmethod
     def get_all_configs(self) -> list[VariantFeatureConfigType]:

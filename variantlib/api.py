@@ -8,6 +8,7 @@ import pathlib
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.constants import VariantsJsonDict
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
@@ -29,6 +30,7 @@ __all__ = [
     "VariantDescription",
     "VariantFeatureConfig",
     "VariantProperty",
+    "VariantValidationResult",
     "get_variant_hashes_by_priority",
     "make_variant_dist_info",
     "validate_variant",
@@ -37,7 +39,7 @@ __all__ = [
 
 def get_variant_hashes_by_priority(
     *,
-    variants_json: dict[str, VariantDescription] | VariantsJson,
+    variants_json: VariantsJsonDict | VariantsJson,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,

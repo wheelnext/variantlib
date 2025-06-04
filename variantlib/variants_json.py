@@ -25,6 +25,8 @@ from variantlib.constants import VARIANTS_JSON_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VariantInfoJsonDict
+from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
@@ -32,9 +34,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.validators.keytracking import KeyTrackingValidator
-
-# Type Alias to ease type checking
-VariantDict = dict[str, dict[str, Any]]
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -49,9 +48,7 @@ else:
 class VariantsJson(VariantMetadata):
     variants: dict[str, VariantDescription] = field(default_factory=dict)
 
-    def __init__(
-        self, variants_json: dict[str, VariantDescription] | VariantMetadata
-    ) -> None:
+    def __init__(self, variants_json: VariantsJsonDict | VariantMetadata) -> None:
         """Init from pre-read ``variants.json`` data or another class"""
 
         if isinstance(variants_json, VariantMetadata):
@@ -138,12 +135,12 @@ class VariantsJson(VariantMetadata):
                         f"Found: {provider_info.plugin_api!r}"
                     )
 
-    def _process(self, variant_table: dict[str, VariantDescription]) -> None:
-        validator = KeyTrackingValidator(None, variant_table)
+    def _process(self, variant_table: VariantsJsonDict) -> None:
+        validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]
 
         with validator.get(
             VARIANTS_JSON_VARIANT_DATA_KEY,
-            dict[str, VariantDict],
+            dict[str, VariantInfoJsonDict],
         ) as variants:
             validator.list_matches_re(VALIDATION_VARIANT_HASH_REGEX)
             variant_hashes = list(variants.keys())
@@ -151,7 +148,7 @@ class VariantsJson(VariantMetadata):
             for variant_hash in variant_hashes:
                 with validator.get(
                     variant_hash,
-                    VariantDict,
+                    VariantInfoJsonDict,
                     ignore_subkeys=True,
                 ) as packed_vdesc:
                     vdesc = VariantDescription.from_dict(packed_vdesc)

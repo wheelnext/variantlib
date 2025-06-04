@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import platformdirs
 import pytest
@@ -16,15 +17,18 @@ from variantlib.models.configuration import VariantConfiguration as Configuratio
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
-def test_reset():
+
+def test_reset() -> None:
     VariantConfiguration._config = ConfigurationModel.default()  # noqa: SLF001
     assert VariantConfiguration._config is not None  # noqa: SLF001
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
 
 
-def test_get_configuration_files():
+def test_get_configuration_files() -> None:
     get_configuration_files.cache_clear()
     config_files = get_configuration_files()
     assert config_files[ConfigEnvironments.LOCAL] == Path.cwd() / CONFIG_FILENAME
@@ -49,7 +53,9 @@ def test_get_configuration_files():
 
 
 @pytest.mark.skipif(sys.platform in ("darwin", "win32"), reason="unix-specific")
-def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_get_configuration_files_xdg(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
     monkeypatch.setenv("XDG_CONFIG_DIRS", "/system-config:/second-config")
@@ -65,7 +71,9 @@ def test_get_configuration_files_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
 
 @pytest.mark.skipif(sys.platform in ("darwin", "win32"), reason="unix-specific")
-def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_get_configuration_files_unix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
     monkeypatch.setenv("HOME", "/home/mocked-user")
@@ -84,7 +92,9 @@ def test_get_configuration_files_unix(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific")
-def test_get_configuration_files_macos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_get_configuration_files_macos(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sys, "prefix", "/virtual-env")
     monkeypatch.setenv("HOME", "/home/mocked-user")
@@ -102,7 +112,7 @@ def test_get_configuration_files_macos(tmp_path: Path, monkeypatch: pytest.Monke
     }
 
 
-def test_get_default_config_with_no_file(mocker):
+def test_get_default_config_with_no_file(mocker: MockerFixture) -> None:
     mocker.patch("variantlib.configuration.get_configuration_files").return_value = {
         ConfigEnvironments.LOCAL: Path("/nonexistent/config.toml"),
         ConfigEnvironments.VIRTUALENV: Path("/nonexistent/config.toml"),
@@ -113,7 +123,7 @@ def test_get_default_config_with_no_file(mocker):
     assert config == ConfigurationModel.default()
 
 
-def test_get_config_from_file(mocker, tmp_path: Path):
+def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
     data = {
         "property_priorities": [
             "fictional_hw::architecture::mother",
@@ -164,7 +174,7 @@ def test_get_config_from_file(mocker, tmp_path: Path):
         assert config.namespace_priorities == data["namespace_priorities"]
 
 
-def test_class_properties_with_default(mocker):
+def test_class_properties_with_default(mocker: MockerFixture) -> None:
     mocker.patch(
         "variantlib.configuration.VariantConfiguration.get_config_file"
     ).side_effect = FileNotFoundError
