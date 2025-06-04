@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -473,25 +474,24 @@ def test_merge_variants() -> None:
         "feature": ["b :: b"],
         "property": ["b :: b :: b"],
     }
+
     for key in json_a["default-priorities"]:
-        json_b["default-priorities"][key] = overrides[key]  # type: ignore[literal-required]
+        _json_data = copy.deepcopy(json_b)
+        _json_data["default-priorities"][key] = overrides[key]  # type: ignore[literal-required]
         with pytest.raises(ValidationError, match=rf"Inconsistency in '{key}"):
-            v1.merge(VariantsJson(json_b))
-        json_b["default-priorities"][key] = json_a["default-priorities"][key]  # type: ignore[literal-required]
+            v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
-    del json_b["providers"]["b"]["enable-if"]
+    _json_data = copy.deepcopy(json_b)
+    del _json_data["providers"]["b"]["enable-if"]
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['b'\].enable_if"
     ):
-        v1.merge(VariantsJson(json_b))
+        v1.merge(VariantsJson(_json_data))
 
-    json_b["providers"]["b"]["enable-if"] = json_a["providers"]["b"]["enable-if"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
-    json_b["providers"]["a"]["plugin-api"] = "test:Test"
-
+    _json_data = copy.deepcopy(json_b)
+    _json_data["providers"]["a"]["plugin-api"] = "test:Test"
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
     ):
-        v1.merge(VariantsJson(json_b))
-
-    json_b["providers"]["a"]["plugin-api"] = json_a["providers"]["a"]["plugin-api"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        v1.merge(VariantsJson(_json_data))
