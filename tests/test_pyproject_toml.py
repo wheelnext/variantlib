@@ -280,7 +280,7 @@ def test_missing_namespace_priority() -> None:
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
         rf"{PYPROJECT_TOML_NAMESPACE_KEY} must specify the same namespaces as "
         rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY} "
-        r"table; currently: set\(\) vs\. \{'ns'\}",
+        r"keys; currently: set\(\) vs\. \{'ns'\}",
     ):
         VariantPyProjectToml(
             {
@@ -302,7 +302,7 @@ def test_missing_namespace_provider() -> None:
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}\."
         rf"{PYPROJECT_TOML_NAMESPACE_KEY} must specify the same namespaces as "
         rf"{PYPROJECT_TOML_TOP_KEY}\.{PYPROJECT_TOML_PROVIDER_DATA_KEY} "
-        r"table; currently: \{'ns'\} vs\. set\(\)",
+        r"keys; currently: \{'ns'\} vs\. set\(\)",
     ):
         VariantPyProjectToml(
             {

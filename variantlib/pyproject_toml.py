@@ -108,11 +108,20 @@ class VariantPyProjectToml(VariantMetadata):
                         plugin_api=provider_plugin_api,
                     )
 
-        if set(self.namespace_priorities) != set(self.providers.keys()):
+        all_providers = set(self.providers.keys())
+        all_providers_key = ".".join(
+            [*validator.keys, PYPROJECT_TOML_PROVIDER_DATA_KEY]
+        )
+        namespace_prios_key = ".".join(
+            [
+                *validator.keys,
+                PYPROJECT_TOML_DEFAULT_PRIO_KEY,
+                PYPROJECT_TOML_NAMESPACE_KEY,
+            ]
+        )
+        if set(self.namespace_priorities) != all_providers:
             raise ValidationError(
-                f"{PYPROJECT_TOML_TOP_KEY}.{PYPROJECT_TOML_DEFAULT_PRIO_KEY}."
-                f"{PYPROJECT_TOML_NAMESPACE_KEY} must specify the same namespaces "
-                f"as {PYPROJECT_TOML_TOP_KEY}.{PYPROJECT_TOML_PROVIDER_DATA_KEY} "
-                f"table; currently: {set(self.namespace_priorities)} vs. "
-                f"{set(self.providers.keys())}"
+                f"{namespace_prios_key} must specify the same namespaces "
+                f"as {all_providers_key} keys; currently: "
+                f"{set(self.namespace_priorities)} vs. {all_providers}"
             )
