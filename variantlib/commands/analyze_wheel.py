@@ -9,7 +9,6 @@ import zipfile
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.constants import METADATA_VARIANT_PROPERTY_HEADER
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.variants_json import VariantsJson
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 def pretty_print(vdesc: VariantDescription) -> str:
     result_str = f"{'#' * 30} Variant: `{vdesc.hexdigest}` {'#' * 29}"
     for vprop in vdesc.properties:
-        result_str += f"\n{METADATA_VARIANT_PROPERTY_HEADER}: {vprop.to_str()}"
+        result_str += f"\n{vprop.to_str()}"
     result_str += f"\n{'#' * 80}\n"
     return result_str
 

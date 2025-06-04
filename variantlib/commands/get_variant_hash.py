@@ -6,7 +6,6 @@ import sys
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.constants import METADATA_VARIANT_HASH_HEADER
 
 
 def get_variant_hash(args: list[str]) -> None:
@@ -38,4 +37,4 @@ def _print_variant_hash(properties: list[VariantProperty]) -> None:
     # Transform properties into a VariantDescription
     vdesc = VariantDescription(properties=properties)
 
-    sys.stdout.write(f"{METADATA_VARIANT_HASH_HEADER}: {vdesc.hexdigest}\n")
+    sys.stdout.write(f"{vdesc.hexdigest}\n")

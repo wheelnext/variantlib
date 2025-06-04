@@ -58,8 +58,8 @@ def test_analyze_wheel_variant(
         capsys.readouterr().out
         == """\
 ############################## Variant: `5d8be4b9` #############################
-Variant-Property: installable_plugin :: feat1 :: val1c
-Variant-Property: installable_plugin :: feat2 :: val2b
+installable_plugin :: feat1 :: val1c
+installable_plugin :: feat2 :: val2b
 ################################################################################
 """
     )
