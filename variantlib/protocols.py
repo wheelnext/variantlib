@@ -11,12 +11,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Protocol
-from typing import TypeAlias
 from typing import runtime_checkable
 
-VariantNamespace: TypeAlias = str
-VariantFeatureName: TypeAlias = str
-VariantFeatureValue: TypeAlias = str
+# Type aliases for readability
+VariantNamespace = str
+VariantFeatureName = str
+VariantFeatureValue = str
 
 
 @runtime_checkable
