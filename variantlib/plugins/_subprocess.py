@@ -8,16 +8,10 @@ from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
 
-from _variantlib_protocols import PluginType  # type: ignore[import-not-found]
-from _variantlib_protocols import (  # pyright: ignore[reportMissingImports]
-    VariantFeatureConfigType,
-)
-from _variantlib_validators_base import (  # type: ignore[import-not-found]
-    ValidationError,
-)
-from _variantlib_validators_base import (  # pyright: ignore[reportMissingImports]
-    validate_type,
-)
+from variantlib.protocols import PluginType
+from variantlib.protocols import VariantFeatureConfigType
+from variantlib.validators.base import ValidationError
+from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator

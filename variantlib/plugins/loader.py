@@ -121,7 +121,13 @@ class BasePluginLoader:
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
             script = Path(temp_dir) / "loader.py"
             script.write_bytes(
-                (importlib.resources.files(__package__) / "_subprocess.py").read_bytes()
+                (importlib.resources.files(__package__) / "_subprocess.py")
+                .read_bytes()
+                .replace(b"from variantlib.protocols", b"from _variantlib_protocols")
+                .replace(
+                    b"from variantlib.validators.base",
+                    b"from _variantlib_validators_base",
+                )
             )
             (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
                 (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
