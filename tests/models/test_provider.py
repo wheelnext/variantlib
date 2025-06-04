@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -237,19 +235,9 @@ def test_to_list_of_properties() -> None:
 # ======================== ProviderPackage ======================== #
 
 
-@pytest.fixture
-def valid_namespace() -> Literal["namespace"]:
-    return "namespace"
-
-
-@pytest.fixture
-def valid_package_name() -> Literal["package_name"]:
-    return "package_name"
-
-
-def test_provider_package_init(
-    valid_namespace: Literal["namespace"], valid_package_name: Literal["package_name"]
-) -> None:
+def test_provider_package_init() -> None:
+    valid_namespace = "namespace"
+    valid_package_name = "package_name"
     provider_package = ProviderPackage(
         namespace=valid_namespace, package_name=valid_package_name
     )
