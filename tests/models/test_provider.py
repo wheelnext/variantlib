@@ -1,14 +1,9 @@
 from __future__ import annotations
 
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
 
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PYTHON_PACKAGE_NAME_REGEX
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import ProviderPackage
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantProperty
 
@@ -230,46 +225,3 @@ def test_to_list_of_properties() -> None:
         VariantProperty("ns", "c", "c1"),
         VariantProperty("ns", "b", "b1"),
     ]
-
-
-# ======================== ProviderPackage ======================== #
-
-
-def test_provider_package_init() -> None:
-    valid_namespace = "namespace"
-    valid_package_name = "package_name"
-    provider_package = ProviderPackage(
-        namespace=valid_namespace, package_name=valid_package_name
-    )
-    assert provider_package.namespace == valid_namespace
-    assert provider_package.package_name == valid_package_name
-
-
-@given(
-    namespace=st.text(
-        alphabet=st.characters(min_codepoint=0, max_codepoint=32)
-        | st.characters(min_codepoint=58, max_codepoint=64)
-        | st.characters(min_codepoint=91, max_codepoint=96)
-        | st.characters(min_codepoint=123, max_codepoint=127)
-    ),
-    package_name=st.text(
-        alphabet=st.characters(min_codepoint=0, max_codepoint=32)
-        | st.characters(min_codepoint=58, max_codepoint=64)
-        | st.characters(min_codepoint=91, max_codepoint=96)
-        | st.characters(min_codepoint=123, max_codepoint=127)
-    ),
-)
-def test_provider_package_init_invalid(namespace: str, package_name: str) -> None:
-    with pytest.raises(ValidationError):
-        ProviderPackage(namespace=namespace, package_name=package_name)
-
-
-@given(
-    namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
-    package_name=st.from_regex(VALIDATION_PYTHON_PACKAGE_NAME_REGEX, fullmatch=True),
-)
-def test_provider_package(namespace: str, package_name: str) -> None:
-    provider_package = ProviderPackage(namespace=namespace, package_name=package_name)
-    assert provider_package.namespace == namespace
-    assert provider_package.package_name == package_name
-    assert provider_package.to_str() == f"{namespace}: {package_name}"
