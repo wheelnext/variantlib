@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
@@ -19,8 +20,13 @@ from variantlib.models.variant import VariantValidationResult
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
+from variantlib.utils import aggregate_priority_dicts
 from variantlib.utils import aggregate_priority_lists
 from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantNamespace
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +49,10 @@ def get_variant_hashes_by_priority(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    namespace_priorities: list[str] | None = None,
-    feature_priorities: list[str] | None = None,
+    namespace_priorities: list[VariantNamespace] | None = None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
     property_priorities: list[str] | None = None,
-    forbidden_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
@@ -68,12 +74,6 @@ def get_variant_hashes_by_priority(
                 for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
-
-    _feature_priorities = (
-        None
-        if feature_priorities is None
-        else [VariantFeature.from_str(vfeat) for vfeat in feature_priorities]
-    )
 
     _property_priorities = (
         None
@@ -105,8 +105,8 @@ def get_variant_hashes_by_priority(
                 config.namespace_priorities,
                 variants_json.namespace_priorities,
             ),
-            feature_priorities=aggregate_priority_lists(
-                _feature_priorities,
+            feature_priorities=aggregate_priority_dicts(
+                feature_priorities,
                 config.feature_priorities,
                 variants_json.feature_priorities,
             ),
@@ -186,7 +186,7 @@ def check_variant_supported(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    forbidden_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> bool:

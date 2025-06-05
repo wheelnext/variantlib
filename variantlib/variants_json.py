@@ -67,9 +67,7 @@ class VariantsJson(VariantMetadata):
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
             VARIANT_METADATA_DEFAULT_PRIO_KEY: {
                 VARIANT_METADATA_NAMESPACE_KEY: self.namespace_priorities,
-                VARIANT_METADATA_FEATURE_KEY: [
-                    x.to_str() for x in self.feature_priorities
-                ],
+                VARIANT_METADATA_FEATURE_KEY: self.feature_priorities,
                 VARIANT_METADATA_PROPERTY_KEY: [
                     x.to_str() for x in self.property_priorities
                 ],

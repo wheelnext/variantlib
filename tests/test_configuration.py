@@ -14,7 +14,6 @@ from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
 from variantlib.constants import CONFIG_FILENAME
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
-from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
@@ -129,11 +128,11 @@ def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
             "fictional_hw::architecture::mother",
             "fictional_tech::risk_exposure::25",
         ],
-        "feature_priorities": [
-            "fictional_hw::architecture",
-            "fictional_tech::risk_exposure",
-            "simd_x86_64::feature3",
-        ],
+        "feature_priorities": {
+            "fictional_hw": ["architecture"],
+            "fictional_tech": ["risk_exposure"],
+            "simd_x86_64": ["feature3"],
+        },
         "namespace_priorities": [
             "fictional_hw",
             "fictional_tech",
@@ -153,10 +152,6 @@ def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
             ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
         }
 
-    feature_priorities = [
-        VariantFeature.from_str(f) for f in data["feature_priorities"]
-    ]
-
     property_priorities = [
         VariantProperty.from_str(f) for f in data["property_priorities"]
     ]
@@ -169,7 +164,7 @@ def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
         ).return_value = config_files
 
         config = VariantConfiguration.get_config()
-        assert config.feature_priorities == feature_priorities
+        assert config.feature_priorities == data["feature_priorities"]
         assert config.property_priorities == property_priorities
         assert config.namespace_priorities == data["namespace_priorities"]
 
@@ -186,7 +181,7 @@ def test_class_properties_with_default(mocker: MockerFixture) -> None:
 
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
-    assert VariantConfiguration.feature_priorities == []
+    assert VariantConfiguration.feature_priorities == {}
     assert VariantConfiguration._config is not None  # noqa: SLF001
 
     VariantConfiguration.reset()

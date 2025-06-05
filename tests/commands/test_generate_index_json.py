@@ -26,7 +26,7 @@ def test_generate_index_json(
     ) == {
         "$schema": "https://variants-schema.wheelnext.dev/",
         "default-priorities": {
-            "feature": [],
+            "feature": {},
             "namespace": [
                 "installable_plugin",
             ],

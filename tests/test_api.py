@@ -319,7 +319,7 @@ def test_make_variant_dist_info(
         "$schema": "https://variants-schema.wheelnext.dev/",
         "default-priorities": {
             "namespace": [],
-            "feature": [],
+            "feature": {},
             "property": [],
         },
         "providers": {},
@@ -360,7 +360,10 @@ def test_make_variant_dist_info(
     if pyproject_toml is PYPROJECT_TOML:
         expected["default-priorities"].update(
             {
-                "feature": ["ns2 :: f1", "ns1 :: f2"],
+                "feature": {
+                    "ns1": ["f2"],
+                    "ns2": ["f1", "f2"],
+                },
                 "property": ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"],
             }
         )

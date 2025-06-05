@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import contextlib
 import random
 from functools import cached_property
+from typing import TYPE_CHECKING
 from typing import Any
 
 import pytest
@@ -20,6 +20,10 @@ from variantlib.resolver.filtering import filter_variants_by_property
 from variantlib.resolver.filtering import remove_duplicates
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
+
+if TYPE_CHECKING:
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantNamespace
 
 
 def deep_diff(
@@ -493,7 +497,9 @@ def test_sort_and_filter_supported_variants(
 
     # Second Priority: Vprop4 and Vprop5 are prioritized priority (same feature)
     #                  With vprop4 > vprop5 given that vprop4 is first in the list
-    prio_vfeats: list[VariantFeature] = [vprop4.feature_object]
+    prio_vfeats: dict[VariantNamespace, list[VariantFeatureName]] = {
+        vprop4.namespace: [vprop4.feature]
+    }
 
     # Third Priority: namespaces
     #                 vprop3, vprop4, vprop5, vprop6 [tyrell_corp] > vprop1, vprop2 ["omnicorp"]  # noqa: E501
@@ -570,7 +576,7 @@ def test_sort_and_filter_supported_variants(
 
 
 @pytest.mark.parametrize(
-    ("vdescs", "vprops"),
+    ("vdescs", "feature_priorities"),
     [
         (
             [VariantDescription([VariantProperty("a", "b", "c")])],
@@ -578,23 +584,19 @@ def test_sort_and_filter_supported_variants(
         ),
         (
             [VariantDescription([VariantProperty("a", "b", "c")])],
-            [VariantFeature("not_a", "variantproperty")],
+            {"a": [VariantFeature("not_a", "variantproperty")]},
         ),
-        ("not a list", VariantProperty("a", "b", "c")),
-        (["not a `VariantDescription`"], VariantProperty("a", "b", "c")),
+        ("not a list", {"a": ["a"]}),
+        (["not a `VariantDescription`"], {"a": ["a"]}),
     ],
 )
 def test_sort_and_filter_supported_variants_validation_errors(
-    vdescs: list[VariantDescription], vprops: list[VariantProperty]
+    vdescs: list[VariantDescription], feature_priorities: Any
 ) -> None:
-    feature_priorities = []
-    with contextlib.suppress(TypeError, AttributeError):
-        feature_priorities = list({vprop.feature_object for vprop in vprops})
-
     with pytest.raises(ValidationError):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
-            supported_vprops=vprops,
+            supported_vprops=vprops,  # type: ignore[arg-type]
             feature_priorities=feature_priorities,
         )
 

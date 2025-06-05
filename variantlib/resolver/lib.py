@@ -16,6 +16,9 @@ from variantlib.validators.base import validate_type
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantNamespace
+
 
 def filter_variants(
     vdescs: list[VariantDescription],
@@ -99,10 +102,10 @@ def filter_variants(
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty],
-    namespace_priorities: list[str] | None = None,
-    feature_priorities: list[VariantFeature] | None = None,
+    namespace_priorities: list[VariantNamespace] | None = None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
     property_priorities: list[VariantProperty] | None = None,
-    forbidden_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[VariantFeature] | None = None,
     forbidden_properties: list[VariantProperty] | None = None,
 ) -> list[VariantDescription]:

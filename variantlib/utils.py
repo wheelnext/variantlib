@@ -45,3 +45,24 @@ def aggregate_priority_lists(*lists: list[T] | None) -> list[T]:
         else:
             result.extend(item for item in iter_list if item not in result)
     return result
+
+
+def aggregate_priority_dicts(*dicts: dict[T, list[RT]] | None) -> dict[T, list[RT]]:
+    """
+    Aggregate multiple priority dicts
+
+    Takes multiple priority dicts and aggregates them into a single
+    dicts, with values from the earlier dicts taking precedence
+    over values from the later dicts. Dicts that are None are skipped.
+    """
+
+    result: dict[T, list[RT]] = {}
+    for iter_dict in dicts:
+        if iter_dict is None:
+            continue
+        for key, values in iter_dict.items():
+            if not (ret_value := result.setdefault(key, [])):
+                ret_value.extend(values)
+            else:
+                ret_value.extend(value for value in values if value not in ret_value)
+    return result

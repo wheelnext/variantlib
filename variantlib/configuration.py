@@ -21,8 +21,9 @@ from variantlib.utils import classproperty
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from variantlib.models.variant import VariantFeature
     from variantlib.models.variant import VariantProperty
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantNamespace
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -117,12 +118,12 @@ class VariantConfiguration:
 
     @classproperty
     @check_initialized
-    def namespace_priorities(cls) -> list[str]:  # noqa: N805
+    def namespace_priorities(cls) -> list[VariantNamespace]:  # noqa: N805
         return cls._config.namespace_priorities  # type: ignore[union-attr]
 
     @classproperty
     @check_initialized
-    def feature_priorities(cls) -> list[VariantFeature]:  # noqa: N805
+    def feature_priorities(cls) -> dict[VariantNamespace, list[VariantFeatureName]]:  # noqa: N805
         return cls._config.feature_priorities  # type: ignore[union-attr]
 
     @classproperty

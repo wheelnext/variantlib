@@ -5,7 +5,7 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 from typing import Any
 
-from variantlib.constants import VALIDATION_FEATURE_REGEX
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -20,11 +20,11 @@ from variantlib.constants import VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantNamespace
 
 if TYPE_CHECKING:
-    from variantlib.protocols import VariantNamespace
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
@@ -38,7 +38,9 @@ class ProviderInfo:
 @dataclass
 class VariantMetadata:
     namespace_priorities: list[VariantNamespace] = field(default_factory=list)
-    feature_priorities: list[VariantFeature] = field(default_factory=list)
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] = field(
+        default_factory=dict
+    )
     property_priorities: list[VariantProperty] = field(default_factory=list)
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
 
@@ -47,7 +49,10 @@ class VariantMetadata:
 
         return {
             "namespace_priorities": list(self.namespace_priorities),
-            "feature_priorities": list(self.feature_priorities),
+            "feature_priorities": {
+                namespace: list(feature_priorities)
+                for namespace, feature_priorities in self.feature_priorities.items()
+            },
             "property_priorities": list(self.property_priorities),
             "providers": {
                 namespace: ProviderInfo(
@@ -80,17 +85,23 @@ class VariantMetadata:
     def _process_common_metadata(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_METADATA_DEFAULT_PRIO_KEY, dict[str, Any], {}):
             with validator.get(
-                VARIANT_METADATA_NAMESPACE_KEY, list[str], []
+                VARIANT_METADATA_NAMESPACE_KEY, list[VariantNamespace], []
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
                 self.namespace_priorities = list(namespace_priorities)
             with validator.get(
-                VARIANT_METADATA_FEATURE_KEY, list[str], []
-            ) as feature_priorities:
-                validator.list_matches_re(VALIDATION_FEATURE_REGEX)
-                self.feature_priorities = [
-                    VariantFeature.from_str(x) for x in feature_priorities
-                ]
+                VARIANT_METADATA_FEATURE_KEY,
+                dict[VariantNamespace, list[VariantFeatureName]],
+                {},
+            ) as feature_priorities_dict:
+                validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
+                self.feature_priorities = {}
+                for namespace in feature_priorities_dict:
+                    with validator.get(
+                        namespace, list[VariantFeatureName]
+                    ) as feature_priorities:
+                        validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
+                        self.feature_priorities[namespace] = feature_priorities
             with validator.get(
                 VARIANT_METADATA_PROPERTY_KEY, list[str], []
             ) as property_priorities:

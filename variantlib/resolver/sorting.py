@@ -6,8 +6,9 @@ import sys
 from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_type
 
 logger = logging.getLogger(__name__)
@@ -41,33 +42,31 @@ def get_property_priorities(
 
 def get_feature_priorities(
     vprop: VariantProperty,
-    feature_priorities: list[VariantFeature] | None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None,
 ) -> int:
     """
     Get the feature priority of a `VariantProperty` object.
 
     :param vprop: `VariantProperty` object.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
+    :param feature_priorities: feature priority dict
     :return: Feature priority of the `VariantProperty` object.
     """
     validate_type(vprop, VariantProperty)
 
     if feature_priorities is None:
         return sys.maxsize
-    validate_type(feature_priorities, list[VariantFeature])
-
-    _feature_priorities = [vfeat.feature_hash for vfeat in feature_priorities]
+    validate_type(feature_priorities, dict[VariantNamespace, list[VariantFeatureName]])
 
     # if not present push at the end
     try:
-        return _feature_priorities.index(vprop.feature_hash)
+        return feature_priorities.get(vprop.namespace, []).index(vprop.feature)
     except ValueError:
         return sys.maxsize
 
 
 def get_namespace_priorities(
     vprop: VariantProperty,
-    namespace_priorities: list[str] | None,
+    namespace_priorities: list[VariantNamespace] | None,
 ) -> int:
     """
     Get the namespace priority of a `VariantProperty` object.
@@ -91,35 +90,34 @@ def get_namespace_priorities(
 
 def get_variant_property_priorities_tuple(
     vprop: VariantProperty,
-    namespace_priorities: list[str] | None,
-    feature_priorities: list[VariantFeature] | None,
-    property_priorities: list[VariantProperty] | None,
+    namespace_priorities: list[VariantNamespace] | None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
+    property_priorities: list[VariantProperty] | None = None,
 ) -> tuple[int, int, int]:
     """
     Get the variant property priority of a `VariantProperty` object.
 
     :param vprop: `VariantProperty` object.
-    :param namespace_priorities: ordered list of `str` objects.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
+    :param namespace_priorities: namespace priority list
+    :param feature_priorities: feature priority dict
     :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Variant property priority of the `VariantProperty` object.
     """
     validate_type(vprop, VariantProperty)
 
     if namespace_priorities is not None:
-        validate_type(namespace_priorities, list[str])
+        validate_type(namespace_priorities, list[VariantNamespace])
     if feature_priorities is not None:
-        validate_type(feature_priorities, list[VariantFeature])
+        validate_type(
+            feature_priorities, dict[VariantNamespace, list[VariantFeatureName]]
+        )
     if property_priorities is not None:
         validate_type(property_priorities, list[VariantProperty])
 
     ranking_tuple = (
-        # First Priority
         get_property_priorities(vprop, property_priorities),
-        # Second Priority
-        get_feature_priorities(vprop, feature_priorities),
-        # Third Priority
         get_namespace_priorities(vprop, namespace_priorities),
+        get_feature_priorities(vprop, feature_priorities),
     )
 
     if all(x == sys.maxsize for x in ranking_tuple):
@@ -132,25 +130,27 @@ def get_variant_property_priorities_tuple(
 
 def sort_variant_properties(
     vprops: list[VariantProperty],
-    namespace_priorities: list[str] | None,
-    feature_priorities: list[VariantFeature] | None,
-    property_priorities: list[VariantProperty] | None,
+    namespace_priorities: list[VariantNamespace] | None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
+    property_priorities: list[VariantProperty] | None = None,
 ) -> list[VariantProperty]:
     """
     Sort a list of `VariantProperty` objects based on their priority.
 
     :param vprops: List of `VariantProperty` objects.
-    :param namespace_priorities: ordered list of `str` objects.
-    :param feature_priorities: ordered list of `VariantFeature` objects.
+    :param namespace_priorities: namespace priority list
+    :param feature_priorities: feature priority dict
     :param property_priorities: ordered list of `VariantProperty` objects.
     :return: Sorted list of `VariantProperty` objects.
     """
     validate_type(vprops, list[VariantProperty])
 
     if namespace_priorities is not None:
-        validate_type(namespace_priorities, list[str])
+        validate_type(namespace_priorities, list[VariantNamespace])
     if feature_priorities is not None:
-        validate_type(feature_priorities, list[VariantFeature])
+        validate_type(
+            feature_priorities, dict[VariantNamespace, list[VariantFeatureName]]
+        )
     if property_priorities is not None:
         validate_type(property_priorities, list[VariantProperty])
 

@@ -8,6 +8,7 @@ from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.models.provider import ProviderConfig
+from variantlib.utils import aggregate_priority_dicts
 from variantlib.utils import aggregate_priority_lists
 
 if TYPE_CHECKING:
@@ -167,3 +168,20 @@ def test_aggregate_priority_lists(
     lists: list[list[int] | None], expected: list[int]
 ) -> None:
     assert aggregate_priority_lists(*lists) == expected
+
+
+@pytest.mark.parametrize(
+    ("dicts", "expected"),
+    [
+        ([None, {1: [1, 2], 2: [2, 3]}], {1: [1, 2], 2: [2, 3]}),
+        ([{}, {1: [1, 2], 2: [2, 3]}], {1: [1, 2], 2: [2, 3]}),
+        ([{1: [2], 3: [1]}, {1: [1, 2], 2: [2, 3]}], {1: [2, 1], 2: [2, 3], 3: [1]}),
+        ([{1: [], 3: [1]}, {1: [1, 2], 2: [3]}], {1: [1, 2], 2: [3], 3: [1]}),
+        ([{1: [], 3: [1]}, None, {1: [1, 2], 2: [3]}], {1: [1, 2], 2: [3], 3: [1]}),
+        ([{1: [], 3: [1]}, {1: [2]}, {1: [1, 2], 2: [3]}], {1: [2, 1], 2: [3], 3: [1]}),
+    ],
+)
+def test_aggregate_priority_dict(
+    dicts: list[dict[int, list[int]] | None], expected: dict[int, list[int]]
+) -> None:
+    assert aggregate_priority_dicts(*dicts) == expected
