@@ -26,7 +26,7 @@ repos:
     rev: v0.11.11
     hooks:
       # Linter
-      - id: ruff
+      - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
         exclude: ^tests/artifacts/
       # Formatter
