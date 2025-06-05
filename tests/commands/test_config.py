@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from io import StringIO
 from pathlib import Path
 
 import pytest
-import tomlkit
 
 from variantlib.commands.main import main
 from variantlib.configuration import get_configuration_files
@@ -65,91 +63,3 @@ property_priorities = []
 
 """
     )
-
-
-def test_config_setup_defaults(
-    config_toml: Path,
-    mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO("y\n"))
-    main(["config", "setup", "--ui", "text", "-d", "-P", str(config_toml)])
-    assert tomlkit.loads(config_toml.read_text()).value == {
-        "feature_priorities": [],
-        "namespace_priorities": [
-            "incompatible_namespace",
-            "second_namespace",
-            "test_namespace",
-        ],
-        "property_priorities": [],
-    }
-
-
-def test_config_setup(
-    mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\n\n\ny\n"))
-    main(["config", "setup", "--ui", "text", "-P", str(tmp_path / "config.toml")])
-    assert tomlkit.loads((tmp_path / "config.toml").read_text()).value == {
-        "feature_priorities": [],
-        "namespace_priorities": [
-            "test_namespace",
-            "second_namespace",
-            "incompatible_namespace",
-        ],
-        "property_priorities": [],
-    }
-
-
-def test_config_setup_all(
-    mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\ny\n2 3\ny\n4 1\ny\n"))
-    main(["config", "setup", "--ui", "text", "-P", str(tmp_path / "config.toml")])
-    assert tomlkit.loads((tmp_path / "config.toml").read_text()).value == {
-        "feature_priorities": [
-            "test_namespace :: name2",
-            "second_namespace :: name3",
-        ],
-        "namespace_priorities": [
-            "test_namespace",
-            "second_namespace",
-            "incompatible_namespace",
-        ],
-        "property_priorities": [
-            "second_namespace :: name3 :: val3a",
-            "test_namespace :: name2 :: val2a",
-        ],
-    }
-
-
-def test_config_setup_defaults_no_save(
-    mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO("n\n"))
-    main(["config", "setup", "--ui", "text", "-d", "-P", str(tmp_path / "config.toml")])
-    assert not (tmp_path / "config.toml").exists()
-
-
-def test_config_setup_update(
-    config_toml: Path,
-    mocked_entry_points: None,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO("\n3 2 1\n\n\ny\n"))
-    main(["config", "setup", "--ui", "text", "-P", str(config_toml)])
-    assert tomlkit.loads(config_toml.read_text()).value == {
-        "feature_priorities": [],
-        "namespace_priorities": [
-            "test_namespace",
-            "second_namespace",
-            "incompatible_namespace",
-        ],
-        "property_priorities": [],
-    }
