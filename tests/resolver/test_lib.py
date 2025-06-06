@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import random
 from functools import cached_property
 from typing import Any
@@ -20,6 +19,7 @@ from variantlib.resolver.filtering import filter_variants_by_property
 from variantlib.resolver.filtering import remove_duplicates
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
+from variantlib.resolver.sorting import sort_variant_properties
 
 
 def deep_diff(
@@ -74,19 +74,19 @@ def vprops() -> list[VariantProperty]:
 
     return [
         # -------------------------- Plugin `omnicorp` -------------------------- #
-        # Feature 1: `omnicorp :: feat_a`
+        # 1. Feature 1: `omnicorp :: feat_a`
         VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
-        # Feature 2: `omnicorp :: feat_b`
+        # 2. Feature 2: `omnicorp :: feat_b`
         VariantProperty(namespace="omnicorp", feature="feat_b", value="value"),
         # ------------------------- Plugin `tyrell_corp` ------------------------- #
-        # Feature 1: `tyrell_corp :: feat_a`
+        # 3. Feature 1: `tyrell_corp :: feat_a`
         VariantProperty(namespace="tyrell_corp", feature="feat_a", value="value"),
         # Feature 2: `tyrell_corp :: feat_b`
-        # Property 2.1: `tyrell_corp :: feat_b :: abcde`
+        # 4. Property 2.1: `tyrell_corp :: feat_b :: abcde`
         VariantProperty(namespace="tyrell_corp", feature="feat_b", value="abcde"),
-        # Property 2.2: `tyrell_corp :: feat_b :: efghij`
+        # 5. Property 2.2: `tyrell_corp :: feat_b :: efghij`
         VariantProperty(namespace="tyrell_corp", feature="feat_b", value="efghij"),
-        # Feature 3: `tyrell_corp :: feat_c`
+        # 6. Feature 3: `tyrell_corp :: feat_c`
         VariantProperty(namespace="tyrell_corp", feature="feat_c", value="value"),
     ]
 
@@ -483,21 +483,30 @@ def test_sort_and_filter_supported_variants(
 ) -> None:
     assert len(vprops) == 6
 
-    # Let's remove vprop2 [not supported]
-    vprop1, _, vprop3, vprop4, vprop5, vprop6 = vprops
+    vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ SORTING PARAMETERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-    # Top Priority: Anything that contains `vprop3`
-    prio_vprops: list[VariantProperty] = [vprop3]
+    prio_vprops = {"tyrell_corp": {"feat_b": ["efghij"]}}
 
-    # Second Priority: Vprop4 and Vprop5 are prioritized priority (same feature)
-    #                  With vprop4 > vprop5 given that vprop4 is first in the list
-    prio_vfeats: list[VariantFeature] = [vprop4.feature_object]
+    prio_vfeats = {"tyrell_corp": ["feat_c"]}
 
-    # Third Priority: namespaces
-    #                 vprop3, vprop4, vprop5, vprop6 [tyrell_corp] > vprop1, vprop2 ["omnicorp"]  # noqa: E501
     prio_namespaces = ["NotExistingNamespace", "tyrell_corp", "omnicorp"]
+
+    # Sanity check variant ordering:
+    # 1. vprop6. tyrell_corp :: feat_c
+    # 2. vprop3. tyrell_corp :: feat_a
+    # 3. vprop5. tyrell_corp :: feat_b :: efghij
+    # 4. vprop4. tyrell_corp :: feat_b :: abcde
+    # 5. vprop1. omnicorp :: feat_a
+    # 6. vprop2. omnicorp :: feat_b
+
+    assert sort_variant_properties(
+        vprops=vprops,
+        namespace_priorities=prio_namespaces,
+        feature_priorities=prio_vfeats,
+        property_priorities=prio_vprops,
+    ) == [vprop6, vprop3, vprop5, vprop4, vprop1, vprop2]
 
     # Default Ordering: properties are assumed pre-sorted in features/properties
     #                   vprop1 > vprop2 > vprop3 > vprop4 > vprop5 > vprop6
@@ -509,40 +518,51 @@ def test_sort_and_filter_supported_variants(
 
     # fmt: off
     expected_vdescs = [
-        # ============ A - Everything with vprop3 ============ #
-        # ============ A.1 - Everything with vprop3 & vprop4 ============ #
-        VariantDescription([vprop1, vprop3, vprop4, vprop6]),
-        VariantDescription([vprop3, vprop4, vprop6]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop1, vprop3, vprop4]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop3, vprop4]),
-        # ============ A.2 - Everything with vprop3 & vprop5 ============ #
+        # Effective vdesc order:
+        # 1. Everything with vprop6
+        # 1.1. + vprop3
+        # 1.1.1. + vprop5
         VariantDescription([vprop1, vprop3, vprop5, vprop6]),
-        VariantDescription([vprop3, vprop5, vprop6]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop1, vprop3, vprop5]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop3, vprop5]),
-        # =========== A.4 - Everything with vprop3 & without vprop5/vprop6 =========== #
+        VariantDescription([vprop3, vprop5, vprop6]),
+        # 1.1.2. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, vprop6]),
+        VariantDescription([vprop3, vprop4, vprop6]),
+        # 1.1.3. + vprop1
         VariantDescription([vprop1, vprop3, vprop6]),
-        VariantDescription([vprop3, vprop6]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop1, vprop3]),  # tyrell_corp > omnicorp
-        # =========== A.5 - vprop3 alone =========== #
+        # 1.1.4. vprop6 + vprop3
+        VariantDescription([vprop3, vprop6]),
+        # 1.2. + vprop5
+        VariantDescription([vprop1, vprop5, vprop6]),
+        VariantDescription([vprop5, vprop6]),
+        # 1.3. + vprop4
+        VariantDescription([vprop1, vprop4, vprop6]),
+        VariantDescription([vprop4, vprop6]),
+        # 1.4. + vprop1
+        VariantDescription([vprop1, vprop6]),
+        # 1. sole vprop6
+        VariantDescription([vprop6]),
+
+        # 2. Everything with vprop3
+        # 2.1. + vprop5
+        VariantDescription([vprop1, vprop3, vprop5]),
+        VariantDescription([vprop3, vprop5]),
+        # 2.2. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4]),
+        VariantDescription([vprop3, vprop4]),
+        # 2.3. + vprop1
+        VariantDescription([vprop1, vprop3]),
+        # 2. sole vprop3
         VariantDescription([vprop3]),
 
-        # ============ B - Everything without vprop3 ============ #
-        # ============ B.1 - Everything without vprop3 & with vprop4 ============ #
-        VariantDescription([vprop1, vprop4, vprop6]),
-        VariantDescription([vprop4, vprop6]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop1, vprop4]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop4]),
-
-        # ============ B.2 - Everything without vprop3 & with vprop5 ============ #
-        VariantDescription([vprop1, vprop5, vprop6]),
-        VariantDescription([vprop5, vprop6]),  # tyrell_corp > omnicorp
-        VariantDescription([vprop1, vprop5]),  # tyrell_corp > omnicorp
+        # 3. vprop5
+        VariantDescription([vprop1, vprop5]),
         VariantDescription([vprop5]),
 
-        # == C - Everything without vprop3/vprop4/vprop5 and tyrell_corp > omnicorp == #
-        VariantDescription([vprop1, vprop6]),
-        VariantDescription([vprop6]),
+        # 4. vprop4
+        VariantDescription([vprop1, vprop4]),
+        VariantDescription([vprop4]),
+
+        # 5. sole vprop1
         VariantDescription([vprop1]),
 
         # Null-Variant is never removed and last - Implicitly added
@@ -553,24 +573,23 @@ def test_sort_and_filter_supported_variants(
     # Shuffling the list & creating duplicates
     inputs_vdescs = shuffle_vdescs_with_duplicates(vdescs=vdescs)
 
-    ddiff = deep_diff(
+    assert (
         sort_and_filter_supported_variants(
             vdescs=inputs_vdescs,
             supported_vprops=[vprop1, vprop3, vprop4, vprop5, vprop6],
             property_priorities=prio_vprops,
             feature_priorities=prio_vfeats,
             namespace_priorities=prio_namespaces,
-        ),
-        expected_vdescs,
+        )
+        == expected_vdescs
     )
-    assert ddiff == {}, ddiff
 
 
 # # =================== `Validation Testing` ================== #
 
 
 @pytest.mark.parametrize(
-    ("vdescs", "vprops"),
+    ("vdescs", "feature_priorities"),
     [
         (
             [VariantDescription([VariantProperty("a", "b", "c")])],
@@ -578,23 +597,19 @@ def test_sort_and_filter_supported_variants(
         ),
         (
             [VariantDescription([VariantProperty("a", "b", "c")])],
-            [VariantFeature("not_a", "variantproperty")],
+            {"a": [VariantFeature("not_a", "variantproperty")]},
         ),
-        ("not a list", VariantProperty("a", "b", "c")),
-        (["not a `VariantDescription`"], VariantProperty("a", "b", "c")),
+        ("not a list", {"a": ["a"]}),
+        (["not a `VariantDescription`"], {"a": ["a"]}),
     ],
 )
 def test_sort_and_filter_supported_variants_validation_errors(
-    vdescs: list[VariantDescription], vprops: list[VariantProperty]
+    vdescs: list[VariantDescription], feature_priorities: Any
 ) -> None:
-    feature_priorities = []
-    with contextlib.suppress(TypeError, AttributeError):
-        feature_priorities = list({vprop.feature_object for vprop in vprops})
-
     with pytest.raises(ValidationError):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
-            supported_vprops=vprops,
+            supported_vprops=vprops,  # type: ignore[arg-type]
             feature_priorities=feature_priorities,
         )
 

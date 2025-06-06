@@ -8,7 +8,9 @@ from tests.utils import get_combinations
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.models.provider import ProviderConfig
-from variantlib.utils import aggregate_priority_lists
+from variantlib.utils import aggregate_feature_priorities
+from variantlib.utils import aggregate_namespace_priorities
+from variantlib.utils import aggregate_property_priorities
 
 if TYPE_CHECKING:
     from variantlib.models.provider import ProviderConfig
@@ -163,7 +165,67 @@ def test_get_combinations_one_one_namespace_two(configs: list[ProviderConfig]) -
         ([None, None, [2, 3, 1]], [2, 3, 1]),
     ],
 )
-def test_aggregate_priority_lists(
+def test_aggregate_namespace_priorities(
     lists: list[list[int] | None], expected: list[int]
 ) -> None:
-    assert aggregate_priority_lists(*lists) == expected
+    assert aggregate_namespace_priorities(*lists) == expected
+
+
+@pytest.mark.parametrize(
+    ("dicts", "expected"),
+    [
+        ([None, {1: [1, 2], 2: [2, 3]}], {1: [1, 2], 2: [2, 3]}),
+        ([{}, {1: [1, 2], 2: [2, 3]}], {1: [1, 2], 2: [2, 3]}),
+        ([{1: [2], 3: [1]}, {1: [1, 2], 2: [2, 3]}], {1: [2, 1], 2: [2, 3], 3: [1]}),
+        ([{1: [], 3: [1]}, {1: [1, 2], 2: [3]}], {1: [1, 2], 2: [3], 3: [1]}),
+        ([{1: [], 3: [1]}, None, {1: [1, 2], 2: [3]}], {1: [1, 2], 2: [3], 3: [1]}),
+        ([{1: [], 3: [1]}, {1: [2]}, {1: [1, 2], 2: [3]}], {1: [2, 1], 2: [3], 3: [1]}),
+    ],
+)
+def test_aggregate_feature_priorities(
+    dicts: list[dict[int, list[int]] | None], expected: dict[int, list[int]]
+) -> None:
+    assert aggregate_feature_priorities(*dicts) == expected
+
+
+@pytest.mark.parametrize(
+    ("dicts", "expected"),
+    [
+        (
+            [None, {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}}],
+            {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}},
+        ),
+        (
+            [{}, {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}}],
+            {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}},
+        ),
+        (
+            [
+                {1: {2: [4], 4: [1]}, 2: {4: [1]}},
+                {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}},
+            ],
+            {1: {2: [4, 3], 3: [4, 5], 4: [1]}, 2: {3: [4], 4: [1, 5, 6]}},
+        ),
+        (
+            [
+                {1: {2: [4], 4: [1]}, 2: {4: [1]}},
+                None,
+                {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}},
+            ],
+            {1: {2: [4, 3], 3: [4, 5], 4: [1]}, 2: {3: [4], 4: [1, 5, 6]}},
+        ),
+        (
+            [
+                {1: {2: [4], 4: [1]}, 2: {4: [1]}},
+                {1: {4: [2]}, 2: {3: [1]}},
+                {1: {2: [3, 4], 3: [4, 5]}, 2: {3: [4], 4: [5, 6]}},
+            ],
+            {1: {2: [4, 3], 3: [4, 5], 4: [1, 2]}, 2: {3: [1, 4], 4: [1, 5, 6]}},
+        ),
+    ],
+)
+def test_aggregate_property_priorities(
+    dicts: list[dict[int, dict[int, list[int]]] | None],
+    expected: dict[int, dict[int, list[int]]],
+) -> None:
+    assert aggregate_property_priorities(*dicts) == expected

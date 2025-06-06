@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
@@ -19,8 +20,15 @@ from variantlib.models.variant import VariantValidationResult
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants
-from variantlib.utils import aggregate_priority_lists
+from variantlib.utils import aggregate_feature_priorities
+from variantlib.utils import aggregate_namespace_priorities
+from variantlib.utils import aggregate_property_priorities
 from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantFeatureValue
+    from variantlib.protocols import VariantNamespace
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +51,13 @@ def get_variant_hashes_by_priority(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    namespace_priorities: list[str] | None = None,
-    feature_priorities: list[str] | None = None,
-    property_priorities: list[str] | None = None,
-    forbidden_namespaces: list[str] | None = None,
+    namespace_priorities: list[VariantNamespace] | None = None,
+    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
+    property_priorities: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ]
+    | None = None,
+    forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> list[str]:
@@ -69,18 +80,6 @@ def get_variant_hashes_by_priority(
             )
         )
 
-    _feature_priorities = (
-        None
-        if feature_priorities is None
-        else [VariantFeature.from_str(vfeat) for vfeat in feature_priorities]
-    )
-
-    _property_priorities = (
-        None
-        if property_priorities is None
-        else [VariantProperty.from_str(vprop) for vprop in property_priorities]
-    )
-
     _forbidden_features = (
         None
         if forbidden_features is None
@@ -100,18 +99,18 @@ def get_variant_hashes_by_priority(
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
-            namespace_priorities=aggregate_priority_lists(
+            namespace_priorities=aggregate_namespace_priorities(
                 namespace_priorities,
                 config.namespace_priorities,
                 variants_json.namespace_priorities,
             ),
-            feature_priorities=aggregate_priority_lists(
-                _feature_priorities,
+            feature_priorities=aggregate_feature_priorities(
+                feature_priorities,
                 config.feature_priorities,
                 variants_json.feature_priorities,
             ),
-            property_priorities=aggregate_priority_lists(
-                _property_priorities,
+            property_priorities=aggregate_property_priorities(
+                property_priorities,
                 config.property_priorities,
                 variants_json.property_priorities,
             ),
@@ -186,7 +185,7 @@ def check_variant_supported(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    forbidden_namespaces: list[str] | None = None,
+    forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[str] | None = None,
     forbidden_properties: list[str] | None = None,
 ) -> bool:
