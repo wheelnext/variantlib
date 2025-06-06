@@ -128,10 +128,16 @@ def test_get_variant_hashes_by_priority_roundtrip(
             ],
         ),
         ProviderConfig(
-            namespace="b", configs=[VariantFeatureConfig(name="b1", values=["x"])]
+            namespace="b",
+            configs=[
+                VariantFeatureConfig(name="b1", values=["x"]),
+            ],
         ),
         ProviderConfig(
-            namespace="c", configs=[VariantFeatureConfig(name="c1", values=["x"])]
+            namespace="c",
+            configs=[
+                VariantFeatureConfig(name="c1", values=["x"]),
+            ],
         ),
     ]
 )
@@ -320,7 +326,7 @@ def test_make_variant_dist_info(
         "default-priorities": {
             "namespace": [],
             "feature": {},
-            "property": [],
+            "property": {},
         },
         "providers": {},
         "variants": {
@@ -364,7 +370,14 @@ def test_make_variant_dist_info(
                     "ns1": ["f2"],
                     "ns2": ["f1", "f2"],
                 },
-                "property": ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"],
+                "property": {
+                    "ns1": {
+                        "f2": ["p1"],
+                    },
+                    "ns2": {
+                        "f1": ["p2"],
+                    },
+                },
             }
         )
 

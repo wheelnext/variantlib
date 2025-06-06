@@ -14,7 +14,6 @@ from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
 from variantlib.constants import CONFIG_FILENAME
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
-from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -124,10 +123,10 @@ def test_get_default_config_with_no_file(mocker: MockerFixture) -> None:
 
 def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
     data = {
-        "property_priorities": [
-            "fictional_hw::architecture::mother",
-            "fictional_tech::risk_exposure::25",
-        ],
+        "property_priorities": {
+            "fictional_hw": {"architecture": ["mother"]},
+            "fictional_tech": {"risk_exposure": ["25"]},
+        },
         "feature_priorities": {
             "fictional_hw": ["architecture"],
             "fictional_tech": ["risk_exposure"],
@@ -152,10 +151,6 @@ def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
             ConfigEnvironments.GLOBAL: Path("/nonexistent/config.toml"),
         }
 
-    property_priorities = [
-        VariantProperty.from_str(f) for f in data["property_priorities"]
-    ]
-
     for env in ConfigEnvironments:
         config_files = _get_config_files()
         config_files[env] = config_path
@@ -165,7 +160,7 @@ def test_get_config_from_file(mocker: MockerFixture, tmp_path: Path) -> None:
 
         config = VariantConfiguration.get_config()
         assert config.feature_priorities == data["feature_priorities"]
-        assert config.property_priorities == property_priorities
+        assert config.property_priorities == data["property_priorities"]
         assert config.namespace_priorities == data["namespace_priorities"]
 
 
@@ -186,5 +181,5 @@ def test_class_properties_with_default(mocker: MockerFixture) -> None:
 
     VariantConfiguration.reset()
     assert VariantConfiguration._config is None  # noqa: SLF001
-    assert VariantConfiguration.property_priorities == []
+    assert VariantConfiguration.property_priorities == {}
     assert VariantConfiguration._config is not None  # noqa: SLF001

@@ -14,9 +14,13 @@
                 "quantum"
             ]
         },
-        "property": [
-            "fictional_tech :: technology :: auto_chef"
-        ]
+        "property": {
+            "fictional_tech": {
+                "technology": [
+                    "auto_chef"
+                ]
+            }
+        }
     },
     "providers": {
         "fictional_hw": {

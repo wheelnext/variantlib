@@ -24,10 +24,12 @@ def test_get_property_priorities() -> None:
     vprop1 = VariantProperty(namespace="omnicorp", feature="feat", value="value1")
     vprop2 = VariantProperty(namespace="omnicorp", feature="feat", value="value2")
     vprop3 = VariantProperty(namespace="omnicorp", feature="feat", value="value3")
-    assert get_property_priorities(vprop1, [vprop1, vprop2]) == 0
-    assert get_property_priorities(vprop2, [vprop1, vprop2]) == 1
-    assert get_property_priorities(vprop1, [vprop1, vprop2, vprop3]) == 0
-    assert get_property_priorities(vprop2, [vprop1, vprop2, vprop3]) == 1
+    prios = {vprop1.namespace: {vprop1.feature: [vprop1.value, vprop2.value]}}
+    assert get_property_priorities(vprop1, prios) == 0
+    assert get_property_priorities(vprop2, prios) == 1
+    prios[vprop3.namespace][vprop3.feature].append(vprop3.value)
+    assert get_property_priorities(vprop1, prios) == 0
+    assert get_property_priorities(vprop2, prios) == 1
 
 
 def test_negative_get_property_priorities() -> None:
@@ -35,8 +37,13 @@ def test_negative_get_property_priorities() -> None:
     vprop2 = VariantProperty(namespace="omnicorp", feature="feat", value="value2")
 
     assert get_property_priorities(vprop1, None) == sys.maxsize
-    assert get_property_priorities(vprop1, []) == sys.maxsize
-    assert get_property_priorities(vprop1, [vprop2]) == sys.maxsize
+    assert get_property_priorities(vprop1, {}) == sys.maxsize
+    assert (
+        get_property_priorities(
+            vprop1, {vprop2.namespace: {vprop2.feature: [vprop2.value]}}
+        )
+        == sys.maxsize
+    )
 
 
 @pytest.mark.parametrize(
@@ -49,7 +56,7 @@ def test_negative_get_property_priorities() -> None:
     ],
 )
 def test_get_property_priorities_validation_error(
-    vprop: VariantProperty, property_priorities: list[VariantProperty] | None
+    vprop: VariantProperty, property_priorities: Any
 ) -> None:
     with pytest.raises(ValidationError):
         get_property_priorities(vprop=vprop, property_priorities=property_priorities)
@@ -131,17 +138,17 @@ def test_get_namespace_priorities_validation_error(
 
 def test_get_variant_property_priorities_tuple() -> None:
     vprop = VariantProperty(namespace="omnicorp", feature="custom_feat", value="value1")
-    property_priorities = [
-        VariantProperty(namespace="other_corp", feature="other_feat", value="value2"),
-        vprop,
-    ]
+    property_priorities = {
+        "other_corp": {"other_feat": ["value2"]},
+        "omnicorp": {"custom_feat": ["value1"]},
+    }
     feature_priorities = {
         vprop.namespace: [vprop.feature, "feature"],
     }
     namespace_priorities = ["other_corp"]
     assert get_variant_property_priorities_tuple(
         vprop, namespace_priorities, feature_priorities, property_priorities
-    ) == (1, sys.maxsize, 0)
+    ) == (sys.maxsize, 0, 0)
 
 
 @pytest.mark.parametrize(
@@ -163,9 +170,9 @@ def test_get_variant_property_priorities_tuple() -> None:
 )
 def test_get_variant_property_priorities_tuple_validation_error(
     vprop: VariantProperty,
-    namespace_priorities: list[str] | None,
+    namespace_priorities: Any,
     feature_priorities: Any,
-    property_priorities: list[VariantProperty] | None,
+    property_priorities: Any,
 ) -> None:
     with pytest.raises(ValidationError):
         get_variant_property_priorities_tuple(
@@ -192,12 +199,10 @@ def test_sort_variant_properties() -> None:
         VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
         VariantProperty(namespace="other_corp", feature="feat_d", value="value"),
     ]
-    property_priorities = [
-        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
-        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
-        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
-        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
-    ]
+    property_priorities = {
+        "omnicorp": {"feat_a": ["value"], "feat_c": ["value"]},
+        "other_corp": {"feat_a": ["value"], "feat_c": ["value"]},
+    }
     feature_priorities = {
         "other_corp": ["feat_b"],
         "omnicorp": ["feat_b"],
@@ -207,17 +212,15 @@ def test_sort_variant_properties() -> None:
         vprop_list, namespace_priorities, feature_priorities, property_priorities
     )
     assert sorted_vprops == [
-        # sorted by property priorities
-        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
-        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
-        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
-        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
-        # sorted by namespace priorities + feature priorities
         VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
         VariantProperty(namespace="omnicorp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
         VariantProperty(namespace="omnicorp", feature="feat_d", value="value"),
         VariantProperty(namespace="other_corp", feature="feat_b", value="value1"),
         VariantProperty(namespace="other_corp", feature="feat_b", value="value2"),
+        VariantProperty(namespace="other_corp", feature="feat_a", value="value"),
+        VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
         VariantProperty(namespace="other_corp", feature="feat_d", value="value"),
     ]
 
@@ -243,9 +246,9 @@ def test_sort_variant_properties() -> None:
 )
 def test_sort_variant_properties_validation_error(
     vprops: list[VariantProperty],
-    namespace_priorities: list[str] | None,
+    namespace_priorities: Any,
     feature_priorities: Any,
-    property_priorities: list[VariantProperty] | None,
+    property_priorities: Any,
 ) -> None:
     with pytest.raises(ValidationError):
         sort_variant_properties(

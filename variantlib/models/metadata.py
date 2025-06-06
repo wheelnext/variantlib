@@ -7,10 +7,10 @@ from typing import Any
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_METADATA_FEATURE_KEY
 from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
@@ -20,8 +20,8 @@ from variantlib.constants import VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantProperty
 from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantFeatureValue
 from variantlib.protocols import VariantNamespace
 
 if TYPE_CHECKING:
@@ -41,7 +41,9 @@ class VariantMetadata:
     feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] = field(
         default_factory=dict
     )
-    property_priorities: list[VariantProperty] = field(default_factory=list)
+    property_priorities: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ] = field(default_factory=dict)
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
 
     def copy_as_kwargs(self) -> dict[str, Any]:
@@ -53,7 +55,13 @@ class VariantMetadata:
                 namespace: list(feature_priorities)
                 for namespace, feature_priorities in self.feature_priorities.items()
             },
-            "property_priorities": list(self.property_priorities),
+            "property_priorities": {
+                namespace: {
+                    feature: list(property_priorities)
+                    for feature, property_priorities in feature_dict.items()
+                }
+                for namespace, feature_dict in self.property_priorities.items()
+            },
             "providers": {
                 namespace: ProviderInfo(
                     requires=list(provider_data.requires),
@@ -103,12 +111,28 @@ class VariantMetadata:
                         validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
                         self.feature_priorities[namespace] = feature_priorities
             with validator.get(
-                VARIANT_METADATA_PROPERTY_KEY, list[str], []
-            ) as property_priorities:
-                validator.list_matches_re(VALIDATION_PROPERTY_REGEX)
-                self.property_priorities = [
-                    VariantProperty.from_str(x) for x in property_priorities
-                ]
+                VARIANT_METADATA_PROPERTY_KEY,
+                dict[
+                    VariantNamespace,
+                    dict[VariantFeatureName, list[VariantFeatureValue]],
+                ],
+                {},
+            ) as property_priorities_dict:
+                validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
+                self.property_priorities = {}
+                for namespace in property_priorities_dict:
+                    with validator.get(
+                        namespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+                    ) as feature_dict:
+                        validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
+                        for feature_name in feature_dict:
+                            with validator.get(
+                                feature_name, list[VariantFeatureValue]
+                            ) as value_priorities:
+                                validator.list_matches_re(VALIDATION_VALUE_REGEX)
+                                self.property_priorities.setdefault(namespace, {})[
+                                    feature_name
+                                ] = value_priorities
 
         with validator.get(
             VARIANT_METADATA_PROVIDER_DATA_KEY, dict[str, Any], {}

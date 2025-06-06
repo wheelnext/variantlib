@@ -68,9 +68,7 @@ class VariantsJson(VariantMetadata):
             VARIANT_METADATA_DEFAULT_PRIO_KEY: {
                 VARIANT_METADATA_NAMESPACE_KEY: self.namespace_priorities,
                 VARIANT_METADATA_FEATURE_KEY: self.feature_priorities,
-                VARIANT_METADATA_PROPERTY_KEY: [
-                    x.to_str() for x in self.property_priorities
-                ],
+                VARIANT_METADATA_PROPERTY_KEY: self.property_priorities,
             },
             VARIANT_METADATA_PROVIDER_DATA_KEY: {
                 namespace: dict(self._provider_info_to_json(provider_info))

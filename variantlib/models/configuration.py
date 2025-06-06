@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
-from variantlib.models.variant import VariantProperty
 from variantlib.protocols import VariantFeatureName
+from variantlib.protocols import VariantFeatureValue
 from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_list_matches_re
 from variantlib.validators.base import validate_type
@@ -70,16 +70,28 @@ class VariantConfiguration(BaseModel):
         default_factory=dict,
     )
 
-    property_priorities: list[VariantProperty] = field(
+    property_priorities: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ] = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
-                    lambda v: validate_type(v, list[VariantProperty]),
+                    lambda v: validate_type(
+                        v,
+                        dict[
+                            VariantNamespace,
+                            dict[VariantFeatureName, list[VariantFeatureValue]],
+                        ],
+                    ),
+                    lambda v: validate_list_matches_re(
+                        v.keys(), VALIDATION_NAMESPACE_REGEX
+                    ),
+                    # TODO
                 ],
                 value=val,
             )
         },
-        default_factory=list,
+        default_factory=dict,
     )
 
     @classmethod
@@ -96,7 +108,7 @@ class VariantConfiguration(BaseModel):
         return cls(
             namespace_priorities=[],
             feature_priorities={},
-            property_priorities=[],
+            property_priorities={},
         )
 
     @classmethod
@@ -105,7 +117,10 @@ class VariantConfiguration(BaseModel):
         namespace_priorities: list[VariantNamespace] | None = None,
         feature_priorities: dict[VariantNamespace, list[VariantFeatureName]]
         | None = None,
-        property_priorities: list[str] | None = None,
+        property_priorities: dict[
+            VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+        ]
+        | None = None,
     ) -> Self:
         """
         Create a Configuration instance from TOML-based configuration.
@@ -114,17 +129,10 @@ class VariantConfiguration(BaseModel):
             Configuration: A new Configuration instance.
         """
 
-        # Convert the `property_priorities: list[str]` into `list[VariantProperty]`
-        _property_priorities: list[VariantProperty] = []
-        if property_priorities is not None:
-            for vprop in property_priorities:
-                validate_type(vprop, str)
-                _property_priorities.append(VariantProperty.from_str(vprop))
-
         return cls(
             namespace_priorities=namespace_priorities or [],
             feature_priorities=feature_priorities or {},
-            property_priorities=_property_priorities,
+            property_priorities=property_priorities or {},
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -137,7 +145,5 @@ class VariantConfiguration(BaseModel):
         return {
             "namespace_priorities": self.namespace_priorities,
             "feature_priorities": self.feature_priorities,
-            "property_priorities": [
-                vprop.to_str() for vprop in self.property_priorities
-            ],
+            "property_priorities": self.property_priorities,
         }

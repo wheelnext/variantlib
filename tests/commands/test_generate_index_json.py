@@ -30,7 +30,7 @@ def test_generate_index_json(
             "namespace": [
                 "installable_plugin",
             ],
-            "property": [],
+            "property": {},
         },
         "providers": {
             "installable_plugin": {

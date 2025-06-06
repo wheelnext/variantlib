@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantFeatureValue
     from variantlib.protocols import VariantNamespace
 
 
@@ -104,7 +105,10 @@ def sort_and_filter_supported_variants(
     supported_vprops: list[VariantProperty],
     namespace_priorities: list[VariantNamespace] | None = None,
     feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
-    property_priorities: list[VariantProperty] | None = None,
+    property_priorities: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ]
+    | None = None,
     forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[VariantFeature] | None = None,
     forbidden_properties: list[VariantProperty] | None = None,
