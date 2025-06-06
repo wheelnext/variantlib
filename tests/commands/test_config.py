@@ -12,13 +12,14 @@ from variantlib.configuration import get_configuration_files
 def config_toml(tmp_path: Path) -> Path:
     config_toml = tmp_path / "variants.toml"
     config_toml.write_text("""
-feature_priorities = []
+feature_priorities.test_namespace = ["foo", "bar"]
 namespace_priorities = [
     "test_namespace",
     "incompatible_namespace",
     "second_namespace",
 ]
-property_priorities = []
+property_priorities.test_namespace.foo = ["v1", "v2"]
+property_priorities.second_namespace.baz = ["v3", "v4"]
 """)
     return config_toml
 
@@ -57,9 +58,19 @@ namespace_priorities = [
     "second_namespace",
 ]
 
-feature_priorities = []
+feature_priorities.test_namespace = [
+    "foo",
+    "bar",
+]
 
-property_priorities = []
+property_priorities.test_namespace.foo = [
+    "v1",
+    "v2",
+]
 
+property_priorities.second_namespace.baz = [
+    "v3",
+    "v4",
+]
 """
     )
