@@ -35,7 +35,7 @@ class VariantFeature(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -46,7 +46,7 @@ class VariantFeature(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -98,7 +98,7 @@ class VariantProperty(VariantFeature):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, str),
-                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
