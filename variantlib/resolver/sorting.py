@@ -99,52 +99,6 @@ def get_namespace_priorities(
         return sys.maxsize
 
 
-def get_variant_property_priorities_tuple(
-    vprop: VariantProperty,
-    namespace_priorities: list[VariantNamespace] | None,
-    feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
-    property_priorities: dict[
-        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
-    ]
-    | None = None,
-) -> tuple[int, int, int]:
-    """
-    Get the variant property priority of a `VariantProperty` object.
-
-    :param vprop: `VariantProperty` object.
-    :param namespace_priorities: namespace priority list
-    :param feature_priorities: feature priority dict
-    :param property_priorities: property priority dict
-    :return: Variant property priority of the `VariantProperty` object.
-    """
-    validate_type(vprop, VariantProperty)
-
-    if namespace_priorities is not None:
-        validate_type(namespace_priorities, list[VariantNamespace])
-    if feature_priorities is not None:
-        validate_type(
-            feature_priorities, dict[VariantNamespace, list[VariantFeatureName]]
-        )
-    if property_priorities is not None:
-        validate_type(
-            property_priorities,
-            dict[VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]],
-        )
-
-    ranking_tuple = (
-        get_namespace_priorities(vprop, namespace_priorities),
-        get_feature_priorities(vprop, feature_priorities),
-        get_property_priorities(vprop, property_priorities),
-    )
-
-    if all(x == sys.maxsize for x in ranking_tuple):
-        raise ConfigurationError(
-            f"VariantProperty {vprop} has no priority - this should not happen."
-        )
-
-    return ranking_tuple
-
-
 def sort_variant_properties(
     vprops: list[VariantProperty],
     namespace_priorities: list[VariantNamespace] | None,

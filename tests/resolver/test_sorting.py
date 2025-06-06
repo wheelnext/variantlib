@@ -13,7 +13,6 @@ from variantlib.models.variant import VariantProperty
 from variantlib.resolver.sorting import get_feature_priorities
 from variantlib.resolver.sorting import get_namespace_priorities
 from variantlib.resolver.sorting import get_property_priorities
-from variantlib.resolver.sorting import get_variant_property_priorities_tuple
 from variantlib.resolver.sorting import sort_variant_properties
 from variantlib.resolver.sorting import sort_variants_descriptions
 
@@ -131,56 +130,6 @@ def test_get_namespace_priorities_validation_error(
 ) -> None:
     with pytest.raises(ValidationError):
         get_namespace_priorities(vprop=vprop, namespace_priorities=namespace_priorities)
-
-
-# =================== get_variant_property_priorities_tuple =================== #
-
-
-def test_get_variant_property_priorities_tuple() -> None:
-    vprop = VariantProperty(namespace="omnicorp", feature="custom_feat", value="value1")
-    property_priorities = {
-        "other_corp": {"other_feat": ["value2"]},
-        "omnicorp": {"custom_feat": ["value1"]},
-    }
-    feature_priorities = {
-        vprop.namespace: [vprop.feature, "feature"],
-    }
-    namespace_priorities = ["other_corp"]
-    assert get_variant_property_priorities_tuple(
-        vprop, namespace_priorities, feature_priorities, property_priorities
-    ) == (sys.maxsize, 0, 0)
-
-
-@pytest.mark.parametrize(
-    ("vprop", "namespace_priorities", "feature_priorities", "property_priorities"),
-    [
-        ("not a `VariantProperty`", None, None, None),
-        (VariantProperty("a", "b", "c"), "not a list or None", None, None),
-        (
-            VariantProperty("a", "b", "c"),
-            [VariantProperty("not", "a", "str")],
-            None,
-            None,
-        ),
-        (VariantProperty("a", "b", "c"), None, "not a list or None", None),
-        (VariantProperty("a", "b", "c"), None, ["not a VariantFeature"], None),
-        (VariantProperty("a", "b", "c"), None, None, "not a list or None"),
-        (VariantProperty("a", "b", "c"), None, None, ["not a VariantProperty"]),
-    ],
-)
-def test_get_variant_property_priorities_tuple_validation_error(
-    vprop: VariantProperty,
-    namespace_priorities: Any,
-    feature_priorities: Any,
-    property_priorities: Any,
-) -> None:
-    with pytest.raises(ValidationError):
-        get_variant_property_priorities_tuple(
-            vprop=vprop,
-            namespace_priorities=namespace_priorities,
-            feature_priorities=feature_priorities,
-            property_priorities=property_priorities,
-        )
 
 
 # ========================= sort_variant_properties ========================= #
