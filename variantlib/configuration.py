@@ -104,7 +104,12 @@ class VariantConfiguration:
             except tomllib.TOMLDecodeError as e:
                 raise ConfigurationError from e
 
-        return ConfigurationModel.from_toml_config(**config)
+        try:
+            return ConfigurationModel.from_toml_config(**config)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Error reading configuration file {config_file}"
+            ) from exc
 
     @classmethod
     def get_config(cls) -> ConfigurationModel:
