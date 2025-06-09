@@ -11,7 +11,6 @@ from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
@@ -163,14 +162,13 @@ def test_validate_variants_json() -> None:
         ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]
-    assert variants_json.feature_priorities == [
-        VariantFeature(namespace="fictional_tech", feature="quantum")
-    ]
-    assert variants_json.property_priorities == [
-        VariantProperty(
-            namespace="fictional_tech", feature="technology", value="auto_chef"
-        )
-    ]
+    assert variants_json.feature_priorities == {
+        "fictional_hw": ["humor", "compute_accuracy"],
+        "fictional_tech": ["quantum"],
+    }
+    assert variants_json.property_priorities == {
+        "fictional_tech": {"technology": ["auto_chef"]}
+    }
     assert variants_json.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
@@ -224,21 +222,20 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
 
     # Mangle variants_json to ensure everything was copied
     variants_json.namespace_priorities.append("ns")
-    variants_json.feature_priorities.append(VariantFeature("ns", "foo"))
-    variants_json.property_priorities.append(VariantProperty("ns", "foo", "bar"))
+    variants_json.feature_priorities["ns"] = ["foo"]
+    variants_json.property_priorities["fictional_tech"]["foo"] = ["bar"]
     variants_json.providers["ns"] = ProviderInfo(plugin_api="foo:bar")
     variants_json.providers["fictional_hw"].enable_if = None
     variants_json.providers["fictional_tech"].requires.append("frobnicate")
 
     assert converted.namespace_priorities == ["fictional_hw", "fictional_tech"]
-    assert converted.feature_priorities == [
-        VariantFeature(namespace="fictional_tech", feature="quantum")
-    ]
-    assert converted.property_priorities == [
-        VariantProperty(
-            namespace="fictional_tech", feature="technology", value="auto_chef"
-        )
-    ]
+    assert converted.feature_priorities == {
+        "fictional_hw": ["humor", "compute_accuracy"],
+        "fictional_tech": ["quantum"],
+    }
+    assert converted.property_priorities == {
+        "fictional_tech": {"technology": ["auto_chef"]}
+    }
     assert converted.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
@@ -260,14 +257,14 @@ def test_to_str() -> None:
     variants_json = VariantsJson(
         VariantMetadata(
             namespace_priorities=["ns2", "ns1"],
-            feature_priorities=[
-                VariantFeature("ns2", "f2"),
-                VariantFeature("ns1", "f1"),
-            ],
-            property_priorities=[
-                VariantProperty("ns2", "f2", "v2"),
-                VariantProperty("ns1", "f1", "v1"),
-            ],
+            feature_priorities={
+                "ns1": ["f1"],
+                "ns2": ["f2"],
+            },
+            property_priorities={
+                "ns2": {"f2": ["v2"]},
+                "ns1": {"f1": ["v1"]},
+            },
             providers={
                 "ns1": ProviderInfo(
                     requires=["ns1-pkg >= 1.0.0", "ns1-dep"],
@@ -303,14 +300,26 @@ def test_to_str() -> None:
             "ns2",
             "ns1"
         ],
-        "feature": [
-            "ns2 :: f2",
-            "ns1 :: f1"
-        ],
-        "property": [
-            "ns2 :: f2 :: v2",
-            "ns1 :: f1 :: v1"
-        ]
+        "feature": {
+            "ns1": [
+                "f1"
+            ],
+            "ns2": [
+                "f2"
+            ]
+        },
+        "property": {
+            "ns2": {
+                "f2": [
+                    "v2"
+                ]
+            },
+            "ns1": {
+                "f1": [
+                    "v1"
+                ]
+            }
+        }
     },
     "providers": {
         "ns1": {
@@ -358,8 +367,8 @@ def test_roundtrip() -> None:
 def test_merge_variants() -> None:
     default_prios: PriorityJsonDict = {
         "namespace": ["a", "b"],
-        "feature": ["a::a", "b::b"],
-        "property": ["a::a::a", "b::b::b"],
+        "feature": {"a": ["a"], "b": ["b"]},
+        "property": {"a": {"a": ["a"]}, "b": {"b": ["b"]}},
     }
 
     provider_b: ProviderPluginJsonDict = {
@@ -471,8 +480,8 @@ def test_merge_variants() -> None:
     # Test for mismatches in default priorities.
     overrides = {
         "namespace": ["b", "a"],
-        "feature": ["b :: b"],
-        "property": ["b :: b :: b"],
+        "feature": {"b": ["b"]},
+        "property": {"b": {"b": ["b"]}},
     }
 
     for key in json_a["default-priorities"]:

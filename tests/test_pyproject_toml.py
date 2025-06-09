@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,8 +15,6 @@ from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -23,6 +22,9 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 TOML_DATA = """
@@ -32,8 +34,10 @@ version = "1.2.3"
 
 [variant.default-priorities]
 namespace = ["ns1", "ns2"]
-feature = ["ns2 :: f1", "ns1 :: f2"]
-property = ["ns1 :: f2 :: p1", "ns2 :: f1 :: p2"]
+feature.ns1 = ["f2"]
+feature.ns2 = ["f1", "f2"]
+property.ns1.f2 = ["p1"]
+property.ns2.f1 = ["p2"]
 
 [variant.providers.ns1]
 requires = ["ns1-provider >= 1.2.3"]
@@ -61,14 +65,14 @@ PYPROJECT_TOML_MINIMAL = tomllib.loads(
 def test_pyproject_toml() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
-    assert pyproj.feature_priorities == [
-        VariantFeature("ns2", "f1"),
-        VariantFeature("ns1", "f2"),
-    ]
-    assert pyproj.property_priorities == [
-        VariantProperty("ns1", "f2", "p1"),
-        VariantProperty("ns2", "f1", "p2"),
-    ]
+    assert pyproj.feature_priorities == {
+        "ns1": ["f2"],
+        "ns2": ["f1", "f2"],
+    }
+    assert pyproj.property_priorities == {
+        "ns1": {"f2": ["p1"]},
+        "ns2": {"f1": ["p2"]},
+    }
     assert pyproj.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
@@ -88,8 +92,8 @@ def test_pyproject_toml() -> None:
 def test_pyproject_toml_minimal() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML_MINIMAL)
     assert pyproj.namespace_priorities == ["ns1", "ns2"]
-    assert pyproj.feature_priorities == []
-    assert pyproj.property_priorities == []
+    assert pyproj.feature_priorities == {}
+    assert pyproj.property_priorities == {}
     assert pyproj.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
@@ -128,18 +132,18 @@ def test_invalid_table_type(table: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "key",
+    ("key", "expected"),
     [
-        VARIANT_METADATA_NAMESPACE_KEY,
-        VARIANT_METADATA_FEATURE_KEY,
-        VARIANT_METADATA_PROPERTY_KEY,
+        (VARIANT_METADATA_NAMESPACE_KEY, r"list\[str\]"),
+        (VARIANT_METADATA_FEATURE_KEY, r"dict\[str, list\[str\]\]"),
+        (VARIANT_METADATA_PROPERTY_KEY, r"dict\[str\, dict\[str, list\[str\]\]\]"),
     ],
 )
-def test_invalid_priority_type(key: str) -> None:
+def test_invalid_priority_type(key: str, expected: str) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
-        rf"{key}: expected list\[str\], got <class 'str'>",
+        rf"{key}: expected {expected}, got <class 'str'>",
     ):
         VariantPyProjectToml(
             {
@@ -151,18 +155,30 @@ def test_invalid_priority_type(key: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("key", "value"),
+    ("key", "value", "expected"),
     [
-        (VARIANT_METADATA_NAMESPACE_KEY, ["ns", "ns :: feature"]),
-        (VARIANT_METADATA_FEATURE_KEY, ["ns :: feature", "ns :: feature :: property"]),
-        (VARIANT_METADATA_PROPERTY_KEY, ["ns :: feature :: property", "ns :: feature"]),
+        (
+            VARIANT_METADATA_NAMESPACE_KEY,
+            ["ns", "ns :: feature"],
+            r"\[1\]: Value `ns :: feature`",
+        ),
+        (
+            VARIANT_METADATA_FEATURE_KEY,
+            {"ns": ["feature", "feature :: property"]},
+            r"\.ns\[1\]: Value `feature :: property`",
+        ),
+        (
+            VARIANT_METADATA_PROPERTY_KEY,
+            {"ns": {"feature": ["property", "not-valid"]}},
+            r".ns.feature\[1\]: Value `not-valid`",
+        ),
     ],
 )
-def test_invalid_priority_value(key: str, value: list[str]) -> None:
+def test_invalid_priority_value(key: str, value: Any, expected: str) -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
-        rf"{key}\[1\]: Value `{value[1]}` must match regex",
+        rf"{key}{expected} must match regex",
     ):
         VariantPyProjectToml(
             {PYPROJECT_TOML_TOP_KEY: {VARIANT_METADATA_DEFAULT_PRIO_KEY: {key: value}}}
@@ -357,21 +373,21 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
 
     # Mangle the original to ensure everything was copied
     pyproj.namespace_priorities.append("ns4")
-    pyproj.feature_priorities.append(VariantFeature("ns4", "foo"))
-    pyproj.property_priorities.append(VariantProperty("ns4", "foo", "bar"))
+    pyproj.feature_priorities["ns4"] = ["foo"]
+    pyproj.property_priorities["ns2"]["foo"] = ["bar"]
     pyproj.providers["ns4"] = ProviderInfo(plugin_api="foo:bar")
     pyproj.providers["ns1"].enable_if = None
     pyproj.providers["ns2"].requires.append("frobnicate")
 
     assert converted.namespace_priorities == ["ns1", "ns2"]
-    assert converted.feature_priorities == [
-        VariantFeature("ns2", "f1"),
-        VariantFeature("ns1", "f2"),
-    ]
-    assert converted.property_priorities == [
-        VariantProperty("ns1", "f2", "p1"),
-        VariantProperty("ns2", "f1", "p2"),
-    ]
+    assert converted.feature_priorities == {
+        "ns1": ["f2"],
+        "ns2": ["f1", "f2"],
+    }
+    assert converted.property_priorities == {
+        "ns1": {"f2": ["p1"]},
+        "ns2": {"f1": ["p2"]},
+    }
     assert converted.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],

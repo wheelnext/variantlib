@@ -31,7 +31,6 @@ dynamic = ["version"]
 cli = [
     "tomlkit>=0.13,<0.14",
     "tzlocal>=3.0,<6",
-    "urwid>=2.6.0,<3",
 ]
 dev = [
     "check-manifest",
@@ -72,7 +71,6 @@ update-pyproject-toml = "variantlib.commands.update_pyproject_toml:update_pyproj
 
 [project.entry-points."variantlib.actions.config"]
 list-paths = "variantlib.commands.config.list_paths:list_paths"
-setup = "variantlib.commands.config.setup:setup"
 show = "variantlib.commands.config.show:show"
 
 [project.entry-points."variantlib.actions.plugins"]

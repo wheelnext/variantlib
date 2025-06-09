@@ -6,6 +6,7 @@ import logging
 import sys
 
 import tomlkit
+import tomlkit.items
 
 from variantlib import __package_name__
 from variantlib.configuration import ConfigEnvironments
@@ -14,6 +15,12 @@ from variantlib.configuration import get_configuration_files
 
 logging.getLogger("variantlib").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+
+def multiline_array(items: list[str]) -> tomlkit.items.Array:
+    array = tomlkit.array().multiline(multiline=True)
+    array.extend(items)
+    return array
 
 
 def show(args: list[str]) -> None:
@@ -55,17 +62,23 @@ def show(args: list[str]) -> None:
             )
         configuration = VariantConfiguration.get_config_from_file(source_f)
 
-    data = configuration.to_dict()
     doc = tomlkit.document()
     doc.add(tomlkit.comment(f"This file has been sourced from: `{source_f}`"))
-    doc.add(tomlkit.nl())  # Blank line after comment
 
-    for key, items in data.items():
-        array = tomlkit.array().multiline(multiline=True)
-        array.extend(items)
-        doc[key] = array
+    doc.add(tomlkit.nl())
+    doc["namespace_priorities"] = multiline_array(configuration.namespace_priorities)
 
-        # Add a blank line
+    for namespace, feature_priorities in configuration.feature_priorities.items():
         doc.add(tomlkit.nl())
+        doc[tomlkit.key(["feature_priorities", namespace])] = multiline_array(
+            feature_priorities
+        )
+
+    for namespace, feature_dict in configuration.property_priorities.items():
+        for feature, property_priorities in feature_dict.items():
+            doc.add(tomlkit.nl())
+            doc[tomlkit.key(["property_priorities", namespace, feature])] = (
+                multiline_array(property_priorities)
+            )
 
     tomlkit.dump(doc, sys.stdout)

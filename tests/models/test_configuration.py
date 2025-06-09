@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -8,15 +10,20 @@ from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.configuration import VariantConfiguration
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantFeatureValue
+    from variantlib.protocols import VariantNamespace
 
 
 def test_default_configuration() -> None:
     config = VariantConfiguration.default()
     assert config.namespace_priorities == []
-    assert config.feature_priorities == []
-    assert config.property_priorities == []
+    assert config.feature_priorities == {}
+    assert config.property_priorities == {}
 
 
 @pytest.mark.parametrize(
@@ -24,26 +31,28 @@ def test_default_configuration() -> None:
     [
         {
             "namespaces": ["omnicorp"],
-            "features": [],
-            "properties": [],
+            "features": {},
+            "properties": {},
         },
         {
             "namespaces": ["omnicorp"],
-            "features": ["omnicorp::custom_feat"],
-            "properties": ["omnicorp::custom_feat::secret_value"],
+            "features": {"omnicorp": ["custom_feat"]},
+            "properties": {"omnicorp": {"custom_feat": ["secret_value"]}},
         },
         {
             "namespaces": ["omnicorp", "acme_corp"],
-            "features": ["omnicorp::custom_feat", "acme_corp :: custom_feat"],
-            "properties": [
-                "omnicorp :: custom_feat_a  ::   secret_value",
-                "omnicorp :: custom_feat_b::   secret_value",
-                "acme_corp::custom_feat::secret_value",
-            ],
+            "features": {"omnicorp": ["custom_feat"], "acme_corp": ["custom_feat"]},
+            "properties": {
+                "omnicorp": {
+                    "custom_feat_a": ["secret_value"],
+                    "custom_feat_b": ["secret_value"],
+                },
+                "acme_corp": {"custom_feat": ["secret_value"]},
+            },
         },
     ],
 )
-def test_from_toml_config(config_params: dict[str, list[str]]) -> None:
+def test_from_toml_config(config_params: dict[str, Any]) -> None:
     _ = VariantConfiguration.from_toml_config(
         namespace_priorities=config_params["namespaces"],
         feature_priorities=config_params["features"],
@@ -59,16 +68,14 @@ def test_namespace_priorities_validation(namespaces: list[str]) -> None:
 
 @given(
     st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)),
-    st.lists(
-        st.builds(
-            VariantFeature,
-            namespace=st.just("omnicorp"),
-            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
-        )
+    st.dictionaries(
+        st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+        st.lists(st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True)),
     ),
 )
 def test_feature_priorities_validation(
-    namespaces: list[str], features: list[VariantFeature]
+    namespaces: list[VariantNamespace],
+    features: dict[VariantNamespace, list[VariantFeatureName]],
 ) -> None:
     config = VariantConfiguration(
         namespace_priorities=namespaces, feature_priorities=features
@@ -78,26 +85,24 @@ def test_feature_priorities_validation(
 
 @given(
     st.lists(st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True)),
-    st.lists(
-        st.builds(
-            VariantFeature,
-            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
-            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
-        )
+    st.dictionaries(
+        st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+        st.lists(st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True)),
     ),
-    st.lists(
-        st.builds(
-            VariantProperty,
-            namespace=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
-            feature=st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
-            value=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
-        )
+    st.dictionaries(
+        st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
+        st.dictionaries(
+            st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
+            st.lists(st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True)),
+        ),
     ),
 )
 def test_property_priorities_validation(
-    namespaces: list[str],
-    features: list[VariantFeature],
-    properties: list[VariantProperty],
+    namespaces: list[VariantNamespace],
+    features: dict[VariantNamespace, list[VariantFeatureName]],
+    properties: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ],
 ) -> None:
     config = VariantConfiguration(
         namespace_priorities=namespaces,

@@ -122,8 +122,8 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
 
 class PriorityJsonDict(TypedDict, total=False):
     namespace: list[str]
-    feature: list[str]
-    property: list[str]
+    feature: dict[str, list[str]]
+    property: dict[str, dict[str, list[str]]]
 
 
 ProviderPluginJsonDict = TypedDict(
