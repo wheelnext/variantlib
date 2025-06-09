@@ -460,3 +460,17 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
 
     with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
+
+
+def test_no_plugin_api(test_plugin_package_req: str) -> None:
+    metadata = VariantMetadata(
+        namespace_priorities=["installable_plugin"],
+        providers={
+            "installable_plugin": ProviderInfo(
+                requires=[test_plugin_package_req],
+            ),
+        },
+    )
+
+    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+        assert set(loader.namespaces) == {"installable_plugin"}

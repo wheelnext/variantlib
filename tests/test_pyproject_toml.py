@@ -280,14 +280,15 @@ def test_invalid_provider_plugin_api() -> None:
 def test_missing_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY}: required key not found",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns: "
+        rf"either {VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY} or "
+        rf"{VARIANT_METADATA_PROVIDER_REQUIRES_KEY} must be specified",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
                     VARIANT_METADATA_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_METADATA_PROVIDER_REQUIRES_KEY: ["frobnicate"]}
+                        "ns": {VARIANT_METADATA_PROVIDER_REQUIRES_KEY: []}
                     }
                 }
             }
@@ -424,3 +425,24 @@ def test_get_provider_requires() -> None:
     }
     with pytest.raises(KeyError):
         pyproj.get_provider_requires({"no_ns"})
+
+
+def test_no_plugin_api() -> None:
+    pyproject_toml = VariantPyProjectToml(
+        {
+            PYPROJECT_TOML_TOP_KEY: {
+                VARIANT_METADATA_DEFAULT_PRIO_KEY: {
+                    VARIANT_METADATA_NAMESPACE_KEY: ["ns"]
+                },
+                VARIANT_METADATA_PROVIDER_DATA_KEY: {
+                    "ns": {
+                        "requires": [
+                            "my-plugin[foo] >= 1.2.3; python_version >= '3.10'"
+                        ],
+                    }
+                },
+            }
+        }
+    )
+    assert pyproject_toml.providers["ns"].plugin_api is None
+    assert pyproject_toml.providers["ns"].object_reference == "my_plugin"

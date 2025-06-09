@@ -367,7 +367,7 @@ class PluginLoader(BasePluginLoader):
         pyenv = default_environment()
 
         plugins = [
-            self._variant_nfo.providers[namespace].plugin_api
+            self._variant_nfo.providers[namespace].object_reference
             for namespace in self._variant_nfo.namespace_priorities
             if (marker := self._variant_nfo.providers[namespace].enable_if) is None
             or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]

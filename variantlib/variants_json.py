@@ -58,7 +58,8 @@ class VariantsJson(VariantMetadata):
             yield (VARIANT_METADATA_PROVIDER_REQUIRES_KEY, provider_info.requires)
         if provider_info.enable_if is not None:
             yield (VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
-        yield (VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
+        if provider_info.plugin_api is not None:
+            yield (VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
 
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
