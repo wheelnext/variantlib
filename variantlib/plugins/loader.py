@@ -170,7 +170,7 @@ class BasePluginLoader:
                 plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
             )
             import_name: str = plugin_api_match.group("module")
-            attr_path: str = plugin_api_match.group("attr")
+            attr_path: str = plugin_api_match.group("attr") or ""
             # normalize it before passing to the subprocess
             normalized_plugin_apis.append(f"{import_name}:{attr_path}")
 
@@ -367,7 +367,7 @@ class PluginLoader(BasePluginLoader):
         pyenv = default_environment()
 
         plugins = [
-            self._variant_nfo.providers[namespace].plugin_api
+            self._variant_nfo.providers[namespace].object_reference
             for namespace in self._variant_nfo.namespace_priorities
             if (marker := self._variant_nfo.providers[namespace].enable_if) is None
             or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]

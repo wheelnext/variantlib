@@ -23,35 +23,33 @@ if TYPE_CHECKING:
 def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
     for plugin_api in plugin_apis:
         # we expect variantlib to verify and normalize it
-        import_name, attr_path = plugin_api.split(":")
+        import_name, _, attr_path = plugin_api.partition(":")
         try:
             module = importlib.import_module(import_name)
-            attr_chain = attr_path.split(".")
+            attr_chain = attr_path.split(".") if attr_path else []
             plugin_callable = reduce(getattr, attr_chain, module)
         except Exception as exc:
             raise RuntimeError(
                 f"Loading the plugin from {plugin_api!r} failed: {exc}"
             ) from exc
 
-        if not callable(plugin_callable):
-            raise TypeError(
-                f"{plugin_api!r} points at a value that is not callable: "
-                f"{plugin_callable!r}"
-            )
-
-        try:
-            # Instantiate the plugin
-            plugin_instance = plugin_callable()
-        except Exception as exc:
-            raise RuntimeError(
-                f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
-            ) from exc
+        # plugin-api can either be a callable (e.g. a class to instantiate
+        # or a function to call) or a ready object
+        if callable(plugin_callable):
+            try:
+                # Instantiate the plugin
+                plugin_instance = plugin_callable()
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
+                ) from exc
+        else:
+            plugin_instance = plugin_callable
 
         required_attributes = PluginType.__abstractmethods__
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise TypeError(
-                f"Instantiating the plugin from {plugin_api!r} "
-                "returned an object that does not meet the PluginType prototype: "
+                f"{plugin_api!r} does not meet the PluginType prototype: "
                 f"{plugin_instance!r} (missing attributes: "
                 f"{', '.join(sorted(missing_attributes))})"
             )

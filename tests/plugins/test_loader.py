@@ -227,8 +227,9 @@ def test_namespace_incorrect_type() -> None:
     with (
         pytest.raises(
             PluginError,
-            match="'tests.plugins.test_loader:RANDOM_STUFF' points at a value that is "
-            "not callable: 123",
+            match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
+            r"the PluginType prototype: 123 \(missing attributes: get_all_configs, "
+            r"get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -282,9 +283,8 @@ def test_namespace_instantiation_returns_incorrect_type(
         pytest.raises(
             PluginError,
             match=re.escape(
-                f"Instantiating the plugin from 'tests.plugins.test_loader:{cls}' "
-                "returned an object that does not meet the PluginType prototype: "
-                "<tests.plugins.test_loader.IncompletePlugin object at"
+                f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
+                "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
             + r".*(missing attributes: get_all_configs)",
         ),
@@ -349,8 +349,30 @@ def test_non_class_attrs() -> None:
         assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
+def test_non_callable_plugin() -> None:
+    with ListPluginLoader(
+        [
+            "tests.mocked_plugins:IndirectPath.MoreIndirection.object_a",
+            "tests.mocked_plugins:OBJECT_B",
+        ]
+    ) as loader:
+        assert loader.namespaces == ["test_namespace", "second_namespace"]
+
+
+def test_plugin_module() -> None:
+    with ListPluginLoader(
+        [
+            "tests.mocked_plugin_as_module",
+        ]
+    ) as loader:
+        assert loader.namespaces == ["module_namespace"]
+
+
 def test_load_plugin_invalid_arg() -> None:
-    with pytest.raises(ValidationError), ListPluginLoader(["tests.mocked_plugins"]):
+    with (
+        pytest.raises(ValidationError),
+        ListPluginLoader(["tests.mocked_plugins:foo:bar"]),
+    ):
         pass
 
 
@@ -430,7 +452,21 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
-                plugin_api="test_plugin_package:TestPlugin",
+                plugin_api="test_plugin_package",
+                requires=[test_plugin_package_req],
+            ),
+        },
+    )
+
+    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+        assert set(loader.namespaces) == {"installable_plugin"}
+
+
+def test_no_plugin_api(test_plugin_package_req: str) -> None:
+    metadata = VariantMetadata(
+        namespace_priorities=["installable_plugin"],
+        providers={
+            "installable_plugin": ProviderInfo(
                 requires=[test_plugin_package_req],
             ),
         },

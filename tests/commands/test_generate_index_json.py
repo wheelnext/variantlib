@@ -34,7 +34,7 @@ def test_generate_index_json(
         },
         "providers": {
             "installable_plugin": {
-                "plugin-api": "test_plugin_package:TestPlugin",
+                "plugin-api": "test_plugin_package",
                 "requires": [
                     "test-plugin-package @ "
                     "file://{plugin_path}/test_plugin_package-0-py3-none-any.whl",

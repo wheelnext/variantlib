@@ -5,6 +5,8 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 from typing import Any
 
+from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -30,9 +32,21 @@ if TYPE_CHECKING:
 
 @dataclass
 class ProviderInfo:
-    plugin_api: str
+    plugin_api: str | None = None
     enable_if: str | None = None
     requires: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.plugin_api is None and not self.requires:
+            raise ValidationError("Either plugin-api or requires need to be specified")
+
+    @property
+    def object_reference(self) -> str:
+        """Get effective object reference from plugin-api or requires"""
+        if self.plugin_api is not None:
+            return self.plugin_api
+        # TODO: how far should we normalize it?
+        return Requirement(self.requires[0]).name.replace("-", "_")
 
 
 @dataclass
@@ -147,14 +161,22 @@ class VariantMetadata:
                     ) as provider_requires:
                         validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     with validator.get(
-                        VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, str
+                        VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, str, None
                     ) as provider_plugin_api:
-                        validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
+                        if provider_plugin_api is not None:
+                            validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     with validator.get(
                         VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY, str, None
                     ) as provider_enable_if:
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
+                    if provider_plugin_api is None and not provider_requires:
+                        raise ValidationError(
+                            f"{validator.key}: either "
+                            f"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY} or "
+                            f"{VARIANT_METADATA_PROVIDER_REQUIRES_KEY} must be "
+                            "specified"
+                        )
                     self.providers[namespace] = ProviderInfo(
                         requires=list(provider_requires),
                         enable_if=provider_enable_if,
