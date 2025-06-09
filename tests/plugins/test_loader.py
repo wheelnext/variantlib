@@ -227,8 +227,9 @@ def test_namespace_incorrect_type() -> None:
     with (
         pytest.raises(
             PluginError,
-            match="'tests.plugins.test_loader:RANDOM_STUFF' points at a value that is "
-            "not callable: 123",
+            match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
+            r"the PluginType prototype: 123 \(missing attributes: get_all_configs, "
+            r"get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -282,9 +283,8 @@ def test_namespace_instantiation_returns_incorrect_type(
         pytest.raises(
             PluginError,
             match=re.escape(
-                f"Instantiating the plugin from 'tests.plugins.test_loader:{cls}' "
-                "returned an object that does not meet the PluginType prototype: "
-                "<tests.plugins.test_loader.IncompletePlugin object at"
+                f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
+                "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
             + r".*(missing attributes: get_all_configs)",
         ),
@@ -344,6 +344,16 @@ def test_non_class_attrs() -> None:
         [
             "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a",
             "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b",
+        ]
+    ) as loader:
+        assert loader.namespaces == ["test_namespace", "second_namespace"]
+
+
+def test_non_callable_plugin() -> None:
+    with ListPluginLoader(
+        [
+            "tests.mocked_plugins:IndirectPath.MoreIndirection.object_a",
+            "tests.mocked_plugins:OBJECT_B",
         ]
     ) as loader:
         assert loader.namespaces == ["test_namespace", "second_namespace"]

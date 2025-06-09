@@ -112,3 +112,8 @@ class IndirectPath:
         @staticmethod
         def plugin_b() -> MockedPluginB:
             return MockedPluginB()
+
+        object_a = MockedPluginA()
+
+
+OBJECT_B = MockedPluginB()
