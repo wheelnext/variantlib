@@ -452,7 +452,7 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
-                plugin_api="test_plugin_package:TestPlugin",
+                plugin_api="test_plugin_package",
                 requires=[test_plugin_package_req],
             ),
         },

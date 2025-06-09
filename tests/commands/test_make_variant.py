@@ -23,7 +23,7 @@ namespace = ["installable_plugin"]
 requires = [
     "{test_plugin_package_req}",
 ]
-plugin-api = "test_plugin_package:TestPlugin"
+plugin-api = "test_plugin_package"
 """)
     return pyproject_toml
 
