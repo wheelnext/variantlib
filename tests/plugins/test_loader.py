@@ -359,8 +359,20 @@ def test_non_callable_plugin() -> None:
         assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
+def test_plugin_module() -> None:
+    with ListPluginLoader(
+        [
+            "tests.mocked_plugin_as_module",
+        ]
+    ) as loader:
+        assert loader.namespaces == ["module_namespace"]
+
+
 def test_load_plugin_invalid_arg() -> None:
-    with pytest.raises(ValidationError), ListPluginLoader(["tests.mocked_plugins"]):
+    with (
+        pytest.raises(ValidationError),
+        ListPluginLoader(["tests.mocked_plugins:foo:bar"]),
+    ):
         pass
 
 

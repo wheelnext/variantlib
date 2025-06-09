@@ -263,14 +263,14 @@ def test_invalid_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY}: Value `frobnicate` must match "
+        rf"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY}: Value `foo:bar:baz` must match "
         r"regex",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
                     VARIANT_METADATA_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: "frobnicate"}
+                        "ns": {VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: "foo:bar:baz"}
                     }
                 }
             }

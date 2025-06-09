@@ -170,7 +170,7 @@ class BasePluginLoader:
                 plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
             )
             import_name: str = plugin_api_match.group("module")
-            attr_path: str = plugin_api_match.group("attr")
+            attr_path: str = plugin_api_match.group("attr") or ""
             # normalize it before passing to the subprocess
             normalized_plugin_apis.append(f"{import_name}:{attr_path}")
 

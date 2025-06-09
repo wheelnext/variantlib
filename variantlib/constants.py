@@ -52,8 +52,9 @@ VALIDATION_PROVIDER_ENABLE_IF_REGEX = re.compile(r"[\S ]+")
 VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
     r"""
     (?P<module> [\w.]+)
-    \s* : \s*
-    (?P<attr> [\w.]+)
+    (?: \s* : \s*
+      (?P<attr> [\w.]+)
+    )?
     """,
     re.VERBOSE,
 )

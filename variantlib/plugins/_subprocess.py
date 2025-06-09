@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
     for plugin_api in plugin_apis:
         # we expect variantlib to verify and normalize it
-        import_name, attr_path = plugin_api.split(":")
+        import_name, _, attr_path = plugin_api.partition(":")
         try:
             module = importlib.import_module(import_name)
-            attr_chain = attr_path.split(".")
+            attr_chain = attr_path.split(".") if attr_path else []
             plugin_callable = reduce(getattr, attr_chain, module)
         except Exception as exc:
             raise RuntimeError(
