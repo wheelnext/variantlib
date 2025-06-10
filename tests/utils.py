@@ -58,7 +58,8 @@ def get_combinations(
 
 
 def assert_zips_equal(
-    ref_path: Path, new_path: Path, replace_plugin_path: Path
+    ref_path: Path,
+    new_path: Path,
 ) -> None:
     with ZipFile(ref_path) as ref_zip, ZipFile(new_path) as new_zip:
         assert set(ref_zip.namelist()) == set(new_zip.namelist())
@@ -67,11 +68,4 @@ def assert_zips_equal(
             if filename.endswith("RECORD"):
                 continue
             with ref_zip.open(filename) as ref_file, new_zip.open(filename) as new_file:
-                ref_data = ref_file.read().decode("utf8").splitlines()
-                new_data = (
-                    new_file.read()
-                    .decode("utf8")
-                    .replace(replace_plugin_path.as_posix(), "{plugin_path}")
-                    .splitlines()
-                )
-                assert new_data == ref_data
+                assert new_file.readlines() == ref_file.readlines()
