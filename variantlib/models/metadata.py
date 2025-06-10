@@ -182,21 +182,3 @@ class VariantMetadata:
                         enable_if=provider_enable_if,
                         plugin_api=provider_plugin_api,
                     )
-
-        all_providers = set(self.providers.keys())
-        all_providers_key = ".".join(
-            [*validator.keys, VARIANT_METADATA_PROVIDER_DATA_KEY]
-        )
-        namespace_prios_key = ".".join(
-            [
-                *validator.keys,
-                VARIANT_METADATA_DEFAULT_PRIO_KEY,
-                VARIANT_METADATA_NAMESPACE_KEY,
-            ]
-        )
-        if set(self.namespace_priorities) != all_providers:
-            raise ValidationError(
-                f"{namespace_prios_key} must specify the same namespaces "
-                f"as {all_providers_key} keys; currently: "
-                f"{set(self.namespace_priorities)} vs. {all_providers}"
-            )
