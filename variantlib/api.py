@@ -39,6 +39,7 @@ __all__ = [
     "VariantFeatureConfig",
     "VariantProperty",
     "VariantValidationResult",
+    "get_variant_environment_dict",
     "get_variant_hashes_by_priority",
     "make_variant_dist_info",
     "validate_variant",
@@ -246,3 +247,17 @@ def check_variant_supported(
             )
         )
     )
+
+
+def get_variant_environment_dict(
+    variant_desc: VariantDescription,
+) -> dict[str, set[str]]:
+    """Get the dict for packaging Marker.evaluate()"""
+
+    return {
+        "variant_namespaces": {vprop.namespace for vprop in variant_desc.properties},
+        "variant_features": {
+            vprop.feature_object.to_str() for vprop in variant_desc.properties
+        },
+        "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
+    }

@@ -23,6 +23,7 @@ from variantlib.api import VariantFeatureConfig
 from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
+from variantlib.api import get_variant_environment_dict
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
@@ -493,3 +494,33 @@ def test_check_variant_supported_generic() -> None:
         use_auto_install=False,
         venv_path=None,
     )
+
+
+def test_get_variant_environment_dict() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("ns1", "feat1", "val1"),
+            VariantProperty("ns1", "feat2", "val2"),
+            VariantProperty("ns2", "feat1", "val1"),
+            VariantProperty("ns3", "feat2", "val2"),
+        ]
+    )
+    assert get_variant_environment_dict(vdesc) == {
+        "variant_features": {
+            "ns1 :: feat1",
+            "ns1 :: feat2",
+            "ns2 :: feat1",
+            "ns3 :: feat2",
+        },
+        "variant_namespaces": {
+            "ns1",
+            "ns2",
+            "ns3",
+        },
+        "variant_properties": {
+            "ns1 :: feat1 :: val1",
+            "ns1 :: feat2 :: val2",
+            "ns2 :: feat1 :: val1",
+            "ns3 :: feat2 :: val2",
+        },
+    }
