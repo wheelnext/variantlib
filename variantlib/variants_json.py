@@ -7,14 +7,14 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
-from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_METADATA_FEATURE_KEY
-from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
-from variantlib.constants import VARIANT_METADATA_PROPERTY_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -55,23 +55,23 @@ class VariantsJson(VariantInfo):
         provider_info: ProviderInfo,
     ) -> Generator[tuple[str, str | list[str]]]:
         if provider_info.requires:
-            yield (VARIANT_METADATA_PROVIDER_REQUIRES_KEY, provider_info.requires)
+            yield (VARIANT_INFO_PROVIDER_REQUIRES_KEY, provider_info.requires)
         if provider_info.enable_if is not None:
-            yield (VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
+            yield (VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
         if provider_info.plugin_api is not None:
-            yield (VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
+            yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
 
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
         data = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
-            VARIANT_METADATA_DEFAULT_PRIO_KEY: {
-                VARIANT_METADATA_NAMESPACE_KEY: self.namespace_priorities,
-                VARIANT_METADATA_FEATURE_KEY: self.feature_priorities,
-                VARIANT_METADATA_PROPERTY_KEY: self.property_priorities,
+            VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                VARIANT_INFO_NAMESPACE_KEY: self.namespace_priorities,
+                VARIANT_INFO_FEATURE_KEY: self.feature_priorities,
+                VARIANT_INFO_PROPERTY_KEY: self.property_priorities,
             },
-            VARIANT_METADATA_PROVIDER_DATA_KEY: {
+            VARIANT_INFO_PROVIDER_DATA_KEY: {
                 namespace: dict(self._provider_info_to_json(provider_info))
                 for namespace, provider_info in self.providers.items()
             },

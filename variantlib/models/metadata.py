@@ -12,14 +12,14 @@ from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_METADATA_FEATURE_KEY
-from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
-from variantlib.constants import VARIANT_METADATA_PROPERTY_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
 from variantlib.protocols import VariantFeatureName
 from variantlib.protocols import VariantFeatureValue
@@ -104,14 +104,14 @@ class VariantInfo:
         return requirements
 
     def _process_common_metadata(self, validator: KeyTrackingValidator) -> None:
-        with validator.get(VARIANT_METADATA_DEFAULT_PRIO_KEY, dict[str, Any], {}):
+        with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
             with validator.get(
-                VARIANT_METADATA_NAMESPACE_KEY, list[VariantNamespace], []
+                VARIANT_INFO_NAMESPACE_KEY, list[VariantNamespace], []
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
                 self.namespace_priorities = list(namespace_priorities)
             with validator.get(
-                VARIANT_METADATA_FEATURE_KEY,
+                VARIANT_INFO_FEATURE_KEY,
                 dict[VariantNamespace, list[VariantFeatureName]],
                 {},
             ) as feature_priorities_dict:
@@ -124,7 +124,7 @@ class VariantInfo:
                         validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
                         self.feature_priorities[namespace] = feature_priorities
             with validator.get(
-                VARIANT_METADATA_PROPERTY_KEY,
+                VARIANT_INFO_PROPERTY_KEY,
                 dict[
                     VariantNamespace,
                     dict[VariantFeatureName, list[VariantFeatureValue]],
@@ -148,7 +148,7 @@ class VariantInfo:
                                 ] = value_priorities
 
         with validator.get(
-            VARIANT_METADATA_PROVIDER_DATA_KEY, dict[str, Any], {}
+            VARIANT_INFO_PROVIDER_DATA_KEY, dict[str, Any], {}
         ) as providers:
             validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
             namespaces = list(providers.keys())
@@ -156,24 +156,24 @@ class VariantInfo:
             for namespace in namespaces:
                 with validator.get(namespace, dict[str, Any], {}):
                     with validator.get(
-                        VARIANT_METADATA_PROVIDER_REQUIRES_KEY, list[str], []
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY, list[str], []
                     ) as provider_requires:
                         validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     with validator.get(
-                        VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, str, None
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, str, None
                     ) as provider_plugin_api:
                         if provider_plugin_api is not None:
                             validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     with validator.get(
-                        VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY, str, None
+                        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, str, None
                     ) as provider_enable_if:
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
                     if provider_plugin_api is None and not provider_requires:
                         raise ValidationError(
                             f"{validator.key}: either "
-                            f"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY} or "
-                            f"{VARIANT_METADATA_PROVIDER_REQUIRES_KEY} must be "
+                            f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
+                            f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
                             "specified"
                         )
                     self.providers[namespace] = ProviderInfo(
@@ -183,14 +183,12 @@ class VariantInfo:
                     )
 
         all_providers = set(self.providers.keys())
-        all_providers_key = ".".join(
-            [*validator.keys, VARIANT_METADATA_PROVIDER_DATA_KEY]
-        )
+        all_providers_key = ".".join([*validator.keys, VARIANT_INFO_PROVIDER_DATA_KEY])
         namespace_prios_key = ".".join(
             [
                 *validator.keys,
-                VARIANT_METADATA_DEFAULT_PRIO_KEY,
-                VARIANT_METADATA_NAMESPACE_KEY,
+                VARIANT_INFO_DEFAULT_PRIO_KEY,
+                VARIANT_INFO_NAMESPACE_KEY,
             ]
         )
         if set(self.namespace_priorities) != all_providers:
