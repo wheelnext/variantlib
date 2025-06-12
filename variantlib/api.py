@@ -13,7 +13,6 @@ from variantlib.constants import VariantsJsonDict
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import VariantInfo
@@ -59,9 +58,6 @@ def get_variant_hashes_by_priority(
         VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
     ]
     | None = None,
-    forbidden_namespaces: list[VariantNamespace] | None = None,
-    forbidden_features: list[str] | None = None,
-    forbidden_properties: list[str] | None = None,
 ) -> list[str]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
@@ -81,18 +77,6 @@ def get_variant_hashes_by_priority(
                 for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
-
-    _forbidden_features = (
-        None
-        if forbidden_features is None
-        else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
-    )
-
-    _forbidden_properties = (
-        None
-        if forbidden_properties is None
-        else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
-    )
 
     config = VariantConfiguration.get_config()
 
@@ -116,9 +100,6 @@ def get_variant_hashes_by_priority(
                 config.property_priorities,
                 variants_json.property_priorities,
             ),
-            forbidden_namespaces=forbidden_namespaces,
-            forbidden_features=_forbidden_features,
-            forbidden_properties=_forbidden_properties,
         )
     ]
 
@@ -187,9 +168,6 @@ def check_variant_supported(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    forbidden_namespaces: list[VariantNamespace] | None = None,
-    forbidden_features: list[str] | None = None,
-    forbidden_properties: list[str] | None = None,
 ) -> bool:
     """Check if variant description is supported
 
@@ -223,18 +201,6 @@ def check_variant_supported(
             )
         )
 
-    _forbidden_features = (
-        None
-        if forbidden_features is None
-        else [VariantFeature.from_str(vfeat) for vfeat in forbidden_features]
-    )
-
-    _forbidden_properties = (
-        None
-        if forbidden_properties is None
-        else [VariantProperty.from_str(vprop) for vprop in forbidden_properties]
-    )
-
     VariantConfiguration.get_config()
 
     return bool(
@@ -242,9 +208,6 @@ def check_variant_supported(
             filter_variants(
                 vdescs=[vdesc],
                 allowed_properties=supported_vprops,
-                forbidden_namespaces=forbidden_namespaces,
-                forbidden_features=_forbidden_features,
-                forbidden_properties=_forbidden_properties,
             )
         )
     )
