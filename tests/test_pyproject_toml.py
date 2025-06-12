@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING
 import pytest
 
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_METADATA_FEATURE_KEY
-from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
-from variantlib.constants import VARIANT_METADATA_PROPERTY_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
+from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -120,7 +120,7 @@ def test_invalid_top_type() -> None:
 
 
 @pytest.mark.parametrize(
-    "table", [VARIANT_METADATA_DEFAULT_PRIO_KEY, VARIANT_METADATA_PROVIDER_DATA_KEY]
+    "table", [VARIANT_INFO_DEFAULT_PRIO_KEY, VARIANT_INFO_PROVIDER_DATA_KEY]
 )
 def test_invalid_table_type(table: str) -> None:
     with pytest.raises(
@@ -134,21 +134,21 @@ def test_invalid_table_type(table: str) -> None:
 @pytest.mark.parametrize(
     ("key", "expected"),
     [
-        (VARIANT_METADATA_NAMESPACE_KEY, r"list\[str\]"),
-        (VARIANT_METADATA_FEATURE_KEY, r"dict\[str, list\[str\]\]"),
-        (VARIANT_METADATA_PROPERTY_KEY, r"dict\[str\, dict\[str, list\[str\]\]\]"),
+        (VARIANT_INFO_NAMESPACE_KEY, r"list\[str\]"),
+        (VARIANT_INFO_FEATURE_KEY, r"dict\[str, list\[str\]\]"),
+        (VARIANT_INFO_PROPERTY_KEY, r"dict\[str\, dict\[str, list\[str\]\]\]"),
     ],
 )
 def test_invalid_priority_type(key: str, expected: str) -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
         rf"{key}: expected {expected}, got <class 'str'>",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_DEFAULT_PRIO_KEY: {key: "frobnicate"}
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {key: "frobnicate"}
                 }
             }
         )
@@ -158,17 +158,17 @@ def test_invalid_priority_type(key: str, expected: str) -> None:
     ("key", "value", "expected"),
     [
         (
-            VARIANT_METADATA_NAMESPACE_KEY,
+            VARIANT_INFO_NAMESPACE_KEY,
             ["ns", "ns :: feature"],
             r"\[1\]: Value `ns :: feature`",
         ),
         (
-            VARIANT_METADATA_FEATURE_KEY,
+            VARIANT_INFO_FEATURE_KEY,
             {"ns": ["feature", "feature :: property"]},
             r"\.ns\[1\]: Value `feature :: property`",
         ),
         (
-            VARIANT_METADATA_PROPERTY_KEY,
+            VARIANT_INFO_PROPERTY_KEY,
             {"ns": {"feature": ["property", "not-valid"]}},
             r".ns.feature\[1\]: Value `not-valid`",
         ),
@@ -177,24 +177,24 @@ def test_invalid_priority_type(key: str, expected: str) -> None:
 def test_invalid_priority_value(key: str, value: Any, expected: str) -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
         rf"{key}{expected} must match regex",
     ):
         VariantPyProjectToml(
-            {PYPROJECT_TOML_TOP_KEY: {VARIANT_METADATA_DEFAULT_PRIO_KEY: {key: value}}}
+            {PYPROJECT_TOML_TOP_KEY: {VARIANT_INFO_DEFAULT_PRIO_KEY: {key: value}}}
         )
 
 
 def test_invalid_provider_namespace() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}"
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}"
         r"\[0\]: Value `invalid namespace` must match regex",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {"invalid namespace": {}}
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {"invalid namespace": {}}
                 }
             }
         )
@@ -203,35 +203,31 @@ def test_invalid_provider_namespace() -> None:
 def test_invalid_provider_table_type() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\."
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\."
         r"ns: expected dict\[str, typing.Any\], got <class 'list'>",
     ):
         VariantPyProjectToml(
-            {
-                PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {"ns": [123]}
-                }
-            }
+            {PYPROJECT_TOML_TOP_KEY: {VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": [123]}}}
         )
 
 
 @pytest.mark.parametrize(
     ("key", "expected"),
     [
-        (VARIANT_METADATA_PROVIDER_REQUIRES_KEY, r"list\[str\]"),
-        (VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, r"<class 'str'>"),
+        (VARIANT_INFO_PROVIDER_REQUIRES_KEY, r"list\[str\]"),
+        (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, r"<class 'str'>"),
     ],
 )
 def test_invalid_provider_data_type(key: str, expected: str) -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns\."
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
         rf"{key}: expected {expected}, got <class 'int'>",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {"ns": {key: 123}}
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": {key: 123}}
                 }
             }
         )
@@ -240,15 +236,15 @@ def test_invalid_provider_data_type(key: str, expected: str) -> None:
 def test_invalid_provider_requires() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_METADATA_PROVIDER_REQUIRES_KEY}\[1\]: Value `` must match regex",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
+        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY}\[1\]: Value `` must match regex",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
-                            VARIANT_METADATA_PROVIDER_REQUIRES_KEY: [
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: [
                                 "frobnicator >= 123",
                                 "",
                             ]
@@ -262,15 +258,15 @@ def test_invalid_provider_requires() -> None:
 def test_invalid_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY}: Value `foo:bar:baz` must match "
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
+        rf"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY}: Value `foo:bar:baz` must match "
         r"regex",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: "foo:bar:baz"}
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "foo:bar:baz"}
                     }
                 }
             }
@@ -280,15 +276,15 @@ def test_invalid_provider_plugin_api() -> None:
 def test_missing_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\.ns: "
-        rf"either {VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY} or "
-        rf"{VARIANT_METADATA_PROVIDER_REQUIRES_KEY} must be specified",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"either {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
+        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_METADATA_PROVIDER_REQUIRES_KEY: []}
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {VARIANT_INFO_PROVIDER_REQUIRES_KEY: []}
                     }
                 }
             }
@@ -298,18 +294,18 @@ def test_missing_provider_plugin_api() -> None:
 def test_missing_namespace_priority() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
-        rf"{VARIANT_METADATA_NAMESPACE_KEY} must specify the same namespaces as "
-        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY} "
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
+        rf"{VARIANT_INFO_NAMESPACE_KEY} must specify the same namespaces as "
+        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
         r"keys; currently: set\(\) vs\. \{'ns'\}",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
-                            VARIANT_METADATA_PROVIDER_REQUIRES_KEY: ["frobnicate"],
-                            VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: "foo:Plugin",
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["frobnicate"],
+                            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "foo:Plugin",
                         }
                     }
                 }
@@ -320,17 +316,15 @@ def test_missing_namespace_priority() -> None:
 def test_missing_namespace_provider() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}\."
-        rf"{VARIANT_METADATA_NAMESPACE_KEY} must specify the same namespaces as "
-        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY} "
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
+        rf"{VARIANT_INFO_NAMESPACE_KEY} must specify the same namespaces as "
+        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
         r"keys; currently: \{'ns'\} vs\. set\(\)",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_DEFAULT_PRIO_KEY: {
-                        VARIANT_METADATA_NAMESPACE_KEY: ["ns"]
-                    }
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]}
                 }
             }
         )
@@ -339,24 +333,24 @@ def test_missing_namespace_provider() -> None:
 def test_extra_default_priority_key() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_DEFAULT_PRIO_KEY}: "
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}: "
         r"unexpected subkeys: \{'foo'\}",
     ):
         VariantPyProjectToml(
-            {PYPROJECT_TOML_TOP_KEY: {VARIANT_METADATA_DEFAULT_PRIO_KEY: {"foo": {}}}}
+            {PYPROJECT_TOML_TOP_KEY: {VARIANT_INFO_DEFAULT_PRIO_KEY: {"foo": {}}}}
         )
 
 
 def test_extra_provider_data_key() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_METADATA_PROVIDER_DATA_KEY}\."
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\."
         r"ns: unexpected subkeys: \{'foo'\}",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_METADATA_PROVIDER_DATA_KEY: {
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             "plugin-api": "frobnicate:Plugin",
                             "foo": {},
@@ -431,10 +425,8 @@ def test_no_plugin_api() -> None:
     pyproject_toml = VariantPyProjectToml(
         {
             PYPROJECT_TOML_TOP_KEY: {
-                VARIANT_METADATA_DEFAULT_PRIO_KEY: {
-                    VARIANT_METADATA_NAMESPACE_KEY: ["ns"]
-                },
-                VARIANT_METADATA_PROVIDER_DATA_KEY: {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "ns": {
                         "requires": [
                             "my-plugin[foo] >= 1.2.3; python_version >= '3.10'"

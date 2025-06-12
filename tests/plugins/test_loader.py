@@ -9,12 +9,12 @@ import pytest
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ListPluginLoader
@@ -377,9 +377,9 @@ def test_load_plugin_invalid_arg() -> None:
 
 
 @pytest.mark.parametrize(
-    "metadata",
+    "variant_info",
     [
-        VariantMetadata(
+        VariantInfo(
             namespace_priorities=[
                 "test_namespace",
                 "second_namespace",
@@ -433,8 +433,8 @@ plugin-api = "tests.mocked_plugins:MockedPluginB"
         ),
     ],
 )
-def test_load_plugins_from_metadata(metadata: VariantMetadata) -> None:
-    with PluginLoader(metadata, use_auto_install=False) as loader:
+def test_load_plugins_from_variant_info(variant_info: VariantInfo) -> None:
+    with PluginLoader(variant_info, use_auto_install=False) as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
@@ -448,7 +448,7 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
 
 
 def test_install_plugin(test_plugin_package_req: str) -> None:
-    metadata = VariantMetadata(
+    variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
@@ -458,12 +458,12 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
 
 
 def test_no_plugin_api(test_plugin_package_req: str) -> None:
-    metadata = VariantMetadata(
+    variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
@@ -472,5 +472,5 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}

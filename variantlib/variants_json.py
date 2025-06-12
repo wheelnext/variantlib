@@ -7,23 +7,23 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
-from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_METADATA_FEATURE_KEY
-from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
-from variantlib.constants import VARIANT_METADATA_PROPERTY_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
@@ -36,13 +36,13 @@ else:
 
 
 @dataclass(init=False)
-class VariantsJson(VariantMetadata):
+class VariantsJson(VariantInfo):
     variants: dict[str, VariantDescription] = field(default_factory=dict)
 
-    def __init__(self, variants_json: VariantsJsonDict | VariantMetadata) -> None:
+    def __init__(self, variants_json: VariantsJsonDict | VariantInfo) -> None:
         """Init from pre-read ``variants.json`` data or another class"""
 
-        if isinstance(variants_json, VariantMetadata):
+        if isinstance(variants_json, VariantInfo):
             # Convert from another related class.
             super().__init__(**variants_json.copy_as_kwargs())
             self.variants = {}
@@ -55,23 +55,23 @@ class VariantsJson(VariantMetadata):
         provider_info: ProviderInfo,
     ) -> Generator[tuple[str, str | list[str]]]:
         if provider_info.requires:
-            yield (VARIANT_METADATA_PROVIDER_REQUIRES_KEY, provider_info.requires)
+            yield (VARIANT_INFO_PROVIDER_REQUIRES_KEY, provider_info.requires)
         if provider_info.enable_if is not None:
-            yield (VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
+            yield (VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
         if provider_info.plugin_api is not None:
-            yield (VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
+            yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
 
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
         data = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
-            VARIANT_METADATA_DEFAULT_PRIO_KEY: {
-                VARIANT_METADATA_NAMESPACE_KEY: self.namespace_priorities,
-                VARIANT_METADATA_FEATURE_KEY: self.feature_priorities,
-                VARIANT_METADATA_PROPERTY_KEY: self.property_priorities,
+            VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                VARIANT_INFO_NAMESPACE_KEY: self.namespace_priorities,
+                VARIANT_INFO_FEATURE_KEY: self.feature_priorities,
+                VARIANT_INFO_PROPERTY_KEY: self.property_priorities,
             },
-            VARIANT_METADATA_PROVIDER_DATA_KEY: {
+            VARIANT_INFO_PROVIDER_DATA_KEY: {
                 namespace: dict(self._provider_info_to_json(provider_info))
                 for namespace, provider_info in self.providers.items()
             },
@@ -81,11 +81,11 @@ class VariantsJson(VariantMetadata):
         }
         return json.dumps(data, indent=4)
 
-    def merge(self, wheel_metadata: Self) -> None:
-        """Merge metadata from another wheel (VariantsJson instance)"""
+    def merge(self, variant_dist_info: Self) -> None:
+        """Merge info from another wheel (VariantsJson instance)"""
 
         # Merge the variant properties
-        self.variants.update(wheel_metadata.variants)
+        self.variants.update(variant_dist_info.variants)
 
         # Verify consistency of default priorities
         for attribute in (
@@ -93,7 +93,7 @@ class VariantsJson(VariantMetadata):
             "feature_priorities",
             "property_priorities",
         ):
-            new_value = getattr(wheel_metadata, attribute)
+            new_value = getattr(variant_dist_info, attribute)
             old_value = getattr(self, attribute)
             if old_value != new_value:
                 raise ValidationError(
@@ -101,7 +101,7 @@ class VariantsJson(VariantMetadata):
                     f"Expected: {old_value!r}, found {new_value!r}"
                 )
 
-        for namespace, provider_info in wheel_metadata.providers.items():
+        for namespace, provider_info in variant_dist_info.providers.items():
             if (old_provider_info := self.providers.get(namespace)) is None:
                 # If provider not yet specified, just copy it
                 self.providers[namespace] = provider_info
@@ -125,7 +125,7 @@ class VariantsJson(VariantMetadata):
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]
-        self._process_common_metadata(validator)
+        self._process_common(validator)
 
         with validator.get(
             VARIANTS_JSON_VARIANT_DATA_KEY,

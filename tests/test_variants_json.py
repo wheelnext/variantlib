@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -255,7 +255,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
 
 def test_to_str() -> None:
     variants_json = VariantsJson(
-        VariantMetadata(
+        VariantInfo(
             namespace_priorities=["ns2", "ns1"],
             feature_priorities={
                 "ns1": ["f1"],

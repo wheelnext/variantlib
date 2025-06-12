@@ -18,7 +18,6 @@ from typing import Any
 from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -32,8 +31,8 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
     from types import TracebackType
 
-    from variantlib.models.metadata import VariantMetadata
     from variantlib.models.variant import VariantDescription
+    from variantlib.models.variant_info import VariantInfo
     from variantlib.plugins.py_envs import PythonEnv
 
 if sys.version_info >= (3, 10):
@@ -286,16 +285,16 @@ class BasePluginLoader:
 
 
 class PluginLoader(BasePluginLoader):
-    _variant_nfo: VariantMetadata
+    _variant_info: VariantInfo
 
     def __init__(
         self,
-        variant_nfo: VariantMetadata,
+        variant_info: VariantInfo,
         use_auto_install: bool,
         isolated: bool = True,
         venv_path: Path | None = None,
     ) -> None:
-        self._variant_nfo = variant_nfo
+        self._variant_info = variant_info
         super().__init__(
             use_auto_install=use_auto_install, isolated=isolated, venv_path=venv_path
         )
@@ -306,19 +305,21 @@ class PluginLoader(BasePluginLoader):
 
         # Installing the plugins
         reqs = []
-        for namespace in self._variant_nfo.namespace_priorities:
-            if (provider_data := self._variant_nfo.providers.get(namespace)) is None:
+        for namespace in self._variant_info.namespace_priorities:
+            if (provider_data := self._variant_info.providers.get(namespace)) is None:
                 logger.error(
                     "Impossible to install the variant provider plugin corresponding "
                     "to namespace `%(ns)s`. Missing provider entry - Known: %(known)s.",
                     {
                         "ns": namespace,
-                        "known": list(self._variant_nfo.providers.keys()),
+                        "known": list(self._variant_info.providers.keys()),
                     },
                 )
                 continue
 
-            if (marker := self._variant_nfo.providers[namespace].enable_if) is not None:
+            if (
+                marker := self._variant_info.providers[namespace].enable_if
+            ) is not None:
                 if not Marker(marker).evaluate(pyenv):  # type: ignore[arg-type]
                     logger.debug(
                         "The variant provider plugin corresponding "
@@ -367,9 +368,9 @@ class PluginLoader(BasePluginLoader):
         pyenv = default_environment()
 
         plugins = [
-            self._variant_nfo.providers[namespace].object_reference
-            for namespace in self._variant_nfo.namespace_priorities
-            if (marker := self._variant_nfo.providers[namespace].enable_if) is None
+            self._variant_info.providers[namespace].object_reference
+            for namespace in self._variant_info.namespace_priorities
+            if (marker := self._variant_info.providers[namespace].enable_if) is None
             or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
         ]
 

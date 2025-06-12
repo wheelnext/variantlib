@@ -7,15 +7,15 @@ VARIANT_HASH_LEN = 8
 CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
 
-# Common metadata keys (used in pyproject.toml and variants.json)
-VARIANT_METADATA_DEFAULT_PRIO_KEY = "default-priorities"
-VARIANT_METADATA_FEATURE_KEY = "feature"
-VARIANT_METADATA_NAMESPACE_KEY = "namespace"
-VARIANT_METADATA_PROPERTY_KEY = "property"
-VARIANT_METADATA_PROVIDER_DATA_KEY = "providers"
-VARIANT_METADATA_PROVIDER_ENABLE_IF_KEY = "enable-if"
-VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY = "plugin-api"
-VARIANT_METADATA_PROVIDER_REQUIRES_KEY = "requires"
+# Common variant info keys (used in pyproject.toml and variants.json)
+VARIANT_INFO_DEFAULT_PRIO_KEY = "default-priorities"
+VARIANT_INFO_FEATURE_KEY = "feature"
+VARIANT_INFO_NAMESPACE_KEY = "namespace"
+VARIANT_INFO_PROPERTY_KEY = "property"
+VARIANT_INFO_PROVIDER_DATA_KEY = "providers"
+VARIANT_INFO_PROVIDER_ENABLE_IF_KEY = "enable-if"
+VARIANT_INFO_PROVIDER_PLUGIN_API_KEY = "plugin-api"
+VARIANT_INFO_PROVIDER_REQUIRES_KEY = "requires"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
@@ -60,30 +60,6 @@ VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
 )
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
 
-VALIDATION_METADATA_PROVIDER_ENABLE_IF_REGEX = re.compile(
-    rf"""
-    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
-    \s* : \s*
-    (?P<enable_if>{VALIDATION_PROVIDER_ENABLE_IF_REGEX.pattern})
-""",
-    re.VERBOSE,
-)
-VALIDATION_METADATA_PROVIDER_PLUGIN_API_REGEX = re.compile(
-    rf"""
-    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
-    \s* : \s*
-    (?P<plugin_api>{VALIDATION_PROVIDER_PLUGIN_API_REGEX.pattern})
-""",
-    re.VERBOSE,
-)
-VALIDATION_METADATA_PROVIDER_REQUIRES_REGEX = re.compile(
-    rf"""
-    (?P<namespace>{VALIDATION_NAMESPACE_REGEX.pattern})
-    \s* : \s*
-    (?P<requirement_str>{VALIDATION_PROVIDER_REQUIRES_REGEX.pattern})
-""",
-    re.VERBOSE,
-)
 
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")
 # Per PEP 508: https://peps.python.org/pep-0508/#names

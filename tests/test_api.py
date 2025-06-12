@@ -30,19 +30,19 @@ from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_METADATA_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_METADATA_NAMESPACE_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_METADATA_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -91,13 +91,13 @@ def test_get_variant_hashes_by_priority_roundtrip(
 
     variants_json = {
         "$schema": VARIANTS_JSON_SCHEMA_URL,
-        VARIANT_METADATA_DEFAULT_PRIO_KEY: {
-            VARIANT_METADATA_NAMESPACE_KEY: namespace_priorities,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: namespace_priorities,
         },
-        VARIANT_METADATA_PROVIDER_DATA_KEY: {
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
             namespace: {
-                VARIANT_METADATA_PROVIDER_PLUGIN_API_KEY: plugin_api,
-                VARIANT_METADATA_PROVIDER_REQUIRES_KEY: [],
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
             }
             for namespace, plugin_api in plugin_apis.items()
         },
@@ -262,7 +262,7 @@ def test_validation_result_properties() -> None:
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
-    vmeta = VariantMetadata(
+    variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
             "second_namespace",
@@ -296,7 +296,7 @@ def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
                 VariantProperty("private", "build_type", "debug"),
             ]
         ),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
     )
 
@@ -392,7 +392,7 @@ def test_make_variant_dist_info(
                         VariantProperty("ns2", "f1", "p1"),
                     ]
                 ),
-                variant_metadata=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
+                variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
                 if pyproject_toml is not None
                 else None,
             )
@@ -402,8 +402,8 @@ def test_make_variant_dist_info(
 
 
 @pytest.fixture
-def common_metadata() -> VariantMetadata:
-    return VariantMetadata(
+def common_variant_info() -> VariantInfo:
+    return VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
             "test_namespace": ProviderInfo(
@@ -440,21 +440,21 @@ def common_metadata() -> VariantMetadata:
     ],
 )
 def test_check_variant_supported_dist(
-    common_metadata: VariantMetadata, vdesc: VariantDescription, expected: bool
+    common_variant_info: VariantInfo, vdesc: VariantDescription, expected: bool
 ) -> None:
-    variant_json = VariantsJson(common_metadata)
+    variant_json = VariantsJson(common_variant_info)
     variant_json.variants[vdesc.hexdigest] = vdesc
     assert (
         check_variant_supported(
-            metadata=variant_json, use_auto_install=False, venv_path=None
+            variant_info=variant_json, use_auto_install=False, venv_path=None
         )
         is expected
     )
 
 
 def test_check_variant_supported_generic() -> None:
-    # metadata should only be used to load plugins
-    vmeta = VariantMetadata(
+    # variant_info should only be used to load plugins
+    variant_info = VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
             "test_namespace": ProviderInfo(
@@ -469,7 +469,7 @@ def test_check_variant_supported_generic() -> None:
     # test the null variant
     assert check_variant_supported(
         vdesc=VariantDescription(),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
@@ -482,7 +482,7 @@ def test_check_variant_supported_generic() -> None:
                 VariantProperty("second_namespace", "name3", "val3a"),
             ]
         ),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
@@ -490,7 +490,7 @@ def test_check_variant_supported_generic() -> None:
     # test an usupported variant
     assert not check_variant_supported(
         vdesc=VariantDescription([VariantProperty("test_namespace", "name1", "val1c")]),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
