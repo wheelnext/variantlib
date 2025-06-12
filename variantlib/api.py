@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantsJsonDict
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -125,7 +125,7 @@ def get_variant_hashes_by_priority(
 
 def validate_variant(
     variant_desc: VariantDescription,
-    metadata: VariantMetadata,
+    metadata: VariantInfo,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
@@ -166,14 +166,14 @@ def validate_variant(
 
 def make_variant_dist_info(
     vdesc: VariantDescription,
-    variant_metadata: VariantMetadata | None = None,
+    variant_metadata: VariantInfo | None = None,
 ) -> str:
     """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
-    # If we have been parsed VariantMetadata, convert it to DistMetadata.
+    # If we have been parsed VariantInfo, convert it to DistMetadata.
     # If not, start with an empty class.
     if variant_metadata is None:
-        variant_metadata = VariantMetadata()
+        variant_metadata = VariantInfo()
     variant_json = VariantDistInfo(variant_metadata)
     variant_json.variant_desc = vdesc
 
@@ -183,7 +183,7 @@ def make_variant_dist_info(
 def check_variant_supported(
     *,
     vdesc: VariantDescription | None = None,
-    metadata: VariantMetadata,
+    metadata: VariantInfo,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,

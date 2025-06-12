@@ -7,7 +7,7 @@ from typing import Any
 
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VariantInfoJsonDict
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
@@ -23,11 +23,11 @@ else:
 
 
 @dataclass(init=False)
-class VariantPyProjectToml(VariantMetadata):
-    def __init__(self, toml_data: dict[str, Any] | VariantMetadata) -> None:
+class VariantPyProjectToml(VariantInfo):
+    def __init__(self, toml_data: dict[str, Any] | VariantInfo) -> None:
         """Init from pre-read ``pyproject.toml`` data or another class"""
 
-        if isinstance(toml_data, VariantMetadata):
+        if isinstance(toml_data, VariantInfo):
             # Convert from another related class.
             super().__init__(**toml_data.copy_as_kwargs())
             return

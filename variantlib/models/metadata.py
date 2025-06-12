@@ -49,7 +49,7 @@ class ProviderInfo:
 
 
 @dataclass
-class VariantMetadata:
+class VariantInfo:
     namespace_priorities: list[VariantNamespace] = field(default_factory=list)
     feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] = field(
         default_factory=dict

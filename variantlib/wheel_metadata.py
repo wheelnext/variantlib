@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
@@ -17,12 +17,12 @@ if TYPE_CHECKING:
 class VariantDistInfo(VariantsJson):
     def __init__(
         self,
-        metadata_file: bytes | str | VariantMetadata,
+        metadata_file: bytes | str | VariantInfo,
         expected_hash: str | None = None,
     ) -> None:
         """Init from pre-read metadata file"""
 
-        if isinstance(metadata_file, VariantMetadata):
+        if isinstance(metadata_file, VariantInfo):
             # Convert from another related class.
             super().__init__(metadata_file)
             return

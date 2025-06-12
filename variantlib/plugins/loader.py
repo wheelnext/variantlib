@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
     from types import TracebackType
 
-    from variantlib.models.metadata import VariantMetadata
+    from variantlib.models.metadata import VariantInfo
     from variantlib.models.variant import VariantDescription
     from variantlib.plugins.py_envs import PythonEnv
 
@@ -285,11 +285,11 @@ class BasePluginLoader:
 
 
 class PluginLoader(BasePluginLoader):
-    _variant_nfo: VariantMetadata
+    _variant_nfo: VariantInfo
 
     def __init__(
         self,
-        variant_nfo: VariantMetadata,
+        variant_nfo: VariantInfo,
         use_auto_install: bool,
         isolated: bool = True,
         venv_path: Path | None = None,

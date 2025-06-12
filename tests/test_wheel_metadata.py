@@ -8,7 +8,7 @@ import pytest
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.wheel_metadata import VariantDistInfo
@@ -79,7 +79,7 @@ def test_wheel_metadata_multiple_variants() -> None:
 
 
 def test_new_wheel_metadata() -> None:
-    vmeta = VariantMetadata(
+    vmeta = VariantInfo(
         namespace_priorities=["ns"], providers={"ns": ProviderInfo(requires=["ns-pkg"])}
     )
     metadata = VariantDistInfo(vmeta)

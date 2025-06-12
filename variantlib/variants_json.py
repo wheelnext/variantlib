@@ -22,7 +22,7 @@ from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.validators.keytracking import KeyTrackingValidator
 
@@ -36,13 +36,13 @@ else:
 
 
 @dataclass(init=False)
-class VariantsJson(VariantMetadata):
+class VariantsJson(VariantInfo):
     variants: dict[str, VariantDescription] = field(default_factory=dict)
 
-    def __init__(self, variants_json: VariantsJsonDict | VariantMetadata) -> None:
+    def __init__(self, variants_json: VariantsJsonDict | VariantInfo) -> None:
         """Init from pre-read ``variants.json`` data or another class"""
 
-        if isinstance(variants_json, VariantMetadata):
+        if isinstance(variants_json, VariantInfo):
             # Convert from another related class.
             super().__init__(**variants_json.copy_as_kwargs())
             self.variants = {}

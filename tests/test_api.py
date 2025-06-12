@@ -42,7 +42,7 @@ from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -262,7 +262,7 @@ def test_validation_result_properties() -> None:
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
-    vmeta = VariantMetadata(
+    vmeta = VariantInfo(
         namespace_priorities=[
             "test_namespace",
             "second_namespace",
@@ -402,8 +402,8 @@ def test_make_variant_dist_info(
 
 
 @pytest.fixture
-def common_metadata() -> VariantMetadata:
-    return VariantMetadata(
+def common_metadata() -> VariantInfo:
+    return VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
             "test_namespace": ProviderInfo(
@@ -440,7 +440,7 @@ def common_metadata() -> VariantMetadata:
     ],
 )
 def test_check_variant_supported_dist(
-    common_metadata: VariantMetadata, vdesc: VariantDescription, expected: bool
+    common_metadata: VariantInfo, vdesc: VariantDescription, expected: bool
 ) -> None:
     variant_json = VariantsJson(common_metadata)
     variant_json.variants[vdesc.hexdigest] = vdesc
@@ -454,7 +454,7 @@ def test_check_variant_supported_dist(
 
 def test_check_variant_supported_generic() -> None:
     # metadata should only be used to load plugins
-    vmeta = VariantMetadata(
+    vmeta = VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
             "test_namespace": ProviderInfo(

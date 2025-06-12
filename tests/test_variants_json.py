@@ -9,7 +9,7 @@ import pytest
 
 from variantlib.errors import ValidationError
 from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantMetadata
+from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -255,7 +255,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
 
 def test_to_str() -> None:
     variants_json = VariantsJson(
-        VariantMetadata(
+        VariantInfo(
             namespace_priorities=["ns2", "ns1"],
             feature_priorities={
                 "ns1": ["f1"],
