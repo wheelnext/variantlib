@@ -7,7 +7,7 @@ from typing import Any
 
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VariantInfoJsonDict
-from variantlib.models.metadata import VariantInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:

@@ -31,8 +31,8 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
     from types import TracebackType
 
-    from variantlib.models.metadata import VariantInfo
     from variantlib.models.variant import VariantDescription
+    from variantlib.models.variant_info import VariantInfo
     from variantlib.plugins.py_envs import PythonEnv
 
 if sys.version_info >= (3, 10):

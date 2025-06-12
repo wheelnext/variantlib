@@ -21,9 +21,9 @@ from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:

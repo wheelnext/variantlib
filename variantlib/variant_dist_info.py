@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import VariantInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:

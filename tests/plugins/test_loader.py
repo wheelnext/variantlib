@@ -9,12 +9,12 @@ import pytest
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantInfo
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ListPluginLoader

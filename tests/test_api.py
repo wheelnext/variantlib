@@ -41,8 +41,8 @@ from variantlib.constants import VariantsJsonDict
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantInfo
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 

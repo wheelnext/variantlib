@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantsJsonDict
-from variantlib.models.metadata import VariantInfo
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
 from variantlib.resolver.lib import sort_and_filter_supported_variants

@@ -14,7 +14,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
+from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 

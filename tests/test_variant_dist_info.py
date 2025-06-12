@@ -7,10 +7,10 @@ import pytest
 
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.models.metadata import ProviderInfo
-from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant_info import ProviderInfo
+from variantlib.models.variant_info import VariantInfo
 from variantlib.variant_dist_info import VariantDistInfo
 
 VARIANT_JSON = """
