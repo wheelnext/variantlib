@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(init=False)
-class WheelMetadata(VariantsJson):
+class VariantDistInfo(VariantsJson):
     def __init__(
         self,
         metadata_file: bytes | str | VariantMetadata,

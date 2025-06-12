@@ -11,7 +11,7 @@ from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantMetadata
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
-from variantlib.wheel_metadata import WheelMetadata
+from variantlib.wheel_metadata import VariantDistInfo
 
 VARIANT_JSON = """
 {
@@ -44,7 +44,7 @@ VARIANT_JSON = """
 @pytest.mark.parametrize("expected_hash", [None, "bdbc6ca0"])
 def test_wheel_metadata(json_type: type, expected_hash: str | None) -> None:
     VARIANT_JSON if json_type is str else VARIANT_JSON.encode()
-    metadata = WheelMetadata(VARIANT_JSON, expected_hash=expected_hash)
+    metadata = VariantDistInfo(VARIANT_JSON, expected_hash=expected_hash)
     assert metadata.namespace_priorities == ["ns"]
     assert metadata.feature_priorities == {}
     assert metadata.property_priorities == {}
@@ -62,7 +62,7 @@ def test_wheel_metadata_wrong_hash() -> None:
             f"{VARIANT_DIST_INFO_FILENAME} specifies hash bdbc6ca0, expected 00000000"
         ),
     ):
-        WheelMetadata(VARIANT_JSON, expected_hash="00000000")
+        VariantDistInfo(VARIANT_JSON, expected_hash="00000000")
 
 
 def test_wheel_metadata_multiple_variants() -> None:
@@ -75,14 +75,14 @@ def test_wheel_metadata_multiple_variants() -> None:
             f"{VARIANT_DIST_INFO_FILENAME} specifies 6 variants, expected exactly one"
         ),
     ):
-        WheelMetadata(json_file.read_text())
+        VariantDistInfo(json_file.read_text())
 
 
 def test_new_wheel_metadata() -> None:
     vmeta = VariantMetadata(
         namespace_priorities=["ns"], providers={"ns": ProviderInfo(requires=["ns-pkg"])}
     )
-    metadata = WheelMetadata(vmeta)
+    metadata = VariantDistInfo(vmeta)
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
     metadata.variant_desc = vdesc
     assert metadata.namespace_priorities == vmeta.namespace_priorities

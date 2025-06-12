@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
-from variantlib.wheel_metadata import WheelMetadata
+from variantlib.wheel_metadata import VariantDistInfo
 
 if TYPE_CHECKING:
     from variantlib.models.variant import VariantDescription
@@ -70,7 +70,7 @@ def analyze_wheel(args: list[str]) -> None:
     with zipfile.ZipFile(input_file, "r") as zip_file:
         for name in zip_file.namelist():
             if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                metadata = WheelMetadata(zip_file.read(name), variant_hash)
+                metadata = VariantDistInfo(zip_file.read(name), variant_hash)
                 break
         else:
             raise ValueError(f"Invalid wheel -- no {VARIANT_DIST_INFO_FILENAME} found")

@@ -10,7 +10,7 @@ from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.wheel_metadata import WheelMetadata
+from variantlib.wheel_metadata import VariantDistInfo
 
 if TYPE_CHECKING:
     from variantlib.variants_json import VariantsJson
@@ -68,7 +68,7 @@ def generate_index_json(args: list[str]) -> None:
                 # Find the variant metadata file
                 for name in zip_file.namelist():
                     if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                        wheel_metadata = WheelMetadata(zip_file.read(name), vhash)
+                        wheel_metadata = VariantDistInfo(zip_file.read(name), vhash)
                         break
                 else:
                     logger.warning(
