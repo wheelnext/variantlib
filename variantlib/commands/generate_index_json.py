@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import pathlib
 import zipfile
+from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.variants_json import VariantsJson
+from variantlib.wheel_metadata import WheelMetadata
+
+if TYPE_CHECKING:
+    from variantlib.variants_json import VariantsJson
 
 logger = logging.getLogger(__name__)
 
@@ -60,28 +63,25 @@ def generate_index_json(args: list[str]) -> None:
             {"wheel": wheel.name, "vhash": vhash},
         )
 
-        with zipfile.ZipFile(wheel, "r") as zip_file:
-            # Find the variant metadata file
-            for name in zip_file.namelist():
-                if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                    with zip_file.open(name) as metadata_file:
-                        wheel_metadata = VariantsJson(json.load(metadata_file))
-                    break
-            else:
-                logger.warning(
-                    "%(wheel)s: no %(filename)s file found",
-                    {"wheel": wheel, "filename": VARIANT_DIST_INFO_FILENAME},
-                )
-                continue
-
-        if len(wheel_metadata.variants) != 1:
+        try:
+            with zipfile.ZipFile(wheel, "r") as zip_file:
+                # Find the variant metadata file
+                for name in zip_file.namelist():
+                    if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
+                        wheel_metadata = WheelMetadata(zip_file.read(name), vhash)
+                        break
+                else:
+                    logger.warning(
+                        "%(wheel)s: no %(filename)s file found",
+                        {"wheel": wheel, "filename": VARIANT_DIST_INFO_FILENAME},
+                    )
+                    continue
+        except ValidationError as err:
             logger.warning(
-                "%(wheel)s: %(filename)s specifies %(num_variants)d variants, "
-                "expected exactly one",
+                "%(wheel)s: %(err)s",
                 {
                     "wheel": wheel,
-                    "filename": VARIANT_DIST_INFO_FILENAME,
-                    "num_variants": len(wheel_metadata.variants),
+                    "err": err,
                 },
             )
             continue

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import pathlib
 import sys
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING
 from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
-from variantlib.variants_json import VariantsJson
+from variantlib.wheel_metadata import WheelMetadata
 
 if TYPE_CHECKING:
     from variantlib.models.variant import VariantDescription
@@ -71,27 +70,15 @@ def analyze_wheel(args: list[str]) -> None:
     with zipfile.ZipFile(input_file, "r") as zip_file:
         for name in zip_file.namelist():
             if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                with zip_file.open(name) as metadata_file:
-                    metadata = VariantsJson(json.load(metadata_file))
+                metadata = WheelMetadata(zip_file.read(name), variant_hash)
                 break
         else:
             raise ValueError(f"Invalid wheel -- no {VARIANT_DIST_INFO_FILENAME} found")
-
-        if len(metadata.variants) != 1:
-            raise ValueError(
-                f"Invalid wheel -- {VARIANT_DIST_INFO_FILENAME} specifies "
-                f"len(metadata.variants) variants, expected exactly one."
-            )
-        if variant_hash not in metadata.variants:
-            raise ValueError(
-                f"Invalid wheel -- {VARIANT_DIST_INFO_FILENAME} specifies "
-                f"hash {next(iter(metadata.variants))}, expected {variant_hash}."
-            )
 
         # We have to flush the logger handlers to ensure that all logs are printed
         for handler in logger.handlers:
             handler.flush()
 
         # for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
-        for line in pretty_print(vdesc=metadata.variants[variant_hash]).splitlines():
+        for line in pretty_print(vdesc=metadata.variant_desc).splitlines():
             sys.stdout.write(f"{line}\n")

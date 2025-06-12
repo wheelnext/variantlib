@@ -24,6 +24,7 @@ from variantlib.utils import aggregate_feature_priorities
 from variantlib.utils import aggregate_namespace_priorities
 from variantlib.utils import aggregate_property_priorities
 from variantlib.variants_json import VariantsJson
+from variantlib.wheel_metadata import WheelMetadata
 
 if TYPE_CHECKING:
     from variantlib.protocols import VariantFeatureName
@@ -173,8 +174,8 @@ def make_variant_dist_info(
     # If not, start with an empty class.
     if variant_metadata is None:
         variant_metadata = VariantMetadata()
-    variant_json = VariantsJson(variant_metadata)
-    variant_json.variants[vdesc.hexdigest] = vdesc
+    variant_json = WheelMetadata(variant_metadata)
+    variant_json.variant_desc = vdesc
 
     return variant_json.to_str()
 

@@ -18,7 +18,6 @@ from typing import Any
 from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
