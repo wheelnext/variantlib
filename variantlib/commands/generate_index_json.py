@@ -10,7 +10,7 @@ from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
-from variantlib.wheel_metadata import VariantDistInfo
+from variantlib.variant_dist_info import VariantDistInfo
 
 if TYPE_CHECKING:
     from variantlib.variants_json import VariantsJson
@@ -68,7 +68,7 @@ def generate_index_json(args: list[str]) -> None:
                 # Find the variant metadata file
                 for name in zip_file.namelist():
                     if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                        wheel_metadata = VariantDistInfo(zip_file.read(name), vhash)
+                        variant_dist_info = VariantDistInfo(zip_file.read(name), vhash)
                         break
                 else:
                     logger.warning(
@@ -89,10 +89,10 @@ def generate_index_json(args: list[str]) -> None:
         namever = wheel_info.group("namever")
         if (variants_json := output_files.get(namever)) is None:
             # Create a new JSON file from the initial wheel.
-            output_files[namever] = wheel_metadata
+            output_files[namever] = variant_dist_info
         else:
             try:
-                variants_json.merge(wheel_metadata)
+                variants_json.merge(variant_dist_info)
             except ValidationError:
                 logger.exception(
                     "Failed to process wheel: `%(wheel)s` with variant hash: "

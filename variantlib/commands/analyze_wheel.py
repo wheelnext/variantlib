@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from variantlib import __package_name__
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
-from variantlib.wheel_metadata import VariantDistInfo
+from variantlib.variant_dist_info import VariantDistInfo
 
 if TYPE_CHECKING:
     from variantlib.models.variant import VariantDescription

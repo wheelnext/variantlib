@@ -23,8 +23,8 @@ from variantlib.resolver.lib import sort_and_filter_supported_variants
 from variantlib.utils import aggregate_feature_priorities
 from variantlib.utils import aggregate_namespace_priorities
 from variantlib.utils import aggregate_property_priorities
+from variantlib.variant_dist_info import VariantDistInfo
 from variantlib.variants_json import VariantsJson
-from variantlib.wheel_metadata import VariantDistInfo
 
 if TYPE_CHECKING:
     from variantlib.protocols import VariantFeatureName

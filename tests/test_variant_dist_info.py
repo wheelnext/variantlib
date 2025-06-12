@@ -11,7 +11,7 @@ from variantlib.models.metadata import ProviderInfo
 from variantlib.models.metadata import VariantInfo
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
-from variantlib.wheel_metadata import VariantDistInfo
+from variantlib.variant_dist_info import VariantDistInfo
 
 VARIANT_JSON = """
 {
@@ -42,7 +42,7 @@ VARIANT_JSON = """
 
 @pytest.mark.parametrize("json_type", [str, bytes])
 @pytest.mark.parametrize("expected_hash", [None, "bdbc6ca0"])
-def test_wheel_metadata(json_type: type, expected_hash: str | None) -> None:
+def test_variant_dist_info(json_type: type, expected_hash: str | None) -> None:
     VARIANT_JSON if json_type is str else VARIANT_JSON.encode()
     metadata = VariantDistInfo(VARIANT_JSON, expected_hash=expected_hash)
     assert metadata.namespace_priorities == ["ns"]
@@ -55,7 +55,7 @@ def test_wheel_metadata(json_type: type, expected_hash: str | None) -> None:
     assert metadata.variant_hash == vdesc.hexdigest
 
 
-def test_wheel_metadata_wrong_hash() -> None:
+def test_variant_dist_info_wrong_hash() -> None:
     with pytest.raises(
         ValidationError,
         match=re.escape(
@@ -65,7 +65,7 @@ def test_wheel_metadata_wrong_hash() -> None:
         VariantDistInfo(VARIANT_JSON, expected_hash="00000000")
 
 
-def test_wheel_metadata_multiple_variants() -> None:
+def test_variant_dist_info_multiple_variants() -> None:
     json_file = Path("tests/artifacts/variants.json")
     assert json_file.exists(), "Expected JSON file does not exist"
 
@@ -78,7 +78,7 @@ def test_wheel_metadata_multiple_variants() -> None:
         VariantDistInfo(json_file.read_text())
 
 
-def test_new_wheel_metadata() -> None:
+def test_new_variant_dist_info() -> None:
     vmeta = VariantInfo(
         namespace_priorities=["ns"], providers={"ns": ProviderInfo(requires=["ns-pkg"])}
     )

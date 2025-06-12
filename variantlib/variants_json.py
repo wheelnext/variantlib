@@ -81,11 +81,11 @@ class VariantsJson(VariantInfo):
         }
         return json.dumps(data, indent=4)
 
-    def merge(self, wheel_metadata: Self) -> None:
+    def merge(self, variant_dist_info: Self) -> None:
         """Merge metadata from another wheel (VariantsJson instance)"""
 
         # Merge the variant properties
-        self.variants.update(wheel_metadata.variants)
+        self.variants.update(variant_dist_info.variants)
 
         # Verify consistency of default priorities
         for attribute in (
@@ -93,7 +93,7 @@ class VariantsJson(VariantInfo):
             "feature_priorities",
             "property_priorities",
         ):
-            new_value = getattr(wheel_metadata, attribute)
+            new_value = getattr(variant_dist_info, attribute)
             old_value = getattr(self, attribute)
             if old_value != new_value:
                 raise ValidationError(
@@ -101,7 +101,7 @@ class VariantsJson(VariantInfo):
                     f"Expected: {old_value!r}, found {new_value!r}"
                 )
 
-        for namespace, provider_info in wheel_metadata.providers.items():
+        for namespace, provider_info in variant_dist_info.providers.items():
             if (old_provider_info := self.providers.get(namespace)) is None:
                 # If provider not yet specified, just copy it
                 self.providers[namespace] = provider_info
