@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import argparse
 import base64
-import email.parser
-import email.policy
 import hashlib
 import logging
 import pathlib
@@ -21,12 +19,6 @@ from variantlib.errors import ValidationError
 from variantlib.pyproject_toml import VariantPyProjectToml
 
 logger = logging.getLogger(__name__)
-
-METADATA_POLICY = email.policy.EmailPolicy(
-    utf8=True,
-    mangle_from_=False,
-    refold_source="none",
-)
 
 
 def make_variant(args: list[str]) -> None:
@@ -84,7 +76,10 @@ def make_variant(args: list[str]) -> None:
         "--pyproject-toml",
         type=pathlib.Path,
         default="./pyproject.toml",
-        help="pyproject.toml to read variant metadata from (default: ./pyproject.toml",
+        help=(
+            "pyproject.toml to read variant variant info from (default: "
+            "./pyproject.toml)"
+        ),
     )
 
     parsed_args = parser.parse_args(args)
@@ -102,7 +97,7 @@ def make_variant(args: list[str]) -> None:
         is_null_variant=parsed_args.null_variant,
         properties=parsed_args.properties,
         validate_properties=not parsed_args.skip_plugin_validation,
-        variant_metadata=pyproject_toml,
+        variant_info=pyproject_toml,
     )
 
 
@@ -113,7 +108,7 @@ def _make_variant(
     is_null_variant: bool,
     properties: list[VariantProperty],
     validate_properties: bool = True,
-    variant_metadata: VariantPyProjectToml,
+    variant_info: VariantPyProjectToml,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -135,7 +130,7 @@ def _make_variant(
 
         if validate_properties:
             # Verify whether the variant properties are valid
-            vdesc_valid = validate_variant(vdesc, metadata=variant_metadata)
+            vdesc_valid = validate_variant(vdesc, variant_info=variant_info)
             if vdesc_valid.invalid_properties:
                 invalid_str = ", ".join(
                     x.to_str() for x in vdesc_valid.invalid_properties
@@ -179,16 +174,16 @@ def _make_variant(
                     with output_zip.open(file_info, "w") as output_file:
                         shutil.copyfileobj(input_file, output_file)
                 elif components[1] == VARIANT_DIST_INFO_FILENAME:
-                    # If a wheel metadata file exists already, discard the existing
+                    # If a wheel dist-info file exists already, discard the existing
                     # copy.
                     continue
                 else:  # RECORD
                     assert components[1] == "RECORD"
-                    # First, add new metadata file prior to RECORD (not strictly
+                    # First, add new dist-info file prior to RECORD (not strictly
                     # required, but a nice convention).
-                    metadata_file_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
-                    metadata_file_data = make_variant_dist_info(vdesc, variant_metadata)
-                    output_zip.writestr(metadata_file_path, metadata_file_data)
+                    dist_info_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
+                    dist_info_data = make_variant_dist_info(vdesc, variant_info)
+                    output_zip.writestr(dist_info_path, dist_info_data)
 
                     # Update RECORD for the new checksums.
                     with output_zip.open(file_info, "w") as output_file:
@@ -196,19 +191,19 @@ def _make_variant(
                             new_line = line
                             rec_filename, sha256, size = line.split(b",")
                             # Skip existing hash for the discarded copy.
-                            if rec_filename.decode("utf-8") == metadata_file_path:
+                            if rec_filename.decode("utf-8") == dist_info_path:
                                 continue
                             output_file.write(new_line)
 
                         # Write hash for the new files.
                         new_sha256 = base64.urlsafe_b64encode(
-                            hashlib.sha256(metadata_file_data.encode("utf8")).digest()
+                            hashlib.sha256(dist_info_data.encode("utf8")).digest()
                         ).rstrip(b"=")
                         output_file.write(
                             (
-                                f"{metadata_file_path},"
+                                f"{dist_info_path},"
                                 f"sha256={new_sha256.decode()},"
-                                f"{len(metadata_file_data)}\n"
+                                f"{len(dist_info_data)}\n"
                             ).encode()
                         )
 

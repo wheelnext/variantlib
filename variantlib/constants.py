@@ -7,7 +7,7 @@ VARIANT_HASH_LEN = 8
 CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
 
-# Common metadata keys (used in pyproject.toml and variants.json)
+# Common variant info keys (used in pyproject.toml and variants.json)
 VARIANT_INFO_DEFAULT_PRIO_KEY = "default-priorities"
 VARIANT_INFO_FEATURE_KEY = "feature"
 VARIANT_INFO_NAMESPACE_KEY = "namespace"

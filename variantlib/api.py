@@ -70,7 +70,7 @@ def get_variant_hashes_by_priority(
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
     with PluginLoader(
-        variant_nfo=variants_json,
+        variant_info=variants_json,
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
@@ -125,7 +125,7 @@ def get_variant_hashes_by_priority(
 
 def validate_variant(
     variant_desc: VariantDescription,
-    metadata: VariantInfo,
+    variant_info: VariantInfo,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
@@ -143,7 +143,7 @@ def validate_variant(
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
     with PluginLoader(
-        variant_nfo=metadata,
+        variant_info=variant_info,
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
@@ -166,15 +166,15 @@ def validate_variant(
 
 def make_variant_dist_info(
     vdesc: VariantDescription,
-    variant_metadata: VariantInfo | None = None,
+    variant_info: VariantInfo | None = None,
 ) -> str:
     """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
     # If we have been parsed VariantInfo, convert it to DistMetadata.
     # If not, start with an empty class.
-    if variant_metadata is None:
-        variant_metadata = VariantInfo()
-    variant_json = VariantDistInfo(variant_metadata)
+    if variant_info is None:
+        variant_info = VariantInfo()
+    variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
 
     return variant_json.to_str()
@@ -183,7 +183,7 @@ def make_variant_dist_info(
 def check_variant_supported(
     *,
     vdesc: VariantDescription | None = None,
-    metadata: VariantInfo,
+    variant_info: VariantInfo,
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
@@ -195,23 +195,23 @@ def check_variant_supported(
 
     Returns True if the variant description is supported.
 
-    If `vdesc` is provided, it is tested. Otherwise, `metadata` must be
+    If `vdesc` is provided, it is tested. Otherwise, `variant_info` must be
     a `DistMetadata` and variant description is inferred from it.
     """
 
     if vdesc is None:
-        if metadata is None or not isinstance(metadata, VariantsJson):
-            raise TypeError("vdesc or metadata=VariantsJson(...) must be provided")
-        if len(metadata.variants) != 1:
+        if variant_info is None or not isinstance(variant_info, VariantsJson):
+            raise TypeError("vdesc or variant_info=VariantsJson(...) must be provided")
+        if len(variant_info.variants) != 1:
             raise ValueError(
-                "metadata=VariantsJson(...) must describe exactly one variant"
+                "variant_info=VariantsJson(...) must describe exactly one variant"
             )
-        vdesc = next(iter(metadata.variants.values()))
+        vdesc = next(iter(variant_info.variants.values()))
 
     venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
 
     with PluginLoader(
-        variant_nfo=metadata,
+        variant_info=variant_info,
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,

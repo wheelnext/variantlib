@@ -65,7 +65,7 @@ def generate_index_json(args: list[str]) -> None:
 
         try:
             with zipfile.ZipFile(wheel, "r") as zip_file:
-                # Find the variant metadata file
+                # Find the variant dist-info file
                 for name in zip_file.namelist():
                     if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
                         variant_dist_info = VariantDistInfo(zip_file.read(name), vhash)

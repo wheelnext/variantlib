@@ -89,7 +89,7 @@ class VariantInfo:
         self, namespaces: set[VariantNamespace] | None = None
     ) -> set[str]:
         """
-        Get list of requirements for providers in metadata
+        Get list of requirements for providers in variant info
 
         If `namespaces` is not None, only requirements for given namespaces
         will be returned. Otherwise, all requirements will be returned.
@@ -103,7 +103,7 @@ class VariantInfo:
             requirements.update(self.providers[namespace].requires)
         return requirements
 
-    def _process_common_metadata(self, validator: KeyTrackingValidator) -> None:
+    def _process_common(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
             with validator.get(
                 VARIANT_INFO_NAMESPACE_KEY, list[VariantNamespace], []

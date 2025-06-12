@@ -17,17 +17,17 @@ if TYPE_CHECKING:
 class VariantDistInfo(VariantsJson):
     def __init__(
         self,
-        metadata_file: bytes | str | VariantInfo,
+        dist_info_file: bytes | str | VariantInfo,
         expected_hash: str | None = None,
     ) -> None:
-        """Init from pre-read metadata file"""
+        """Init from pre-read dist-info file"""
 
-        if isinstance(metadata_file, VariantInfo):
+        if isinstance(dist_info_file, VariantInfo):
             # Convert from another related class.
-            super().__init__(metadata_file)
+            super().__init__(dist_info_file)
             return
 
-        self._process(json.loads(metadata_file))
+        self._process(json.loads(dist_info_file))
 
         if len(self.variants) != 1:
             raise ValidationError(

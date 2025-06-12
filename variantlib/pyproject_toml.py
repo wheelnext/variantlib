@@ -41,4 +41,4 @@ class VariantPyProjectToml(VariantInfo):
 
     def _process(self, variant_table: dict[str, VariantInfoJsonDict]) -> None:
         validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)
-        self._process_common_metadata(validator)
+        self._process_common(validator)

@@ -44,15 +44,15 @@ VARIANT_JSON = """
 @pytest.mark.parametrize("expected_hash", [None, "bdbc6ca0"])
 def test_variant_dist_info(json_type: type, expected_hash: str | None) -> None:
     VARIANT_JSON if json_type is str else VARIANT_JSON.encode()
-    metadata = VariantDistInfo(VARIANT_JSON, expected_hash=expected_hash)
-    assert metadata.namespace_priorities == ["ns"]
-    assert metadata.feature_priorities == {}
-    assert metadata.property_priorities == {}
-    assert metadata.providers == {"ns": ProviderInfo(requires=["ns-pkg"])}
+    variant_dist_info = VariantDistInfo(VARIANT_JSON, expected_hash=expected_hash)
+    assert variant_dist_info.namespace_priorities == ["ns"]
+    assert variant_dist_info.feature_priorities == {}
+    assert variant_dist_info.property_priorities == {}
+    assert variant_dist_info.providers == {"ns": ProviderInfo(requires=["ns-pkg"])}
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
-    assert metadata.variants == {vdesc.hexdigest: vdesc}
-    assert metadata.variant_desc == vdesc
-    assert metadata.variant_hash == vdesc.hexdigest
+    assert variant_dist_info.variants == {vdesc.hexdigest: vdesc}
+    assert variant_dist_info.variant_desc == vdesc
+    assert variant_dist_info.variant_hash == vdesc.hexdigest
 
 
 def test_variant_dist_info_wrong_hash() -> None:
@@ -79,13 +79,13 @@ def test_variant_dist_info_multiple_variants() -> None:
 
 
 def test_new_variant_dist_info() -> None:
-    vmeta = VariantInfo(
+    variant_info = VariantInfo(
         namespace_priorities=["ns"], providers={"ns": ProviderInfo(requires=["ns-pkg"])}
     )
-    metadata = VariantDistInfo(vmeta)
+    variant_dist_info = VariantDistInfo(variant_info)
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
-    metadata.variant_desc = vdesc
-    assert metadata.namespace_priorities == vmeta.namespace_priorities
-    assert metadata.providers == vmeta.providers
-    assert metadata.variant_hash == vdesc.hexdigest
-    assert metadata.variant_desc == vdesc
+    variant_dist_info.variant_desc = vdesc
+    assert variant_dist_info.namespace_priorities == variant_info.namespace_priorities
+    assert variant_dist_info.providers == variant_info.providers
+    assert variant_dist_info.variant_hash == vdesc.hexdigest
+    assert variant_dist_info.variant_desc == vdesc

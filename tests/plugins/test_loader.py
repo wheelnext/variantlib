@@ -377,7 +377,7 @@ def test_load_plugin_invalid_arg() -> None:
 
 
 @pytest.mark.parametrize(
-    "metadata",
+    "variant_info",
     [
         VariantInfo(
             namespace_priorities=[
@@ -433,8 +433,8 @@ plugin-api = "tests.mocked_plugins:MockedPluginB"
         ),
     ],
 )
-def test_load_plugins_from_metadata(metadata: VariantInfo) -> None:
-    with PluginLoader(metadata, use_auto_install=False) as loader:
+def test_load_plugins_from_variant_info(variant_info: VariantInfo) -> None:
+    with PluginLoader(variant_info, use_auto_install=False) as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
@@ -448,7 +448,7 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
 
 
 def test_install_plugin(test_plugin_package_req: str) -> None:
-    metadata = VariantInfo(
+    variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
@@ -458,12 +458,12 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
 
 
 def test_no_plugin_api(test_plugin_package_req: str) -> None:
-    metadata = VariantInfo(
+    variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
             "installable_plugin": ProviderInfo(
@@ -472,5 +472,5 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(metadata, use_auto_install=True, isolated=True) as loader:
+    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}

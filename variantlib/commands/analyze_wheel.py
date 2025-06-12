@@ -70,7 +70,7 @@ def analyze_wheel(args: list[str]) -> None:
     with zipfile.ZipFile(input_file, "r") as zip_file:
         for name in zip_file.namelist():
             if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
-                metadata = VariantDistInfo(zip_file.read(name), variant_hash)
+                variant_dist_info = VariantDistInfo(zip_file.read(name), variant_hash)
                 break
         else:
             raise ValueError(f"Invalid wheel -- no {VARIANT_DIST_INFO_FILENAME} found")
@@ -80,5 +80,5 @@ def analyze_wheel(args: list[str]) -> None:
             handler.flush()
 
         # for line in pretty_print(vdesc=vdesc, providers=providers).splitlines():
-        for line in pretty_print(vdesc=metadata.variant_desc).splitlines():
+        for line in pretty_print(vdesc=variant_dist_info.variant_desc).splitlines():
             sys.stdout.write(f"{line}\n")

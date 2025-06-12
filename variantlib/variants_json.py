@@ -82,7 +82,7 @@ class VariantsJson(VariantInfo):
         return json.dumps(data, indent=4)
 
     def merge(self, variant_dist_info: Self) -> None:
-        """Merge metadata from another wheel (VariantsJson instance)"""
+        """Merge info from another wheel (VariantsJson instance)"""
 
         # Merge the variant properties
         self.variants.update(variant_dist_info.variants)
@@ -125,7 +125,7 @@ class VariantsJson(VariantInfo):
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]
-        self._process_common_metadata(validator)
+        self._process_common(validator)
 
         with validator.get(
             VARIANTS_JSON_VARIANT_DATA_KEY,

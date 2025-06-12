@@ -19,7 +19,7 @@ from variantlib.plugins.loader import EntryPointPluginLoader
 def update_pyproject_toml(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog=f"{__package_name__} update-pyproject-toml",
-        description="Update variant metadata in pyproject.toml",
+        description="Update variant info in pyproject.toml",
     )
     parser.add_argument(
         "-f",

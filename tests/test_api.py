@@ -262,7 +262,7 @@ def test_validation_result_properties() -> None:
 
 
 def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
-    vmeta = VariantInfo(
+    variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
             "second_namespace",
@@ -296,7 +296,7 @@ def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
                 VariantProperty("private", "build_type", "debug"),
             ]
         ),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
     )
 
@@ -392,7 +392,7 @@ def test_make_variant_dist_info(
                         VariantProperty("ns2", "f1", "p1"),
                     ]
                 ),
-                variant_metadata=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
+                variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
                 if pyproject_toml is not None
                 else None,
             )
@@ -402,7 +402,7 @@ def test_make_variant_dist_info(
 
 
 @pytest.fixture
-def common_metadata() -> VariantInfo:
+def common_variant_info() -> VariantInfo:
     return VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
@@ -440,21 +440,21 @@ def common_metadata() -> VariantInfo:
     ],
 )
 def test_check_variant_supported_dist(
-    common_metadata: VariantInfo, vdesc: VariantDescription, expected: bool
+    common_variant_info: VariantInfo, vdesc: VariantDescription, expected: bool
 ) -> None:
-    variant_json = VariantsJson(common_metadata)
+    variant_json = VariantsJson(common_variant_info)
     variant_json.variants[vdesc.hexdigest] = vdesc
     assert (
         check_variant_supported(
-            metadata=variant_json, use_auto_install=False, venv_path=None
+            variant_info=variant_json, use_auto_install=False, venv_path=None
         )
         is expected
     )
 
 
 def test_check_variant_supported_generic() -> None:
-    # metadata should only be used to load plugins
-    vmeta = VariantInfo(
+    # variant_info should only be used to load plugins
+    variant_info = VariantInfo(
         namespace_priorities=["test_namespace", "second_namespace"],
         providers={
             "test_namespace": ProviderInfo(
@@ -469,7 +469,7 @@ def test_check_variant_supported_generic() -> None:
     # test the null variant
     assert check_variant_supported(
         vdesc=VariantDescription(),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
@@ -482,7 +482,7 @@ def test_check_variant_supported_generic() -> None:
                 VariantProperty("second_namespace", "name3", "val3a"),
             ]
         ),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
@@ -490,7 +490,7 @@ def test_check_variant_supported_generic() -> None:
     # test an usupported variant
     assert not check_variant_supported(
         vdesc=VariantDescription([VariantProperty("test_namespace", "name1", "val1c")]),
-        metadata=vmeta,
+        variant_info=variant_info,
         use_auto_install=False,
         venv_path=None,
     )
