@@ -7,6 +7,17 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
@@ -22,7 +33,9 @@ if TYPE_CHECKING:
 
 
 def test_validate_variants_json() -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     assert json_file.exists(), "Expected JSON file does not exist"
 
     # Read the Variants JSON file
@@ -31,6 +44,7 @@ def test_validate_variants_json() -> None:
 
     variants_json = VariantsJson(data)
     assert variants_json.variants == {
+        "00000000": VariantDescription(),
         "03e04d5e": VariantDescription(
             properties=[
                 VariantProperty(
@@ -160,6 +174,33 @@ def test_validate_variants_json() -> None:
                 ),
             ],
         ),
+        "1d836653": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=4,<6",
+                )
+            ]
+        ),
+        "a0d8855a": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=4,<8",
+                )
+            ]
+        ),
+        "092f6ea8": VariantDescription(
+            properties=[
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value=">=7",
+                )
+            ]
+        ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]
     assert variants_json.feature_priorities == {
@@ -183,23 +224,39 @@ def test_validate_variants_json() -> None:
 
 
 def test_validate_variants_json_empty() -> None:
-    assert VariantsJson({"variants": {}}).variants == {}
+    assert VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {}}).variants == {}
 
 
 @pytest.mark.parametrize(
     "data",
     [
         {},
-        {"variants": ["abcd1234"]},
-        {"variants": {"abcd12345": {}}},
-        {"variants": {"abcd1234": {}}},
-        {"variants": {"abcd1234": ["namespace"]}},
-        {"variants": {"abcd1234": {"namespace": [{"feature": "value"}]}}},
-        {"variants": {"abcd1234": {"namespace": {}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature": 1}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature": "variant@python"}}}},
-        {"variants": {"abcd1234": {"namespace": {"feature@variant": "python"}}}},
-        {"variants": {"abcd1234": {"namesp@ce": {"feature": "value"}}}},
+        {VARIANTS_JSON_VARIANT_DATA_KEY: ["abcd1234"]},
+        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd12345": {}}},
+        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {}}},
+        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": ["namespace"]}},
+        {
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
+                "abcd1234": {"namespace": [{"feature": "value"}]}
+            }
+        },
+        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {}}}},
+        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {"feature": 1}}}},
+        {
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
+                "abcd1234": {"namespace": {"feature": "variant@python"}}
+            }
+        },
+        {
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
+                "abcd1234": {"namespace": {"feature@variant": "python"}}
+            }
+        },
+        {
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
+                "abcd1234": {"namesp@ce": {"feature": "value"}}
+            }
+        },
     ],
 )
 def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
@@ -209,7 +266,9 @@ def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
 
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
 def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     assert json_file.exists(), "Expected JSON file does not exist"
 
     # Read the Variants JSON file
@@ -290,158 +349,118 @@ def test_to_str() -> None:
         vdesc1.hexdigest: vdesc1,
         vdesc2.hexdigest: vdesc2,
     }
-    assert (
-        variants_json.to_str()
-        == """\
-{
-    "$schema": "https://variants-schema.wheelnext.dev/",
-    "default-priorities": {
-        "namespace": [
-            "ns2",
-            "ns1"
-        ],
-        "feature": {
-            "ns1": [
-                "f1"
-            ],
-            "ns2": [
-                "f2"
-            ]
+    assert json.loads(variants_json.to_str()) == {
+        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: ["ns2", "ns1"],
+            VARIANT_INFO_FEATURE_KEY: {"ns1": ["f1"], "ns2": ["f2"]},
+            VARIANT_INFO_PROPERTY_KEY: {"ns2": {"f2": ["v2"]}, "ns1": {"f1": ["v1"]}},
         },
-        "property": {
-            "ns2": {
-                "f2": [
-                    "v2"
-                ]
-            },
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
             "ns1": {
-                "f1": [
-                    "v1"
-                ]
-            }
-        }
-    },
-    "providers": {
-        "ns1": {
-            "requires": [
-                "ns1-pkg >= 1.0.0",
-                "ns1-dep"
-            ],
-            "enable-if": "python_version >= '3.12'",
-            "plugin-api": "ns1_pkg:Plugin"
-        },
-        "ns2": {
-            "requires": [
-                "ns2_pkg"
-            ],
-            "plugin-api": "ns2_pkg:Plugin"
-        }
-    },
-    "variants": {
-        "b3b0305c": {
-            "ns1": {
-                "f1": "v1"
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns1-pkg >= 1.0.0", "ns1-dep"],
+                VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version >= '3.12'",
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_pkg:Plugin",
             },
             "ns2": {
-                "f2": "v1"
-            }
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns2_pkg"],
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_pkg:Plugin",
+            },
         },
-        "9177ff3f": {
-            "ns2": {
-                "f2": "v2"
-            }
-        }
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
+            "b3b0305c": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
+            "9177ff3f": {"ns2": {"f2": ["v2"]}},
+        },
     }
-}\
-"""
-    )
 
 
 def test_roundtrip() -> None:
-    json_file = Path("tests/artifacts/variants.json")
+    json_file = Path(
+        "tests/artifacts/variant_json_files/dummy_project-1.0.0-variants.json"
+    )
     data = json_file.read_text()
     variants_json = VariantsJson(json.loads(data))
-    assert variants_json.to_str() == data.rstrip()
+    assert json.loads(variants_json.to_str()) == json.loads(data)
 
 
 def test_merge_variants() -> None:
     default_prios: PriorityJsonDict = {
-        "namespace": ["a", "b"],
-        "feature": {"a": ["a"], "b": ["b"]},
-        "property": {"a": {"a": ["a"]}, "b": {"b": ["b"]}},
+        VARIANT_INFO_NAMESPACE_KEY: ["a", "b"],
+        VARIANT_INFO_FEATURE_KEY: {"a": ["a"], "b": ["b"]},
+        VARIANT_INFO_PROPERTY_KEY: {"a": {"a": ["a"]}, "b": {"b": ["b"]}},
     }
 
     provider_b: ProviderPluginJsonDict = {
-        "requires": ["b"],
-        "enable-if": "python_version > '3.12'",
-        "plugin-api": "b:B",
+        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["b"],
+        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version > '3.12'",
+        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "b:B",
     }
 
     json_a: VariantsJsonDict = {
-        "default-priorities": default_prios,
-        "providers": {
+        VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
             "a": {
-                "requires": ["a"],
-                "plugin-api": "a:A",
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a"],
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
             },
             "b": provider_b,
         },
-        "variants": {
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
             "54357fe4": {
                 "a": {
-                    "a": "a",
+                    "a": ["a"],
                 },
                 "b": {
-                    "b": "c",
+                    "b": ["c"],
                 },
             }
         },
     }
     json_b: VariantsJsonDict = {
-        "default-priorities": default_prios,
-        "providers": {
+        VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
             "a": {
-                "requires": ["a2"],
-                "plugin-api": "a:A",
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a2"],
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
             },
             "b": provider_b,
         },
-        "variants": {
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
             "48b561bc": {
                 "a": {
-                    "a": "c",
+                    "a": ["c"],
                 },
                 "b": {
-                    "b": "b",
+                    "b": ["b"],
                 },
             }
         },
     }
     merged = VariantsJson(
         {
-            "default-priorities": default_prios,
-            "providers": {
+            VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
+            VARIANT_INFO_PROVIDER_DATA_KEY: {
                 "a": {
-                    "requires": ["a", "a2"],
-                    "plugin-api": "a:A",
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a", "a2"],
+                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
                 },
                 "b": provider_b,
             },
-            "variants": {
+            VARIANTS_JSON_VARIANT_DATA_KEY: {
                 "48b561bc": {
                     "a": {
-                        "a": "c",
+                        "a": ["c"],
                     },
                     "b": {
-                        "b": "b",
+                        "b": ["b"],
                     },
                 },
                 "54357fe4": {
                     "a": {
-                        "a": "a",
+                        "a": ["a"],
                     },
                     "b": {
-                        "b": "c",
+                        "b": ["c"],
                     },
                 },
             },
@@ -479,27 +498,31 @@ def test_merge_variants() -> None:
 
     # Test for mismatches in default priorities.
     overrides = {
-        "namespace": ["b", "a"],
-        "feature": {"b": ["b"]},
-        "property": {"b": {"b": ["b"]}},
+        VARIANT_INFO_NAMESPACE_KEY: ["b", "a"],
+        VARIANT_INFO_FEATURE_KEY: {"b": ["b"]},
+        VARIANT_INFO_PROPERTY_KEY: {"b": {"b": ["b"]}},
     }
 
-    for key in json_a["default-priorities"]:
+    for key in json_a[VARIANT_INFO_DEFAULT_PRIO_KEY]:
         _json_data = copy.deepcopy(json_b)
-        _json_data["default-priorities"][key] = overrides[key]  # type: ignore[literal-required]
+        _json_data[VARIANT_INFO_DEFAULT_PRIO_KEY][key] = overrides[key]  # type: ignore[literal-required]
         with pytest.raises(ValidationError, match=rf"Inconsistency in '{key}"):
             v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
     _json_data = copy.deepcopy(json_b)
-    del _json_data["providers"]["b"]["enable-if"]
+    del _json_data[VARIANT_INFO_PROVIDER_DATA_KEY]["b"][
+        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+    ]
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['b'\].enable_if"
     ):
         v1.merge(VariantsJson(_json_data))
 
     _json_data = copy.deepcopy(json_b)
-    _json_data["providers"]["a"]["plugin-api"] = "test:Test"
+    _json_data[VARIANT_INFO_PROVIDER_DATA_KEY]["a"][
+        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+    ] = "test:Test"
     with pytest.raises(
         ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
     ):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Literal
 from typing import TypedDict
 
 VARIANT_HASH_LEN = 8
@@ -8,25 +9,36 @@ CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
 
 # Common variant info keys (used in pyproject.toml and variants.json)
-VARIANT_INFO_DEFAULT_PRIO_KEY = "default-priorities"
-VARIANT_INFO_FEATURE_KEY = "feature"
-VARIANT_INFO_NAMESPACE_KEY = "namespace"
-VARIANT_INFO_PROPERTY_KEY = "property"
-VARIANT_INFO_PROVIDER_DATA_KEY = "providers"
-VARIANT_INFO_PROVIDER_ENABLE_IF_KEY = "enable-if"
-VARIANT_INFO_PROVIDER_PLUGIN_API_KEY = "plugin-api"
-VARIANT_INFO_PROVIDER_REQUIRES_KEY = "requires"
+VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
+VARIANT_INFO_FEATURE_KEY: Literal["feature"] = "feature"
+VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
+VARIANT_INFO_PROPERTY_KEY: Literal["property"] = "property"
+VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
+VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
+VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
+VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
-VARIANTS_JSON_SCHEMA_KEY = "$schema"
+VARIANTS_JSON_SCHEMA_KEY: Literal["$schema"] = "$schema"
 VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/"
-VARIANTS_JSON_VARIANT_DATA_KEY = "variants"
+VARIANTS_JSON_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
 VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
+
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.]+")
+
+# For `Property value` there is two regexes:
+# 1. `VALIDATION_VALUE_VSPEC_REGEX` - if `packaging.specifiers.SpecifierSet` is used
+# Note: for clarity - only "full version" are allowed
+#       i.e. so no "a|b|alpha|beta|rc|post|etc." versions
+VALIDATION_VALUE_VSPEC_REGEX = re.compile(r"[0-9_.,!>~<=]+")
+# 2. `VALIDATION_VALUE_STR_REGEX` - if string matching is used
+VALIDATION_VALUE_STR_REGEX = re.compile(r"[a-z0-9_.]+")
+VALIDATION_VALUE_REGEX = re.compile(
+    rf"{VALIDATION_VALUE_VSPEC_REGEX.pattern}|{VALIDATION_VALUE_STR_REGEX.pattern}"
+)
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""
@@ -113,7 +125,7 @@ ProviderPluginJsonDict = TypedDict(
     total=False,
 )
 
-VariantInfoJsonDict = dict[str, dict[str, str]]
+VariantInfoJsonDict = dict[str, dict[str, list[str]]]
 
 
 VariantsJsonDict = TypedDict(

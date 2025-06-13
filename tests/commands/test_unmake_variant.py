@@ -13,6 +13,8 @@ from variantlib.commands.main import main
     [
         "test_package-0-py3-none-any-00000000.whl",
         "test_package-0-py3-none-any-5d8be4b9.whl",
+        "test_package-0-py3-none-any-60567bd9.whl",
+        "test_package-0-py3-none-any-fbe82642.whl",
     ],
 )
 def test_unmake_variant(
@@ -23,12 +25,12 @@ def test_unmake_variant(
         [
             "unmake-variant",
             "-f",
-            f"tests/artifacts/{filename}",
+            f"tests/artifacts/test-package/dist/{filename}",
             "-o",
             str(tmp_path),
         ]
     )
     assert_zips_equal(
-        Path("tests/artifacts/test_package-0-py3-none-any.whl"),
+        Path("tests/artifacts/test-package/dist/test_package-0-py3-none-any.whl"),
         tmp_path / "test_package-0-py3-none-any.whl",
     )

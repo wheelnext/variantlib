@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import string
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+from variantlib.constants import VALIDATION_VALUE_STR_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -80,7 +83,10 @@ def test_failing_regex_namespace() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="", feature="feature", value="value")
 
-    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
+    for c in string.printable:
+        if VALIDATION_NAMESPACE_REGEX.fullmatch(c):
+            continue
+
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantProperty(
                 namespace=f"Omni{c}Corp", feature="feature", value="value"
@@ -91,7 +97,10 @@ def test_failing_regex_feature() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="provider", feature="", value="value")
 
-    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
+    for c in string.printable:
+        if VALIDATION_FEATURE_NAME_REGEX.fullmatch(c):
+            continue
+
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantProperty(
                 namespace="provider", feature=f"access{c}feature", value="value"
@@ -102,7 +111,10 @@ def test_failing_regex_value() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantProperty(namespace="provider", feature="feature", value="")
 
-    for c in "@#$%&*^()[]?!-{}[]\\/ ":
+    for c in string.printable:
+        if VALIDATION_VALUE_STR_REGEX.fullmatch(c):
+            continue
+
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantProperty(
                 namespace="provider", feature="feature", value=f"val{c}ue"
@@ -276,8 +288,7 @@ def test_variantdescription_partial_duplicate_data() -> None:
     vprop2 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="another_value"
     )
-    with pytest.raises(ValidationError, match="Duplicate value"):
-        _ = VariantDescription([vprop1, vprop2])
+    VariantDescription([vprop1, vprop2])
 
 
 def test_variantdescription_sorted_data() -> None:

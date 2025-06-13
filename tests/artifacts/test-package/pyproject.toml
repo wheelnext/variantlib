@@ -7,3 +7,9 @@ name = "test-package"
 version = "0"
 description = "Installable package for testing"
 requires-python = ">=3.9"
+
+[variant.default-priorities]
+namespace = ["installable_plugin"]
+
+[variant.providers.installable_plugin]
+requires = ["test-plugin-package"]

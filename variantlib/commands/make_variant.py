@@ -173,10 +173,12 @@ def _make_variant(
                 ):
                     with output_zip.open(file_info, "w") as output_file:
                         shutil.copyfileobj(input_file, output_file)
+
                 elif components[1] == VARIANT_DIST_INFO_FILENAME:
                     # If a wheel dist-info file exists already, discard the existing
                     # copy.
                     continue
+
                 else:  # RECORD
                     assert components[1] == "RECORD"
                     # First, add new dist-info file prior to RECORD (not strictly

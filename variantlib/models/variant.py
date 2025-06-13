@@ -13,8 +13,8 @@ from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
+from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
 from variantlib.protocols import VariantFeatureName
@@ -24,6 +24,7 @@ from variantlib.validators.base import validate_list_all_unique
 from variantlib.validators.base import validate_matches_re
 from variantlib.validators.base import validate_type
 from variantlib.validators.combining import validate_and
+from variantlib.validators.vprop import validate_variant_property_value
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -38,7 +39,7 @@ class VariantFeature(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantNamespace),
-                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -49,7 +50,7 @@ class VariantFeature(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantFeatureName),
-                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -101,7 +102,7 @@ class VariantProperty(VariantFeature):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantFeatureValue),
-                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
+                    lambda v: validate_variant_property_value(v),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -158,7 +159,7 @@ class VariantDescription(BaseModel):
                 [
                     lambda v: validate_type(v, list[VariantProperty]),
                     lambda v: validate_list_all_unique(
-                        v, keys=["namespace", "feature"]
+                        v, keys=["namespace", "feature", "value"]
                     ),
                 ],
                 value=val,
@@ -223,25 +224,28 @@ class VariantDescription(BaseModel):
     def serialize(self) -> list[dict[str, str]]:
         return [vprop.serialize() for vprop in self.properties]
 
-    def to_dict(self) -> dict[str, dict[str, str]]:
+    def to_dict(self) -> VariantInfoJsonDict:
         data = asdict(self)
 
-        result: defaultdict[str, dict[str, str]] = defaultdict(dict)
+        result: defaultdict[str, dict[str, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
 
         for vprop in data["properties"]:
             namespace = vprop["namespace"]
             feature = vprop["feature"]
             value = vprop["value"]
-            result[namespace][feature] = value
+            result[namespace][feature].append(value)
 
         return dict(result)
 
     @classmethod
-    def from_dict(cls, data: dict[str, dict[str, str]]) -> Self:
+    def from_dict(cls, data: VariantInfoJsonDict) -> Self:
         vprops = [
-            VariantProperty(namespace=namespace, feature=key, value=value)
+            VariantProperty(namespace=namespace, feature=key, value=vprop_val)
             for namespace, vdata in data.items()
-            for key, value in vdata.items()
+            for key, vprop_values in vdata.items()
+            for vprop_val in vprop_values
         ]
 
         return cls(vprops)

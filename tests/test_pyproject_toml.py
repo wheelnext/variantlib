@@ -11,6 +11,7 @@ from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
@@ -27,29 +28,29 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-TOML_DATA = """
+TOML_DATA = f"""
 [project]
 name = "frobnicate"
 version = "1.2.3"
 
-[variant.default-priorities]
-namespace = ["ns1", "ns2"]
-feature.ns1 = ["f2"]
-feature.ns2 = ["f1", "f2"]
-property.ns1.f2 = ["p1"]
-property.ns2.f1 = ["p2"]
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_DEFAULT_PRIO_KEY}]
+{VARIANT_INFO_NAMESPACE_KEY} = ["ns1", "ns2"]
+{VARIANT_INFO_FEATURE_KEY}.ns1 = ["f2"]
+{VARIANT_INFO_FEATURE_KEY}.ns2 = ["f1", "f2"]
+{VARIANT_INFO_PROPERTY_KEY}.ns1.f2 = ["p1"]
+{VARIANT_INFO_PROPERTY_KEY}.ns2.f1 = ["p2"]
 
-[variant.providers.ns1]
-requires = ["ns1-provider >= 1.2.3"]
-enable-if = "python_version >= '3.12'"
-plugin-api = "ns1_provider.plugin:NS1Plugin"
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns1]
+{VARIANT_INFO_PROVIDER_REQUIRES_KEY} = ["ns1-provider >= 1.2.3"]
+{VARIANT_INFO_PROVIDER_ENABLE_IF_KEY} = "python_version >= '3.12'"
+{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns1_provider.plugin:NS1Plugin"
 
-[variant.providers.ns2]
-requires = [
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns2]
+{VARIANT_INFO_PROVIDER_REQUIRES_KEY} = [
     "ns2_provider; python_version >= '3.11'",
     "old_ns2_provider; python_version < '3.11'",
 ]
-plugin-api = "ns2_provider:Plugin"
+{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns2_provider:Plugin"
 """
 
 PYPROJECT_TOML = tomllib.loads(TOML_DATA)
@@ -352,7 +353,7 @@ def test_extra_provider_data_key() -> None:
                 PYPROJECT_TOML_TOP_KEY: {
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
-                            "plugin-api": "frobnicate:Plugin",
+                            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "frobnicate:Plugin",
                             "foo": {},
                         }
                     }

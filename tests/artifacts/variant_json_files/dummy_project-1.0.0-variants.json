@@ -1,0 +1,153 @@
+{
+    "$schema": "https://variants-schema.wheelnext.dev/",
+    "default-priorities": {
+        "namespace": [
+            "fictional_hw",
+            "fictional_tech"
+        ],
+        "feature": {
+            "fictional_hw": [
+                "humor",
+                "compute_accuracy"
+            ],
+            "fictional_tech": [
+                "quantum"
+            ]
+        },
+        "property": {
+            "fictional_tech": {
+                "technology": [
+                    "auto_chef"
+                ]
+            }
+        }
+    },
+    "providers": {
+        "fictional_hw": {
+            "requires": [
+                "provider-fictional-hw == 1.0.0"
+            ],
+            "enable-if": "python_version >= '3.12'",
+            "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin"
+        },
+        "fictional_tech": {
+            "requires": [
+                "provider-fictional-tech == 1.0.0"
+            ],
+            "plugin-api": "provider_fictional_tech.plugin:FictionalTechPlugin"
+        }
+    },
+    "variants": {
+        "1d836653": {
+            "fictional_hw": {
+                "compute_capability": [
+                    ">=4,<6"
+                ]
+            }
+        },
+        "808c7f9d": {
+            "fictional_tech": {
+                "quantum": [
+                    "foam"
+                ],
+                "risk_exposure": [
+                    "1000000000"
+                ],
+                "technology": [
+                    "improb_drive"
+                ]
+            }
+        },
+        "80fa16ff": {
+            "fictional_hw": {
+                "architecture": [
+                    "tars"
+                ],
+                "compute_accuracy": [
+                    "8"
+                ],
+                "compute_capability": [
+                    "8"
+                ],
+                "humor": [
+                    "10"
+                ]
+            }
+        },
+        "00000000": {},
+        "3f7188c1": {
+            "fictional_hw": {
+                "architecture": [
+                    "hal9000"
+                ],
+                "compute_accuracy": [
+                    "0"
+                ],
+                "compute_capability": [
+                    "6"
+                ],
+                "humor": [
+                    "2"
+                ]
+            }
+        },
+        "a0d8855a": {
+            "fictional_hw": {
+                "compute_capability": [
+                    ">=4,<8"
+                ]
+            }
+        },
+        "7db6d39f": {
+            "fictional_tech": {
+                "quantum": [
+                    "superposition"
+                ],
+                "risk_exposure": [
+                    "25"
+                ],
+                "technology": [
+                    "auto_chef"
+                ]
+            }
+        },
+        "092f6ea8": {
+            "fictional_hw": {
+                "compute_capability": [
+                    ">=7"
+                ]
+            }
+        },
+        "36028aca": {
+            "fictional_hw": {
+                "architecture": [
+                    "deepthought"
+                ],
+                "compute_accuracy": [
+                    "10"
+                ],
+                "compute_capability": [
+                    "10"
+                ],
+                "humor": [
+                    "0"
+                ]
+            },
+            "fictional_tech": {
+                "quantum": [
+                    "foam"
+                ]
+            }
+        },
+        "03e04d5e": {
+            "fictional_hw": {
+                "architecture": [
+                    "mother"
+                ],
+                "compute_capability": [
+                    "4"
+                ]
+            }
+        }
+    }
+}

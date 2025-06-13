@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -57,6 +58,7 @@ class VariantInfo:
     property_priorities: dict[
         VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
     ] = field(default_factory=dict)
+
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
 
     def copy_as_kwargs(self) -> dict[str, Any]:
@@ -110,6 +112,7 @@ class VariantInfo:
             ) as namespace_priorities:
                 validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
                 self.namespace_priorities = list(namespace_priorities)
+
             with validator.get(
                 VARIANT_INFO_FEATURE_KEY,
                 dict[VariantNamespace, list[VariantFeatureName]],
@@ -123,6 +126,7 @@ class VariantInfo:
                     ) as feature_priorities:
                         validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
                         self.feature_priorities[namespace] = feature_priorities
+
             with validator.get(
                 VARIANT_INFO_PROPERTY_KEY,
                 dict[
@@ -191,6 +195,7 @@ class VariantInfo:
                 VARIANT_INFO_NAMESPACE_KEY,
             ]
         )
+
         if set(self.namespace_priorities) != all_providers:
             raise ValidationError(
                 f"{namespace_prios_key} must specify the same namespaces "

@@ -52,7 +52,6 @@ test = [
     "virtualenv>=20.0.0,<21.0.0",
     "tomlkit>=0.13,<0.14",
     "trycast==1.2.1",
-    "uv>=0.7,<0.8",
 ]
 
 [project.scripts]

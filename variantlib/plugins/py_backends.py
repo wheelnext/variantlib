@@ -101,7 +101,7 @@ class _BaseBackend(abc.ABC):
 
 
 class UvBackend(_BaseBackend):
-    display_name: str = "uv"
+    display_name: str = "uv"  # pyright: ignore[reportIncompatibleMethodOverride]
     _uv_exec_path: str | None = shutil.which("uv")
 
     def install_requirements(
@@ -132,7 +132,7 @@ class UvBackend(_BaseBackend):
 
 
 class PipBackend(_BaseBackend):
-    display_name = "pip"
+    display_name: str = "pip"  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def install_requirements(
         self, requirements: Collection[str], py_exec: pathlib.Path | None = None

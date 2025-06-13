@@ -94,6 +94,14 @@ def _unmake_variant(
     ):
         for file_info in input_zip.infolist():
             components = file_info.filename.split("/", 2)
+
+            if (
+                ".dist-info/" in file_info.filename
+                and components[1] == VARIANT_DIST_INFO_FILENAME
+            ):
+                # This is the variant.json file, we skip it.
+                continue
+
             with input_zip.open(file_info, "r") as input_file:
                 if (
                     len(components) != 2
@@ -102,9 +110,7 @@ def _unmake_variant(
                 ):
                     with output_zip.open(file_info, "w") as output_file:
                         shutil.copyfileobj(input_file, output_file)
-                elif components[1] == VARIANT_DIST_INFO_FILENAME:
-                    # Skip the file.
-                    continue
+
                 else:
                     assert components[1] == "RECORD"
                     # Update RECORD to remove the checksum.

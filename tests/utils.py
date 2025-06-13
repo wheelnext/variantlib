@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
@@ -10,7 +12,6 @@ from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from pathlib import Path
 
 
 def get_combinations(
@@ -63,9 +64,21 @@ def assert_zips_equal(
 ) -> None:
     with ZipFile(ref_path) as ref_zip, ZipFile(new_path) as new_zip:
         assert set(ref_zip.namelist()) == set(new_zip.namelist())
-        for filename in ref_zip.namelist():
-            # ignore RECORD file, checksums will differ depending on plugin paths
-            if filename.endswith("RECORD"):
+        for filepath in ref_zip.namelist():
+            filename = Path(filepath).name
+
+            if filename == "RECORD":
+                # ignore RECORD file, checksums will differ depending on plugin paths
                 continue
-            with ref_zip.open(filename) as ref_file, new_zip.open(filename) as new_file:
-                assert new_file.readlines() == ref_file.readlines()
+
+            if filename == "variant.json":
+                assert json.loads(ref_zip.read(filepath)) == json.loads(
+                    new_zip.read(filepath)
+                )
+
+            else:
+                with (
+                    ref_zip.open(filepath) as ref_file,
+                    new_zip.open(filepath) as new_file,
+                ):
+                    assert new_file.readlines() == ref_file.readlines()
