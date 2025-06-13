@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Literal
 from typing import TypedDict
 
 VARIANT_HASH_LEN = 8
@@ -8,21 +9,21 @@ CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
 
 # Common variant info keys (used in pyproject.toml and variants.json)
-VARIANT_INFO_DEFAULT_PRIO_KEY = "default-priorities"
-VARIANT_INFO_FEATURE_KEY = "feature"
-VARIANT_INFO_NAMESPACE_KEY = "namespace"
-VARIANT_INFO_PROPERTY_KEY = "property"
-VARIANT_INFO_PROVIDER_DATA_KEY = "providers"
-VARIANT_INFO_PROVIDER_ENABLE_IF_KEY = "enable-if"
-VARIANT_INFO_PROVIDER_PLUGIN_API_KEY = "plugin-api"
-VARIANT_INFO_PROVIDER_REQUIRES_KEY = "requires"
+VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
+VARIANT_INFO_FEATURE_KEY: Literal["feature"] = "feature"
+VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
+VARIANT_INFO_PROPERTY_KEY: Literal["property"] = "property"
+VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
+VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
+VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
+VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
-VARIANTS_JSON_SCHEMA_KEY = "$schema"
+VARIANTS_JSON_SCHEMA_KEY: Literal["$schema"] = "$schema"
 # VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/"
 VARIANTS_JSON_SCHEMA_URL = "https://raw.githubusercontent.com/wheelnext/pep_xxx_wheel_variants/refs/heads/version_specifier_support/schema/variants.schema.json"
-VARIANTS_JSON_VARIANT_DATA_KEY = "variants"
+VARIANTS_JSON_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
 VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 

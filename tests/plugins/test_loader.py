@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-import json
 import re
 import sys
 
 import pytest
 
+from variantlib.constants import PYPROJECT_TOML_TOP_KEY
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.errors import ValidationError
@@ -402,34 +407,32 @@ def test_load_plugin_invalid_arg() -> None:
             },
         ),
         VariantPyProjectToml(
-            tomllib.loads("""
-[variant.default-priorities]
-namespace = ["test_namespace", "second_namespace"]
+            tomllib.loads(f"""
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_DEFAULT_PRIO_KEY}]
+{VARIANT_INFO_NAMESPACE_KEY} = ["test_namespace", "second_namespace"]
 
-[variant.providers.test_namespace]
-plugin-api = "tests.mocked_plugins:MockedPluginA"
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.test_namespace]
+{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "tests.mocked_plugins:MockedPluginA"
 
-[variant.providers.second_namespace]
-plugin-api = "tests.mocked_plugins:MockedPluginB"
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.second_namespace]
+{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "tests.mocked_plugins:MockedPluginB"
 """)
         ),
         VariantsJson(
-            json.loads("""
-{
-    "default-priorities": {
-        "namespace": ["test_namespace", "second_namespace"]
-    },
-    "providers": {
-        "test_namespace": {
-            "plugin-api": "tests.mocked_plugins:MockedPluginA"
-        },
-        "second_namespace": {
-            "plugin-api": "tests.mocked_plugins:MockedPluginB"
-        }
-    },
-    "variants": {}
-}
-""")
+            {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                    VARIANT_INFO_NAMESPACE_KEY: ["test_namespace", "second_namespace"]
+                },
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "test_namespace": {
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginA"  # noqa: E501
+                    },
+                    "second_namespace": {
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB"  # noqa: E501
+                    },
+                },
+                VARIANTS_JSON_VARIANT_DATA_KEY: {},
+            }
         ),
     ],
 )

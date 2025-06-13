@@ -27,14 +27,19 @@ from variantlib.api import get_variant_environment_dict
 from variantlib.api import get_variant_hashes_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
+from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_STR_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
@@ -90,7 +95,7 @@ def test_get_variant_hashes_by_priority_roundtrip(
     ]
 
     variants_json = {
-        "$schema": VARIANTS_JSON_SCHEMA_URL,
+        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: namespace_priorities,
         },
@@ -245,7 +250,7 @@ def test_validation_result_is_valid(
 def test_validation_result_properties() -> None:
     res = VariantValidationResult(
         {
-            VariantProperty("blas", "variant", "mkl"): True,
+            VariantProperty("blas", PYPROJECT_TOML_TOP_KEY, "mkl"): True,
             VariantProperty("cuda", "runtime", "12.0"): None,
             VariantProperty("blas", "invariant", "lkm"): False,
             VariantProperty("x86_64", "baseline", "v10"): False,
@@ -325,12 +330,12 @@ def test_make_variant_dist_info(
     pyproject_toml: VariantsJsonDict | None,
 ) -> None:
     expected: VariantsJsonDict = {
-        "$schema": VARIANTS_JSON_SCHEMA_URL,
-        "default-priorities": {
-            "namespace": [],
+        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: [],
         },
-        "providers": {},
-        "variants": {
+        VARIANT_INFO_PROVIDER_DATA_KEY: {},
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
             "67fcaf38": {
                 "ns1": {
                     "f1": ["p1"],
@@ -342,36 +347,36 @@ def test_make_variant_dist_info(
     }
 
     if pyproject_toml is not None:
-        expected["providers"].update(
+        expected[VARIANT_INFO_PROVIDER_DATA_KEY].update(
             {
                 "ns1": {
-                    "requires": ["ns1-provider >= 1.2.3"],
-                    "enable-if": "python_version >= '3.12'",
-                    "plugin-api": "ns1_provider.plugin:NS1Plugin",
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns1-provider >= 1.2.3"],
+                    VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version >= '3.12'",
+                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",  # noqa: E501
                 },
                 "ns2": {
-                    "requires": [
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: [
                         "ns2_provider; python_version >= '3.11'",
                         "old_ns2_provider; python_version < '3.11'",
                     ],
-                    "plugin-api": "ns2_provider:Plugin",
+                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
                 },
             }
         )
-        expected["default-priorities"].update(
+        expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                "namespace": ["ns1", "ns2"],
+                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2"],
             },
         )
 
     if pyproject_toml is PYPROJECT_TOML:
-        expected["default-priorities"].update(
+        expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                "feature": {
+                VARIANT_INFO_FEATURE_KEY: {
                     "ns1": ["f2"],
                     "ns2": ["f1", "f2"],
                 },
-                "property": {
+                VARIANT_INFO_PROPERTY_KEY: {
                     "ns1": {
                         "f2": ["p1"],
                     },

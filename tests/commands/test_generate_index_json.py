@@ -5,7 +5,13 @@ from pathlib import Path
 from shutil import copy
 
 from variantlib.commands.main import main
+from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
+from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
+from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 
 
 def test_generate_index_json(
@@ -22,18 +28,18 @@ def test_generate_index_json(
 
     main(["generate-index-json", "-d", str(tmp_path)])
     assert json.loads((tmp_path / "test_package-0-variants.json").read_text()) == {
-        "$schema": VARIANTS_JSON_SCHEMA_URL,
-        "default-priorities": {
-            "namespace": [
+        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: [
                 "installable_plugin",
             ]
         },
-        "providers": {
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
             "installable_plugin": {
-                "requires": ["test-plugin-package"],
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["test-plugin-package"],
             },
         },
-        "variants": {
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
             "00000000": {},
             "5d8be4b9": {
                 "installable_plugin": {
