@@ -213,9 +213,7 @@ def filter_variants_by_property(
             vprops_dict[VariantFeature(vprop.namespace, vprop.feature)].add(vprop.value)
 
         for vfeat_tuple, property_values in vprops_dict.items():
-            if (
-                allowed_props := allowed_props_dict.get(vfeat_tuple)
-            ) is None or not allowed_props:
+            if not (allowed_props := allowed_props_dict.get(vfeat_tuple)):
                 # If there are no allowed properties for this feature, we reject
                 # the variant.
                 logger.info(
