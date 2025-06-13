@@ -288,7 +288,7 @@ def test_variantdescription_partial_duplicate_data() -> None:
     vprop2 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="another_value"
     )
-    _ = VariantDescription([vprop1, vprop2])
+    VariantDescription([vprop1, vprop2])
 
 
 def test_variantdescription_sorted_data() -> None:

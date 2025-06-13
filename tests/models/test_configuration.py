@@ -8,7 +8,6 @@ from hypothesis import strategies as st
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_VSPEC_REGEX
 from variantlib.models.configuration import VariantConfiguration
 
 if TYPE_CHECKING:
@@ -93,7 +92,26 @@ def test_feature_priorities_validation(
         st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
         st.dictionaries(
             st.from_regex(VALIDATION_FEATURE_NAME_REGEX, fullmatch=True),
-            st.lists(st.from_regex(VALIDATION_VALUE_VSPEC_REGEX, fullmatch=True)),
+            st.lists(
+                st.sampled_from(
+                    [
+                        "8.5",
+                        "8.6a",
+                        "custom_value",
+                        "==8.4",
+                        ">=8.4",
+                        ">8.4",
+                        "<=8.4",
+                        "<8.4",
+                        ">8.4,<9.0",
+                        ">8.4,<=9.0",
+                        ">=8.4,<9.0",
+                        ">=8.4,<=9.0",
+                        ">=1.2,<=2.0,!=4",
+                    ]
+                ),
+                unique=True,
+            ),
         ),
     ),
 )
