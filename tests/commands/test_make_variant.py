@@ -20,55 +20,6 @@ def non_variant_wheel(test_artifact_path: Path) -> Path:
     return whl_f
 
 
-@pytest.fixture
-def pyproject_toml(test_artifact_path: Path) -> Path:
-    pyproject_f = test_artifact_path / "test-package/pyproject.toml"
-    if not pyproject_f.exists() or not pyproject_f.is_file():
-        raise FileNotFoundError(
-            f"Test package pyproject.toml not found: `{pyproject_f}`"
-        )
-    return pyproject_f
-
-
-def validate_make_variant(
-    tmp_dir_path: Path,
-    non_variant_wheel: Path,
-    pyproject_toml: Path,
-    target_variant_wheel: Path,
-    properties: list[str] | None = None,
-) -> None:
-    cmd_args = [
-        "make-variant",
-        "-f",
-        str(non_variant_wheel.resolve()),
-        "-o",
-        str(tmp_dir_path),
-        "--pyproject-toml",
-        str(pyproject_toml.resolve()),
-    ]
-
-    if properties is None:
-        cmd_args.append("--null-variant")
-    else:
-        cmd_args.extend(
-            itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
-        )
-
-    if properties is not None:
-        with pytest.raises(RuntimeError, match="No module named 'test_plugin_package'"):
-            # This should fail because the plugin is not installed
-            main(cmd_args)
-
-    main([*cmd_args, "--skip-plugin-validation"])
-
-    output_f = tmp_dir_path / target_variant_wheel.name
-    assert output_f.exists(), (
-        f"Expected output file {output_f} to exist, but it does not."
-    )
-
-    assert_zips_equal(target_variant_wheel, output_f)
-
-
 @pytest.mark.parametrize(
     ("vhash", "properties"),
     [
@@ -98,25 +49,52 @@ def test_make_variant(
     vhash: str,
     properties: list[str] | None,
     non_variant_wheel: Path,
-    pyproject_toml: Path,
+    test_artifact_path: Path,
     tmp_path: Path,
 ) -> None:
-    validate_make_variant(
-        tmp_dir_path=tmp_path,
-        non_variant_wheel=non_variant_wheel,
-        pyproject_toml=pyproject_toml,
-        target_variant_wheel=(
-            non_variant_wheel.parent / f"test_package-0-py3-none-any-{vhash}.whl"
-        ),
-        properties=properties,
+    cmd_args = [
+        "make-variant",
+        "-f",
+        str(non_variant_wheel.resolve()),
+        "-o",
+        str(tmp_path),
+        "--pyproject-toml",
+        str((test_artifact_path / "test-package/pyproject.toml").resolve()),
+    ]
+
+    if properties is None:
+        cmd_args.append("--null-variant")
+    else:
+        cmd_args.extend(
+            itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
+        )
+
+    if properties is not None:
+        with pytest.raises(RuntimeError, match="No module named 'test_plugin_package'"):
+            # This should fail because the plugin is not installed
+            main(cmd_args)
+
+    main([*cmd_args, "--skip-plugin-validation"])
+
+    target_variant_wheel = (
+        non_variant_wheel.parent / f"test_package-0-py3-none-any-{vhash}.whl"
     )
+
+    output_f = tmp_path / target_variant_wheel.name
+    assert output_f.exists(), (
+        f"Expected output file {output_f} to exist, but it does not."
+    )
+
+    assert_zips_equal(target_variant_wheel, output_f)
 
 
 def test_make_variant_error(
     non_variant_wheel: Path,
-    pyproject_toml: Path,
+    test_artifact_path: Path,
     tmp_path: Path,
 ) -> None:
+    pyproject_f = test_artifact_path / "test-package/pyproject.toml"
+
     with pytest.raises(SystemExit):
         # "error: one of the arguments -p/--property --null-variant is required"
         main(
@@ -127,6 +105,6 @@ def test_make_variant_error(
                 "-o",
                 str(tmp_path),
                 "--pyproject-toml",
-                str(pyproject_toml.resolve()),
+                str(pyproject_f.resolve()),
             ]
         )
