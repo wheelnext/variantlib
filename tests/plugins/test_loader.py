@@ -234,7 +234,7 @@ def test_namespace_incorrect_type() -> None:
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
             r"the PluginType prototype: 123 \(missing attributes: get_all_configs, "
-            r"get_supported_configs\)",
+            r"get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):

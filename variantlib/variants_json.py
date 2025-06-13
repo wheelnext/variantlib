@@ -89,7 +89,7 @@ class VariantsJson(VariantInfo):
             # Remove empty property priorities
             del data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY]
 
-        return json.dumps(data, indent=4, sort_keys=True, ensure_ascii=True)
+        return json.dumps(data, indent=4, sort_keys=True)
 
     def merge(self, variant_dist_info: Self) -> None:
         """Merge info from another wheel (VariantsJson instance)"""

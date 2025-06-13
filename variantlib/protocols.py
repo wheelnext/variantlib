@@ -63,7 +63,11 @@ class VariantPropertyType(Protocol):
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
-    namespace: VariantNamespace
+    @property
+    @abstractmethod
+    def namespace(self) -> VariantNamespace:
+        """Plugin namespace"""
+        raise NotImplementedError
 
     @abstractmethod
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
