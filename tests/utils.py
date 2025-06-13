@@ -72,13 +72,9 @@ def assert_zips_equal(
                 continue
 
             if filename == "variant.json":
-                with (
-                    ref_zip.open(filepath) as ref_file,
-                    new_zip.open(filepath) as new_file,
-                ):
-                    assert json.loads(new_file.read().decode()) == json.loads(
-                        ref_file.read().decode()
-                    )
+                assert json.loads(ref_zip.read(filepath)) == json.loads(
+                    new_zip.read(filepath)
+                )
 
             else:
                 with (
