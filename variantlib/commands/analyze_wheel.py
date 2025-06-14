@@ -69,7 +69,12 @@ def analyze_wheel(args: list[str]) -> None:
 
     with zipfile.ZipFile(input_file, "r") as zip_file:
         for name in zip_file.namelist():
-            if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
+            components = name.split("/", 2)
+            if (
+                len(components) == 2
+                and components[0].endswith(".dist-info")
+                and components[1] == VARIANT_DIST_INFO_FILENAME
+            ):
                 variant_dist_info = VariantDistInfo(zip_file.read(name), variant_hash)
                 break
         else:

@@ -67,7 +67,12 @@ def generate_index_json(args: list[str]) -> None:
             with zipfile.ZipFile(wheel, "r") as zip_file:
                 # Find the variant dist-info file
                 for name in zip_file.namelist():
-                    if name.endswith(f".dist-info/{VARIANT_DIST_INFO_FILENAME}"):
+                    components = name.split("/", 2)
+                    if (
+                        len(components) == 2
+                        and components[0].endswith(".dist-info")
+                        and components[1] == VARIANT_DIST_INFO_FILENAME
+                    ):
                         variant_dist_info = VariantDistInfo(zip_file.read(name), vhash)
                         break
                 else:
