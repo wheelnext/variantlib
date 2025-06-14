@@ -163,24 +163,15 @@ def _make_variant(
     ):
         for file_info in input_zip.infolist():
             components = file_info.filename.split("/", 2)
-            with (
-                input_zip.open(file_info, "r") as input_file,
-            ):
-                if (
-                    len(components) != 2
-                    or not components[0].endswith(".dist-info")
-                    or components[1] not in ("RECORD", VARIANT_DIST_INFO_FILENAME)
-                ):
-                    with output_zip.open(file_info, "w") as output_file:
-                        shutil.copyfileobj(input_file, output_file)
+            is_dist_info = len(components) == 2 and components[0].endswith(".dist-info")
 
-                elif components[1] == VARIANT_DIST_INFO_FILENAME:
-                    # If a wheel dist-info file exists already, discard the existing
-                    # copy.
-                    continue
+            if is_dist_info and components[1] == VARIANT_DIST_INFO_FILENAME:
+                # If a wheel dist-info file exists already, discard the existing
+                # copy.
+                continue
 
-                else:  # RECORD
-                    assert components[1] == "RECORD"
+            with input_zip.open(file_info, "r") as input_file:
+                if is_dist_info and components[1] == "RECORD":
                     # First, add new dist-info file prior to RECORD (not strictly
                     # required, but a nice convention).
                     dist_info_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
@@ -208,5 +199,8 @@ def _make_variant(
                                 f"{len(dist_info_data)}\n"
                             ).encode()
                         )
+                else:
+                    with output_zip.open(file_info, "w") as output_file:
+                        shutil.copyfileobj(input_file, output_file)
 
     logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())
