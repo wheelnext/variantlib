@@ -94,33 +94,26 @@ def _unmake_variant(
     ):
         for file_info in input_zip.infolist():
             components = file_info.filename.split("/", 2)
+            is_dist_info = len(components) == 2 and components[0].endswith(".dist-info")
 
-            if (
-                ".dist-info/" in file_info.filename
-                and components[1] == VARIANT_DIST_INFO_FILENAME
-            ):
+            if is_dist_info and components[1] == VARIANT_DIST_INFO_FILENAME:
                 # This is the variant.json file, we skip it.
                 continue
 
-            with input_zip.open(file_info, "r") as input_file:
-                if (
-                    len(components) != 2
-                    or not components[0].endswith(".dist-info")
-                    or components[1] not in ("RECORD", VARIANT_DIST_INFO_FILENAME)
-                ):
-                    with output_zip.open(file_info, "w") as output_file:
-                        shutil.copyfileobj(input_file, output_file)
-
-                else:
-                    assert components[1] == "RECORD"
+            with (
+                input_zip.open(file_info, "r") as input_file,
+                output_zip.open(file_info, "w") as output_file,
+            ):
+                if is_dist_info and components[1] == "RECORD":
                     # Update RECORD to remove the checksum.
-                    with output_zip.open(file_info, "w") as output_file:
-                        variant_dist_info_path = (
-                            f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
-                        ).encode()
-                        for line in input_file:
-                            rec_filename, sha256, size = line.split(b",")
-                            if rec_filename != variant_dist_info_path:
-                                output_file.write(line)
+                    variant_dist_info_path = (
+                        f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
+                    ).encode()
+                    for line in input_file:
+                        rec_filename, sha256, size = line.split(b",")
+                        if rec_filename != variant_dist_info_path:
+                            output_file.write(line)
+                else:
+                    shutil.copyfileobj(input_file, output_file)
 
     logger.info("Variant Wheel Created: `%s`", output_filepath.resolve())
