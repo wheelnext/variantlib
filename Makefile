@@ -45,13 +45,16 @@ format:
 # TEST COMMANDS
 # ============================================================================ #
 
-test: ## run tests quickly with the default Python
+test: ## run tests
 	pytest
+
+test-fast: ## run tests quickly - only 1 hypothesis example per test
+	pytest --hypothesis-profile fast
 
 test-all: ## run tests on every Python version with tox
 	tox
 
-coverage: ## check code coverage quickly with the default Python
+coverage: ## check code coverage
 	coverage run --source comp_bench_tools -m pytest
 	coverage report -m
 	coverage html

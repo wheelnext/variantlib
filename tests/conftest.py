@@ -3,6 +3,8 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+from hypothesis import Verbosity
+from hypothesis import settings
 from pytest_mock import MockerFixture
 
 from tests.mocked_plugins import MockedEntryPoint
@@ -13,6 +15,10 @@ from variantlib.plugins.loader import ListPluginLoader
 os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
 
 pytest.register_assert_rewrite("tests.utils")
+
+settings.register_profile("fast", max_examples=1)
+settings.register_profile("debug", max_examples=1, verbosity=Verbosity.verbose, seed=1)
+settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
 
 @pytest.fixture(scope="session")
