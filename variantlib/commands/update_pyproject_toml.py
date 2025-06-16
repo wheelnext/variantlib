@@ -71,14 +71,9 @@ def update_pyproject_toml(args: list[str]) -> None:
     default_prio_table = variant_table.setdefault(VARIANT_INFO_DEFAULT_PRIO_KEY, {})
     namespace_prio_key = default_prio_table.setdefault(VARIANT_INFO_NAMESPACE_KEY, [])
     provider_table = variant_table.setdefault(VARIANT_INFO_PROVIDER_DATA_KEY, {})
-    if parsed_args.add_optional:
-        optional_provider_table = variant_table.setdefault(
-            VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, {}
-        )
-    else:
-        optional_provider_table = variant_table.get(
-            VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, {}
-        )
+    optional_provider_table = variant_table.get(
+        VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, {}
+    )
 
     with EntryPointPluginLoader() as loader:
         for namespace in parsed_args.delete:
@@ -98,6 +93,9 @@ def update_pyproject_toml(args: list[str]) -> None:
             if namespace not in namespace_prio_key:
                 namespace_prio_key.append(namespace)
 
+            if namespace in optional_provider_table:
+                provider_table[namespace] = optional_provider_table.pop(namespace)
+
             namespace_table = provider_table.setdefault(namespace, {})
             plugin_api = loader.plugin_api_values[namespace]
             namespace_table[VARIANT_INFO_PROVIDER_PLUGIN_API_KEY] = plugin_api
@@ -114,6 +112,13 @@ def update_pyproject_toml(args: list[str]) -> None:
                     f"Plugin providing namespace `{namespace}` not installed."
                 )
 
+            if namespace not in namespace_prio_key:
+                namespace_prio_key.append(namespace)
+
+            # do not duplicate plugins already in providers table
+            if namespace in provider_table:
+                continue
+
             namespace_table = optional_provider_table.setdefault(namespace, {})
             plugin_api = loader.plugin_api_values[namespace]
             namespace_table[VARIANT_INFO_PROVIDER_PLUGIN_API_KEY] = plugin_api
@@ -123,6 +128,10 @@ def update_pyproject_toml(args: list[str]) -> None:
             namespace_table.setdefault(
                 VARIANT_INFO_PROVIDER_REQUIRES_KEY, default_requires
             )
+
+    # add it only if we've added any optional providers
+    if optional_provider_table:
+        variant_table[VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY] = optional_provider_table
 
     toml_file.write(toml_data)
     sys.stdout.write(f"Wrote changes to {parsed_args.file}\n")

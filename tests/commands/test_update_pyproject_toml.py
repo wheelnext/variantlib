@@ -10,6 +10,7 @@ from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
@@ -50,24 +51,29 @@ def test_update_pyproject_toml(
     }
     pyproject_toml.write_text(tomlkit.dumps(toml_data))
 
+    # helper vars
+    top_key = toml_data[PYPROJECT_TOML_TOP_KEY]
+    providers = top_key[VARIANT_INFO_PROVIDER_DATA_KEY]
+    namespace_prios = top_key[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_NAMESPACE_KEY]
+
     # '-a test_namespace' should update plugin-api
     main(["update-pyproject-toml", "-f", str(pyproject_toml), "-a", "test_namespace"])
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
-        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-    ] = "tests.mocked_plugins:MockedPluginA"
+    providers["test_namespace"][VARIANT_INFO_PROVIDER_PLUGIN_API_KEY] = (
+        "tests.mocked_plugins:MockedPluginA"
+    )
     assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
 
     # '-a second_namespace' should add second_namespace
     main(["update-pyproject-toml", "-f", str(pyproject_toml), "-a", "second_namespace"])
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_DEFAULT_PRIO_KEY][
-        VARIANT_INFO_NAMESPACE_KEY
-    ].append("second_namespace")
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY][
-        "second_namespace"
-    ] = {
-        "plugin-api": "tests.mocked_plugins:MockedPluginB",
+    namespace_prios.append("second_namespace")
+    providers["second_namespace"] = {
+        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB",
         VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
     }
+    assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
+
+    # '-o second_namespace' should not add a duplicate
+    main(["update-pyproject-toml", "-f", str(pyproject_toml), "-o", "second_namespace"])
     assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
 
     # '-d test_namespace -a test_namespace' should readd it
@@ -82,25 +88,40 @@ def test_update_pyproject_toml(
             "test_namespace",
         ]
     )
-    del toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY][
-        "test_namespace"
-    ][VARIANT_INFO_PROVIDER_ENABLE_IF_KEY]
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
-        VARIANT_INFO_PROVIDER_REQUIRES_KEY
-    ].clear()
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_DEFAULT_PRIO_KEY][
-        VARIANT_INFO_NAMESPACE_KEY
-    ].remove("test_namespace")
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_DEFAULT_PRIO_KEY][
-        VARIANT_INFO_NAMESPACE_KEY
-    ].append("test_namespace")
+    del providers["test_namespace"][VARIANT_INFO_PROVIDER_ENABLE_IF_KEY]
+    providers["test_namespace"][VARIANT_INFO_PROVIDER_REQUIRES_KEY].clear()
+    namespace_prios.remove("test_namespace")
+    namespace_prios.append("test_namespace")
 
+    assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
+
+    # '-d second_namespace -o second_namespace' should readd it as optional
+    main(
+        [
+            "update-pyproject-toml",
+            "-f",
+            str(pyproject_toml),
+            "-d",
+            "second_namespace",
+            "-o",
+            "second_namespace",
+        ]
+    )
+
+    top_key[VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY] = {
+        "second_namespace": providers.pop("second_namespace")
+    }
+    namespace_prios.remove("second_namespace")
+    namespace_prios.append("second_namespace")
+
+    assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
+
+    main(["update-pyproject-toml", "-f", str(pyproject_toml), "-a", "second_namespace"])
+    providers.update(top_key.pop(VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY))
     assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
 
     # '-d foo' should remove it
     main(["update-pyproject-toml", "-f", str(pyproject_toml), "-d", "foo"])
-    del toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY]["foo"]
-    toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_DEFAULT_PRIO_KEY][
-        VARIANT_INFO_NAMESPACE_KEY
-    ].remove("foo")
+    del providers["foo"]
+    namespace_prios.remove("foo")
     assert tomlkit.loads(pyproject_toml.read_text()).value == toml_data
