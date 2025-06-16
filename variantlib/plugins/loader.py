@@ -307,6 +307,14 @@ class PluginLoader(BasePluginLoader):
         # Installing the plugins
         reqs = []
         for namespace, provider_data in self._variant_info.providers.items():
+            if provider_data.optional:
+                logger.debug(
+                    "The variant provider plugin corresponding "
+                    "to namespace `%(ns)s` has been skipped - optional.",
+                    {"ns": namespace},
+                )
+                continue
+
             if (marker := provider_data.enable_if) is not None:
                 if not Marker(marker).evaluate(pyenv):  # type: ignore[arg-type]
                     logger.debug(
@@ -358,8 +366,11 @@ class PluginLoader(BasePluginLoader):
         plugins = [
             provider_data.object_reference
             for namespace, provider_data in self._variant_info.providers.items()
-            if (marker := provider_data.enable_if) is None
-            or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
+            if not provider_data.optional
+            and (
+                (marker := provider_data.enable_if) is None
+                or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
+            )
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)

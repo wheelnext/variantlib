@@ -389,6 +389,7 @@ def test_load_plugin_invalid_arg() -> None:
                 "test_namespace",
                 "second_namespace",
                 "incompatible_namespace",
+                "one_more",
             ],
             providers={
                 "test_namespace": ProviderInfo(
@@ -403,6 +404,10 @@ def test_load_plugin_invalid_arg() -> None:
                     # always false (hopefully)
                     enable_if='platform_machine == "frobnicator"',
                     plugin_api="tests.mocked_plugins:MockedPluginC",
+                ),
+                "one_more": ProviderInfo(
+                    plugin_api="tests.mocked_plugins:NoSuchClass",
+                    optional=True,
                 ),
             },
         ),

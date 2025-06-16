@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -19,6 +18,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 class ProviderInfo:
     plugin_api: str | None = None
     enable_if: str | None = None
+    optional: bool = False
     requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -81,6 +82,7 @@ class VariantInfo:
                 namespace: ProviderInfo(
                     requires=list(provider_data.requires),
                     enable_if=provider_data.enable_if,
+                    optional=provider_data.optional,
                     plugin_api=provider_data.plugin_api,
                 )
                 for namespace, provider_data in self.providers.items()
@@ -164,6 +166,10 @@ class VariantInfo:
                     ) as provider_requires:
                         validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     with validator.get(
+                        VARIANT_INFO_PROVIDER_OPTIONAL_KEY, bool, False
+                    ) as provider_optional:
+                        pass
+                    with validator.get(
                         VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, str, None
                     ) as provider_plugin_api:
                         if provider_plugin_api is not None:
@@ -183,6 +189,7 @@ class VariantInfo:
                     self.providers[namespace] = ProviderInfo(
                         requires=list(provider_requires),
                         enable_if=provider_enable_if,
+                        optional=provider_optional,
                         plugin_api=provider_plugin_api,
                     )
 

@@ -12,6 +12,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
@@ -51,6 +52,7 @@ version = "1.2.3"
     "old_ns2_provider; python_version < '3.11'",
 ]
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns2_provider:Plugin"
+{VARIANT_INFO_PROVIDER_OPTIONAL_KEY} = true
 """
 
 PYPROJECT_TOML = tomllib.loads(TOML_DATA)
@@ -85,6 +87,7 @@ def test_pyproject_toml() -> None:
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
+            optional=True,
             plugin_api="ns2_provider:Plugin",
         ),
     }
@@ -106,6 +109,7 @@ def test_pyproject_toml_minimal() -> None:
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
+            optional=True,
             plugin_api="ns2_provider:Plugin",
         ),
     }
@@ -395,6 +399,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
+            optional=True,
             plugin_api="ns2_provider:Plugin",
         ),
     }

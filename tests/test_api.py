@@ -37,6 +37,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -360,6 +361,7 @@ def test_make_variant_dist_info(
                         "old_ns2_provider; python_version < '3.11'",
                     ],
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
+                    VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
                 },
             }
         )
