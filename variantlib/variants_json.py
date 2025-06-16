@@ -62,16 +62,19 @@ class VariantsJson(VariantInfo):
         if provider_info.plugin_api is not None:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
 
+    def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
+        yield (VARIANT_INFO_NAMESPACE_KEY, self.namespace_priorities)
+        if self.feature_priorities:
+            yield (VARIANT_INFO_FEATURE_KEY, self.feature_priorities)
+        if self.property_priorities:
+            yield (VARIANT_INFO_PROPERTY_KEY, self.property_priorities)
+
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
         data: dict[str, Any] = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
-            VARIANT_INFO_DEFAULT_PRIO_KEY: {
-                VARIANT_INFO_NAMESPACE_KEY: self.namespace_priorities,
-                VARIANT_INFO_FEATURE_KEY: self.feature_priorities,
-                VARIANT_INFO_PROPERTY_KEY: self.property_priorities,
-            },
+            VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
             VARIANT_INFO_PROVIDER_DATA_KEY: {
                 namespace: dict(self._provider_info_to_json(provider_info))
                 for namespace, provider_info in self.providers.items()
@@ -80,14 +83,6 @@ class VariantsJson(VariantInfo):
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
-
-        if not data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY]:
-            # Remove empty feature priorities
-            del data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY]
-
-        if not data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY]:
-            # Remove empty property priorities
-            del data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY]
 
         return json.dumps(data, indent=4, sort_keys=True)
 
