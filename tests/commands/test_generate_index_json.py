@@ -7,6 +7,7 @@ from shutil import copy
 from variantlib.commands.main import main
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -32,11 +33,17 @@ def test_generate_index_json(
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: [
                 "installable_plugin",
+                "non_existing_plugin",
             ]
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "installable_plugin": {
                 VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["test-plugin-package"],
+            },
+        },
+        VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY: {
+            "non_existing_plugin": {
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["this-one-is-not-installed"],
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {

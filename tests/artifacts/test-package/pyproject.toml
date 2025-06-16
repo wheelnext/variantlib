@@ -9,7 +9,10 @@ description = "Installable package for testing"
 requires-python = ">=3.9"
 
 [variant.default-priorities]
-namespace = ["installable_plugin"]
+namespace = ["installable_plugin", "non_existing_plugin"]
 
 [variant.providers.installable_plugin]
 requires = ["test-plugin-package"]
+
+[variant.optional-providers.non_existing_plugin]
+requires = ["this-one-is-not-installed"]
