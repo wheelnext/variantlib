@@ -17,7 +17,7 @@ os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
 pytest.register_assert_rewrite("tests.utils")
 
 settings.register_profile("fast", max_examples=1)
-settings.register_profile("debug", max_examples=1, verbosity=Verbosity.verbose, seed=1)
+settings.register_profile("debug", max_examples=1, verbosity=Verbosity.verbose)
 settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
 
