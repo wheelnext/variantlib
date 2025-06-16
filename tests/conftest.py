@@ -18,7 +18,9 @@ pytest.register_assert_rewrite("tests.utils")
 
 settings.register_profile("fast", max_examples=1)
 settings.register_profile("debug", max_examples=1, verbosity=Verbosity.verbose)
-settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
+settings.load_profile(
+    os.getenv("HYPOTHESIS_PROFILE", "ci" if "CI" in os.environ else "default")
+)
 
 
 @pytest.fixture(scope="session")
