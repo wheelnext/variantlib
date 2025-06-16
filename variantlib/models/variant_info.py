@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -16,6 +15,7 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
@@ -27,6 +27,8 @@ from variantlib.protocols import VariantFeatureValue
 from variantlib.protocols import VariantNamespace
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
@@ -48,6 +50,14 @@ class ProviderInfo:
         # TODO: how far should we normalize it?
         return Requirement(self.requires[0]).name.replace("-", "_")
 
+    def copy_as_kwargs(self) -> dict[str, Any]:
+        """Return a "kwargs" dict suitable for instantiating a copy of itself"""
+        return {
+            "requires": list(self.requires),
+            "enable_if": self.enable_if,
+            "plugin_api": self.plugin_api,
+        }
+
 
 @dataclass
 class VariantInfo:
@@ -60,6 +70,9 @@ class VariantInfo:
     ] = field(default_factory=dict)
 
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
+    optional_providers: dict[VariantNamespace, ProviderInfo] = field(
+        default_factory=dict
+    )
 
     def copy_as_kwargs(self) -> dict[str, Any]:
         """Return a "kwargs" dict suitable for instantiating a copy of itself"""
@@ -78,12 +91,12 @@ class VariantInfo:
                 for namespace, feature_dict in self.property_priorities.items()
             },
             "providers": {
-                namespace: ProviderInfo(
-                    requires=list(provider_data.requires),
-                    enable_if=provider_data.enable_if,
-                    plugin_api=provider_data.plugin_api,
-                )
+                namespace: ProviderInfo(**provider_data.copy_as_kwargs())
                 for namespace, provider_data in self.providers.items()
+            },
+            "optional_providers": {
+                namespace: ProviderInfo(**provider_data.copy_as_kwargs())
+                for namespace, provider_data in self.optional_providers.items()
             },
         }
 
@@ -104,6 +117,43 @@ class VariantInfo:
         for namespace in namespaces:
             requirements.update(self.providers[namespace].requires)
         return requirements
+
+    def _process_providers(
+        self, providers: dict[VariantNamespace, Any], validator: KeyTrackingValidator
+    ) -> Generator[tuple[VariantNamespace, ProviderInfo], None, None]:
+        validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
+        namespaces = list(providers.keys())
+        for namespace in namespaces:
+            with validator.get(namespace, dict[str, Any], {}):
+                with validator.get(
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY, list[str], []
+                ) as provider_requires:
+                    validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
+                with validator.get(
+                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, str, None
+                ) as provider_plugin_api:
+                    if provider_plugin_api is not None:
+                        validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
+                with validator.get(
+                    VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, str, None
+                ) as provider_enable_if:
+                    if provider_enable_if is not None:
+                        validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
+                if provider_plugin_api is None and not provider_requires:
+                    raise ValidationError(
+                        f"{validator.key}: either "
+                        f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
+                        f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
+                        "specified"
+                    )
+                yield (
+                    namespace,
+                    ProviderInfo(
+                        requires=list(provider_requires),
+                        enable_if=provider_enable_if,
+                        plugin_api=provider_plugin_api,
+                    ),
+                )
 
     def _process_common(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
@@ -154,40 +204,20 @@ class VariantInfo:
         with validator.get(
             VARIANT_INFO_PROVIDER_DATA_KEY, dict[str, Any], {}
         ) as providers:
-            validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
-            namespaces = list(providers.keys())
-            self.providers = {}
-            for namespace in namespaces:
-                with validator.get(namespace, dict[str, Any], {}):
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_REQUIRES_KEY, list[str], []
-                    ) as provider_requires:
-                        validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, str, None
-                    ) as provider_plugin_api:
-                        if provider_plugin_api is not None:
-                            validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, str, None
-                    ) as provider_enable_if:
-                        if provider_enable_if is not None:
-                            validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
-                    if provider_plugin_api is None and not provider_requires:
-                        raise ValidationError(
-                            f"{validator.key}: either "
-                            f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
-                            f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
-                            "specified"
-                        )
-                    self.providers[namespace] = ProviderInfo(
-                        requires=list(provider_requires),
-                        enable_if=provider_enable_if,
-                        plugin_api=provider_plugin_api,
-                    )
+            self.providers = dict(self._process_providers(providers, validator))
 
-        all_providers = set(self.providers.keys())
-        all_providers_key = ".".join([*validator.keys, VARIANT_INFO_PROVIDER_DATA_KEY])
+        with validator.get(
+            VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, dict[str, Any], {}
+        ) as optional_providers:
+            self.optional_providers = dict(
+                self._process_providers(optional_providers, validator)
+            )
+
+        all_providers = set(self.providers.keys()) | self.optional_providers.keys()
+        providers_key = ".".join([*validator.keys, VARIANT_INFO_PROVIDER_DATA_KEY])
+        optional_providers_key = ".".join(
+            [*validator.keys, VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY]
+        )
         namespace_prios_key = ".".join(
             [
                 *validator.keys,
@@ -198,7 +228,7 @@ class VariantInfo:
 
         if set(self.namespace_priorities) != all_providers:
             raise ValidationError(
-                f"{namespace_prios_key} must specify the same namespaces "
-                f"as {all_providers_key} keys; currently: "
+                f"{namespace_prios_key} must specify the same namespaces as the union "
+                f"of {providers_key} and {optional_providers_key} keys; currently: "
                 f"{set(self.namespace_priorities)} vs. {all_providers}"
             )

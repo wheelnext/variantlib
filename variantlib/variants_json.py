@@ -11,6 +11,7 @@ from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
@@ -69,22 +70,33 @@ class VariantsJson(VariantInfo):
         if self.property_priorities:
             yield (VARIANT_INFO_PROPERTY_KEY, self.property_priorities)
 
-    def to_str(self) -> str:
-        """Serialize variants.json as a JSON string"""
-
-        data: dict[str, Any] = {
-            VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
-            VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
-            VARIANT_INFO_PROVIDER_DATA_KEY: {
+    def _to_json(self) -> Generator[tuple[str, Any]]:
+        yield (VARIANTS_JSON_SCHEMA_KEY, VARIANTS_JSON_SCHEMA_URL)
+        yield (VARIANT_INFO_DEFAULT_PRIO_KEY, dict(self._priorities_to_json()))
+        yield (
+            VARIANT_INFO_PROVIDER_DATA_KEY,
+            {
                 namespace: dict(self._provider_info_to_json(provider_info))
                 for namespace, provider_info in self.providers.items()
             },
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
-            },
-        }
+        )
+        if self.optional_providers:
+            yield (
+                VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY,
+                {
+                    namespace: dict(self._provider_info_to_json(provider_info))
+                    for namespace, provider_info in self.optional_providers.items()
+                },
+            )
+        yield (
+            VARIANTS_JSON_VARIANT_DATA_KEY,
+            {vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()},
+        )
 
-        return json.dumps(data, indent=4, sort_keys=True)
+    def to_str(self) -> str:
+        """Serialize variants.json as a JSON string"""
+
+        return json.dumps(dict(self._to_json()), indent=4, sort_keys=True)
 
     def merge(self, variant_dist_info: Self) -> None:
         """Merge info from another wheel (VariantsJson instance)"""
@@ -106,27 +118,32 @@ class VariantsJson(VariantInfo):
                     f"Expected: {old_value!r}, found {new_value!r}"
                 )
 
-        for namespace, provider_info in variant_dist_info.providers.items():
-            if (old_provider_info := self.providers.get(namespace)) is None:
-                # If provider not yet specified, just copy it
-                self.providers[namespace] = provider_info
-            else:
-                # Otherwise, merge requirements and verify consistency
-                for req_str in provider_info.requires:
-                    if req_str not in old_provider_info.requires:
-                        old_provider_info.requires.append(req_str)
-                if provider_info.enable_if != old_provider_info.enable_if:
-                    raise ValidationError(
-                        f"Inconsistency in providers[{namespace!r}].enable_if. "
-                        f"Expected: {old_provider_info.enable_if!r}, "
-                        f"Found: {provider_info.enable_if!r}"
-                    )
-                if provider_info.plugin_api != old_provider_info.plugin_api:
-                    raise ValidationError(
-                        f"Inconsistency in providers[{namespace!r}].plugin_api. "
-                        f"Expected: {old_provider_info.plugin_api!r}, "
-                        f"Found: {provider_info.plugin_api!r}"
-                    )
+        for attribute in ("providers", "optional_providers"):
+            for namespace, provider_info in getattr(
+                variant_dist_info, attribute
+            ).items():
+                if (
+                    old_provider_info := getattr(self, attribute).get(namespace)
+                ) is None:
+                    # If provider not yet specified, just copy it
+                    getattr(self, attribute)[namespace] = provider_info
+                else:
+                    # Otherwise, merge requirements and verify consistency
+                    for req_str in provider_info.requires:
+                        if req_str not in old_provider_info.requires:
+                            old_provider_info.requires.append(req_str)
+                    if provider_info.enable_if != old_provider_info.enable_if:
+                        raise ValidationError(
+                            f"Inconsistency in {attribute}[{namespace!r}].enable_if. "
+                            f"Expected: {old_provider_info.enable_if!r}, "
+                            f"Found: {provider_info.enable_if!r}"
+                        )
+                    if provider_info.plugin_api != old_provider_info.plugin_api:
+                        raise ValidationError(
+                            f"Inconsistency in {attribute}[{namespace!r}].plugin_api. "
+                            f"Expected: {old_provider_info.plugin_api!r}, "
+                            f"Found: {provider_info.plugin_api!r}"
+                        )
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]

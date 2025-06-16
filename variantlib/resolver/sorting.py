@@ -8,7 +8,6 @@ from itertools import groupby
 
 from packaging.specifiers import InvalidSpecifier
 from packaging.specifiers import SpecifierSet
-
 from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription

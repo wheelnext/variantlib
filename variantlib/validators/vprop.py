@@ -4,7 +4,6 @@ import contextlib
 
 from packaging.specifiers import InvalidSpecifier
 from packaging.specifiers import SpecifierSet
-
 from variantlib.constants import VALIDATION_VALUE_STR_REGEX
 from variantlib.constants import VALIDATION_VALUE_VSPEC_REGEX
 from variantlib.validators.base import validate_matches_re

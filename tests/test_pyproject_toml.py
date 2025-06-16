@@ -9,6 +9,7 @@ from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
@@ -297,7 +298,8 @@ def test_missing_namespace_priority() -> None:
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
         rf"{VARIANT_INFO_NAMESPACE_KEY} must specify the same namespaces as "
-        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
+        rf"the union of {PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
+        rf"and {PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY} "
         r"keys; currently: set\(\) vs\. \{'ns'\}",
     ):
         VariantPyProjectToml(
@@ -319,8 +321,9 @@ def test_missing_namespace_provider() -> None:
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
         rf"{VARIANT_INFO_NAMESPACE_KEY} must specify the same namespaces as "
-        rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
-        r"keys; currently: \{'ns'\} vs\. set\(\)",
+        rf"the union of {PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
+        rf"and {PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY} "
+        r"keys; currently: \{'ns'\} vs. set\(\)",
     ):
         VariantPyProjectToml(
             {

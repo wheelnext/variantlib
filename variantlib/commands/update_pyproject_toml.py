@@ -10,6 +10,7 @@ from variantlib import __package_name__
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
@@ -38,6 +39,14 @@ def update_pyproject_toml(args: list[str]) -> None:
         help="Add provider sections for specified namespace(s)",
     )
     parser.add_argument(
+        "-o",
+        "--add-optional",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="Add optional provider sections for specified namespace(s)",
+    )
+    parser.add_argument(
         "-d",
         "--delete",
         action="extend",
@@ -48,7 +57,7 @@ def update_pyproject_toml(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    if not (parsed_args.add + parsed_args.delete):
+    if not (parsed_args.add + parsed_args.add_optional + parsed_args.delete):
         parser.error("No manipulations specified")
 
     toml_file = TOMLFile(parsed_args.file)
@@ -62,6 +71,14 @@ def update_pyproject_toml(args: list[str]) -> None:
     default_prio_table = variant_table.setdefault(VARIANT_INFO_DEFAULT_PRIO_KEY, {})
     namespace_prio_key = default_prio_table.setdefault(VARIANT_INFO_NAMESPACE_KEY, [])
     provider_table = variant_table.setdefault(VARIANT_INFO_PROVIDER_DATA_KEY, {})
+    if parsed_args.add_optional:
+        optional_provider_table = variant_table.setdefault(
+            VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, {}
+        )
+    else:
+        optional_provider_table = variant_table.get(
+            VARIANT_INFO_OPTIONAL_PROVIDER_DATA_KEY, {}
+        )
 
     with EntryPointPluginLoader() as loader:
         for namespace in parsed_args.delete:
@@ -69,6 +86,8 @@ def update_pyproject_toml(args: list[str]) -> None:
                 namespace_prio_key.remove(namespace)
             if namespace in provider_table:
                 del provider_table[namespace]
+            if namespace in optional_provider_table:
+                del optional_provider_table[namespace]
 
         for namespace in parsed_args.add:
             if namespace not in loader.namespaces:
@@ -80,6 +99,22 @@ def update_pyproject_toml(args: list[str]) -> None:
                 namespace_prio_key.append(namespace)
 
             namespace_table = provider_table.setdefault(namespace, {})
+            plugin_api = loader.plugin_api_values[namespace]
+            namespace_table[VARIANT_INFO_PROVIDER_PLUGIN_API_KEY] = plugin_api
+            default_requires = []
+            if (dist := loader.plugin_provider_packages.get(plugin_api)) is not None:
+                default_requires.append(f"{dist.name} >={dist.version}")
+            namespace_table.setdefault(
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY, default_requires
+            )
+
+        for namespace in parsed_args.add_optional:
+            if namespace not in loader.namespaces:
+                raise RuntimeError(
+                    f"Plugin providing namespace `{namespace}` not installed."
+                )
+
+            namespace_table = optional_provider_table.setdefault(namespace, {})
             plugin_api = loader.plugin_api_values[namespace]
             namespace_table[VARIANT_INFO_PROVIDER_PLUGIN_API_KEY] = plugin_api
             default_requires = []

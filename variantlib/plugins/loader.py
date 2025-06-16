@@ -17,7 +17,6 @@ from typing import Any
 from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -307,21 +306,8 @@ class PluginLoader(BasePluginLoader):
 
         # Installing the plugins
         reqs = []
-        for namespace in self._variant_info.namespace_priorities:
-            if (provider_data := self._variant_info.providers.get(namespace)) is None:
-                logger.error(
-                    "Impossible to install the variant provider plugin corresponding "
-                    "to namespace `%(ns)s`. Missing provider entry - Known: %(known)s.",
-                    {
-                        "ns": namespace,
-                        "known": list(self._variant_info.providers.keys()),
-                    },
-                )
-                continue
-
-            if (
-                marker := self._variant_info.providers[namespace].enable_if
-            ) is not None:
+        for namespace, provider_data in self._variant_info.providers.items():
+            if (marker := provider_data.enable_if) is not None:
                 if not Marker(marker).evaluate(pyenv):  # type: ignore[arg-type]
                     logger.debug(
                         "The variant provider plugin corresponding "
@@ -370,9 +356,9 @@ class PluginLoader(BasePluginLoader):
         pyenv = default_environment()
 
         plugins = [
-            self._variant_info.providers[namespace].object_reference
-            for namespace in self._variant_info.namespace_priorities
-            if (marker := self._variant_info.providers[namespace].enable_if) is None
+            provider_info.object_reference
+            for namespace, provider_info in self._variant_info.providers.items()
+            if (marker := provider_info.enable_if) is None
             or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
         ]
 
