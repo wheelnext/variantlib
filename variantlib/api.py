@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
@@ -23,6 +24,9 @@ from variantlib.utils import aggregate_namespace_priorities
 from variantlib.utils import aggregate_property_priorities
 from variantlib.variant_dist_info import VariantDistInfo
 from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from variantlib.protocols import VariantNamespace
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +50,7 @@ def get_variant_hashes_by_priority(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
+    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> list[str]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
@@ -58,6 +63,7 @@ def get_variant_hashes_by_priority(
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
+        enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(
@@ -113,6 +119,8 @@ def validate_variant(
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
+        enable_optional_plugins=True,
+        filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
     ) as plugin_loader:
         provider_cfgs = plugin_loader.get_all_configs()
 
@@ -153,6 +161,7 @@ def check_variant_supported(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
+    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> bool:
     """Check if variant description is supported
 
@@ -178,6 +187,7 @@ def check_variant_supported(
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
+        enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(

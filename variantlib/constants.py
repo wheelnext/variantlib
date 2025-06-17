@@ -15,6 +15,7 @@ VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
 VARIANT_INFO_PROPERTY_KEY: Literal["property"] = "property"
 VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
 VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
+VARIANT_INFO_PROVIDER_OPTIONAL_KEY: Literal["optional"] = "optional"
 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
 VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
 
@@ -121,6 +122,7 @@ ProviderPluginJsonDict = TypedDict(
         "plugin-api": str,
         "requires": list[str],
         "enable-if": str,
+        "optional": bool,
     },
     total=False,
 )

@@ -14,6 +14,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -54,11 +55,13 @@ class VariantsJson(VariantInfo):
     @staticmethod
     def _provider_info_to_json(
         provider_info: ProviderInfo,
-    ) -> Generator[tuple[str, str | list[str]]]:
+    ) -> Generator[tuple[str, str | list[str] | bool]]:
         if provider_info.requires:
             yield (VARIANT_INFO_PROVIDER_REQUIRES_KEY, provider_info.requires)
         if provider_info.enable_if is not None:
             yield (VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
+        if provider_info.optional:
+            yield (VARIANT_INFO_PROVIDER_OPTIONAL_KEY, provider_info.optional)
         if provider_info.plugin_api is not None:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
 
@@ -115,18 +118,14 @@ class VariantsJson(VariantInfo):
                 for req_str in provider_info.requires:
                     if req_str not in old_provider_info.requires:
                         old_provider_info.requires.append(req_str)
-                if provider_info.enable_if != old_provider_info.enable_if:
-                    raise ValidationError(
-                        f"Inconsistency in providers[{namespace!r}].enable_if. "
-                        f"Expected: {old_provider_info.enable_if!r}, "
-                        f"Found: {provider_info.enable_if!r}"
-                    )
-                if provider_info.plugin_api != old_provider_info.plugin_api:
-                    raise ValidationError(
-                        f"Inconsistency in providers[{namespace!r}].plugin_api. "
-                        f"Expected: {old_provider_info.plugin_api!r}, "
-                        f"Found: {provider_info.plugin_api!r}"
-                    )
+                for attribute in ("enable_if", "optional", "plugin_api"):
+                    new = getattr(provider_info, attribute)
+                    old = getattr(old_provider_info, attribute)
+                    if new != old:
+                        raise ValidationError(
+                            f"Inconsistency in providers[{namespace!r}].{attribute}. "
+                            f"Expected: {old!r}, found: {new!r}"
+                        )
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]

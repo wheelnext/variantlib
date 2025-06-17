@@ -2,13 +2,20 @@
     "$schema": "https://variants-schema.wheelnext.dev/",
     "default-priorities": {
         "namespace": [
-            "installable_plugin"
+            "installable_plugin",
+            "non_existing_plugin"
         ]
     },
     "providers": {
         "installable_plugin": {
             "requires": [
                 "test-plugin-package"
+            ]
+        },
+        "non_existing_plugin": {
+            "optional": true,
+            "requires": [
+                "do-not-install-me"
             ]
         }
     },

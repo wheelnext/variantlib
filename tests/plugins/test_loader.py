@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 import sys
+from functools import partial
+from typing import Callable
 
 import pytest
 
@@ -26,6 +28,7 @@ from variantlib.plugins.loader import ListPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
+from variantlib.protocols import VariantNamespace
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -389,6 +392,7 @@ def test_load_plugin_invalid_arg() -> None:
                 "test_namespace",
                 "second_namespace",
                 "incompatible_namespace",
+                "one_more",
             ],
             providers={
                 "test_namespace": ProviderInfo(
@@ -403,6 +407,10 @@ def test_load_plugin_invalid_arg() -> None:
                     # always false (hopefully)
                     enable_if='platform_machine == "frobnicator"',
                     plugin_api="tests.mocked_plugins:MockedPluginC",
+                ),
+                "one_more": ProviderInfo(
+                    plugin_api="tests.mocked_plugins:NoSuchClass",
+                    optional=True,
                 ),
             },
         ),
@@ -477,3 +485,91 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
 
     with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (False, False),
+        (True, True),
+        ([], False),
+        (["test_namespace"], False),
+        (["second_namespace"], True),
+        (["second_namespace", "test_namespace"], True),
+        (["frobnicate"], False),
+        (["frobnicate", "second_namespace"], True),
+    ],
+)
+def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) -> None:
+    variant_info = VariantInfo(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+        ],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB", optional=True
+            ),
+        },
+    )
+
+    expected_namespaces = {"test_namespace"}
+    if expected:
+        expected_namespaces.add("second_namespace")
+    with PluginLoader(
+        variant_info, use_auto_install=False, enable_optional_plugins=value
+    ) as loader:
+        assert set(loader.namespaces) == expected_namespaces
+
+
+@pytest.mark.parametrize(
+    "loader_call",
+    [
+        partial(PluginLoader, VariantInfo(), use_auto_install=False),
+        partial(ListPluginLoader, []),
+    ],
+)
+def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:
+    with loader_call() as loader:
+        assert loader.namespaces == []
+        assert loader.get_supported_configs() == {}
+        assert loader.get_all_configs() == {}
+        assert loader.get_build_setup(VariantDescription([])) == {}
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        [],
+        ["test_namespace"],
+        ["second_namespace"],
+        ["second_namespace", "test_namespace"],
+        ["frobnicate"],
+        ["frobnicate", "second_namespace"],
+    ],
+)
+def test_filter_plugins(value: list[VariantNamespace]) -> None:
+    variant_info = VariantInfo(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+        ],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+        },
+    )
+
+    expected_namespaces = set(value)
+    expected_namespaces.discard("frobnicate")
+    with PluginLoader(
+        variant_info, use_auto_install=False, filter_plugins=value
+    ) as loader:
+        assert set(loader.namespaces) == expected_namespaces

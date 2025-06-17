@@ -37,6 +37,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -268,7 +269,8 @@ def test_validation_result_properties() -> None:
     ]
 
 
-def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
+@pytest.mark.parametrize("optional", [False, True])
+def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
@@ -277,13 +279,13 @@ def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
         ],
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA"
+                plugin_api="tests.mocked_plugins:MockedPluginA", optional=optional
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB"
+                plugin_api="tests.mocked_plugins:MockedPluginB", optional=optional
             ),
             "incompatible_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginC"
+                plugin_api="tests.mocked_plugins:MockedPluginC", optional=optional
             ),
         },
     )
@@ -360,6 +362,7 @@ def test_make_variant_dist_info(
                         "old_ns2_provider; python_version < '3.11'",
                     ],
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
+                    VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
                 },
             }
         )
