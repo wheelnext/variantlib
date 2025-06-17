@@ -538,3 +538,38 @@ def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:
         assert loader.get_supported_configs() == {}
         assert loader.get_all_configs() == {}
         assert loader.get_build_setup(VariantDescription([])) == {}
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        [],
+        ["test_namespace"],
+        ["second_namespace"],
+        ["second_namespace", "test_namespace"],
+        ["frobnicate"],
+        ["frobnicate", "second_namespace"],
+    ],
+)
+def test_filter_plugins(value: list[VariantNamespace]) -> None:
+    variant_info = VariantInfo(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+        ],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB"
+            ),
+        },
+    )
+
+    expected_namespaces = set(value)
+    expected_namespaces.discard("frobnicate")
+    with PluginLoader(
+        variant_info, use_auto_install=False, filter_plugins=value
+    ) as loader:
+        assert set(loader.namespaces) == expected_namespaces

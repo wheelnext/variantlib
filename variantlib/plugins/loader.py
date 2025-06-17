@@ -309,9 +309,11 @@ class PluginLoader(BasePluginLoader):
         isolated: bool = True,
         venv_path: Path | None = None,
         enable_optional_plugins: bool | list[VariantNamespace] = False,
+        filter_plugins: list[VariantNamespace] | None = None,
     ) -> None:
         self._variant_info = variant_info
         self._enable_optional_plugins = enable_optional_plugins
+        self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
         super().__init__(
             use_auto_install=use_auto_install, isolated=isolated, venv_path=venv_path
@@ -327,6 +329,9 @@ class PluginLoader(BasePluginLoader):
         return namespace in self._enable_optional_plugins
 
     def _provider_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
+        if self._filter_plugins is not None and namespace not in self._filter_plugins:
+            return False
+
         if provider_data.optional and not self._optional_provider_enabled(namespace):
             logger.debug(
                 "The variant provider plugin corresponding "
