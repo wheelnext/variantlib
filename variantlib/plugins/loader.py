@@ -8,11 +8,13 @@ import logging
 import subprocess
 import sys
 from abc import abstractmethod
+from collections.abc import Sequence
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 from packaging.markers import Marker
 from packaging.markers import default_environment
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from variantlib.models.variant import VariantDescription
+    from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
     from variantlib.plugins.py_envs import PythonEnv
 
@@ -294,36 +297,51 @@ class PluginLoader(BasePluginLoader):
         use_auto_install: bool,
         isolated: bool = True,
         venv_path: Path | None = None,
+        enable_optional_plugins: bool | list[str] = False,
     ) -> None:
         self._variant_info = variant_info
+        self._enable_optional_plugins = enable_optional_plugins
+        self._environment = cast("dict[str, str]", default_environment())
         super().__init__(
             use_auto_install=use_auto_install, isolated=isolated, venv_path=venv_path
         )
 
-    def _install_all_plugins(self) -> None:
-        # Get the current environment and evaluate the marker
-        pyenv = default_environment()
+    def _optional_provider_enabled(self, namespace: str) -> bool:
+        # if enable_optional_plugins is a bool, it controls all plugins
+        if self._enable_optional_plugins in (False, True):
+            assert isinstance(self._enable_optional_plugins, bool)
+            return self._enable_optional_plugins
+        # otherwise, it's a list of enabled namespaces
+        assert isinstance(self._enable_optional_plugins, Sequence)
+        return namespace in self._enable_optional_plugins
 
+    def _provider_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
+        if provider_data.optional and not self._optional_provider_enabled(namespace):
+            logger.debug(
+                "The variant provider plugin corresponding "
+                "to namespace `%(ns)s` has been skipped - optional provider disabled.",
+                {"ns": namespace},
+            )
+            return False
+
+        if (marker := provider_data.enable_if) is not None:
+            if not Marker(marker).evaluate(self._environment):
+                logger.debug(
+                    "The variant provider plugin corresponding "
+                    "to namespace `%(ns)s` has been skipped - Not compatible with "
+                    "the environmment. Details: %(data)s.",
+                    {"ns": namespace, "data": provider_data},
+                )
+                return False
+
+        return True
+
+    def _install_all_plugins(self) -> None:
         # Installing the plugins
         reqs = []
         for namespace, provider_data in self._variant_info.providers.items():
-            if provider_data.optional:
-                logger.debug(
-                    "The variant provider plugin corresponding "
-                    "to namespace `%(ns)s` has been skipped - optional.",
-                    {"ns": namespace},
-                )
+            if not self._provider_enabled(namespace, provider_data):
                 continue
-
-            if (marker := provider_data.enable_if) is not None:
-                if not Marker(marker).evaluate(pyenv):  # type: ignore[arg-type]
-                    logger.debug(
-                        "The variant provider plugin corresponding "
-                        "to namespace `%(ns)s` has been skipped - Not compatible with "
-                        "the environmment. Details: %(data)s.",
-                        {"ns": namespace, "data": provider_data},
-                    )
-                    continue
 
             if not (list_req_str := provider_data.requires):
                 logger.error(
@@ -336,7 +354,9 @@ class PluginLoader(BasePluginLoader):
 
             for req_str in list_req_str:
                 pyreq = Requirement(req_str)
-                if not (pyreq.marker.evaluate(pyenv) if pyreq.marker else True):  # type: ignore[arg-type]
+                if not (
+                    pyreq.marker.evaluate(self._environment) if pyreq.marker else True
+                ):
                     continue
 
                 # If there's at least one requirement compatible - break
@@ -360,17 +380,10 @@ class PluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
-        # Get the current environment for marker evaluation
-        pyenv = default_environment()
-
         plugins = [
             provider_data.object_reference
             for namespace, provider_data in self._variant_info.providers.items()
-            if not provider_data.optional
-            and (
-                (marker := provider_data.enable_if) is None
-                or Marker(marker).evaluate(pyenv)  # type: ignore[arg-type]
-            )
+            if self._provider_enabled(namespace, provider_data)
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)

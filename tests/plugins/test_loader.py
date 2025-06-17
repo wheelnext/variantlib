@@ -482,3 +482,41 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
 
     with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (False, False),
+        (True, True),
+        ([], False),
+        (["test_namespace"], False),
+        (["second_namespace"], True),
+        (["second_namespace", "test_namespace"], True),
+        (["frobnicate"], False),
+        (["frobnicate", "second_namespace"], True),
+    ],
+)
+def test_optional_plugins(value: bool | list[str], expected: bool) -> None:
+    variant_info = VariantInfo(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+        ],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB", optional=True
+            ),
+        },
+    )
+
+    expected_namespaces = {"test_namespace"}
+    if expected:
+        expected_namespaces.add("second_namespace")
+    with PluginLoader(
+        variant_info, use_auto_install=False, enable_optional_plugins=value
+    ) as loader:
+        assert set(loader.namespaces) == expected_namespaces
