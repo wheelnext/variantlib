@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 import sys
+from functools import partial
+from typing import Callable
 
 import pytest
 
@@ -521,3 +523,18 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
         variant_info, use_auto_install=False, enable_optional_plugins=value
     ) as loader:
         assert set(loader.namespaces) == expected_namespaces
+
+
+@pytest.mark.parametrize(
+    "loader_call",
+    [
+        partial(PluginLoader, VariantInfo(), use_auto_install=False),
+        partial(ListPluginLoader, []),
+    ],
+)
+def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:
+    with loader_call() as loader:
+        assert loader.namespaces == []
+        assert loader.get_supported_configs() == {}
+        assert loader.get_all_configs() == {}
+        assert loader.get_build_setup(VariantDescription([])) == {}

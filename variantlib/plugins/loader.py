@@ -168,6 +168,9 @@ class BasePluginLoader:
             )
         self._namespace_map = {}
 
+        if not plugin_apis:
+            return
+
         normalized_plugin_apis = []
         for plugin_api in plugin_apis:
             plugin_api_match = validate_matches_re(
@@ -217,6 +220,9 @@ class BasePluginLoader:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
+        if not self._namespace_map:
+            return {}
+
         configs = self._call_subprocess(list(self._namespace_map.keys()), {method: {}})[
             method
         ]
@@ -262,6 +268,10 @@ class BasePluginLoader:
             ]
         except KeyError as err:
             raise PluginMissingError(f"No plugin found for namespace {err}") from None
+
+        if not plugin_apis:
+            return {}
+
         return self._call_subprocess(
             plugin_apis,
             {

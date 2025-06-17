@@ -78,6 +78,7 @@ def main() -> int:
         "--plugin-api",
         action="append",
         help="Load specified plugin API",
+        required=True,
     )
     args = parser.parse_args()
     commands = json.load(sys.stdin)
