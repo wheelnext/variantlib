@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import VARIANT_HASH_LEN
@@ -23,6 +24,9 @@ from variantlib.utils import aggregate_namespace_priorities
 from variantlib.utils import aggregate_property_priorities
 from variantlib.variant_dist_info import VariantDistInfo
 from variantlib.variants_json import VariantsJson
+
+if TYPE_CHECKING:
+    from variantlib.protocols import VariantNamespace
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,7 @@ def get_variant_hashes_by_priority(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    enable_optional_plugins: bool | list[str] = False,
+    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> list[str]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
@@ -97,7 +101,7 @@ def validate_variant(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    enable_optional_plugins: bool | list[str] = False,
+    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -157,7 +161,7 @@ def check_variant_supported(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    enable_optional_plugins: bool | list[str] = False,
+    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> bool:
     """Check if variant description is supported
 

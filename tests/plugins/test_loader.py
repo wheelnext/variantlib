@@ -26,6 +26,7 @@ from variantlib.plugins.loader import ListPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
+from variantlib.protocols import VariantNamespace
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
@@ -497,7 +498,7 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
         (["frobnicate", "second_namespace"], True),
     ],
 )
-def test_optional_plugins(value: bool | list[str], expected: bool) -> None:
+def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",

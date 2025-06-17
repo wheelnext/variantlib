@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
     from variantlib.plugins.py_envs import PythonEnv
+    from variantlib.protocols import VariantNamespace
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import Distribution
@@ -297,7 +298,7 @@ class PluginLoader(BasePluginLoader):
         use_auto_install: bool,
         isolated: bool = True,
         venv_path: Path | None = None,
-        enable_optional_plugins: bool | list[str] = False,
+        enable_optional_plugins: bool | list[VariantNamespace] = False,
     ) -> None:
         self._variant_info = variant_info
         self._enable_optional_plugins = enable_optional_plugins
