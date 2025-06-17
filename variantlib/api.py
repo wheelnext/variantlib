@@ -101,7 +101,6 @@ def validate_variant(
     use_auto_install: bool = True,
     isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
-    enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -120,7 +119,8 @@ def validate_variant(
         use_auto_install=use_auto_install,
         isolated=isolated,
         venv_path=venv_path,
-        enable_optional_plugins=enable_optional_plugins,
+        enable_optional_plugins=True,
+        filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
     ) as plugin_loader:
         provider_cfgs = plugin_loader.get_all_configs()
 

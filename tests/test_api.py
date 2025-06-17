@@ -269,7 +269,8 @@ def test_validation_result_properties() -> None:
     ]
 
 
-def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
+@pytest.mark.parametrize("optional", [False, True])
+def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
@@ -278,13 +279,13 @@ def test_validate_variant(mocked_plugin_apis: list[str]) -> None:
         ],
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA"
+                plugin_api="tests.mocked_plugins:MockedPluginA", optional=optional
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB"
+                plugin_api="tests.mocked_plugins:MockedPluginB", optional=optional
             ),
             "incompatible_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginC"
+                plugin_api="tests.mocked_plugins:MockedPluginC", optional=optional
             ),
         },
     )
