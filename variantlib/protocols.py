@@ -60,7 +60,7 @@ class VariantPropertyType(Protocol):
 
 
 @runtime_checkable
-class PluginType(Protocol):
+class PluginStaticType(Protocol):
     """A protocol for plugin classes"""
 
     @property
@@ -77,6 +77,38 @@ class PluginType(Protocol):
     @abstractmethod
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
+        raise NotImplementedError
+
+    def get_build_setup(
+        self, properties: list[VariantPropertyType]
+    ) -> dict[str, list[str]]:
+        """Get build variables for a variant made of specified properties"""
+        return {}
+
+
+@runtime_checkable
+class PluginDynamicType(Protocol):
+    """A protocol for plugin classes"""
+
+    @property
+    @abstractmethod
+    def namespace(self) -> VariantNamespace:
+        """Plugin namespace"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_all_features(self) -> list[VariantFeatureName]:
+        """Get all feature names for the plugin"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter_and_sort_properties(
+        self,
+        vprops: list[VariantPropertyType],
+        property_priorities: list[VariantFeatureValue] | None = None,
+    ) -> dict[VariantFeatureName, list[VariantFeatureValue]]:
+        """Get supported properties sorted at the property level. The order of the
+        `dict.keys()` is assumed to follow the prefered priority by the plugin"""
         raise NotImplementedError
 
     def get_build_setup(
