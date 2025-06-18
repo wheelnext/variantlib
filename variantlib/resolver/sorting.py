@@ -3,14 +3,11 @@ from __future__ import annotations
 import contextlib
 import logging
 import sys
+from collections import defaultdict
 from itertools import chain
 from itertools import groupby
 
-from packaging.specifiers import InvalidSpecifier
-from packaging.specifiers import SpecifierSet
-
 from variantlib.errors import ConfigurationError
-from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.protocols import VariantFeatureName
@@ -200,24 +197,19 @@ def sort_variants_descriptions(
     validate_type(vdescs, list[VariantDescription])
     validate_type(property_priorities, list[VariantProperty])
 
-    vprops: set[VariantProperty] = set()
-    for vdesc in vdescs:
-        vprops.update(vdesc.properties)
-
-    for vprop in vprops:
-        with contextlib.suppress(InvalidSpecifier):
-            SpecifierSet(vprop.value)
-            # NOTE: IF ONE OF THE PROPERTIES IS A VERSION SPECIFIER,
-            #
-            # TODO: Implement smthg that makes sense here.
-            # Temporary sorting - doesn't matter for now
-            # sort by descending hash to ensure that the null variant is always last
-            return sorted(vdescs, key=lambda v: v.hexdigest, reverse=True)
-
     # Pre-compute the property hash for the property priorities
     # This is used to speed up the sorting process.
     # The property_hash is used to compare the `VariantProperty` objects
-    property_hash_priorities = [vprop.property_hash for vprop in property_priorities]
+    # property_hash_priorities = [vprop.property_hash for vprop in property_priorities]
+    property_lookup_table: dict[
+        tuple[VariantNamespace, VariantFeatureName], list[VariantFeatureValue]
+    ] = defaultdict(list)
+
+    for vprop in property_priorities:
+        property_lookup_table[(vprop.namespace, vprop.feature)].append(vprop.value)
+
+    property_lookup_table = dict(property_lookup_table)
+    lookup_table_size = len(property_lookup_table)
 
     def _get_rank_tuple(vdesc: VariantDescription) -> tuple[int, ...]:
         """
@@ -227,42 +219,24 @@ def sort_variants_descriptions(
         :return: Rank tuple[int, ...] of the `VariantDescription` object.
         """
 
-        if vdesc.is_null_variant():
-            # return the tuple that represents the lowest priority
-            return tuple(sys.maxsize for _ in property_hash_priorities)
+        # Initialization of the tuple at the maximum on every dimension: lowest priority
+        ranking_array = [sys.maxsize for _ in range(lookup_table_size)]
 
-        # --------------------------- Implementation Notes --------------------------- #
-        # - `property_hash_priorities` is ordered. It's a list.
-        # - `vdesc_prop_hashes` is unordered. It's a set.
-        #
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Performance Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-        # * Only `property_hash_priorities` needs to be ordered. The set is used for
-        # performance reasons.
-        # * `vdesc.properties` hashes are pre-computed and saved to avoid recomputing
-        #  them multiple times.
-        # * `property_priorities` are also pre-hashed to avoid recomputing them
-        # ---------------------------------------------------------------------------- #
+        if not vdesc.is_null_variant():
+            for vprop in vdesc.properties:
+                vprop_key = (vprop.namespace, vprop.feature)
 
-        # using a set for performance reason: O(1) access time.
-        vdesc_prop_hashes = {vprop.property_hash for vprop in vdesc.properties}
+                # The following can not raises `ValueError` otherwise the vdesc would have
+                # been filtered out.
+                vprop_idx = list(property_lookup_table.keys()).index(vprop_key)
 
-        # N-dimensional tuple with tuple[N] of 1 or sys.maxsize
-        # 1 if the property is present in the `VariantDescription` object,
-        # sys.maxsize if not present.
-        # This is used to sort the `VariantDescription` objects based on their
-        # `VariantProperty`s.
-        ranking_tuple = tuple(
-            1 if vprop_hash in vdesc_prop_hashes else sys.maxsize
-            for vprop_hash in property_hash_priorities
-        )
+                with contextlib.suppress(ValueError):
+                    # This call will raise `ValueError` if `vprop.value` is not in the list
+                    ranking_array[vprop_idx] = min(
+                        ranking_array[vprop_idx],
+                        property_lookup_table[vprop_key].index(vprop.value),
+                    )
 
-        if sum(1 for x in ranking_tuple if x != sys.maxsize) != len(vdesc.properties):
-            raise ValidationError(
-                f"VariantDescription {vdesc} contains properties not in the property "
-                "priorities list - this should not happen. Filtering should be applied "
-                "first."
-            )
-
-        return ranking_tuple
+        return tuple(ranking_array)
 
     return sorted(vdescs, key=_get_rank_tuple)

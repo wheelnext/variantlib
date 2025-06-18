@@ -64,6 +64,9 @@ VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
 
 
+VARIANTLIB_DYNAMIC_ANY_VALUE_MAGIC_VALUE = "__variant_any_value_magic__"
+
+
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")
 # Per PEP 508: https://peps.python.org/pep-0508/#names
 VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(
