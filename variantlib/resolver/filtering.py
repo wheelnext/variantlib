@@ -1,26 +1,20 @@
 from __future__ import annotations
 
-import contextlib
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from packaging.specifiers import InvalidSpecifier
-from packaging.specifiers import SpecifierSet
-from packaging.version import InvalidVersion
-from packaging.version import Version
-
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
-from variantlib.protocols import VariantFeatureName
-from variantlib.protocols import VariantFeatureValue
-from variantlib.protocols import VariantNamespace
 from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from variantlib.protocols import VariantFeatureValue
+    from variantlib.protocols import VariantNamespace
 
 
 logger = logging.getLogger(__name__)

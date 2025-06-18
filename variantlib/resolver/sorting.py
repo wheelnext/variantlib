@@ -226,12 +226,13 @@ def sort_variants_descriptions(
             for vprop in vdesc.properties:
                 vprop_key = (vprop.namespace, vprop.feature)
 
-                # The following can not raises `ValueError` otherwise the vdesc would have
-                # been filtered out.
+                # The following can not raises `ValueError` otherwise the vdesc would
+                # have been filtered out.
                 vprop_idx = list(property_lookup_table.keys()).index(vprop_key)
 
                 with contextlib.suppress(ValueError):
-                    # This call will raise `ValueError` if `vprop.value` is not in the list
+                    # This call will raise `ValueError` if `vprop.value` is not in the
+                    # list of allowed properties.
                     ranking_array[vprop_idx] = min(
                         ranking_array[vprop_idx],
                         property_lookup_table[vprop_key].index(vprop.value),
