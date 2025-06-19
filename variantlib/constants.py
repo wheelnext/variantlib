@@ -63,8 +63,15 @@ VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
 )
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
 
-
-VARIANTLIB_DYNAMIC_ANY_VALUE_MAGIC_VALUE = "__variant_any_value_magic__"
+# This "magic value" will be use during `make-variant` and other commands
+# when validating if a given `VariantProperty` is valid.
+# Unless we want to also make the `validate_property(vprop)` part of the
+# `PluginDynamicType` interface. We can just "not analyze" and allow everything.
+# The magic value is used as a "*" value. If detected - allow any value that
+# passes the regex.
+#
+# @mgorny: if you have a better idea - happy to hear it :)
+VARIANTLIB_DYNAMIC_ANY_VALUE_MAGIC_VALUE = "__variant_property_any_value_magic__"
 
 
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")
