@@ -9,7 +9,7 @@ from hypothesis import strategies as st
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_STR_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -112,7 +112,7 @@ def test_failing_regex_value() -> None:
         _ = VariantProperty(namespace="provider", feature="feature", value="")
 
     for c in string.printable:
-        if VALIDATION_VALUE_STR_REGEX.fullmatch(c):
+        if VALIDATION_VALUE_REGEX.fullmatch(c):
             continue
 
         with pytest.raises(ValidationError, match="must match regex"):

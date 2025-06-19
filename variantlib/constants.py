@@ -29,17 +29,7 @@ VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-
-# For `Property value` there is two regexes:
-# 1. `VALIDATION_VALUE_VSPEC_REGEX` - if `packaging.specifiers.SpecifierSet` is used
-# Note: for clarity - only "full version" are allowed
-#       i.e. so no "a|b|alpha|beta|rc|post|etc." versions
-VALIDATION_VALUE_VSPEC_REGEX = re.compile(r"[0-9_.,!>~<=]+")
-# 2. `VALIDATION_VALUE_STR_REGEX` - if string matching is used
-VALIDATION_VALUE_STR_REGEX = re.compile(r"[a-z0-9_.]+")
-VALIDATION_VALUE_REGEX = re.compile(
-    rf"{VALIDATION_VALUE_VSPEC_REGEX.pattern}|{VALIDATION_VALUE_STR_REGEX.pattern}"
-)
+VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.,!>~<=]+")
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""
@@ -72,6 +62,16 @@ VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
     re.VERBOSE,
 )
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
+
+# This "magic value" will be use during `make-variant` and other commands
+# when validating if a given `VariantProperty` is valid.
+# Unless we want to also make the `validate_property(vprop)` part of the
+# `PluginDynamicType` interface. We can just "not analyze" and allow everything.
+# The magic value is used as a "*" value. If detected - allow any value that
+# passes the regex.
+#
+# @mgorny: if you have a better idea - happy to hear it :)
+VARIANTLIB_DYNAMIC_ANY_VALUE_MAGIC_VALUE = "__variant_property_any_value_magic__"
 
 
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")

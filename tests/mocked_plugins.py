@@ -4,7 +4,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.protocols import PluginType
+from variantlib.protocols import PluginStaticType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.protocols import VariantPropertyType
 
@@ -16,8 +16,8 @@ class MockedEntryPoint:
     dist: None = None
 
 
-class MockedPluginA(PluginType):
-    namespace = "test_namespace"
+class MockedPluginA(PluginStaticType):
+    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
@@ -48,7 +48,7 @@ class MockedPluginA(PluginType):
 MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values"))
 
 
-# NB: this plugin deliberately does not inherit from PluginType
+# NB: this plugin deliberately does not inherit from PluginStaticType
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_namespace"
@@ -73,7 +73,7 @@ class MyFlag:
         self.values = ["on"]
 
 
-class MockedPluginC(PluginType):
+class MockedPluginC(PluginStaticType):
     namespace = "incompatible_namespace"
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX

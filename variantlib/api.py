@@ -65,10 +65,19 @@ def get_variant_hashes_by_priority(
         venv_path=venv_path,
         enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
+        known_properties = list(
+            {
+                vprop
+                for vdesc in variants_json.variants.values()
+                for vprop in vdesc.properties
+            }
+        )
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs().values()
+                for provider_cfg in plugin_loader.get_supported_configs(
+                    variant_properties=known_properties
+                ).values()
             )
         )
 

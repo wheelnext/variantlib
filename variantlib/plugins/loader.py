@@ -19,6 +19,7 @@ from typing import cast
 from packaging.markers import Marker
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
+
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from variantlib.models.variant import VariantDescription
+    from variantlib.models.variant import VariantProperty
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
     from variantlib.plugins.py_envs import PythonEnv
@@ -116,24 +118,38 @@ class BasePluginLoader:
         self._python_ctx.install(reqs)
 
     def _call_subprocess(
-        self, plugin_apis: list[str], commands: dict[str, Any]
+        self,
+        plugin_apis: list[str],
+        commands: dict[str, Any],
+        variant_properties: list[VariantProperty] | None = None,
     ) -> dict[str, dict[str, Any]]:
         assert self._python_ctx is not None
 
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
+            # Copy `variantlib/plugins/loader.py` into the temp_dir
             script = Path(temp_dir) / "loader.py"
             script.write_bytes(
                 (importlib.resources.files(__package__) / "_subprocess.py")
                 .read_bytes()
                 .replace(b"from variantlib.protocols", b"from _variantlib_protocols")
+                .replace(b"from variantlib.constants", b"from _variantlib_constants")
                 .replace(
                     b"from variantlib.validators.base",
                     b"from _variantlib_validators_base",
                 )
             )
+
+            # Copy `variantlib/constants.py` into the temp_dir
+            (Path(temp_dir) / "_variantlib_constants.py").write_bytes(
+                (importlib.resources.files("variantlib") / "constants.py").read_bytes()
+            )
+
+            # Copy `variantlib/protocols.py` into the temp_dir
             (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
                 (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
             )
+
+            # Copy `variantlib/validators/base.py` into the temp_dir
             (Path(temp_dir) / "_variantlib_validators_base.py").write_bytes(
                 (
                     importlib.resources.files("variantlib.validators") / "base.py"
@@ -142,7 +158,11 @@ class BasePluginLoader:
 
             args = []
             for plugin_api in plugin_apis:
-                args += ["-p", plugin_api]
+                args += ["--plugin-api", plugin_api]
+
+            if variant_properties:
+                for vprop in variant_properties:
+                    args += ["--property", vprop.to_str()]
 
             process = subprocess.run(  # noqa: S603
                 [self._python_ctx.python_executable, script, *args],
@@ -188,9 +208,9 @@ class BasePluginLoader:
                 },
             )
 
-        namespaces = self._call_subprocess(normalized_plugin_apis, {"namespaces": {}})[
-            "namespaces"
-        ]
+        namespaces = self._call_subprocess(
+            plugin_apis=normalized_plugin_apis, commands={"namespaces": {}}
+        )["namespaces"]
 
         for plugin_api, namespace in namespaces.items():
             if namespace in self._namespace_map.values():
@@ -215,7 +235,10 @@ class BasePluginLoader:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
     def _get_configs(
-        self, method: str, require_non_empty: bool
+        self,
+        method: str,
+        require_non_empty: bool,
+        variant_properties: list[VariantProperty] | None = None,
     ) -> dict[str, ProviderConfig]:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
@@ -223,9 +246,11 @@ class BasePluginLoader:
         if not self._namespace_map:
             return {}
 
-        configs = self._call_subprocess(list(self._namespace_map.keys()), {method: {}})[
-            method
-        ]
+        configs = self._call_subprocess(
+            plugin_apis=list(self._namespace_map.keys()),
+            commands={method: {}},
+            variant_properties=variant_properties,
+        )[method]
 
         provider_cfgs = {}
         for plugin_api, plugin_configs in configs.items():
@@ -248,9 +273,15 @@ class BasePluginLoader:
 
         return provider_cfgs
 
-    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+    def get_supported_configs(
+        self, variant_properties: list[VariantProperty]
+    ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
-        return self._get_configs("get_supported_configs", require_non_empty=False)
+        return self._get_configs(
+            "get_supported_configs",
+            require_non_empty=False,
+            variant_properties=variant_properties,
+        )
 
     def get_all_configs(self) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
@@ -273,8 +304,8 @@ class BasePluginLoader:
             return {}
 
         return self._call_subprocess(
-            plugin_apis,
-            {
+            plugin_apis=plugin_apis,
+            commands={
                 "get_build_setup": {
                     "properties": [
                         dataclasses.asdict(vprop) for vprop in variant_desc.properties

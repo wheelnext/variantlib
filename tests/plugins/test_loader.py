@@ -26,7 +26,7 @@ from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
 from variantlib.plugins.loader import ListPluginLoader
 from variantlib.plugins.loader import PluginLoader
-from variantlib.protocols import PluginType
+from variantlib.protocols import PluginStaticType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.protocols import VariantNamespace
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -41,8 +41,8 @@ else:
 RANDOM_STUFF = 123
 
 
-class ClashingPlugin(PluginType):
-    namespace = "test_namespace"
+class ClashingPlugin(PluginStaticType):
+    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
@@ -53,8 +53,8 @@ class ClashingPlugin(PluginType):
         return []
 
 
-class ExceptionPluginBase(PluginType):
-    namespace = "exception_test"
+class ExceptionPluginBase(PluginStaticType):
+    namespace = "exception_test"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     returned_value: list[VariantFeatureConfigType]
 
@@ -236,8 +236,8 @@ def test_namespace_incorrect_type() -> None:
         pytest.raises(
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
-            r"the PluginType prototype: 123 \(missing attributes: get_all_configs, "
-            r"get_supported_configs, namespace\)",
+            r"the PluginStaticType prototype: 123 \(missing attributes: "
+            r"get_all_configs, get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -291,7 +291,7 @@ def test_namespace_instantiation_returns_incorrect_type(
         pytest.raises(
             PluginError,
             match=re.escape(
-                f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
+                f"'tests.plugins.test_loader:{cls}' does not meet the PluginStaticType "
                 "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
             + r".*(missing attributes: get_all_configs)",

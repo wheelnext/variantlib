@@ -13,6 +13,7 @@ from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
@@ -24,7 +25,6 @@ from variantlib.validators.base import validate_list_all_unique
 from variantlib.validators.base import validate_matches_re
 from variantlib.validators.base import validate_type
 from variantlib.validators.combining import validate_and
-from variantlib.validators.vprop import validate_variant_property_value
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -102,7 +102,7 @@ class VariantProperty(VariantFeature):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantFeatureValue),
-                    lambda v: validate_variant_property_value(v),  # pyright: ignore[reportArgumentType]
+                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
                 ],
                 value=val,
             )
