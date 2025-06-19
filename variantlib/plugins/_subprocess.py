@@ -107,7 +107,9 @@ def process_dynamic_configs(
             f"method returned incorrect type. {err}"
         ) from None
 
-    return [{"name": name, "values": values} for name, values in configs.items()]
+    return [
+        {"name": name, "values": values} for name, values in configs.items() if values
+    ]
 
 
 @dataclass(frozen=True)
@@ -193,7 +195,7 @@ def main() -> int:
 
         elif command == "get_supported_configs":
             assert not command_args
-            retval[command] = {  # pyright: ignore[reportArgumentType]
+            result = {  # pyright: ignore[reportArgumentType]
                 plugin_api: (
                     process_static_configs(
                         plugin.get_supported_configs(), plugin, command
@@ -201,7 +203,12 @@ def main() -> int:
                     if isinstance(plugin, PluginStaticType)
                     else process_dynamic_configs(
                         plugin.filter_and_sort_properties(
-                            vprops=vprops,  # pyright: ignore[reportArgumentType]
+                            vprops=list(
+                                filter(
+                                    lambda vprop: plugin.namespace == vprop.namespace,
+                                    vprops,
+                                )
+                            ),  # pyright: ignore[reportArgumentType]
                             property_priorities=[],
                         ),
                         plugin,
@@ -209,6 +216,12 @@ def main() -> int:
                     )
                 )
                 for plugin_api, plugin in plugins.items()
+            }
+
+            retval[command] = {
+                plugin_api: plugin_config
+                for plugin_api, plugin_config in result.items()
+                if plugin_config
             }
 
         elif command == "get_build_setup":
