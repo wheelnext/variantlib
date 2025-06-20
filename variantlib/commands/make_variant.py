@@ -6,7 +6,9 @@ import hashlib
 import logging
 import pathlib
 import shutil
+import sys
 import zipfile
+from subprocess import CalledProcessError
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
@@ -129,24 +131,45 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
-            # Verify whether the variant properties are valid
-            vdesc_valid = validate_variant(vdesc, variant_info=variant_info)
-            if vdesc_valid.invalid_properties:
-                invalid_str = ", ".join(
-                    x.to_str() for x in vdesc_valid.invalid_properties
+            from build.env import DefaultIsolatedEnv
+
+            with DefaultIsolatedEnv() as venv:
+                try:
+                    venv.install(
+                        variant_info.get_provider_requires(
+                            {vprop.namespace for vprop in vdesc.properties}
+                        )
+                    )
+                except CalledProcessError as err:
+                    sys.stderr.write(
+                        "Installing variant provider dependencies failed:\n"
+                        f"{err.stderr.decode()}"
+                    )
+                    raise
+
+                # Verify whether the variant properties are valid
+                vdesc_valid = validate_variant(
+                    vdesc,
+                    variant_info=variant_info,
+                    use_auto_install=False,
+                    venv_path=venv.path,
                 )
-                raise ValidationError(
-                    "The following variant properties are invalid according to the "
-                    f"plugins: {invalid_str}"
-                )
-            if vdesc_valid.unknown_properties:
-                unknown_str = ", ".join(
-                    x.to_str() for x in vdesc_valid.unknown_properties
-                )
-                raise ValidationError(
-                    "The following variant properties use namespaces that are not "
-                    f"provided by any installed plugin: {unknown_str}"
-                )
+                if vdesc_valid.invalid_properties:
+                    invalid_str = ", ".join(
+                        x.to_str() for x in vdesc_valid.invalid_properties
+                    )
+                    raise ValidationError(
+                        "The following variant properties are invalid according to the "
+                        f"plugins: {invalid_str}"
+                    )
+                if vdesc_valid.unknown_properties:
+                    unknown_str = ", ".join(
+                        x.to_str() for x in vdesc_valid.unknown_properties
+                    )
+                    raise ValidationError(
+                        "The following variant properties use namespaces that are not "
+                        f"provided by any installed plugin: {unknown_str}"
+                    )
     else:
         # Create a null variant
         vdesc = VariantDescription()

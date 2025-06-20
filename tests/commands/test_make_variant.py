@@ -11,6 +11,8 @@ from variantlib.commands.main import main
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from pytest_mock import MockerFixture
+
 
 @pytest.fixture
 def non_variant_wheel(test_artifact_path: Path) -> Path:
@@ -18,6 +20,16 @@ def non_variant_wheel(test_artifact_path: Path) -> Path:
     if not whl_f.exists() or not whl_f.is_file():
         raise FileNotFoundError(f"Test package wheel not found: `{whl_f}`")
     return whl_f
+
+
+@pytest.fixture
+def mocked_plugin_reqs(
+    mocker: MockerFixture,
+    test_plugin_package_req: str,
+) -> None:
+    mocker.patch(
+        "variantlib.models.variant_info.VariantInfo.get_provider_requires"
+    ).return_value = [test_plugin_package_req]
 
 
 @pytest.mark.parametrize(
@@ -51,6 +63,7 @@ def test_make_variant(
     non_variant_wheel: Path,
     test_artifact_path: Path,
     tmp_path: Path,
+    mocked_plugin_reqs: None,
 ) -> None:
     cmd_args = [
         "make-variant",
@@ -69,12 +82,7 @@ def test_make_variant(
             itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
         )
 
-    if properties is not None:
-        with pytest.raises(RuntimeError, match="No module named 'test_plugin_package'"):
-            # This should fail because the plugin is not installed
-            main(cmd_args)
-
-    main([*cmd_args, "--skip-plugin-validation"])
+    main([*cmd_args])
 
     target_variant_wheel = (
         non_variant_wheel.parent / f"test_package-0-py3-none-any-{vhash}.whl"
