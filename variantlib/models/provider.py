@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_STR_REGEX
+from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.models.base import BaseModel
 from variantlib.models.variant import VariantProperty
 from variantlib.protocols import VariantFeatureName
@@ -49,7 +49,7 @@ class VariantFeatureConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, list[VariantFeatureValue]),
-                    lambda v: validate_list_matches_re(v, VALIDATION_VALUE_STR_REGEX),
+                    lambda v: validate_list_matches_re(v, VALIDATION_VALUE_REGEX),
                     lambda v: validate_list_min_len(v, 1),
                     lambda v: validate_list_all_unique(v),
                 ],

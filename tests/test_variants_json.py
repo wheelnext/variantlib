@@ -174,31 +174,38 @@ def test_validate_variants_json() -> None:
                 ),
             ],
         ),
-        "1d836653": VariantDescription(
+        "3351fc6a": VariantDescription(
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
                     feature="compute_capability",
-                    value=">=4,<6",
+                    value=str(value),
                 )
+                for value in range(4, 6)
             ]
         ),
-        "a0d8855a": VariantDescription(
+        "181830db": VariantDescription(
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
                     feature="compute_capability",
-                    value=">=4,<8",
+                    value=str(value),
                 )
+                for value in range(4, 8)
             ]
         ),
-        "092f6ea8": VariantDescription(
+        "72c47fce": VariantDescription(
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
                     feature="compute_capability",
-                    value=">=7",
-                )
+                    value="7",
+                ),
+                VariantProperty(
+                    namespace="fictional_hw",
+                    feature="compute_capability",
+                    value="8",
+                ),
             ]
         ),
     }

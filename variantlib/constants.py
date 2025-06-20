@@ -29,17 +29,7 @@ VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-
-# For `Property value` there is two regexes:
-# 1. `VALIDATION_VALUE_VSPEC_REGEX` - if `packaging.specifiers.SpecifierSet` is used
-# Note: for clarity - only "full version" are allowed
-#       i.e. so no "a|b|alpha|beta|rc|post|etc." versions
-VALIDATION_VALUE_VSPEC_REGEX = re.compile(r"[0-9_.,!>~<=]+")
-# 2. `VALIDATION_VALUE_STR_REGEX` - if string matching is used
-VALIDATION_VALUE_STR_REGEX = re.compile(r"[a-z0-9_.]+")
-VALIDATION_VALUE_REGEX = re.compile(
-    rf"{VALIDATION_VALUE_VSPEC_REGEX.pattern}|{VALIDATION_VALUE_STR_REGEX.pattern}"
-)
+VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.]+")
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""

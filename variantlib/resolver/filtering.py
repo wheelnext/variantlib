@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-import contextlib
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
-
-from packaging.specifiers import InvalidSpecifier
-from packaging.specifiers import SpecifierSet
-from packaging.version import InvalidVersion
-from packaging.version import Version
 
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -227,34 +221,8 @@ def filter_variants_by_property(
                 return False
 
             for property_value in property_values:
-                try:
-                    # If `property_value` is not a `SpecifierSet` valid value:
-                    #     => will raise InvalidSpecifier
-                    vspec = SpecifierSet(property_value)
-
-                    # 1. Tentatively convert `variant_prop` to `Version`
-                    # Not all/any values given by the Provider Plugins will be
-                    # convertible to `Version`, so we use `contextlib.suppress`.
-                    # 2. Check if the `Version` is in the `SpecifierSet`.
-                    for variant_prop in allowed_props:
-                        with contextlib.suppress(InvalidVersion):
-                            if Version(variant_prop) in vspec:
-                                # We found one or more allowed properties that match
-                                # the specifier, so we can include this variant.
-                                break
-                    else:
-                        continue
-
-                    # Match was found, so we can break out of the loop.
+                if property_value in allowed_props:
                     break
-
-                except InvalidSpecifier:
-                    # We treat the property value as a simple string
-                    # and check if it is in the allowed properties.
-                    # If it is, we can include this variant.
-                    if property_value in allowed_props:
-                        break
-
             else:
                 # We never broke out of the loop, meaning no allowed property
                 # matched. Consequently, we reject this variant.

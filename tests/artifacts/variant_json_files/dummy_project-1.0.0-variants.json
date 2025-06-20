@@ -38,10 +38,11 @@
         }
     },
     "variants": {
-        "1d836653": {
+        "3351fc6a": {
             "fictional_hw": {
                 "compute_capability": [
-                    ">=4,<6"
+                    "4",
+                    "5"
                 ]
             }
         },
@@ -91,10 +92,13 @@
                 ]
             }
         },
-        "a0d8855a": {
+        "181830db": {
             "fictional_hw": {
                 "compute_capability": [
-                    ">=4,<8"
+                    "4",
+                    "5",
+                    "6",
+                    "7"
                 ]
             }
         },
@@ -111,10 +115,11 @@
                 ]
             }
         },
-        "092f6ea8": {
+        "72c47fce": {
             "fictional_hw": {
                 "compute_capability": [
-                    ">=7"
+                    "7",
+                    "8"
                 ]
             }
         },
