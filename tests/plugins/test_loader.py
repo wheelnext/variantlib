@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 from functools import partial
+from pathlib import Path
 from typing import Callable
 
 import pytest
@@ -458,7 +459,9 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
         }
 
 
-def test_install_plugin(test_plugin_package_req: str) -> None:
+def test_plugin_in_venv(test_plugin_package_req: str) -> None:
+    from build.env import DefaultIsolatedEnv
+
     variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
@@ -469,8 +472,12 @@ def test_install_plugin(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
-        assert set(loader.namespaces) == {"installable_plugin"}
+    with DefaultIsolatedEnv() as venv:
+        venv.install([test_plugin_package_req])
+        with PluginLoader(
+            variant_info, use_auto_install=False, venv_path=Path(venv.path)
+        ) as loader:
+            assert set(loader.namespaces) == {"installable_plugin"}
 
 
 def test_no_plugin_api(test_plugin_package_req: str) -> None:
