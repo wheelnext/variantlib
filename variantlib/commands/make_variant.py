@@ -8,7 +8,9 @@ import pathlib
 import shutil
 import sys
 import zipfile
+from contextlib import nullcontext
 from subprocess import CalledProcessError
+from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
@@ -44,6 +46,12 @@ def make_variant(args: list[str]) -> None:
         type=pathlib.Path,
         required=True,
         help="Output Directory to use to store the Wheel Variant",
+    )
+
+    parser.add_argument(
+        "--no-isolation",
+        action="store_true",
+        help="Use providers already installed in callignPython environment",
     )
 
     parser.add_argument(
@@ -107,6 +115,7 @@ def make_variant(args: list[str]) -> None:
         validate_properties=not parsed_args.skip_plugin_validation,
         variant_info=pyproject_toml,
         installer=parsed_args.installer,
+        use_isolation=not parsed_args.no_isolation,
     )
 
 
@@ -119,6 +128,7 @@ def _make_variant(
     validate_properties: bool = True,
     variant_info: VariantPyProjectToml,
     installer: str | None = None,
+    use_isolation: bool = True,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -139,38 +149,47 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
-            from build.env import DefaultIsolatedEnv
+            if TYPE_CHECKING:
+                from build.env import DefaultIsolatedEnv
 
-            # make it really verbose to make mypy happy
-            if installer is None:
-                env_factory = DefaultIsolatedEnv()
-            elif installer == "pip":
-                env_factory = DefaultIsolatedEnv(installer="pip")
-            elif installer == "uv":
-                env_factory = DefaultIsolatedEnv(installer="uv")
+                env_factory: DefaultIsolatedEnv | nullcontext[None]
+
+            if use_isolation:
+                from build.env import DefaultIsolatedEnv
+
+                # make it really verbose to make mypy happy
+                if installer is None:
+                    env_factory = DefaultIsolatedEnv()
+                elif installer == "pip":
+                    env_factory = DefaultIsolatedEnv(installer="pip")
+                elif installer == "uv":
+                    env_factory = DefaultIsolatedEnv(installer="uv")
+                else:
+                    raise ValueError(f"unexpected installer={installer}")
             else:
-                raise ValueError(f"unexpected installer={installer}")
+                env_factory = nullcontext()
 
             with env_factory as venv:
-                try:
-                    venv.install(
-                        variant_info.get_provider_requires(
-                            {vprop.namespace for vprop in vdesc.properties}
+                if venv is not None:
+                    try:
+                        venv.install(
+                            variant_info.get_provider_requires(
+                                {vprop.namespace for vprop in vdesc.properties}
+                            )
                         )
-                    )
-                except CalledProcessError as err:
-                    sys.stderr.write(
-                        "Installing variant provider dependencies failed:\n"
-                        f"{err.stderr.decode()}"
-                    )
-                    raise
+                    except CalledProcessError as err:
+                        sys.stderr.write(
+                            "Installing variant provider dependencies failed:\n"
+                            f"{err.stderr.decode()}"
+                        )
+                        raise
 
                 # Verify whether the variant properties are valid
                 vdesc_valid = validate_variant(
                     vdesc,
                     variant_info=variant_info,
                     use_auto_install=False,
-                    venv_path=venv.path,
+                    venv_path=venv.path if venv is not None else None,
                 )
                 if vdesc_valid.invalid_properties:
                     invalid_str = ", ".join(
