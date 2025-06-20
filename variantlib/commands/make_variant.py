@@ -46,6 +46,12 @@ def make_variant(args: list[str]) -> None:
         help="Output Directory to use to store the Wheel Variant",
     )
 
+    parser.add_argument(
+        "--installer",
+        choices=("pip", "uv"),
+        help="Installer to use for providers (choices: pip, uv)",
+    )
+
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument(
@@ -100,6 +106,7 @@ def make_variant(args: list[str]) -> None:
         properties=parsed_args.properties,
         validate_properties=not parsed_args.skip_plugin_validation,
         variant_info=pyproject_toml,
+        installer=parsed_args.installer,
     )
 
 
@@ -111,6 +118,7 @@ def _make_variant(
     properties: list[VariantProperty],
     validate_properties: bool = True,
     variant_info: VariantPyProjectToml,
+    installer: str | None = None,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -133,7 +141,17 @@ def _make_variant(
         if validate_properties:
             from build.env import DefaultIsolatedEnv
 
-            with DefaultIsolatedEnv() as venv:
+            # make it really verbose to make mypy happy
+            if installer is None:
+                env_factory = DefaultIsolatedEnv()
+            elif installer == "pip":
+                env_factory = DefaultIsolatedEnv(installer="pip")
+            elif installer == "uv":
+                env_factory = DefaultIsolatedEnv(installer="uv")
+            else:
+                raise ValueError(f"unexpected installer={installer}")
+
+            with env_factory as venv:
                 try:
                     venv.install(
                         variant_info.get_provider_requires(
