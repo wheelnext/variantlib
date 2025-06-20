@@ -46,6 +46,9 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
         else:
             plugin_instance = plugin_callable
 
+        # We cannot use isinstance() here since some of the PluginType methods
+        # are optional. Instead, we use @abstractmethod decorator to naturally
+        # annotate required methods, and the remaining methods are optional.
         required_attributes = PluginType.__abstractmethods__
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise TypeError(
