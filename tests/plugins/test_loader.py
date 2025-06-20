@@ -446,7 +446,7 @@ def test_load_plugin_invalid_arg() -> None:
     ],
 )
 def test_load_plugins_from_variant_info(variant_info: VariantInfo) -> None:
-    with PluginLoader(variant_info, use_auto_install=False) as loader:
+    with PluginLoader(variant_info) as loader:
         assert set(loader.namespaces) == {"test_namespace", "second_namespace"}
 
 
@@ -474,9 +474,7 @@ def test_plugin_in_venv(test_plugin_package_req: str) -> None:
 
     with DefaultIsolatedEnv() as venv:
         venv.install([test_plugin_package_req])
-        with PluginLoader(
-            variant_info, use_auto_install=False, venv_path=Path(venv.path)
-        ) as loader:
+        with PluginLoader(variant_info, venv_path=Path(venv.path)) as loader:
             assert set(loader.namespaces) == {"installable_plugin"}
 
 
@@ -496,7 +494,7 @@ def test_no_plugin_api(
         },
     )
 
-    with PluginLoader(variant_info, use_auto_install=False) as loader:
+    with PluginLoader(variant_info) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
 
 
@@ -532,16 +530,14 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
     expected_namespaces = {"test_namespace"}
     if expected:
         expected_namespaces.add("second_namespace")
-    with PluginLoader(
-        variant_info, use_auto_install=False, enable_optional_plugins=value
-    ) as loader:
+    with PluginLoader(variant_info, enable_optional_plugins=value) as loader:
         assert set(loader.namespaces) == expected_namespaces
 
 
 @pytest.mark.parametrize(
     "loader_call",
     [
-        partial(PluginLoader, VariantInfo(), use_auto_install=False),
+        partial(PluginLoader, VariantInfo()),
         partial(ListPluginLoader, []),
     ],
 )
@@ -582,7 +578,5 @@ def test_filter_plugins(value: list[VariantNamespace]) -> None:
 
     expected_namespaces = set(value)
     expected_namespaces.discard("frobnicate")
-    with PluginLoader(
-        variant_info, use_auto_install=False, filter_plugins=value
-    ) as loader:
+    with PluginLoader(variant_info, filter_plugins=value) as loader:
         assert set(loader.namespaces) == expected_namespaces

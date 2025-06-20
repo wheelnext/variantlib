@@ -135,7 +135,7 @@ class PythonEnv:
 
 @contextmanager
 def python_env(
-    isolated: bool = True, venv_path: pathlib.Path | None = None
+    isolated: bool = False, venv_path: pathlib.Path | None = None
 ) -> Generator[PythonEnv]:
     if venv_path is None and isolated:
         import venv

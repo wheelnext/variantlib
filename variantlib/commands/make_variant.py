@@ -188,7 +188,6 @@ def _make_variant(
                 vdesc_valid = validate_variant(
                     vdesc,
                     variant_info=variant_info,
-                    use_auto_install=False,
                     venv_path=venv.path if venv is not None else None,
                 )
                 if vdesc_valid.invalid_properties:

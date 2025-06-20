@@ -119,9 +119,9 @@ def test_get_variant_hashes_by_priority_roundtrip(
 
     # variants_json = VariantsJson(typed_variants_json)
 
-    assert get_variant_hashes_by_priority(
-        variants_json=typed_variants_json, use_auto_install=False, venv_path=None
-    ) == [vdesc.hexdigest for vdesc in combinations]
+    assert get_variant_hashes_by_priority(variants_json=typed_variants_json) == [
+        vdesc.hexdigest for vdesc in combinations
+    ]
 
 
 @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -210,9 +210,9 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
         "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
-    assert get_variant_hashes_by_priority(
-        variants_json=typed_variants_json, use_auto_install=False, venv_path=None
-    ) == [vdesc.hexdigest for vdesc in combinations]
+    assert get_variant_hashes_by_priority(variants_json=typed_variants_json) == [
+        vdesc.hexdigest for vdesc in combinations
+    ]
 
 
 @pytest.mark.parametrize(
@@ -306,7 +306,6 @@ def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None
             ]
         ),
         variant_info=variant_info,
-        use_auto_install=False,
     )
 
     assert res == VariantValidationResult(
@@ -452,12 +451,7 @@ def test_check_variant_supported_dist(
 ) -> None:
     variant_json = VariantsJson(common_variant_info)
     variant_json.variants[vdesc.hexdigest] = vdesc
-    assert (
-        check_variant_supported(
-            variant_info=variant_json, use_auto_install=False, venv_path=None
-        )
-        is expected
-    )
+    assert check_variant_supported(variant_info=variant_json) is expected
 
 
 def test_check_variant_supported_generic() -> None:
@@ -478,8 +472,6 @@ def test_check_variant_supported_generic() -> None:
     assert check_variant_supported(
         vdesc=VariantDescription(),
         variant_info=variant_info,
-        use_auto_install=False,
-        venv_path=None,
     )
 
     # test a supported variant
@@ -491,16 +483,12 @@ def test_check_variant_supported_generic() -> None:
             ]
         ),
         variant_info=variant_info,
-        use_auto_install=False,
-        venv_path=None,
     )
 
     # test an usupported variant
     assert not check_variant_supported(
         vdesc=VariantDescription([VariantProperty("test_namespace", "name1", "val1c")]),
         variant_info=variant_info,
-        use_auto_install=False,
-        venv_path=None,
     )
 
 

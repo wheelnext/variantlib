@@ -18,7 +18,6 @@ from typing import cast
 
 from packaging.markers import Marker
 from packaging.markers import default_environment
-from packaging.requirements import Requirement
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -62,16 +61,9 @@ class BasePluginLoader:
 
     def __init__(
         self,
-        use_auto_install: bool,
-        isolated: bool = True,
         venv_path: Path | None = None,
     ) -> None:
-        self._use_auto_install = use_auto_install
-        # isolated=True is effective only with use_auto_install=True
-        # (otherwise we'd be using empty venv)
-        self._python_ctx_factory = partial(
-            python_env, isolated=isolated and use_auto_install, venv_path=venv_path
-        )
+        self._python_ctx_factory = partial(python_env, venv_path=venv_path)
 
     def __enter__(self) -> Self:
         if self._python_ctx is not None:
@@ -80,8 +72,6 @@ class BasePluginLoader:
         self._python_ctx_manager = self._python_ctx_factory()
         self._python_ctx = self._python_ctx_manager.__enter__()
         try:
-            if self._use_auto_install:
-                self._install_all_plugins()
             self._load_all_plugins()
         except Exception:
             self._python_ctx_manager.__exit__(*sys.exc_info())
@@ -104,16 +94,6 @@ class BasePluginLoader:
         self._namespace_map = None
         self._python_ctx = None
         self._python_ctx_manager.__exit__(exc_type, exc_value, traceback)
-
-    def _install_all_plugins(self) -> None:
-        pass
-
-    def _install_all_plugins_from_reqs(self, reqs: list[str]) -> None:
-        if self._python_ctx is None:
-            raise RuntimeError("Context manager not entered!")
-
-        # Actual plugin installation
-        self._python_ctx.install(reqs)
 
     def _call_subprocess(
         self, plugin_apis: list[str], commands: dict[str, Any]
@@ -305,8 +285,6 @@ class PluginLoader(BasePluginLoader):
     def __init__(
         self,
         variant_info: VariantInfo,
-        use_auto_install: bool,
-        isolated: bool = True,
         venv_path: Path | None = None,
         enable_optional_plugins: bool | list[VariantNamespace] = False,
         filter_plugins: list[VariantNamespace] | None = None,
@@ -315,9 +293,7 @@ class PluginLoader(BasePluginLoader):
         self._enable_optional_plugins = enable_optional_plugins
         self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
-        super().__init__(
-            use_auto_install=use_auto_install, isolated=isolated, venv_path=venv_path
-        )
+        super().__init__(venv_path=venv_path)
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
         # if enable_optional_plugins is a bool, it controls all plugins
@@ -352,44 +328,6 @@ class PluginLoader(BasePluginLoader):
 
         return True
 
-    def _install_all_plugins(self) -> None:
-        # Installing the plugins
-        reqs = []
-        for namespace, provider_data in self._variant_info.providers.items():
-            if not self._provider_enabled(namespace, provider_data):
-                continue
-
-            if not (list_req_str := provider_data.requires):
-                logger.error(
-                    "Impossible to install the variant provider plugin corresponding "
-                    "to namespace `%(ns)s`. Missing provider requirement, "
-                    "received: %(data)s.",
-                    {"ns": namespace, "data": provider_data},
-                )
-                continue
-
-            for req_str in list_req_str:
-                pyreq = Requirement(req_str)
-                if not (
-                    pyreq.marker.evaluate(self._environment) if pyreq.marker else True
-                ):
-                    continue
-
-                # If there's at least one requirement compatible - break
-                break
-            else:
-                logger.debug(
-                    "The variant provider plugin corresponding "
-                    "to namespace `%(ns)s` has been skipped - Not compatible with the "
-                    "environmment. Details: %(data)s.",
-                    {"ns": namespace, "data": provider_data},
-                )
-                continue
-
-            reqs.extend(list_req_str)
-
-        self._install_all_plugins_from_reqs(reqs)
-
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:
             raise RuntimeError(
@@ -412,7 +350,7 @@ class EntryPointPluginLoader(BasePluginLoader):
         self,
         venv_path: Path | None = None,
     ) -> None:
-        super().__init__(use_auto_install=False, isolated=False, venv_path=venv_path)
+        super().__init__(venv_path=venv_path)
 
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:
@@ -461,7 +399,7 @@ class ListPluginLoader(BasePluginLoader):
         venv_path: Path | None = None,
     ) -> None:
         self._plugin_apis = list(plugin_apis)
-        super().__init__(use_auto_install=False, isolated=False, venv_path=venv_path)
+        super().__init__(venv_path=venv_path)
 
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:

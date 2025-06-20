@@ -47,8 +47,6 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: VariantsJsonDict | VariantsJson,
-    use_auto_install: bool = True,
-    isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> list[str]:
@@ -60,8 +58,6 @@ def get_variant_hashes_by_priority(
 
     with PluginLoader(
         variant_info=variants_json,
-        use_auto_install=use_auto_install,
-        isolated=isolated,
         venv_path=venv_path,
         enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
@@ -98,8 +94,6 @@ def get_variant_hashes_by_priority(
 def validate_variant(
     variant_desc: VariantDescription,
     variant_info: VariantInfo,
-    use_auto_install: bool = True,
-    isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
 ) -> VariantValidationResult:
     """
@@ -116,8 +110,6 @@ def validate_variant(
 
     with PluginLoader(
         variant_info=variant_info,
-        use_auto_install=use_auto_install,
-        isolated=isolated,
         venv_path=venv_path,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
@@ -158,8 +150,6 @@ def check_variant_supported(
     *,
     vdesc: VariantDescription | None = None,
     variant_info: VariantInfo,
-    use_auto_install: bool = True,
-    isolated: bool = True,
     venv_path: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> bool:
@@ -184,8 +174,6 @@ def check_variant_supported(
 
     with PluginLoader(
         variant_info=variant_info,
-        use_auto_install=use_auto_install,
-        isolated=isolated,
         venv_path=venv_path,
         enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
