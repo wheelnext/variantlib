@@ -480,7 +480,13 @@ def test_plugin_in_venv(test_plugin_package_req: str) -> None:
             assert set(loader.namespaces) == {"installable_plugin"}
 
 
-def test_no_plugin_api(test_plugin_package_req: str) -> None:
+def test_no_plugin_api(
+    test_artifact_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    test_plugin_package_req: str,
+) -> None:
+    monkeypatch.setenv("PYTHONPATH", str(test_artifact_path / "test-plugin-package"))
+
     variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={
@@ -490,7 +496,7 @@ def test_no_plugin_api(test_plugin_package_req: str) -> None:
         },
     )
 
-    with PluginLoader(variant_info, use_auto_install=True, isolated=True) as loader:
+    with PluginLoader(variant_info, use_auto_install=False) as loader:
         assert set(loader.namespaces) == {"installable_plugin"}
 
 
