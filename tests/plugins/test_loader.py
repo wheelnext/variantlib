@@ -474,7 +474,9 @@ def test_plugin_in_venv(test_plugin_package_req: str) -> None:
 
     with DefaultIsolatedEnv() as venv:
         venv.install([test_plugin_package_req])
-        with PluginLoader(variant_info, venv_path=Path(venv.path)) as loader:
+        with PluginLoader(
+            variant_info, venv_python_executable=Path(venv.python_executable)
+        ) as loader:
             assert set(loader.namespaces) == {"installable_plugin"}
 
 

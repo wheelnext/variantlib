@@ -188,7 +188,9 @@ def _make_variant(
                 vdesc_valid = validate_variant(
                     vdesc,
                     variant_info=variant_info,
-                    venv_path=venv.path if venv is not None else None,
+                    venv_python_executable=venv.python_executable
+                    if venv is not None
+                    else None,
                 )
                 if vdesc_valid.invalid_properties:
                     invalid_str = ", ".join(

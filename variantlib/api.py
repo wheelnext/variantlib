@@ -47,18 +47,22 @@ __all__ = [
 def get_variant_hashes_by_priority(
     *,
     variants_json: VariantsJsonDict | VariantsJson,
-    venv_path: str | pathlib.Path | None = None,
+    venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> list[str]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
 
-    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+    venv_python_executable = (
+        venv_python_executable
+        if venv_python_executable is None
+        else pathlib.Path(venv_python_executable)
+    )
 
     with PluginLoader(
         variant_info=variants_json,
-        venv_path=venv_path,
+        venv_python_executable=venv_python_executable,
         enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
         supported_vprops = list(
@@ -94,7 +98,7 @@ def get_variant_hashes_by_priority(
 def validate_variant(
     variant_desc: VariantDescription,
     variant_info: VariantInfo,
-    venv_path: str | pathlib.Path | None = None,
+    venv_python_executable: str | pathlib.Path | None = None,
 ) -> VariantValidationResult:
     """
     Validate all metas in the variant description
@@ -106,11 +110,15 @@ def validate_variant(
     be verified.
     """
 
-    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+    venv_python_executable = (
+        venv_python_executable
+        if venv_python_executable is None
+        else pathlib.Path(venv_python_executable)
+    )
 
     with PluginLoader(
         variant_info=variant_info,
-        venv_path=venv_path,
+        venv_python_executable=venv_python_executable,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
     ) as plugin_loader:
@@ -150,7 +158,7 @@ def check_variant_supported(
     *,
     vdesc: VariantDescription | None = None,
     variant_info: VariantInfo,
-    venv_path: str | pathlib.Path | None = None,
+    venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
 ) -> bool:
     """Check if variant description is supported
@@ -170,11 +178,15 @@ def check_variant_supported(
             )
         vdesc = next(iter(variant_info.variants.values()))
 
-    venv_path = venv_path if venv_path is None else pathlib.Path(venv_path)
+    venv_python_executable = (
+        venv_python_executable
+        if venv_python_executable is None
+        else pathlib.Path(venv_python_executable)
+    )
 
     with PluginLoader(
         variant_info=variant_info,
-        venv_path=venv_path,
+        venv_python_executable=venv_python_executable,
         enable_optional_plugins=enable_optional_plugins,
     ) as plugin_loader:
         supported_vprops = list(

@@ -9,7 +9,6 @@ import subprocess
 import sys
 from abc import abstractmethod
 from collections.abc import Sequence
-from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
@@ -24,17 +23,14 @@ from variantlib.errors import PluginError
 from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.plugins.py_envs import python_env
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
     from types import TracebackType
 
     from variantlib.models.variant import VariantDescription
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
-    from variantlib.plugins.py_envs import PythonEnv
     from variantlib.protocols import VariantNamespace
 
 if sys.version_info >= (3, 10):
@@ -56,29 +52,22 @@ class BasePluginLoader:
     """Load and query plugins"""
 
     _namespace_map: dict[str, str] | None = None
-    _python_ctx_manager: AbstractContextManager[PythonEnv] | None = None
-    _python_ctx: PythonEnv | None = None
+    _python_executable: Path
 
     def __init__(
         self,
-        venv_path: Path | None = None,
+        venv_python_executable: Path | None = None,
     ) -> None:
-        self._python_ctx_factory = partial(python_env, venv_path=venv_path)
+        self._python_executable = (
+            venv_python_executable
+            if venv_python_executable is not None
+            else Path(sys.executable)
+        )
 
     def __enter__(self) -> Self:
-        if self._python_ctx is not None:
+        if self._namespace_map is not None:
             raise RuntimeError("Already inside the context manager!")
-
-        self._python_ctx_manager = self._python_ctx_factory()
-        self._python_ctx = self._python_ctx_manager.__enter__()
-        try:
-            self._load_all_plugins()
-        except Exception:
-            self._python_ctx_manager.__exit__(*sys.exc_info())
-            self._python_ctx = None
-            self._python_ctx_manager = None
-            raise
-
+        self._load_all_plugins()
         return self
 
     def __exit__(
@@ -87,19 +76,13 @@ class BasePluginLoader:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        if self._python_ctx is None:
+        if self._namespace_map is None:
             raise RuntimeError("Context manager not entered!")
-        assert self._python_ctx_manager is not None
-
         self._namespace_map = None
-        self._python_ctx = None
-        self._python_ctx_manager.__exit__(exc_type, exc_value, traceback)
 
     def _call_subprocess(
         self, plugin_apis: list[str], commands: dict[str, Any]
     ) -> dict[str, dict[str, Any]]:
-        assert self._python_ctx is not None
-
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
             script = Path(temp_dir) / "loader.py"
             script.write_bytes(
@@ -125,7 +108,7 @@ class BasePluginLoader:
                 args += ["-p", plugin_api]
 
             process = subprocess.run(  # noqa: S603
-                [self._python_ctx.python_executable, script, *args],
+                [self._python_executable, script, *args],
                 input=json.dumps(commands).encode("utf8"),
                 capture_output=True,
                 check=False,
@@ -140,8 +123,6 @@ class BasePluginLoader:
     def _load_all_plugins(self) -> None: ...
 
     def _load_all_plugins_from_tuple(self, plugin_apis: list[str]) -> None:
-        if self._python_ctx is None:
-            raise RuntimeError("Context manager not entered!")
         if self._namespace_map is not None:
             raise RuntimeError(
                 "Impossible to load plugins - `self._namespace_map` is not None"
@@ -189,8 +170,6 @@ class BasePluginLoader:
             )
 
     def _check_plugins_loaded(self) -> None:
-        if self._python_ctx is None:
-            raise RuntimeError("Context manager not entered!")
         if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
@@ -285,7 +264,7 @@ class PluginLoader(BasePluginLoader):
     def __init__(
         self,
         variant_info: VariantInfo,
-        venv_path: Path | None = None,
+        venv_python_executable: Path | None = None,
         enable_optional_plugins: bool | list[VariantNamespace] = False,
         filter_plugins: list[VariantNamespace] | None = None,
     ) -> None:
@@ -293,7 +272,7 @@ class PluginLoader(BasePluginLoader):
         self._enable_optional_plugins = enable_optional_plugins
         self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
-        super().__init__(venv_path=venv_path)
+        super().__init__(venv_python_executable=venv_python_executable)
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
         # if enable_optional_plugins is a bool, it controls all plugins
@@ -348,9 +327,9 @@ class EntryPointPluginLoader(BasePluginLoader):
 
     def __init__(
         self,
-        venv_path: Path | None = None,
+        venv_python_executable: Path | None = None,
     ) -> None:
-        super().__init__(venv_path=venv_path)
+        super().__init__(venv_python_executable=venv_python_executable)
 
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:
@@ -396,10 +375,10 @@ class ListPluginLoader(BasePluginLoader):
     def __init__(
         self,
         plugin_apis: list[str],
-        venv_path: Path | None = None,
+        venv_python_executable: Path | None = None,
     ) -> None:
         self._plugin_apis = list(plugin_apis)
-        super().__init__(venv_path=venv_path)
+        super().__init__(venv_python_executable=venv_python_executable)
 
     def _load_all_plugins(self) -> None:
         if self._namespace_map is not None:
