@@ -74,6 +74,17 @@ def process_configs(
     return [{"name": vfeat.name, "values": vfeat.values} for vfeat in configs]
 
 
+def group_properties_by_plugin(
+    properties: list[dict[str, str]], namespace_map: dict[str, PluginType]
+) -> Generator[tuple[PluginType, list[argparse.Namespace]]]:
+    for namespace, p_props in groupby(
+        sorted(properties, key=lambda prop: prop["namespace"]),
+        lambda prop: prop["namespace"],
+    ):
+        plugin = namespace_map[namespace]
+        yield (plugin, [argparse.Namespace(**prop) for prop in p_props])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -95,17 +106,20 @@ def main() -> int:
             retval[command] = {
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
             }
-        elif command == "get_all_configs":
-            assert not command_args
-            retval[command] = {  # pyright: ignore[reportArgumentType]
-                plugin_api: process_configs(plugin.get_all_configs(), plugin, command)
-                for plugin_api, plugin in plugins.items()
-            }
-        elif command == "get_supported_configs":
-            assert not command_args
+        elif command in ("get_all_configs", "get_supported_configs"):
+            assert command_args
+            assert "properties" in command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
-                    plugin.get_supported_configs(), plugin, command
+                    getattr(plugin, command)(
+                        [
+                            argparse.Namespace(**prop)
+                            for prop in command_args["properties"]
+                            if prop["namespace"] == plugin.namespace
+                        ]
+                    ),
+                    plugin,
+                    command,
                 )
                 for plugin_api, plugin in plugins.items()
             }
@@ -113,21 +127,17 @@ def main() -> int:
             assert command_args
             assert "properties" in command_args
             ret_env: dict[str, list[str]] = {}
-            for namespace, p_props in groupby(
-                sorted(command_args["properties"], key=lambda prop: prop["namespace"]),
-                lambda prop: prop["namespace"],
+            for plugin, p_props in group_properties_by_plugin(
+                command_args["properties"], namespace_map
             ):
-                plugin = namespace_map[namespace]
                 if hasattr(plugin, "get_build_setup"):
-                    plugin_env = plugin.get_build_setup(
-                        [argparse.Namespace(**prop) for prop in p_props]
-                    )
+                    plugin_env = plugin.get_build_setup(p_props)
 
                     try:
                         validate_type(plugin_env, dict[str, list[str]])
                     except ValidationError as err:
                         raise TypeError(
-                            f"Provider {namespace}, get_build_setup() "
+                            f"Provider {plugin.namespace}, get_build_setup() "
                             f"method returned incorrect type. {err}"
                         ) from None
                 else:

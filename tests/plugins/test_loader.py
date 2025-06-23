@@ -4,6 +4,7 @@ import re
 import sys
 from functools import partial
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Callable
 
 import pytest
@@ -33,6 +34,11 @@ from variantlib.protocols import VariantNamespace
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
+if TYPE_CHECKING:
+    from collections.abc import Collection
+
+    from variantlib.protocols import VariantPropertyType
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
@@ -45,12 +51,16 @@ RANDOM_STUFF = 123
 class ClashingPlugin(PluginType):
     namespace = "test_namespace"
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -59,10 +69,14 @@ class ExceptionPluginBase(PluginType):
 
     returned_value: list[VariantFeatureConfigType]
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
 
@@ -103,6 +117,65 @@ def test_get_supported_configs(
             namespace="second_namespace",
             configs=[
                 VariantFeatureConfig("name3", ["val3a"]),
+            ],
+        ),
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
+            configs=[
+                VariantFeatureConfig("name1", ["val1a", "val1b"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
+
+
+def test_get_all_configs_dynamic(
+    mocked_plugin_loader: BasePluginLoader,
+) -> None:
+    assert mocked_plugin_loader.get_all_configs(
+        [
+            VariantProperty("test_namespace", "name1", "val1z"),
+            VariantProperty("second_namespace", "name3", "val3bcde"),
+        ]
+    ) == {
+        "incompatible_namespace": ProviderConfig(
+            namespace="incompatible_namespace",
+            configs=[
+                VariantFeatureConfig("flag1", ["on"]),
+                VariantFeatureConfig("flag2", ["on"]),
+                VariantFeatureConfig("flag3", ["on"]),
+                VariantFeatureConfig("flag4", ["on"]),
+            ],
+        ),
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c", "val3bcde"]),
+            ],
+        ),
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
+            configs=[
+                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            ],
+        ),
+    }
+
+
+def test_get_supported_configs_dynamic(
+    mocked_plugin_loader: BasePluginLoader,
+) -> None:
+    assert mocked_plugin_loader.get_supported_configs(
+        [
+            VariantProperty("test_namespace", "name1", "val1z"),
+            VariantProperty("second_namespace", "name3", "val3abcd"),
+        ]
+    ) == {
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig("name3", ["val3a", "val3abcd"]),
             ],
         ),
         "test_namespace": ProviderConfig(
@@ -228,7 +301,9 @@ def test_namespace_incorrect_name() -> None:
 class IncompletePlugin:
     namespace = "incomplete_plugin"
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType]
+    ) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -251,10 +326,14 @@ class RaisingInstantiationPlugin:
     def __init__(self) -> None:
         raise RuntimeError("I failed to initialize")
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType]
+    ) -> list[VariantFeatureConfigType]:
         return []
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType]
+    ) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -277,10 +356,14 @@ class CrossTypeInstantiationPlugin:
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType]
+    ) -> list[VariantFeatureConfigType]:
         return []
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType]
+    ) -> list[VariantFeatureConfigType]:
         return []
 
 

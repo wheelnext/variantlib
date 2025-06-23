@@ -1,4 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
+    from variantlib.protocols import VariantPropertyType
 
 
 @dataclass
@@ -10,14 +17,14 @@ class FeatConfig:
 namespace = "installable_plugin"
 
 
-def get_all_configs() -> list[FeatConfig]:
+def get_all_configs(known_properties: Collection[VariantPropertyType]) -> list[FeatConfig]:
     return [
         FeatConfig("feat1", ["val1a", "val1b", "val1c"]),
         FeatConfig("feat2", ["val2a", "val2b"]),
     ]
 
 
-def get_supported_configs() -> list[FeatConfig]:
+def get_supported_configs(known_properties: Collection[VariantPropertyType]) -> list[FeatConfig]:
     return [
         FeatConfig("feat1", ["val1c", "val1b"]),
     ]

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from collections import namedtuple
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.protocols import VariantPropertyType
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 @dataclass
@@ -19,20 +23,26 @@ class MockedEntryPoint:
 class MockedPluginA(PluginType):
     namespace = "test_namespace"
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
     def get_build_setup(
-        self, properties: list[VariantPropertyType]
+        self, properties: Collection[VariantPropertyType]
     ) -> dict[str, list[str]]:
         for prop in properties:
             assert prop.namespace == self.namespace
@@ -53,14 +63,32 @@ MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values")
 class MockedPluginB:
     namespace = "second_namespace"
 
-    def get_all_configs(self) -> list[MyVariantFeatureConfig]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[MyVariantFeatureConfig]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
+        vals3 = ["val3a", "val3b", "val3c"]
+        vals3.extend(
+            x.value
+            for x in known_properties
+            if x.feature == "name3" and x.value not in vals3
+        )
         return [
-            MyVariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+            MyVariantFeatureConfig("name3", vals3),
         ]
 
-    def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[MyVariantFeatureConfig]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
+        vals3 = ["val3a"]
+        vals3.extend(
+            x.value
+            for x in known_properties
+            if x.feature == "name3" and x.value not in vals3
+        )
         return [
-            MyVariantFeatureConfig("name3", ["val3a"]),
+            MyVariantFeatureConfig("name3", vals3),
         ]
 
 
@@ -76,7 +104,10 @@ class MyFlag:
 class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
             MyFlag("flag1"),
             MyFlag("flag2"),
@@ -84,11 +115,14 @@ class MockedPluginC(PluginType):
             MyFlag("flag4"),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
+        assert all(prop.namespace == self.namespace for prop in known_properties)
         return []
 
     def get_build_setup(
-        self, properties: list[VariantPropertyType]
+        self, properties: Collection[VariantPropertyType]
     ) -> dict[str, list[str]]:
         flag_opts = []
 

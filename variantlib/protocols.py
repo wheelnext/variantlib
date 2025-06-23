@@ -31,8 +31,13 @@ the protocol classes.
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 from typing import Protocol
 from typing import runtime_checkable
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
+
 
 # Type aliases for readability
 VariantNamespace = str
@@ -91,17 +96,21 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         """Get all configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantPropertyType] = ()
+    ) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError
 
     def get_build_setup(
-        self, properties: list[VariantPropertyType]
+        self, properties: Collection[VariantPropertyType]
     ) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
         return {}

@@ -29,7 +29,7 @@ VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.]+")
+VALIDATION_VALUE_REGEX = re.compile(r"\S+")
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""
