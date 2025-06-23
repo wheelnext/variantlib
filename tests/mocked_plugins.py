@@ -22,20 +22,21 @@ class MockedEntryPoint:
 
 class MockedPluginA(PluginType):
     namespace = "test_namespace"
+    dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
-        assert all(prop.namespace == self.namespace for prop in known_properties)
+        assert known_properties is None
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
-        assert all(prop.namespace == self.namespace for prop in known_properties)
+        assert known_properties is None
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
@@ -62,10 +63,12 @@ MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values")
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_namespace"
+    dynamic = True
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[MyVariantFeatureConfig]:
+        assert known_properties is not None
         assert all(prop.namespace == self.namespace for prop in known_properties)
         vals3 = ["val3a", "val3b", "val3c"]
         vals3.extend(
@@ -78,8 +81,9 @@ class MockedPluginB:
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[MyVariantFeatureConfig]:
+        assert known_properties is not None
         assert all(prop.namespace == self.namespace for prop in known_properties)
         vals3 = ["val3a"]
         vals3.extend(
@@ -103,11 +107,12 @@ class MyFlag:
 
 class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
+    dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
-        assert all(prop.namespace == self.namespace for prop in known_properties)
+        assert known_properties is None
         return [
             MyFlag("flag1"),
             MyFlag("flag2"),
@@ -116,9 +121,9 @@ class MockedPluginC(PluginType):
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
-        assert all(prop.namespace == self.namespace for prop in known_properties)
+        assert known_properties is None
         return []
 
     def get_build_setup(

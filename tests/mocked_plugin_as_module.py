@@ -11,15 +11,18 @@ if TYPE_CHECKING:
 
 
 namespace = "module_namespace"
+dynamic = False
 
 
 def get_all_configs(
-    known_properties: Collection[VariantPropertyType],
+    known_properties: Collection[VariantPropertyType] | None,
 ) -> list[VariantFeatureConfigType]:
+    assert known_properties is None
     return [Namespace(name="feature", values=["a", "b"])]
 
 
 def get_supported_configs(
-    known_properties: Collection[VariantPropertyType],
+    known_properties: Collection[VariantPropertyType] | None,
 ) -> list[VariantFeatureConfigType]:
+    assert known_properties is None
     return []

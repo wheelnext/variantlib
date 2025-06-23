@@ -95,16 +95,29 @@ class PluginType(Protocol):
         """Plugin namespace"""
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def dynamic(self) -> bool:
+        """
+        Is this a dynamic plugin?
+
+        This property / attribute should return True if the configs
+        returned by `get_all_configs()` and `get_supported_configs()`
+        depend on `known_properties` input.  If it is False,
+        `known_properties` will be `None`.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         """Get all configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError

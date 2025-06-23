@@ -117,6 +117,8 @@ def main() -> int:
                             for prop in command_args["properties"]
                             if prop["namespace"] == plugin.namespace
                         ]
+                        if plugin.dynamic
+                        else None
                     ),
                     plugin,
                     command,

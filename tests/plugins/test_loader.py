@@ -50,32 +50,34 @@ RANDOM_STUFF = 123
 
 class ClashingPlugin(PluginType):
     namespace = "test_namespace"
+    dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
 
 class ExceptionPluginBase(PluginType):
     namespace = "exception_test"
+    dynamic = False
 
     returned_value: list[VariantFeatureConfigType]
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
@@ -300,9 +302,10 @@ def test_namespace_incorrect_name() -> None:
 
 class IncompletePlugin:
     namespace = "incomplete_plugin"
+    dynamic = False
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -312,8 +315,8 @@ def test_namespace_incorrect_type() -> None:
         pytest.raises(
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
-            r"the PluginType prototype: 123 \(missing attributes: get_all_configs, "
-            r"get_supported_configs, namespace\)",
+            r"the PluginType prototype: 123 \(missing attributes: dynamic, "
+            r"get_all_configs, get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -352,17 +355,18 @@ def test_namespace_instantiation_raises() -> None:
 
 class CrossTypeInstantiationPlugin:
     namespace = "cross_plugin"
+    dynamic = False
 
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: Collection[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 

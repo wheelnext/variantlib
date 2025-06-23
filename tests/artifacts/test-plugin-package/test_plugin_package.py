@@ -15,16 +15,19 @@ class FeatConfig:
 
 
 namespace = "installable_plugin"
+dynamic = False
 
 
-def get_all_configs(known_properties: Collection[VariantPropertyType]) -> list[FeatConfig]:
+def get_all_configs(known_properties: Collection[VariantPropertyType] | None) -> list[FeatConfig]:
+    assert known_properties is None
     return [
         FeatConfig("feat1", ["val1a", "val1b", "val1c"]),
         FeatConfig("feat2", ["val2a", "val2b"]),
     ]
 
 
-def get_supported_configs(known_properties: Collection[VariantPropertyType]) -> list[FeatConfig]:
+def get_supported_configs(known_properties: Collection[VariantPropertyType] | None) -> list[FeatConfig]:
+    assert known_properties is None
     return [
         FeatConfig("feat1", ["val1c", "val1b"]),
     ]
