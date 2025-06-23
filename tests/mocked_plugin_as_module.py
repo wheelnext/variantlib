@@ -14,12 +14,12 @@ namespace = "module_namespace"
 
 
 def get_all_configs(
-    known_properties: Collection[VariantPropertyType] = (),
+    known_properties: Collection[VariantPropertyType],
 ) -> list[VariantFeatureConfigType]:
     return [Namespace(name="feature", values=["a", "b"])]
 
 
 def get_supported_configs(
-    known_properties: Collection[VariantPropertyType] = (),
+    known_properties: Collection[VariantPropertyType],
 ) -> list[VariantFeatureConfigType]:
     return []

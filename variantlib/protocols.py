@@ -97,14 +97,14 @@ class PluginType(Protocol):
 
     @abstractmethod
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         """Get all configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError

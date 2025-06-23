@@ -52,14 +52,14 @@ class ClashingPlugin(PluginType):
     namespace = "test_namespace"
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -70,12 +70,12 @@ class ExceptionPluginBase(PluginType):
     returned_value: list[VariantFeatureConfigType]
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 

@@ -24,7 +24,7 @@ class MockedPluginA(PluginType):
     namespace = "test_namespace"
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
@@ -33,7 +33,7 @@ class MockedPluginA(PluginType):
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
@@ -64,7 +64,7 @@ class MockedPluginB:
     namespace = "second_namespace"
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[MyVariantFeatureConfig]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         vals3 = ["val3a", "val3b", "val3c"]
@@ -78,7 +78,7 @@ class MockedPluginB:
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[MyVariantFeatureConfig]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         vals3 = ["val3a"]
@@ -105,7 +105,7 @@ class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         return [
@@ -116,7 +116,7 @@ class MockedPluginC(PluginType):
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] = ()
+        self, known_properties: Collection[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         assert all(prop.namespace == self.namespace for prop in known_properties)
         return []
