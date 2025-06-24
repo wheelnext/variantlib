@@ -8,7 +8,7 @@ import logging
 import subprocess
 import sys
 from abc import abstractmethod
-from collections.abc import Sequence
+from collections.abc import Collection
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from variantlib.models.variant import VariantDescription
+    from variantlib.models.variant import VariantProperty
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
     from variantlib.protocols import VariantNamespace
@@ -174,7 +175,10 @@ class BasePluginLoader:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
     def _get_configs(
-        self, method: str, require_non_empty: bool
+        self,
+        method: str,
+        known_properties: Collection[VariantProperty],
+        require_non_empty: bool,
     ) -> dict[str, ProviderConfig]:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
@@ -182,9 +186,16 @@ class BasePluginLoader:
         if not self._namespace_map:
             return {}
 
-        configs = self._call_subprocess(list(self._namespace_map.keys()), {method: {}})[
-            method
-        ]
+        configs = self._call_subprocess(
+            list(self._namespace_map.keys()),
+            {
+                method: {
+                    "properties": [
+                        dataclasses.asdict(vprop) for vprop in known_properties
+                    ]
+                }
+            },
+        )[method]
 
         provider_cfgs = {}
         for plugin_api, plugin_configs in configs.items():
@@ -207,13 +218,23 @@ class BasePluginLoader:
 
         return provider_cfgs
 
-    def get_supported_configs(self) -> dict[str, ProviderConfig]:
+    def get_supported_configs(
+        self, known_properties: Collection[VariantProperty] = ()
+    ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
-        return self._get_configs("get_supported_configs", require_non_empty=False)
+        return self._get_configs(
+            "get_supported_configs",
+            known_properties=known_properties,
+            require_non_empty=False,
+        )
 
-    def get_all_configs(self) -> dict[str, ProviderConfig]:
+    def get_all_configs(
+        self, known_properties: Collection[VariantProperty] = ()
+    ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
-        return self._get_configs("get_all_configs", require_non_empty=True)
+        return self._get_configs(
+            "get_all_configs", known_properties=known_properties, require_non_empty=True
+        )
 
     def get_build_setup(self, variant_desc: VariantDescription) -> dict[str, list[str]]:
         """Get build variables for a variant made of specified properties"""
@@ -280,7 +301,7 @@ class PluginLoader(BasePluginLoader):
             assert isinstance(self._enable_optional_plugins, bool)
             return self._enable_optional_plugins
         # otherwise, it's a list of enabled namespaces
-        assert isinstance(self._enable_optional_plugins, Sequence)
+        assert isinstance(self._enable_optional_plugins, Collection)
         return namespace in self._enable_optional_plugins
 
     def _provider_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:

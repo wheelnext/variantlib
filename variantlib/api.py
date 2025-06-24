@@ -68,7 +68,9 @@ def get_variant_hashes_by_priority(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs().values()
+                for provider_cfg in plugin_loader.get_supported_configs(
+                    known_properties=variants_json.get_known_properties()
+                ).values()
             )
         )
 
@@ -122,7 +124,9 @@ def validate_variant(
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
     ) as plugin_loader:
-        provider_cfgs = plugin_loader.get_all_configs()
+        provider_cfgs = plugin_loader.get_all_configs(
+            known_properties=variant_desc.properties
+        )
 
     def _validate_variant(vprop: VariantProperty) -> bool | None:
         provider_cfg = provider_cfgs.get(vprop.namespace)
@@ -192,7 +196,9 @@ def check_variant_supported(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs().values()
+                for provider_cfg in plugin_loader.get_supported_configs(
+                    known_properties=vdesc.properties
+                ).values()
             )
         )
 

@@ -174,8 +174,8 @@ def test_invalid_priority_type(key: str, expected: str) -> None:
         ),
         (
             VARIANT_INFO_PROPERTY_KEY,
-            {"ns": {"feature": ["property", "not-valid"]}},
-            r".ns.feature\[1\]: Value `not-valid`",
+            {"ns": {"feature": ["property", "not valid"]}},
+            r".ns.feature\[1\]: Value `not valid`",
         ),
     ],
 )

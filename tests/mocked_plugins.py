@@ -18,21 +18,28 @@ class MockedEntryPoint:
 
 class MockedPluginA(PluginType):
     namespace = "test_namespace"
+    dynamic = False
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[VariantFeatureConfigType]:
+        assert known_properties is None
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[VariantFeatureConfigType]:
+        assert known_properties is None
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
     def get_build_setup(
-        self, properties: list[VariantPropertyType]
+        self, properties: frozenset[VariantPropertyType]
     ) -> dict[str, list[str]]:
         for prop in properties:
             assert prop.namespace == self.namespace
@@ -52,15 +59,36 @@ MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values")
 # to test that we don't rely on that inheritance
 class MockedPluginB:
     namespace = "second_namespace"
+    dynamic = True
 
-    def get_all_configs(self) -> list[MyVariantFeatureConfig]:
+    def get_all_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[MyVariantFeatureConfig]:
+        assert known_properties is not None
+        assert all(prop.namespace == self.namespace for prop in known_properties)
+        vals3 = ["val3a", "val3b", "val3c"]
+        vals3.extend(
+            x.value
+            for x in known_properties
+            if x.feature == "name3" and x.value not in vals3
+        )
         return [
-            MyVariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+            MyVariantFeatureConfig("name3", vals3),
         ]
 
-    def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
+    def get_supported_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[MyVariantFeatureConfig]:
+        assert known_properties is not None
+        assert all(prop.namespace == self.namespace for prop in known_properties)
+        vals3 = ["val3a"]
+        vals3.extend(
+            x.value
+            for x in known_properties
+            if x.feature == "name3" and x.value not in vals3
+        )
         return [
-            MyVariantFeatureConfig("name3", ["val3a"]),
+            MyVariantFeatureConfig("name3", vals3),
         ]
 
 
@@ -75,8 +103,12 @@ class MyFlag:
 
 class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
+    dynamic = False
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[VariantFeatureConfigType]:
+        assert known_properties is None
         return [
             MyFlag("flag1"),
             MyFlag("flag2"),
@@ -84,11 +116,14 @@ class MockedPluginC(PluginType):
             MyFlag("flag4"),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(
+        self, known_properties: frozenset[VariantPropertyType] | None
+    ) -> list[VariantFeatureConfigType]:
+        assert known_properties is None
         return []
 
     def get_build_setup(
-        self, properties: list[VariantPropertyType]
+        self, properties: frozenset[VariantPropertyType]
     ) -> dict[str, list[str]]:
         flag_opts = []
 

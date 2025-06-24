@@ -31,6 +31,8 @@ from variantlib.validators.keytracking import KeyTrackingValidator
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from variantlib.models.variant import VariantProperty
+
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
@@ -126,6 +128,10 @@ class VariantsJson(VariantInfo):
                             f"Inconsistency in providers[{namespace!r}].{attribute}. "
                             f"Expected: {old!r}, found: {new!r}"
                         )
+
+    def get_known_properties(self) -> set[VariantProperty]:
+        """Get a set of all property values found in listed variants"""
+        return {vprop for vdesc in self.variants.values() for vprop in vdesc.properties}
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]

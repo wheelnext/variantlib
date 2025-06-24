@@ -116,7 +116,7 @@ def test_failing_regex_name() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantFeatureConfig(name="", values=["7", "4", "8", "12"])
 
-    for c in "@#$%&*^()[]?.!-{}[]\\/ ":
+    for c in "@#$%&*^()[]?.!-{}[]\\/ \t":
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantFeatureConfig(name=f"name{c}value", values=["7", "4", "8", "12"])
 
@@ -125,7 +125,7 @@ def test_failing_regex_value() -> None:
     with pytest.raises(ValidationError, match="must match regex"):
         _ = VariantFeatureConfig(name="name", values=[""])
 
-    for c in "@#$%&*^()[]?!-{}[]\\/ ":
+    for c in "@#$%&*^()[]?-{}[]\\/ \t":
         with pytest.raises(ValidationError, match="must match regex"):
             _ = VariantFeatureConfig(name="name", values=[f"val{c}ue"])
 
