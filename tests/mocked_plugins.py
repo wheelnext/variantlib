@@ -2,15 +2,11 @@ from __future__ import annotations
 
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
 from variantlib.protocols import VariantPropertyType
-
-if TYPE_CHECKING:
-    from collections.abc import Collection
 
 
 @dataclass
@@ -25,7 +21,7 @@ class MockedPluginA(PluginType):
     dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         assert known_properties is None
         return [
@@ -34,7 +30,7 @@ class MockedPluginA(PluginType):
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         assert known_properties is None
         return [
@@ -43,7 +39,7 @@ class MockedPluginA(PluginType):
         ]
 
     def get_build_setup(
-        self, properties: Collection[VariantPropertyType]
+        self, properties: frozenset[VariantPropertyType]
     ) -> dict[str, list[str]]:
         for prop in properties:
             assert prop.namespace == self.namespace
@@ -66,7 +62,7 @@ class MockedPluginB:
     dynamic = True
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[MyVariantFeatureConfig]:
         assert known_properties is not None
         assert all(prop.namespace == self.namespace for prop in known_properties)
@@ -81,7 +77,7 @@ class MockedPluginB:
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[MyVariantFeatureConfig]:
         assert known_properties is not None
         assert all(prop.namespace == self.namespace for prop in known_properties)
@@ -110,7 +106,7 @@ class MockedPluginC(PluginType):
     dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         assert known_properties is None
         return [
@@ -121,13 +117,13 @@ class MockedPluginC(PluginType):
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         assert known_properties is None
         return []
 
     def get_build_setup(
-        self, properties: Collection[VariantPropertyType]
+        self, properties: frozenset[VariantPropertyType]
     ) -> dict[str, list[str]]:
         flag_opts = []
 

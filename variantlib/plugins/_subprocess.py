@@ -4,6 +4,7 @@ import argparse
 import importlib
 import json
 import sys
+from dataclasses import dataclass
 from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
@@ -18,6 +19,13 @@ from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+
+@dataclass(frozen=True)
+class VariantProperty:
+    namespace: str
+    feature: str
+    value: str
 
 
 def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
@@ -76,13 +84,13 @@ def process_configs(
 
 def group_properties_by_plugin(
     properties: list[dict[str, str]], namespace_map: dict[str, PluginType]
-) -> Generator[tuple[PluginType, list[argparse.Namespace]]]:
+) -> Generator[tuple[PluginType, frozenset[VariantProperty]]]:
     for namespace, p_props in groupby(
         sorted(properties, key=lambda prop: prop["namespace"]),
         lambda prop: prop["namespace"],
     ):
         plugin = namespace_map[namespace]
-        yield (plugin, [argparse.Namespace(**prop) for prop in p_props])
+        yield (plugin, frozenset(VariantProperty(**prop) for prop in p_props))
 
 
 def main() -> int:
@@ -112,11 +120,11 @@ def main() -> int:
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
                     getattr(plugin, command)(
-                        [
-                            argparse.Namespace(**prop)
+                        frozenset(
+                            VariantProperty(**prop)
                             for prop in command_args["properties"]
                             if prop["namespace"] == plugin.namespace
-                        ]
+                        )
                         if plugin.dynamic
                         else None
                     ),

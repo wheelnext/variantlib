@@ -35,8 +35,6 @@ from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
-
     from variantlib.protocols import VariantPropertyType
 
 if sys.version_info >= (3, 11):
@@ -53,14 +51,14 @@ class ClashingPlugin(PluginType):
     dynamic = False
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
         ]
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -72,12 +70,12 @@ class ExceptionPluginBase(PluginType):
     returned_value: list[VariantFeatureConfigType]
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
@@ -305,7 +303,7 @@ class IncompletePlugin:
     dynamic = False
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -330,12 +328,12 @@ class RaisingInstantiationPlugin:
         raise RuntimeError("I failed to initialize")
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: frozenset[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return []
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType]
+        self, known_properties: frozenset[VariantPropertyType]
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -361,12 +359,12 @@ class CrossTypeInstantiationPlugin:
         return IncompletePlugin()
 
     def get_all_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantPropertyType] | None
+        self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return []
 
@@ -401,9 +399,13 @@ def test_get_build_setup(
         ]
     )
 
-    assert mocked_plugin_loader.get_build_setup(variant_desc) == {
-        "cflags": ["-mflag1", "-mflag4", "-march=val1b"],
-        "cxxflags": ["-mflag1", "-mflag4", "-march=val1b"],
+    # flag order may depend on (random) property ordering
+    assert {
+        k: sorted(v)
+        for k, v in mocked_plugin_loader.get_build_setup(variant_desc).items()
+    } == {
+        "cflags": ["-march=val1b", "-mflag1", "-mflag4"],
+        "cxxflags": ["-march=val1b", "-mflag1", "-mflag4"],
         "ldflags": ["-Wl,--test-flag"],
     }
 
