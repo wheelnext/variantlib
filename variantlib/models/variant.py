@@ -102,7 +102,7 @@ class VariantProperty(VariantFeature):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantFeatureValue),
-                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_VALUE_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )

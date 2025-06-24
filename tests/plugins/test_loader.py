@@ -47,8 +47,8 @@ RANDOM_STUFF = 123
 
 
 class ClashingPlugin(PluginType):
-    namespace = "test_namespace"
-    dynamic = False
+    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
+    dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     def get_all_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -64,8 +64,8 @@ class ClashingPlugin(PluginType):
 
 
 class ExceptionPluginBase(PluginType):
-    namespace = "exception_test"
-    dynamic = False
+    namespace = "exception_test"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
+    dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     returned_value: list[VariantFeatureConfigType]
 

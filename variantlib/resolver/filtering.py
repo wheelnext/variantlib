@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from variantlib.protocols import VariantFeatureValue
+    from variantlib.protocols import VariantNamespace
+
 
 logger = logging.getLogger(__name__)
 
@@ -188,13 +190,12 @@ def filter_variants_by_property(
 
     # We group allowed properties by their namespace and feature:
     #   => only one match per group is required.
-    allowed_props_dict: dict[VariantFeature, set[VariantFeatureValue]] = defaultdict(
-        set
-    )
+    # Note: This step is required for the OR match within one VariantFeature
+    allowed_props_dict: dict[
+        tuple[VariantNamespace, VariantFeatureValue], set[VariantFeatureValue]
+    ] = defaultdict(set)
     for vprop in allowed_properties:
-        allowed_props_dict[VariantFeature(vprop.namespace, vprop.feature)].add(
-            vprop.value
-        )
+        allowed_props_dict[(vprop.namespace, vprop.feature)].add(vprop.value)
 
     def _should_include(vdesc: VariantDescription) -> bool:
         """
@@ -202,20 +203,23 @@ def filter_variants_by_property(
         """
         validate_type(vdesc, VariantDescription)
 
-        vprops_dict: dict[VariantFeature, set[VariantFeatureValue]] = defaultdict(set)
+        vdesc_prop_dict: dict[
+            tuple[VariantNamespace, VariantFeatureValue], set[VariantFeatureValue]
+        ] = defaultdict(set)
         for vprop in vdesc.properties:
-            vprops_dict[VariantFeature(vprop.namespace, vprop.feature)].add(vprop.value)
+            vdesc_prop_dict[(vprop.namespace, vprop.feature)].add(vprop.value)
 
-        for vfeat_tuple, property_values in vprops_dict.items():
-            if not (allowed_props := allowed_props_dict.get(vfeat_tuple)):
+        for (ns, vfeat_name), property_values in vdesc_prop_dict.items():
+            if not (allowed_props := allowed_props_dict.get((ns, vfeat_name))):
                 # If there are no allowed properties for this feature, we reject
                 # the variant.
                 logger.info(
                     "Variant `%(vhash)s` has been rejected because the feature "
-                    "`%(feature)s` is not supported by any of the allowed properties.",
+                    "`%(ns)s :: %(feature)s` has no allowed properties.",
                     {
                         "vhash": vdesc.hexdigest,
-                        "feature": vfeat_tuple.feature,
+                        "ns": ns,
+                        "feature": vfeat_name,
                     },
                 )
                 return False
@@ -223,16 +227,20 @@ def filter_variants_by_property(
             for property_value in property_values:
                 if property_value in allowed_props:
                     break
+
             else:
                 # We never broke out of the loop, meaning no allowed property
                 # matched. Consequently, we reject this variant.
                 logger.info(
-                    "Variant `%(vhash)s` has been rejected because the feature "
-                    "`%(feature)s` is not supported by any of the allowed "
-                    "properties.",
+                    "Variant `%(vhash)s` has been rejected because the none of the "
+                    "variant properties are compatible with this platform:"
+                    "\n\t- %(vprops)s",
                     {
                         "vhash": vdesc.hexdigest,
-                        "feature": vfeat_tuple.feature,
+                        "vprops": "\n\t- ".join(
+                            f"`{ns} :: {vfeat_name} :: {val}`"
+                            for val in property_values
+                        ),
                     },
                 )
                 return False

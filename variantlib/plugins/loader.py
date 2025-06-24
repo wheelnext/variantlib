@@ -17,6 +17,7 @@ from typing import cast
 
 from packaging.markers import Marker
 from packaging.markers import default_environment
+
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -85,6 +86,7 @@ class BasePluginLoader:
         self, plugin_apis: list[str], commands: dict[str, Any]
     ) -> dict[str, dict[str, Any]]:
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
+            # Copy `variantlib/plugins/loader.py` into the temp_dir
             script = Path(temp_dir) / "loader.py"
             script.write_bytes(
                 (importlib.resources.files(__package__) / "_subprocess.py")
@@ -95,9 +97,13 @@ class BasePluginLoader:
                     b"from _variantlib_validators_base",
                 )
             )
+
+            # Copy `variantlib/protocols.py` into the temp_dir
             (Path(temp_dir) / "_variantlib_protocols.py").write_bytes(
                 (importlib.resources.files("variantlib") / "protocols.py").read_bytes()
             )
+
+            # Copy `variantlib/validators/base.py` into the temp_dir
             (Path(temp_dir) / "_variantlib_validators_base.py").write_bytes(
                 (
                     importlib.resources.files("variantlib.validators") / "base.py"
@@ -106,7 +112,7 @@ class BasePluginLoader:
 
             args = []
             for plugin_api in plugin_apis:
-                args += ["-p", plugin_api]
+                args += ["--plugin-api", plugin_api]
 
             process = subprocess.run(  # noqa: S603
                 [self._python_executable, script, *args],

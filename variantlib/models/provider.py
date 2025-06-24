@@ -36,7 +36,7 @@ class VariantFeatureConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantFeatureName),
-                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_FEATURE_NAME_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -49,9 +49,9 @@ class VariantFeatureConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, list[VariantFeatureValue]),
-                    lambda v: validate_list_matches_re(v, VALIDATION_VALUE_REGEX),
-                    lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v),
+                    lambda v: validate_list_matches_re(v, VALIDATION_VALUE_REGEX),  # pyright: ignore[reportArgumentType]
+                    lambda v: validate_list_min_len(v, 1),  # pyright: ignore[reportArgumentType]
+                    lambda v: validate_list_all_unique(v),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -66,7 +66,7 @@ class ProviderConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, VariantNamespace),
-                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),
+                    lambda v: validate_matches_re(v, VALIDATION_NAMESPACE_REGEX),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             )
@@ -79,8 +79,8 @@ class ProviderConfig(BaseModel):
             "validator": lambda val: validate_and(
                 [
                     lambda v: validate_type(v, list[VariantFeatureConfig]),
-                    lambda v: validate_list_min_len(v, 1),
-                    lambda v: validate_list_all_unique(v, keys=["name"]),
+                    lambda v: validate_list_min_len(v, 1),  # pyright: ignore[reportArgumentType]
+                    lambda v: validate_list_all_unique(v, keys=["name"]),  # pyright: ignore[reportArgumentType]
                 ],
                 value=val,
             ),

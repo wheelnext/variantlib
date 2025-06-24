@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from functools import reduce
 from itertools import groupby
 from typing import TYPE_CHECKING
+from typing import Any
 
 # The following imports are replaced with temporary paths by the plugin
 # loader. We are using the original imports here to facilitate static
@@ -43,6 +44,7 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
 
         # plugin-api can either be a callable (e.g. a class to instantiate
         # or a function to call) or a ready object
+        plugin_instance: PluginType
         if callable(plugin_callable):
             try:
                 # Instantiate the plugin
@@ -52,12 +54,12 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
                     f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
                 ) from exc
         else:
-            plugin_instance = plugin_callable
+            plugin_instance = plugin_callable  # pyright: ignore[reportAssignmentType]
 
         # We cannot use isinstance() here since some of the PluginType methods
         # are optional. Instead, we use @abstractmethod decorator to naturally
         # annotate required methods, and the remaining methods are optional.
-        required_attributes = PluginType.__abstractmethods__
+        required_attributes = PluginType.__abstractmethods__  # pyright: ignore[reportAttributeAccessIssue]
         if missing_attributes := required_attributes.difference(dir(plugin_instance)):
             raise TypeError(
                 f"{plugin_api!r} does not meet the PluginType prototype: "
@@ -96,7 +98,6 @@ def group_properties_by_plugin(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-p",
         "--plugin-api",
         action="append",
         help="Load specified plugin API",
@@ -107,7 +108,7 @@ def main() -> int:
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
     namespace_map = {plugin.namespace: plugin for plugin in plugins.values()}
 
-    retval = {}
+    retval: dict[str, Any] = {}
     for command, command_args in commands.items():
         if command == "namespaces":
             assert not command_args

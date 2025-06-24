@@ -17,8 +17,8 @@ class MockedEntryPoint:
 
 
 class MockedPluginA(PluginType):
-    namespace = "test_namespace"
-    dynamic = False
+    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
+    dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     def get_all_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
