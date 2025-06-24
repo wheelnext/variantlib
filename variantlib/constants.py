@@ -75,12 +75,12 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
     r"    (?P<name>[^\s-]+?)              "  # <name>
     r"    - (?P<ver>[^\s-]*?)             "  # "-" <ver>
     r"  )                                 "  # close "namever" group
-    r"  ( - (?P<build>\d[^-]*?) )?        "  # optional "-" <build>
+    r"  (?: - (?P<build>\d[^-]*?) )?      "  # optional "-" <build>
     r"  - (?P<pyver>[^\s-]+?)             "  # "-" <pyver> tag
     r"  - (?P<abi>[^\s-]+?)               "  # "-" <abi> tag
     r"  - (?P<plat>[^\s-]+?)              "  # "-" <plat> tag
     r")                                   "  # end of <base_wheel_name> group
-    r"( - (?P<variant_hash>               "  # optional <variant_hash>
+    r"(?: - (?P<variant_hash>             "  # optional <variant_hash>
     rf"    [0-9a-f]{{{VARIANT_HASH_LEN}}} "
     r"    )                               "
     r")?                                  "
