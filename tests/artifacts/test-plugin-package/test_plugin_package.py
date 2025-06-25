@@ -17,15 +17,19 @@ namespace = "installable_plugin"
 dynamic = False
 
 
-def get_all_configs(known_properties: frozenset[VariantPropertyType] | None) -> list[FeatConfig]:
-    assert known_properties is None
-    return [
-        FeatConfig("feat1", ["val1a", "val1b", "val1c"]),
-        FeatConfig("feat2", ["val2a", "val2b"]),
-    ]
+def validate_property(
+    variant_property: VariantPropertyType,
+) -> bool:
+    assert variant_property.namespace == namespace
+    return (
+        (variant_property.feature == "feat1" and variant_property.value in ["val1a", "val1b", "val1c"])
+        or (variant_property.feature == "feat2" and variant_property.value in ["val2a", "val2b"])
+        )
 
 
-def get_supported_configs(known_properties: frozenset[VariantPropertyType] | None) -> list[FeatConfig]:
+def get_supported_configs(
+    known_properties: frozenset[VariantPropertyType] | None,
+) -> list[FeatConfig]:
     assert known_properties is None
     return [
         FeatConfig("feat1", ["val1c", "val1b"]),

@@ -20,14 +20,15 @@ class MockedPluginA(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
     dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        assert known_properties is None
-        return [
-            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-            VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-        ]
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return (
+            variant_property.feature == "name1"
+            and variant_property.value in ["val1a", "val1b", "val1c", "val1d"]
+        ) or (
+            variant_property.feature == "name2"
+            and variant_property.value in ["val2a", "val2b", "val2c"]
+        )
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -61,20 +62,9 @@ class MockedPluginB:
     namespace = "second_namespace"
     dynamic = True
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[MyVariantFeatureConfig]:
-        assert known_properties is not None
-        assert all(prop.namespace == self.namespace for prop in known_properties)
-        vals3 = ["val3a", "val3b", "val3c"]
-        vals3.extend(
-            x.value
-            for x in known_properties
-            if x.feature == "name3" and x.value not in vals3
-        )
-        return [
-            MyVariantFeatureConfig("name3", vals3),
-        ]
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return variant_property.feature == "name3"
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -105,16 +95,12 @@ class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
     dynamic = False
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        assert known_properties is None
-        return [
-            MyFlag("flag1"),
-            MyFlag("flag2"),
-            MyFlag("flag3"),
-            MyFlag("flag4"),
-        ]
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return (
+            variant_property.feature in ("flag1", "flag2", "flag3", "flag4")
+            and variant_property.value == "on"
+        )
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
