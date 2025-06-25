@@ -234,43 +234,6 @@ def test_validate_variants_json_empty() -> None:
     assert VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {}}).variants == {}
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: ["abcd1234"]},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd12345": {}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": ["namespace"]}},
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": [{"feature": "value"}]}
-            }
-        },
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {}}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {"feature": 1}}}},
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": {"feature": "variant@python"}}
-            }
-        },
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": {"feature@variant": "python"}}
-            }
-        },
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namesp@ce": {"feature": "value"}}
-            }
-        },
-    ],
-)
-def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
-    with pytest.raises(ValidationError):
-        VariantsJson(data)
-
-
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
 def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     json_file = Path(

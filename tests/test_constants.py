@@ -17,7 +17,7 @@ class WheelNameTuple:
     pyver: str
     abi: str
     plat: str
-    variant_hash: str | None
+    variant_label: str | None
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ class WheelNameTuple:
                 pyver="py3",
                 abi="none",
                 plat="any",
-                variant_hash=None,
+                variant_label=None,
             ),
         ),
         (
@@ -50,7 +50,7 @@ class WheelNameTuple:
                 pyver="py3",
                 abi="none",
                 plat="any",
-                variant_hash=None,
+                variant_label=None,
             ),
         ),
         (
@@ -65,7 +65,7 @@ class WheelNameTuple:
                 pyver="py3",
                 abi="none",
                 plat="any",
-                variant_hash="12345678",
+                variant_label="12345678",
             ),
         ),
         (
@@ -80,7 +80,7 @@ class WheelNameTuple:
                 pyver="py3",
                 abi="none",
                 plat="any",
-                variant_hash="12345678",
+                variant_label="12345678",
             ),
         ),
         (
@@ -95,7 +95,7 @@ class WheelNameTuple:
                 pyver="3",
                 abi="none",
                 plat="any",
-                variant_hash=None,
+                variant_label=None,
             ),
         ),
         (
@@ -111,7 +111,22 @@ class WheelNameTuple:
                 pyver="none",
                 abi="any",
                 plat="12345678",
-                variant_hash=None,
+                variant_label=None,
+            ),
+        ),
+        (
+            # custom variant label
+            "foo-1.2.3-py3-none-any-fancyhw1.whl",
+            WheelNameTuple(
+                base_wheel_name="foo-1.2.3-py3-none-any",
+                namever="foo-1.2.3",
+                name="foo",
+                ver="1.2.3",
+                build=None,
+                pyver="py3",
+                abi="none",
+                plat="any",
+                variant_label="fancyhw1",
             ),
         ),
     ],

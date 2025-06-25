@@ -25,7 +25,7 @@ VARIANTS_JSON_SCHEMA_KEY: Literal["$schema"] = "$schema"
 VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/"
 VARIANTS_JSON_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
-VALIDATION_VARIANT_HASH_REGEX = re.compile(rf"[0-9a-f]{{{VARIANT_HASH_LEN}}}")
+VALIDATION_VARIANT_LABEL_REGEX = re.compile(r"[0-9a-z]{1,8}")
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
@@ -80,8 +80,8 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
     r"  - (?P<abi>[^\s-]+?)               "  # "-" <abi> tag
     r"  - (?P<plat>[^\s-]+?)              "  # "-" <plat> tag
     r")                                   "  # end of <base_wheel_name> group
-    r"(?: - (?P<variant_hash>             "  # optional <variant_hash>
-    rf"    [0-9a-f]{{{VARIANT_HASH_LEN}}} "
+    r"(?: - (?P<variant_label>            "  # optional <variant_label>
+    rf"     {VALIDATION_VARIANT_LABEL_REGEX.pattern}"
     r"    )                               "
     r")?                                  "
     r"\.whl                               "  # ".whl" suffix

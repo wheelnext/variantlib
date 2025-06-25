@@ -18,7 +18,7 @@ class VariantDistInfo(VariantsJson):
     def __init__(
         self,
         dist_info_file: bytes | str | VariantInfo,
-        expected_hash: str | None = None,
+        expected_label: str | None = None,
     ) -> None:
         """Init from pre-read dist-info file"""
 
@@ -34,16 +34,20 @@ class VariantDistInfo(VariantsJson):
                 f"{VARIANT_DIST_INFO_FILENAME} specifies "
                 f"{len(self.variants)} variants, expected exactly one"
             )
-        if expected_hash not in (None, self.variant_hash):
+        if expected_label not in (None, self.variant_label):
             raise ValidationError(
-                f"{VARIANT_DIST_INFO_FILENAME} specifies hash "
-                f"{self.variant_hash}, expected {expected_hash}"
+                f"{VARIANT_DIST_INFO_FILENAME} specifies label "
+                f"{self.variant_label}, expected {expected_label}"
             )
 
     @property
-    def variant_hash(self) -> str:
+    def variant_label(self) -> str:
         assert len(self.variants) == 1
         return next(iter(self.variants.keys()))
+
+    @variant_label.setter
+    def variant_label(self, new_label: str) -> None:
+        self.variants = {new_label: self.variant_desc}
 
     @property
     def variant_desc(self) -> VariantDescription:

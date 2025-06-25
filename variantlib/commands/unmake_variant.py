@@ -78,7 +78,7 @@ def _unmake_variant(
             f"The file is not a valid python wheel filename: `{input_filepath.name}`"
         )
 
-    if wheel_info.group("variant_hash") is None:
+    if wheel_info.group("variant_label") is None:
         logger.info(
             "Filepath: `%(input_file)s` ... is a Standard Wheel",
             {"input_file": input_filepath.name},
