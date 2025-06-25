@@ -124,22 +124,7 @@ def validate_variant(
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
     ) as plugin_loader:
-        provider_cfgs = plugin_loader.get_all_configs(
-            known_properties=variant_desc.properties
-        )
-
-    def _validate_variant(vprop: VariantProperty) -> bool | None:
-        provider_cfg = provider_cfgs.get(vprop.namespace)
-        if provider_cfg is None:
-            return None
-        for key_cfg in provider_cfg.configs:
-            if key_cfg.name == vprop.feature:
-                return vprop.value in key_cfg.values
-        return False
-
-    return VariantValidationResult(
-        {vprop: _validate_variant(vprop) for vprop in variant_desc.properties}
-    )
+        return plugin_loader.validate_properties(properties=variant_desc.properties)
 
 
 def make_variant_dist_info(

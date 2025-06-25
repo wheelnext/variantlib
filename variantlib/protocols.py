@@ -97,17 +97,9 @@ class PluginType(Protocol):
         Is this a dynamic plugin?
 
         This property / attribute should return True if the configs
-        returned by `get_all_configs()` and `get_supported_configs()`
-        depend on `known_properties` input.  If it is False,
-        `known_properties` will be `None`.
+        returned `get_supported_configs()` depend on `known_properties`
+        input.  If it is False, `known_properties` will be `None`.
         """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        """Get all configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
@@ -115,6 +107,19 @@ class PluginType(Protocol):
         self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def validate_properties(
+        self, properties: frozenset[VariantPropertyType]
+    ) -> dict[VariantPropertyType, bool]:
+        """
+        Validate individual variant properties
+
+        Validate whether each of the specified properties is valid
+        for the plugin.  Returns a dict mapping properties to boolean
+        validity values (True means valid, False invalid).
+        """
         raise NotImplementedError
 
     def get_build_setup(

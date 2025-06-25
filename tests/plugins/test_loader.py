@@ -22,6 +22,7 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
@@ -50,12 +51,16 @@ class ClashingPlugin(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
     dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        return [
-            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-        ]
+    def validate_properties(
+        self, properties: frozenset[VariantPropertyType]
+    ) -> dict[VariantPropertyType, bool]:
+        return {
+            prop: (
+                prop.feature == "name1"
+                and prop.value in ["val1a", "val1b", "val1c", "val1d"]
+            )
+            for prop in properties
+        }
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -69,44 +74,15 @@ class ExceptionPluginBase(PluginType):
 
     returned_value: list[VariantFeatureConfigType]
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        return self.returned_value
+    def validate_properties(
+        self, properties: frozenset[VariantPropertyType]
+    ) -> dict[VariantPropertyType, bool]:
+        return {}
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
     ) -> list[VariantFeatureConfigType]:
         return self.returned_value
-
-
-def test_get_all_configs(
-    mocked_plugin_loader: BasePluginLoader,
-) -> None:
-    assert mocked_plugin_loader.get_all_configs() == {
-        "incompatible_namespace": ProviderConfig(
-            namespace="incompatible_namespace",
-            configs=[
-                VariantFeatureConfig("flag1", ["on"]),
-                VariantFeatureConfig("flag2", ["on"]),
-                VariantFeatureConfig("flag3", ["on"]),
-                VariantFeatureConfig("flag4", ["on"]),
-            ],
-        ),
-        "second_namespace": ProviderConfig(
-            namespace="second_namespace",
-            configs=[
-                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
-            ],
-        ),
-        "test_namespace": ProviderConfig(
-            namespace="test_namespace",
-            configs=[
-                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-            ],
-        ),
-    }
 
 
 def test_get_supported_configs(
@@ -123,40 +99,6 @@ def test_get_supported_configs(
             namespace="test_namespace",
             configs=[
                 VariantFeatureConfig("name1", ["val1a", "val1b"]),
-                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-            ],
-        ),
-    }
-
-
-def test_get_all_configs_dynamic(
-    mocked_plugin_loader: BasePluginLoader,
-) -> None:
-    assert mocked_plugin_loader.get_all_configs(
-        [
-            VariantProperty("test_namespace", "name1", "val1z"),
-            VariantProperty("second_namespace", "name3", "val3bcde"),
-        ]
-    ) == {
-        "incompatible_namespace": ProviderConfig(
-            namespace="incompatible_namespace",
-            configs=[
-                VariantFeatureConfig("flag1", ["on"]),
-                VariantFeatureConfig("flag2", ["on"]),
-                VariantFeatureConfig("flag3", ["on"]),
-                VariantFeatureConfig("flag4", ["on"]),
-            ],
-        ),
-        "second_namespace": ProviderConfig(
-            namespace="second_namespace",
-            configs=[
-                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c", "val3bcde"]),
-            ],
-        ),
-        "test_namespace": ProviderConfig(
-            namespace="test_namespace",
-            configs=[
-                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
                 VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
             ],
         ),
@@ -188,6 +130,38 @@ def test_get_supported_configs_dynamic(
     }
 
 
+def test_validate_properties(
+    mocked_plugin_loader: BasePluginLoader,
+) -> None:
+    expected = {
+        VariantProperty("incompatible_namespace", "flag1", "off"): False,
+        VariantProperty("incompatible_namespace", "flag1", "on"): True,
+        VariantProperty("incompatible_namespace", "flag2", "on"): True,
+        VariantProperty("incompatible_namespace", "flag3", "on"): True,
+        VariantProperty("incompatible_namespace", "flag4", "on"): True,
+        VariantProperty("incompatible_namespace", "flag5", "on"): False,
+        VariantProperty("second_namespace", "name2", "val3a"): False,
+        VariantProperty("second_namespace", "name3", "val3a"): True,
+        VariantProperty("second_namespace", "name3", "val9a"): True,
+        VariantProperty("second_namespace", "name3", "anything"): True,
+        VariantProperty("test_namespace", "name1", "val1a"): True,
+        VariantProperty("test_namespace", "name1", "val1b"): True,
+        VariantProperty("test_namespace", "name1", "val1c"): True,
+        VariantProperty("test_namespace", "name1", "val1d"): True,
+        VariantProperty("test_namespace", "name1", "val1e"): False,
+        VariantProperty("test_namespace", "name2", "val2a"): True,
+        VariantProperty("test_namespace", "name2", "val2b"): True,
+        VariantProperty("test_namespace", "name2", "val2c"): True,
+        VariantProperty("test_namespace", "name2", "val2d"): False,
+        VariantProperty("test_namespace", "name3", "val1a"): False,
+        VariantProperty("test_namespace", "name3", "val2a"): False,
+        VariantProperty("unknown_namespace", "name", "val"): None,
+    }
+    assert mocked_plugin_loader.validate_properties(
+        expected.keys()
+    ) == VariantValidationResult(expected)
+
+
 def test_namespace_clash() -> None:
     with (
         pytest.raises(
@@ -212,8 +186,7 @@ class IncorrectListTypePlugin(ExceptionPluginBase):
     )  # type: ignore[assignment]
 
 
-@pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_type(method: str) -> None:
+def test_get_supported_configs_incorrect_list_type() -> None:
     with (
         ListPluginLoader(
             ["tests.plugins.test_loader:IncorrectListTypePlugin"]
@@ -222,39 +195,25 @@ def test_get_configs_incorrect_list_type(method: str) -> None:
             PluginError,
             match=r".*"
             + re.escape(
-                f"Provider exception_test, {method}() method returned incorrect type. "
-                "Expected list[_variantlib_protocols.VariantFeatureConfigType], "
+                "Provider exception_test, get_supported_configs() method returned "
+                "incorrect type. Expected "
+                "list[_variantlib_protocols.VariantFeatureConfigType], "
                 "got <class 'tuple'>"
             ),
         ),
     ):
-        getattr(loader, method)()
+        loader.get_supported_configs()
 
 
 class IncorrectListLengthPlugin(ExceptionPluginBase):
     returned_value = []
 
 
-def test_get_all_configs_incorrect_list_length() -> None:
-    with (
-        ListPluginLoader(
-            ["tests.plugins.test_loader:IncorrectListLengthPlugin"]
-        ) as loader,
-        pytest.raises(
-            ValueError,
-            match=r"Provider exception_test, get_all_configs\(\) method returned "
-            r"no valid configs",
-        ),
-    ):
-        loader.get_all_configs()
-
-
 class IncorrectListMemberTypePlugin(ExceptionPluginBase):
     returned_value = [{"k1": ["v1"], "k2": ["v2"]}, 1]  # type: ignore[list-item]
 
 
-@pytest.mark.parametrize("method", ["get_all_configs", "get_supported_configs"])
-def test_get_configs_incorrect_list_member_type(method: str) -> None:
+def test_get_configs_incorrect_list_member_type() -> None:
     with (
         ListPluginLoader(
             ["tests.plugins.test_loader:IncorrectListMemberTypePlugin"]
@@ -263,14 +222,15 @@ def test_get_configs_incorrect_list_member_type(method: str) -> None:
             PluginError,
             match=r".*"
             + re.escape(
-                f"Provider exception_test, {method}() method returned incorrect type. "
-                "Expected list[_variantlib_protocols.VariantFeatureConfigType], "
+                "Provider exception_test, get_supported_configs() method returned "
+                "incorrect type. Expected "
+                "list[_variantlib_protocols.VariantFeatureConfigType], "
                 "got list[typing.Union[_variantlib_protocols.VariantFeatureConfigType, "
             )
             + r"(dict, int|int, dict)",
         ),
     ):
-        getattr(loader, method)()
+        loader.get_supported_configs()
 
 
 def test_namespace_missing_module() -> None:
@@ -314,7 +274,7 @@ def test_namespace_incorrect_type() -> None:
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
             r"the PluginType prototype: 123 \(missing attributes: dynamic, "
-            r"get_all_configs, get_supported_configs, namespace\)",
+            r"get_supported_configs, namespace, validate_properties\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -327,10 +287,10 @@ class RaisingInstantiationPlugin:
     def __init__(self) -> None:
         raise RuntimeError("I failed to initialize")
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType]
-    ) -> list[VariantFeatureConfigType]:
-        return []
+    def validate_properties(
+        self, properties: frozenset[VariantPropertyType]
+    ) -> dict[VariantPropertyType, bool]:
+        return {}
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType]
@@ -358,10 +318,10 @@ class CrossTypeInstantiationPlugin:
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
 
-    def get_all_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        return []
+    def validate_properties(
+        self, properties: frozenset[VariantPropertyType]
+    ) -> dict[VariantPropertyType, bool]:
+        return {}
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -380,7 +340,7 @@ def test_namespace_instantiation_returns_incorrect_type(
                 f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
                 "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
-            + r".*(missing attributes: get_all_configs)",
+            + r".*(missing attributes: validate_properties)",
         ),
         ListPluginLoader([f"tests.plugins.test_loader:{cls}"]),
     ):
@@ -636,7 +596,7 @@ def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:
     with loader_call() as loader:
         assert loader.namespaces == []
         assert loader.get_supported_configs() == {}
-        assert loader.get_all_configs() == {}
+        assert loader.validate_properties([]) == VariantValidationResult({})
         assert loader.get_build_setup(VariantDescription([])) == {}
 
 

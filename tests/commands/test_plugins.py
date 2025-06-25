@@ -23,62 +23,6 @@ incompatible_namespace
     )
 
 
-def test_plugins_get_all_configs(
-    capsys: pytest.CaptureFixture[str],
-    mocked_entry_points: None,
-) -> None:
-    main(["plugins", "get-all-configs"])
-    assert (
-        capsys.readouterr().out
-        == """\
-incompatible_namespace :: flag1 :: on
-incompatible_namespace :: flag2 :: on
-incompatible_namespace :: flag3 :: on
-incompatible_namespace :: flag4 :: on
-second_namespace :: name3 :: val3a
-second_namespace :: name3 :: val3b
-second_namespace :: name3 :: val3c
-test_namespace :: name1 :: val1a
-test_namespace :: name1 :: val1b
-test_namespace :: name1 :: val1c
-test_namespace :: name1 :: val1d
-test_namespace :: name2 :: val2a
-test_namespace :: name2 :: val2b
-test_namespace :: name2 :: val2c
-"""
-    )
-
-
-def test_plugins_get_all_configs_filter_namespace(
-    capsys: pytest.CaptureFixture[str],
-    mocked_entry_points: None,
-) -> None:
-    main(["plugins", "get-all-configs", "-n", "second_namespace"])
-    assert (
-        capsys.readouterr().out
-        == """\
-second_namespace :: name3 :: val3a
-second_namespace :: name3 :: val3b
-second_namespace :: name3 :: val3c
-"""
-    )
-
-
-def test_plugins_get_all_configs_filter_feature(
-    capsys: pytest.CaptureFixture[str],
-    mocked_entry_points: None,
-) -> None:
-    main(["plugins", "get-all-configs", "-f", "name2"])
-    assert (
-        capsys.readouterr().out
-        == """\
-test_namespace :: name2 :: val2a
-test_namespace :: name2 :: val2b
-test_namespace :: name2 :: val2c
-"""
-    )
-
-
 def test_plugins_get_supported_configs(
     capsys: pytest.CaptureFixture[str],
     mocked_entry_points: None,

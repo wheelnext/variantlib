@@ -76,7 +76,6 @@ show = "variantlib.commands.config.show:show"
 
 [project.entry-points."variantlib.actions.plugins"]
 list = "variantlib.commands.plugins.list_plugins:list_plugins"
-get-all-configs = "variantlib.commands.plugins.get_all_configs:get_all_configs"
 get-supported-configs = "variantlib.commands.plugins.get_supported_configs:get_supported_configs"
 
 [tool.pytest.ini_options]

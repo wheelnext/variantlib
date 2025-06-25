@@ -15,6 +15,7 @@ from typing import Any
 # checkers and easier debugging.
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
+from variantlib.protocols import VariantPropertyType
 from variantlib.validators.base import ValidationError
 from variantlib.validators.base import validate_type
 
@@ -86,13 +87,21 @@ def process_configs(
 
 def group_properties_by_plugin(
     properties: list[dict[str, str]], namespace_map: dict[str, PluginType]
-) -> Generator[tuple[PluginType, frozenset[VariantProperty]]]:
+) -> Generator[tuple[PluginType | None, frozenset[VariantProperty]]]:
     for namespace, p_props in groupby(
         sorted(properties, key=lambda prop: prop["namespace"]),
         lambda prop: prop["namespace"],
     ):
-        plugin = namespace_map[namespace]
+        plugin = namespace_map.get(namespace)
         yield (plugin, frozenset(VariantProperty(**prop) for prop in p_props))
+
+
+def property_to_dict(vprop: VariantPropertyType) -> dict[str, str]:
+    return {
+        "namespace": vprop.namespace,
+        "feature": vprop.feature,
+        "value": vprop.value,
+    }
 
 
 def main() -> int:
@@ -115,12 +124,12 @@ def main() -> int:
             retval[command] = {
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
             }
-        elif command in ("get_all_configs", "get_supported_configs"):
+        elif command == "get_supported_configs":
             assert command_args
             assert "properties" in command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
-                    getattr(plugin, command)(
+                    plugin.get_supported_configs(
                         frozenset(
                             VariantProperty(**prop)
                             for prop in command_args["properties"]
@@ -134,6 +143,21 @@ def main() -> int:
                 )
                 for plugin_api, plugin in plugins.items()
             }
+        elif command == "validate_properties":
+            assert command_args
+            assert "properties" in command_args
+            results: list[tuple[dict[str, str], bool | None]] = []
+            for plugin, p_props in group_properties_by_plugin(
+                command_args["properties"], namespace_map
+            ):
+                if plugin is not None:
+                    results.extend(
+                        (property_to_dict(vprop), result)
+                        for vprop, result in plugin.validate_properties(p_props).items()
+                    )
+                else:
+                    results.extend((property_to_dict(vprop), None) for vprop in p_props)
+            retval = {command: results}
         elif command == "get_build_setup":
             assert command_args
             assert "properties" in command_args
@@ -141,6 +165,10 @@ def main() -> int:
             for plugin, p_props in group_properties_by_plugin(
                 command_args["properties"], namespace_map
             ):
+                if plugin is None:
+                    raise KeyError(
+                        f"No provider for namespace {next(iter(p_props)).namespace}"
+                    )
                 if hasattr(plugin, "get_build_setup"):
                     plugin_env = plugin.get_build_setup(p_props)
 

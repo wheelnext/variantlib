@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from argparse import Namespace
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,11 +11,14 @@ namespace = "module_namespace"
 dynamic = False
 
 
-def get_all_configs(
-    known_properties: frozenset[VariantPropertyType] | None,
-) -> list[VariantFeatureConfigType]:
-    assert known_properties is None
-    return [Namespace(name="feature", values=["a", "b"])]
+def validate_properties(
+    properties: frozenset[VariantPropertyType],
+) -> dict[VariantPropertyType, bool]:
+    assert all(prop.namespace == namespace for prop in properties)
+    return {
+        prop: (prop.feature == "feature" and prop.value in ["a", "b"])
+        for prop in properties
+    }
 
 
 def get_supported_configs(
