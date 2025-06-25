@@ -51,16 +51,13 @@ class ClashingPlugin(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
     dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        return {
-            prop: (
-                prop.feature == "name1"
-                and prop.value in ["val1a", "val1b", "val1c", "val1d"]
-            )
-            for prop in properties
-        }
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        return variant_property.feature == "name1" and variant_property.value in [
+            "val1a",
+            "val1b",
+            "val1c",
+            "val1d",
+        ]
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -74,10 +71,8 @@ class ExceptionPluginBase(PluginType):
 
     returned_value: list[VariantFeatureConfigType]
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        return {}
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        return True
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -274,7 +269,7 @@ def test_namespace_incorrect_type() -> None:
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
             r"the PluginType prototype: 123 \(missing attributes: dynamic, "
-            r"get_supported_configs, namespace, validate_properties\)",
+            r"get_supported_configs, namespace, validate_property\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -287,10 +282,8 @@ class RaisingInstantiationPlugin:
     def __init__(self) -> None:
         raise RuntimeError("I failed to initialize")
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        return {}
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        return True
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType]
@@ -318,10 +311,8 @@ class CrossTypeInstantiationPlugin:
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        return {}
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        return True
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -340,7 +331,7 @@ def test_namespace_instantiation_returns_incorrect_type(
                 f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
                 "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
-            + r".*(missing attributes: validate_properties)",
+            + r".*(missing attributes: validate_property)",
         ),
         ListPluginLoader([f"tests.plugins.test_loader:{cls}"]),
     ):

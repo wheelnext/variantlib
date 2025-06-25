@@ -20,18 +20,15 @@ class MockedPluginA(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
     dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        assert all(prop.namespace == self.namespace for prop in properties)
-        return {
-            prop: (
-                prop.feature == "name1"
-                and prop.value in ["val1a", "val1b", "val1c", "val1d"]
-            )
-            or (prop.feature == "name2" and prop.value in ["val2a", "val2b", "val2c"])
-            for prop in properties
-        }
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return (
+            variant_property.feature == "name1"
+            and variant_property.value in ["val1a", "val1b", "val1c", "val1d"]
+        ) or (
+            variant_property.feature == "name2"
+            and variant_property.value in ["val2a", "val2b", "val2c"]
+        )
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -65,11 +62,9 @@ class MockedPluginB:
     namespace = "second_namespace"
     dynamic = True
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        assert all(prop.namespace == self.namespace for prop in properties)
-        return {prop: prop.feature == "name3" for prop in properties}
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return variant_property.feature == "name3"
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -100,15 +95,12 @@ class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
     dynamic = False
 
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        assert all(prop.namespace == self.namespace for prop in properties)
-        return {
-            prop: prop.feature in ("flag1", "flag2", "flag3", "flag4")
-            and prop.value == "on"
-            for prop in properties
-        }
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        assert variant_property.namespace == self.namespace
+        return (
+            variant_property.feature in ("flag1", "flag2", "flag3", "flag4")
+            and variant_property.value == "on"
+        )
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None

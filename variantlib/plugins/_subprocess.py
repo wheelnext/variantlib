@@ -152,8 +152,8 @@ def main() -> int:
             ):
                 if plugin is not None:
                     results.extend(
-                        (property_to_dict(vprop), result)
-                        for vprop, result in plugin.validate_properties(p_props).items()
+                        (property_to_dict(vprop), plugin.validate_property(vprop))
+                        for vprop in p_props
                     )
                 else:
                     results.extend((property_to_dict(vprop), None) for vprop in p_props)

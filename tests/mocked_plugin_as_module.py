@@ -11,14 +11,14 @@ namespace = "module_namespace"
 dynamic = False
 
 
-def validate_properties(
-    properties: frozenset[VariantPropertyType],
-) -> dict[VariantPropertyType, bool]:
-    assert all(prop.namespace == namespace for prop in properties)
-    return {
-        prop: (prop.feature == "feature" and prop.value in ["a", "b"])
-        for prop in properties
-    }
+def validate_property(
+    variant_property: VariantPropertyType,
+) -> bool:
+    assert variant_property.namespace == namespace
+    return variant_property.feature == "feature" and variant_property.value in [
+        "a",
+        "b",
+    ]
 
 
 def get_supported_configs(

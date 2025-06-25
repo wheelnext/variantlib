@@ -17,15 +17,14 @@ namespace = "installable_plugin"
 dynamic = False
 
 
-def validate_properties(
-    properties: frozenset[VariantPropertyType],
-) -> dict[VariantPropertyType, bool]:
-    assert all(prop.namespace == namespace for prop in properties)
-    return {
-        prop: (prop.feature == "feat1" and prop.value in ["val1a", "val1b", "val1c"])
-        or (prop.feature == "feat2" and prop.value in ["val2a", "val2b"])
-        for prop in properties
-    }
+def validate_property(
+    variant_property: VariantPropertyType,
+) -> bool:
+    assert variant_property.namespace == namespace
+    return (
+        (variant_property.feature == "feat1" and variant_property.value in ["val1a", "val1b", "val1c"])
+        or (variant_property.feature == "feat2" and variant_property.value in ["val2a", "val2b"])
+        )
 
 
 def get_supported_configs(

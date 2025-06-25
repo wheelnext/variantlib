@@ -110,16 +110,8 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def validate_properties(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[VariantPropertyType, bool]:
-        """
-        Validate individual variant properties
-
-        Validate whether each of the specified properties is valid
-        for the plugin.  Returns a dict mapping properties to boolean
-        validity values (True means valid, False invalid).
-        """
+    def validate_property(self, variant_property: VariantPropertyType) -> bool:
+        """Validate variant property, returns True if it's valid"""
         raise NotImplementedError
 
     def get_build_setup(
