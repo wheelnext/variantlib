@@ -180,12 +180,10 @@ class BasePluginLoader:
         if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
-    def _get_configs(
-        self,
-        method: str,
-        known_properties: Collection[VariantProperty],
-        require_non_empty: bool,
+    def get_supported_configs(
+        self, known_properties: Collection[VariantProperty] = ()
     ) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to supported configs"""
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
@@ -195,24 +193,19 @@ class BasePluginLoader:
         configs = self._call_subprocess(
             list(self._namespace_map.keys()),
             {
-                method: {
+                "get_supported_configs": {
                     "properties": [
                         dataclasses.asdict(vprop) for vprop in known_properties
                     ]
                 }
             },
-        )[method]
+        )["get_supported_configs"]
 
         provider_cfgs = {}
         for plugin_api, plugin_configs in configs.items():
             namespace = self._namespace_map[plugin_api]
 
             if not plugin_configs:
-                if require_non_empty:
-                    raise ValueError(
-                        f"Provider {namespace}, {method}() method returned no valid "
-                        "configs"
-                    )
                 continue
 
             provider_cfgs[namespace] = ProviderConfig(
@@ -223,16 +216,6 @@ class BasePluginLoader:
             )
 
         return provider_cfgs
-
-    def get_supported_configs(
-        self, known_properties: Collection[VariantProperty] = ()
-    ) -> dict[str, ProviderConfig]:
-        """Get a mapping of namespaces to supported configs"""
-        return self._get_configs(
-            "get_supported_configs",
-            known_properties=known_properties,
-            require_non_empty=False,
-        )
 
     def validate_properties(
         self, properties: Collection[VariantProperty]
