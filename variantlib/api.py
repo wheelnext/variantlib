@@ -38,13 +38,13 @@ __all__ = [
     "VariantProperty",
     "VariantValidationResult",
     "get_variant_environment_dict",
-    "get_variant_hashes_by_priority",
+    "get_variants_by_priority",
     "make_variant_dist_info",
     "validate_variant",
 ]
 
 
-def get_variant_hashes_by_priority(
+def get_variants_by_priority(
     *,
     variants_json: VariantsJsonDict | VariantsJson,
     venv_python_executable: str | pathlib.Path | None = None,
@@ -75,9 +75,14 @@ def get_variant_hashes_by_priority(
         )
 
     config = VariantConfiguration.get_config()
+    label_map = {
+        vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
+    }
+    # handle the implicit null variant
+    label_map.setdefault("00000000", "00000000")
 
     return [
-        vdesc.hexdigest
+        label_map[vdesc.hexdigest]
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
