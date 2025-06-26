@@ -130,6 +130,7 @@ def validate_variant(
 def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_info: VariantInfo | None = None,
+    variant_label: str | None = None,
 ) -> str:
     """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
@@ -139,6 +140,8 @@ def make_variant_dist_info(
         variant_info = VariantInfo()
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
+    if variant_label is not None:
+        variant_json.variant_label = variant_label
 
     return variant_json.to_str()
 

@@ -15,6 +15,8 @@ from variantlib.commands.main import main
         "test_package-0-py3-none-any-5d8be4b9.whl",
         "test_package-0-py3-none-any-60567bd9.whl",
         "test_package-0-py3-none-any-fbe82642.whl",
+        "test_package-0-py3-none-any-foo.whl",
+        "test_package-0-py3-none-any-bar.whl",
     ],
 )
 def test_unmake_variant(

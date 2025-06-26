@@ -17,6 +17,7 @@ from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
@@ -98,7 +99,21 @@ def make_variant(args: list[str]) -> None:
         ),
     )
 
+    parser.add_argument(
+        "--variant-label",
+        help="Custom variant label to use (default is to use variant hash)",
+    )
+
     parsed_args = parser.parse_args(args)
+
+    if (
+        parsed_args.variant_label is not None
+        and not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label)
+    ):
+        parser.error(
+            "Invalid variant label (must be up to 8 alphanumeric characters): "
+            f"{parsed_args.variant_label!r}"
+        )
 
     try:
         pyproject_toml = VariantPyProjectToml.from_path(parsed_args.pyproject_toml)
@@ -116,6 +131,7 @@ def make_variant(args: list[str]) -> None:
         variant_info=pyproject_toml,
         installer=parsed_args.installer,
         use_isolation=not parsed_args.no_isolation,
+        variant_label=parsed_args.variant_label,
     )
 
 
@@ -129,6 +145,7 @@ def _make_variant(
     variant_info: VariantPyProjectToml,
     installer: str | None = None,
     use_isolation: bool = True,
+    variant_label: str | None = None,
 ) -> None:
     # Input Validation
     if not input_filepath.is_file():
@@ -212,10 +229,12 @@ def _make_variant(
         # Create a null variant
         vdesc = VariantDescription()
 
+    if variant_label is None:
+        variant_label = vdesc.hexdigest
+
     # Determine output wheel filename
     output_filepath = (
-        output_directory
-        / f"{wheel_info.group('base_wheel_name')}-{vdesc.hexdigest}.whl"
+        output_directory / f"{wheel_info.group('base_wheel_name')}-{variant_label}.whl"
     )
 
     with (
@@ -236,7 +255,9 @@ def _make_variant(
                     # First, add new dist-info file prior to RECORD (not strictly
                     # required, but a nice convention).
                     dist_info_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
-                    dist_info_data = make_variant_dist_info(vdesc, variant_info)
+                    dist_info_data = make_variant_dist_info(
+                        vdesc, variant_info=variant_info, variant_label=variant_label
+                    )
                     output_zip.writestr(dist_info_path, dist_info_data)
 
                     # Update RECORD for the new checksums.

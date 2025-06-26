@@ -39,4 +39,12 @@ build: clean ## builds source and wheel package
 		-p "installable_plugin :: feat1 :: val1c" \
 		-p "installable_plugin :: feat2 :: val2b"
 
+	flit build --format wheel \
+		-p "installable_plugin :: feat1 :: val1c" \
+		--variant-label=foo
+
+	flit build --format wheel \
+		-p "installable_plugin :: feat2 :: val2b" \
+		--variant-label=bar
+
 	variantlib generate-index-json -d dist/
