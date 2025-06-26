@@ -115,8 +115,8 @@ def generate_index_json(args: list[str]) -> None:
             if len(labels) > 1:
                 logger.error(
                     "Multiple `%(namever)s` wheels share the same variant properties: "
-                    "all of `%(labels)s` correspond to variant hash `%(vhash)s`",
-                    {"namever": namever, "labels": labels, "vhash": vhash},
+                    "all of %(labels)s correspond to variant hash `%(vhash)s`",
+                    {"namever": namever, "labels": sorted(labels), "vhash": vhash},
                 )
 
     for namever, variants_json in output_files.items():

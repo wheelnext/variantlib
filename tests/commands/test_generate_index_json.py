@@ -76,5 +76,5 @@ def test_duplicate_descriptions(
     main(["generate-index-json", "-d", str(tmp_path)])
     assert (
         "Multiple `test_package-0` wheels share the same variant properties: "
-        "all of `['foo', '60567bd9']` correspond to variant hash `60567bd9`"
+        "all of ['60567bd9', 'foo'] correspond to variant hash `60567bd9`"
     ) in caplog.text
