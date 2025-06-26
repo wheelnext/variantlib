@@ -56,6 +56,7 @@ def mocked_plugin_reqs(
         ("fbe82642", ["installable_plugin::feat2 :: val2b"]),
         ("fbe82642", ["installable_plugin :: feat2 :: val2b"]),
         # Custom labels
+        ("null", None),
         ("foo", ["installable_plugin::feat1::val1c"]),
         ("bar", ["installable_plugin::feat2::val2b"]),
     ],
