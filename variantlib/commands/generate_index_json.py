@@ -41,6 +41,7 @@ def generate_index_json(args: list[str]) -> None:
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     output_files: dict[str, VariantsJson] = {}
+    seen_variants: dict[str, dict[str, list[str]]] = {}
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
@@ -103,6 +104,19 @@ def generate_index_json(args: list[str]) -> None:
                     "Failed to process wheel: `%(wheel)s` with variant label: "
                     "`%(vlabel)s`",
                     {"wheel": wheel.name, "vlabel": vlabel},
+                )
+
+        seen_variants.setdefault(namever, {}).setdefault(
+            variant_dist_info.variant_desc.hexdigest, []
+        ).append(vlabel)
+
+    for namever, variants in seen_variants.items():
+        for vhash, labels in variants.items():
+            if len(labels) > 1:
+                logger.error(
+                    "Multiple `%(namever)s` wheels share the same variant properties: "
+                    "all of `%(labels)s` correspond to variant hash `%(vhash)s`",
+                    {"namever": namever, "labels": labels, "vhash": vhash},
                 )
 
     for namever, variants_json in output_files.items():
