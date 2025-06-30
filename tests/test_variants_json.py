@@ -498,3 +498,17 @@ def test_merge_variants() -> None:
         ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
     ):
         v1.merge(VariantsJson(_json_data))
+
+
+def test_null_variant_label():
+    with pytest.raises(
+        ValidationError,
+        match=rf"{NULL_VARIANT_HASH} label can only be used for the null variant",
+    ):
+        VariantsJson(
+            {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_HASH: {"x": {"y": ["z"]}}}}
+        )
+    with pytest.raises(
+        ValidationError, match=rf"Null variant must use {NULL_VARIANT_HASH} label"
+    ):
+        VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"null": {}}})
