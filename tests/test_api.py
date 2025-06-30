@@ -45,6 +45,7 @@ from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
+from variantlib.errors import ValidationError
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
@@ -349,8 +350,10 @@ def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None
 @pytest.mark.parametrize(
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
+@pytest.mark.parametrize("label", [None, "foo", "xy1.2"])
 def test_make_variant_dist_info(
     pyproject_toml: VariantsJsonDict | None,
+    label: str | None,
 ) -> None:
     expected: VariantsJsonDict = {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
@@ -359,7 +362,7 @@ def test_make_variant_dist_info(
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {},
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "67fcaf38": {
+            label if label else "67fcaf38": {
                 "ns1": {
                     "f1": ["p1"],
                     "f2": ["p2"],
@@ -424,6 +427,7 @@ def test_make_variant_dist_info(
                 variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
                 if pyproject_toml is not None
                 else None,
+                variant_label=label,
             )
         )
         == expected
@@ -542,3 +546,28 @@ def test_get_variant_environment_dict() -> None:
             "ns3 :: feat2 :: val2",
         },
     }
+
+
+def test_make_variant_dist_info_invalid_label():
+    with pytest.raises(
+        ValidationError, match=r"Variant label cannot be specified for the null variant"
+    ):
+        make_variant_dist_info(VariantDescription([]), variant_label="foo")
+    with pytest.raises(
+        ValidationError,
+        match=rf"{NULL_VARIANT_HASH} label can be used only for the null variant",
+    ):
+        make_variant_dist_info(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            variant_label=NULL_VARIANT_HASH,
+        )
+    with pytest.raises(ValidationError, match=r"Invalid variant label: foo/bar"):
+        make_variant_dist_info(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            variant_label="foo/bar",
+        )
+    with pytest.raises(ValidationError, match=r"Invalid variant label: 123456789"):
+        make_variant_dist_info(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            variant_label="123456789",
+        )
