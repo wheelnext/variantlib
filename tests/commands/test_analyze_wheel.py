@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import pytest
+from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def test_analyze_wheel_regular(
@@ -79,28 +82,6 @@ def test_analyze_wheel_variant_custom_label(
         == """\
 ############################## Variant: `60567bd9` #############################
 installable_plugin :: feat1 :: val1c
-################################################################################
-"""
-    )
-
-
-@pytest.mark.parametrize("suffix", ["00000000", "null"])
-def test_analyze_wheel_variant_null(
-    capsys: pytest.CaptureFixture[str],
-    mocked_entry_points: None,
-    suffix: str,
-) -> None:
-    main(
-        [
-            "analyze-wheel",
-            "-i",
-            f"tests/artifacts/test-package/dist/test_package-0-py3-none-any-{suffix}.whl",
-        ]
-    )
-    assert (
-        capsys.readouterr().out
-        == """\
-############################## Variant: `00000000` #############################
 ################################################################################
 """
     )
