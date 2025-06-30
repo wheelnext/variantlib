@@ -5,6 +5,7 @@ from typing import Literal
 from typing import TypedDict
 
 VARIANT_HASH_LEN = 8
+NULL_VARIANT_HASH = "0" * VARIANT_HASH_LEN
 CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
 

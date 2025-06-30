@@ -6,12 +6,13 @@ import pytest
 
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 
 
 @pytest.mark.parametrize(
     "filename",
     [
-        "test_package-0-py3-none-any-00000000.whl",
+        f"test_package-0-py3-none-any-{NULL_VARIANT_HASH}.whl",
         "test_package-0-py3-none-any-5d8be4b9.whl",
         "test_package-0-py3-none-any-60567bd9.whl",
         "test_package-0-py3-none-any-fbe82642.whl",

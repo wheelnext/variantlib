@@ -27,6 +27,7 @@ from variantlib.api import get_variant_environment_dict
 from variantlib.api import get_variants_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -131,7 +132,7 @@ def test_get_variants_by_priority_roundtrip(
             if custom_labels
             else vdesc.hexdigest: vdesc.to_dict()
             for vdesc in combinations
-            if explicit_null or vdesc.hexdigest != "00000000"
+            if explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH
         },
     }
 
@@ -144,7 +145,7 @@ def test_get_variants_by_priority_roundtrip(
 
     assert get_variants_by_priority(variants_json=typed_variants_json) == [
         f"foo{vdesc.hexdigest[:4]}"
-        if custom_labels and (explicit_null or vdesc.hexdigest != "00000000")
+        if custom_labels and (explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH)
         else vdesc.hexdigest
         for vdesc in combinations
     ]

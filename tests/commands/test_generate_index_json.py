@@ -6,6 +6,7 @@ from shutil import copy
 from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
@@ -24,7 +25,7 @@ def test_generate_index_json(
 ) -> None:
     filenames = [
         "test_package-0-py3-none-any.whl",
-        "test_package-0-py3-none-any-00000000.whl",
+        f"test_package-0-py3-none-any-{NULL_VARIANT_HASH}.whl",
         "test_package-0-py3-none-any-5d8be4b9.whl",
     ]
     artifact_dir = Path("tests/artifacts/test-package/dist")
@@ -50,7 +51,7 @@ def test_generate_index_json(
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "00000000": {},
+            NULL_VARIANT_HASH: {},
             "5d8be4b9": {
                 "installable_plugin": {
                     "feat1": ["val1c"],

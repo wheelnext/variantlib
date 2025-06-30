@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -44,7 +45,7 @@ def test_validate_variants_json() -> None:
 
     variants_json = VariantsJson(data)
     assert variants_json.variants == {
-        "00000000": VariantDescription(),
+        NULL_VARIANT_HASH: VariantDescription(),
         "03e04d5e": VariantDescription(
             properties=[
                 VariantProperty(

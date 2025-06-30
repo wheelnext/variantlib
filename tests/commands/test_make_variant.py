@@ -7,6 +7,7 @@ import pytest
 
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -36,7 +37,7 @@ def mocked_plugin_reqs(
     ("label", "properties"),
     [
         # Null Variant
-        ("00000000", None),
+        (NULL_VARIANT_HASH, None),
         # Variant 1
         (
             "5d8be4b9",

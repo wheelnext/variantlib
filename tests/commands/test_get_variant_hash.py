@@ -5,12 +5,13 @@ from itertools import chain
 import pytest
 
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 
 
 @pytest.mark.parametrize(
     ("properties", "expected"),
     [
-        ([], "00000000"),
+        ([], NULL_VARIANT_HASH),
         (["a::b::c"], "01a9783a"),
         (["d::e::f"], "41665eee"),
         (["a::b::c", "d::e::f"], "eb9a66a7"),
