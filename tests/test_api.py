@@ -129,7 +129,7 @@ def test_get_variants_by_priority_roundtrip(
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             f"foo{vdesc.hexdigest[:4]}"
-            if custom_labels
+            if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
             else vdesc.hexdigest: vdesc.to_dict()
             for vdesc in combinations
             if explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH
@@ -145,7 +145,7 @@ def test_get_variants_by_priority_roundtrip(
 
     assert get_variants_by_priority(variants_json=typed_variants_json) == [
         f"foo{vdesc.hexdigest[:4]}"
-        if custom_labels and (explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH)
+        if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
         else vdesc.hexdigest
         for vdesc in combinations
     ]
