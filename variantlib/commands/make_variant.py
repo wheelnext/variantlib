@@ -106,14 +106,14 @@ def make_variant(args: list[str]) -> None:
 
     parsed_args = parser.parse_args(args)
 
-    if (
-        parsed_args.variant_label is not None
-        and not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label)
-    ):
-        parser.error(
-            "Invalid variant label (must be up to 8 alphanumeric characters): "
-            f"{parsed_args.variant_label!r}"
-        )
+    if parsed_args.variant_label is not None:
+        if parsed_args.null_variant:
+            parser.error("--variant-label cannot be usedwith --null-variant")
+        if not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label):
+            parser.error(
+                "invalid variant label (must be up to 8 alphanumeric characters): "
+                f"{parsed_args.variant_label!r}"
+            )
 
     try:
         pyproject_toml = VariantPyProjectToml.from_path(parsed_args.pyproject_toml)

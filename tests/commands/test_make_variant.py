@@ -102,15 +102,32 @@ def test_make_variant(
     assert_zips_equal(target_variant_wheel, output_f)
 
 
+@pytest.mark.parametrize(
+    ("args", "error"),
+    [
+        ([], "error: one of the arguments -p/--property --null-variant is required"),
+        (["--property=x::y"], "argument -p/--property: invalid from_str value"),
+        (
+            ["--property=x::y::z", "--variant-label=123456789"],
+            "error: invalid variant label",
+        ),
+        (
+            ["--null-variant", "--variant-label=null"],
+            "error: --variant-label cannot be usedwith --null-variant",
+        ),
+    ],
+)
 def test_make_variant_error(
+    args: list[str],
+    error: str,
     non_variant_wheel: Path,
     test_artifact_path: Path,
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     pyproject_f = test_artifact_path / "test-package/pyproject.toml"
 
     with pytest.raises(SystemExit):
-        # "error: one of the arguments -p/--property --null-variant is required"
         main(
             [
                 "make-variant",
@@ -120,5 +137,8 @@ def test_make_variant_error(
                 str(tmp_path),
                 "--pyproject-toml",
                 str(pyproject_f.resolve()),
+                *args,
             ]
         )
+
+    assert error in capsys.readouterr().err
