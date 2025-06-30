@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantsJsonDict
+from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -147,6 +149,17 @@ def make_variant_dist_info(
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
     if variant_label is not None:
+        if vdesc.is_null_variant():
+            if variant_label != NULL_VARIANT_HASH:
+                raise ValidationError(
+                    "Variant label cannot be specified for the null variant"
+                )
+        elif variant_label == NULL_VARIANT_HASH:
+            raise ValidationError(
+                f"{NULL_VARIANT_HASH} label can be used only for the null variant"
+            )
+        elif not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(variant_label):
+            raise ValidationError(f"Invalid variant label: {variant_label}")
         variant_json.variant_label = variant_label
 
     return variant_json.to_str()
