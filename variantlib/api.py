@@ -8,6 +8,7 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantsJsonDict
 from variantlib.models.provider import ProviderConfig
@@ -38,13 +39,13 @@ __all__ = [
     "VariantProperty",
     "VariantValidationResult",
     "get_variant_environment_dict",
-    "get_variant_hashes_by_priority",
+    "get_variants_by_priority",
     "make_variant_dist_info",
     "validate_variant",
 ]
 
 
-def get_variant_hashes_by_priority(
+def get_variants_by_priority(
     *,
     variants_json: VariantsJsonDict | VariantsJson,
     venv_python_executable: str | pathlib.Path | None = None,
@@ -75,9 +76,14 @@ def get_variant_hashes_by_priority(
         )
 
     config = VariantConfiguration.get_config()
+    label_map = {
+        vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
+    }
+    # handle the implicit null variant
+    label_map.setdefault(NULL_VARIANT_HASH, NULL_VARIANT_HASH)
 
     return [
-        vdesc.hexdigest
+        label_map[vdesc.hexdigest]
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
@@ -130,6 +136,7 @@ def validate_variant(
 def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_info: VariantInfo | None = None,
+    variant_label: str | None = None,
 ) -> str:
     """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
 
@@ -139,6 +146,8 @@ def make_variant_dist_info(
         variant_info = VariantInfo()
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
+    if variant_label is not None:
+        variant_json.variant_label = variant_label
 
     return variant_json.to_str()
 

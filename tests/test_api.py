@@ -24,9 +24,10 @@ from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_environment_dict
-from variantlib.api import get_variant_hashes_by_priority
+from variantlib.api import get_variants_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -62,7 +63,7 @@ if TYPE_CHECKING:
 
 def test_api_accessible() -> None:
     """Test that the API is accessible."""
-    assert get_variant_hashes_by_priority is not None
+    assert get_variants_by_priority is not None
     assert pconfig.VariantFeatureConfig is VariantFeatureConfig
     assert pconfig.ProviderConfig is ProviderConfig
     assert vconfig.VariantDescription is VariantDescription
@@ -78,10 +79,14 @@ def configs(
 
 @pytest.mark.parametrize("construct", [False, True])
 @pytest.mark.parametrize("test_dynamic", [False, True])
-def test_get_variant_hashes_by_priority_roundtrip(
+@pytest.mark.parametrize("custom_labels", [False, True])
+@pytest.mark.parametrize("explicit_null", [False, True])
+def test_get_variants_by_priority_roundtrip(
     configs: list[ProviderConfig],
     construct: bool,
     test_dynamic: bool,
+    custom_labels: bool,
+    explicit_null: bool,
 ) -> None:
     """Test that we can round-trip all combinations via variants.json and get the same
     result."""
@@ -123,7 +128,11 @@ def test_get_variant_hashes_by_priority_roundtrip(
             for namespace, plugin_api in plugin_apis.items()
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
+            f"foo{vdesc.hexdigest[:4]}"
+            if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
+            else vdesc.hexdigest: vdesc.to_dict()
+            for vdesc in combinations
+            if explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH
         },
     }
 
@@ -134,8 +143,11 @@ def test_get_variant_hashes_by_priority_roundtrip(
 
     # variants_json = VariantsJson(typed_variants_json)
 
-    assert get_variant_hashes_by_priority(variants_json=typed_variants_json) == [
-        vdesc.hexdigest for vdesc in combinations
+    assert get_variants_by_priority(variants_json=typed_variants_json) == [
+        f"foo{vdesc.hexdigest[:4]}"
+        if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
+        else vdesc.hexdigest
+        for vdesc in combinations
     ]
 
 
@@ -189,7 +201,7 @@ def test_get_variant_hashes_by_priority_roundtrip(
         ),
     )
 )
-def test_get_variant_hashes_by_priority_roundtrip_fuzz(
+def test_get_variants_by_priority_roundtrip_fuzz(
     mocker: MockerFixture, configs: list[ProviderConfig]
 ) -> None:
     namespace_priorities = list({provider_cfg.namespace for provider_cfg in configs})
@@ -220,7 +232,7 @@ def test_get_variant_hashes_by_priority_roundtrip_fuzz(
         "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
-    assert get_variant_hashes_by_priority(variants_json=typed_variants_json) == [
+    assert get_variants_by_priority(variants_json=typed_variants_json) == [
         vdesc.hexdigest for vdesc in combinations
     ]
 

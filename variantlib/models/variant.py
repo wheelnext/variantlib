@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from functools import cached_property
 
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -194,7 +195,7 @@ class VariantDescription(BaseModel):
         """
         if self.is_null_variant():
             # The `null-variant` is a special case where no properties are defined.
-            return "0" * VARIANT_HASH_LEN
+            return NULL_VARIANT_HASH
 
         hash_object = hashlib.sha256()
         # Append a newline to every serialized property to ensure that they

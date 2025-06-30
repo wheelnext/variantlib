@@ -32,14 +32,14 @@ VARIANT_JSON = {
 
 
 @pytest.mark.parametrize("json_type", [str, bytes])
-@pytest.mark.parametrize("expected_hash", [None, "bdbc6ca0"])
-def test_variant_dist_info(json_type: type, expected_hash: str | None) -> None:
+@pytest.mark.parametrize("expected_label", [None, "bdbc6ca0"])
+def test_variant_dist_info(json_type: type, expected_label: str | None) -> None:
     vjson_str = (
         json.dumps(VARIANT_JSON)
         if json_type is str
         else json.dumps(VARIANT_JSON).encode()
     )
-    variant_dist_info = VariantDistInfo(vjson_str, expected_hash=expected_hash)
+    variant_dist_info = VariantDistInfo(vjson_str, expected_label=expected_label)
     assert variant_dist_info.namespace_priorities == ["ns"]
     assert variant_dist_info.feature_priorities == {}
     assert variant_dist_info.property_priorities == {}
@@ -47,17 +47,21 @@ def test_variant_dist_info(json_type: type, expected_hash: str | None) -> None:
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
     assert variant_dist_info.variants == {vdesc.hexdigest: vdesc}
     assert variant_dist_info.variant_desc == vdesc
-    assert variant_dist_info.variant_hash == vdesc.hexdigest
+    assert variant_dist_info.variant_label == vdesc.hexdigest
 
 
-def test_variant_dist_info_wrong_hash() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=re.escape(
-            f"{VARIANT_DIST_INFO_FILENAME} specifies hash bdbc6ca0, expected 00000000"
-        ),
-    ):
-        VariantDistInfo(json.dumps(VARIANT_JSON), expected_hash="00000000")
+@pytest.mark.parametrize("expected_label", [None, "fancy1"])
+def test_variant_dist_info_custom_label(expected_label: str | None) -> None:
+    vjson_str = json.dumps(VARIANT_JSON).replace("bdbc6ca0", "fancy1")
+    variant_dist_info = VariantDistInfo(vjson_str, expected_label=expected_label)
+    assert variant_dist_info.namespace_priorities == ["ns"]
+    assert variant_dist_info.feature_priorities == {}
+    assert variant_dist_info.property_priorities == {}
+    assert variant_dist_info.providers == {"ns": ProviderInfo(requires=["ns-pkg"])}
+    vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
+    assert variant_dist_info.variants == {"fancy1": vdesc}
+    assert variant_dist_info.variant_desc == vdesc
+    assert variant_dist_info.variant_label == "fancy1"
 
 
 def test_variant_dist_info_multiple_variants(test_artifact_path: Path) -> None:
@@ -86,5 +90,21 @@ def test_new_variant_dist_info() -> None:
     variant_dist_info.variant_desc = vdesc
     assert variant_dist_info.namespace_priorities == variant_info.namespace_priorities
     assert variant_dist_info.providers == variant_info.providers
-    assert variant_dist_info.variant_hash == vdesc.hexdigest
+    assert variant_dist_info.variant_label == vdesc.hexdigest
     assert variant_dist_info.variant_desc == vdesc
+
+    # changing vdesc should update the label
+    vdesc2 = VariantDescription([VariantProperty("ns2", "f2", "v2")])
+    variant_dist_info.variant_desc = vdesc2
+    assert variant_dist_info.variant_label == vdesc2.hexdigest
+    assert variant_dist_info.variant_desc == vdesc2
+
+    # set a custom label
+    variant_dist_info.variant_label = "fancy2"
+    assert variant_dist_info.variant_label == "fancy2"
+    assert variant_dist_info.variant_desc == vdesc2
+
+    # changing vdesc should reset the label
+    variant_dist_info.variant_desc = vdesc2
+    assert variant_dist_info.variant_label == vdesc2.hexdigest
+    assert variant_dist_info.variant_desc == vdesc2

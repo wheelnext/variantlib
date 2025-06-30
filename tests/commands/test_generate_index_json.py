@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from shutil import copy
+from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
@@ -14,13 +16,16 @@ from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 
+if TYPE_CHECKING:
+    import pytest
+
 
 def test_generate_index_json(
     tmp_path: Path,
 ) -> None:
     filenames = [
         "test_package-0-py3-none-any.whl",
-        "test_package-0-py3-none-any-00000000.whl",
+        f"test_package-0-py3-none-any-{NULL_VARIANT_HASH}.whl",
         "test_package-0-py3-none-any-5d8be4b9.whl",
     ]
     artifact_dir = Path("tests/artifacts/test-package/dist")
@@ -46,7 +51,7 @@ def test_generate_index_json(
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "00000000": {},
+            NULL_VARIANT_HASH: {},
             "5d8be4b9": {
                 "installable_plugin": {
                     "feat1": ["val1c"],
@@ -55,3 +60,22 @@ def test_generate_index_json(
             },
         },
     }
+
+
+def test_duplicate_descriptions(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    filenames = [
+        "test_package-0-py3-none-any-60567bd9.whl",
+        "test_package-0-py3-none-any-foo.whl",
+    ]
+    artifact_dir = Path("tests/artifacts/test-package/dist")
+    for filename in filenames:
+        copy(artifact_dir / filename, tmp_path / filename)
+
+    main(["generate-index-json", "-d", str(tmp_path)])
+    assert (
+        "Multiple `test_package-0` wheels share the same variant properties: "
+        "all of ['60567bd9', 'foo'] correspond to variant hash `60567bd9`"
+    ) in caplog.text

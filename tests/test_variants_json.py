@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -44,7 +45,7 @@ def test_validate_variants_json() -> None:
 
     variants_json = VariantsJson(data)
     assert variants_json.variants == {
-        "00000000": VariantDescription(),
+        NULL_VARIANT_HASH: VariantDescription(),
         "03e04d5e": VariantDescription(
             properties=[
                 VariantProperty(
@@ -232,43 +233,6 @@ def test_validate_variants_json() -> None:
 
 def test_validate_variants_json_empty() -> None:
     assert VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {}}).variants == {}
-
-
-@pytest.mark.parametrize(
-    "data",
-    [
-        {},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: ["abcd1234"]},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd12345": {}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": ["namespace"]}},
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": [{"feature": "value"}]}
-            }
-        },
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {}}}},
-        {VARIANTS_JSON_VARIANT_DATA_KEY: {"abcd1234": {"namespace": {"feature": 1}}}},
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": {"feature": "variant@python"}}
-            }
-        },
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namespace": {"feature@variant": "python"}}
-            }
-        },
-        {
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "abcd1234": {"namesp@ce": {"feature": "value"}}
-            }
-        },
-    ],
-)
-def test_validate_variants_json_incorrect_vhash(data: VariantsJsonDict) -> None:
-    with pytest.raises(ValidationError):
-        VariantsJson(data)
 
 
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
@@ -534,3 +498,17 @@ def test_merge_variants() -> None:
         ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
     ):
         v1.merge(VariantsJson(_json_data))
+
+
+def test_null_variant_label():
+    with pytest.raises(
+        ValidationError,
+        match=rf"{NULL_VARIANT_HASH} label can only be used for the null variant",
+    ):
+        VariantsJson(
+            {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_HASH: {"x": {"y": ["z"]}}}}
+        )
+    with pytest.raises(
+        ValidationError, match=rf"Null variant must use {NULL_VARIANT_HASH} label"
+    ):
+        VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"null": {}}})

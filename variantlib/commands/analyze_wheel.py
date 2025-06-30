@@ -55,7 +55,7 @@ def analyze_wheel(args: list[str]) -> None:
             f"The file is not a valid python wheel filename: `{input_file.name}`"
         )
 
-    if (variant_hash := wheel_info.group("variant_hash")) is None:
+    if (variant_label := wheel_info.group("variant_label")) is None:
         logger.info(
             "Filepath: `%(input_file)s` ... is a Standard Wheel",
             {"input_file": input_file.name},
@@ -63,8 +63,9 @@ def analyze_wheel(args: list[str]) -> None:
         return
 
     logger.info(
-        "Filepath: `%(input_file)s` ... is a Wheel Variant - Hash: `%(variant_hash)s`",
-        {"input_file": input_file.name, "variant_hash": variant_hash},
+        "Filepath: `%(input_file)s` ... is a Wheel Variant - Label: "
+        "`%(variant_label)s`",
+        {"input_file": input_file.name, "variant_label": variant_label},
     )
 
     with zipfile.ZipFile(input_file, "r") as zip_file:
@@ -75,7 +76,7 @@ def analyze_wheel(args: list[str]) -> None:
                 and components[0].endswith(".dist-info")
                 and components[1] == VARIANT_DIST_INFO_FILENAME
             ):
-                variant_dist_info = VariantDistInfo(zip_file.read(name), variant_hash)
+                variant_dist_info = VariantDistInfo(zip_file.read(name), variant_label)
                 break
         else:
             raise ValueError(f"Invalid wheel -- no {VARIANT_DIST_INFO_FILENAME} found")

@@ -7,7 +7,8 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 from typing import Any
 
-from variantlib.constants import VALIDATION_VARIANT_HASH_REGEX
+from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -141,22 +142,27 @@ class VariantsJson(VariantInfo):
             VARIANTS_JSON_VARIANT_DATA_KEY,
             dict[str, VariantInfoJsonDict],
         ) as variants:
-            validator.list_matches_re(VALIDATION_VARIANT_HASH_REGEX)
-            variant_hashes = list(variants.keys())
+            validator.list_matches_re(VALIDATION_VARIANT_LABEL_REGEX)
+            variant_labels = list(variants.keys())
             self.variants = {}
 
-            for variant_hash in variant_hashes:
+            for variant_label in variant_labels:
                 with validator.get(
-                    variant_hash,
+                    variant_label,
                     VariantInfoJsonDict,
                     ignore_subkeys=True,
                 ) as packed_vdesc:
                     vdesc = VariantDescription.from_dict(packed_vdesc)
-
-                    if variant_hash != vdesc.hexdigest:
+                    if vdesc.is_null_variant() and variant_label != NULL_VARIANT_HASH:
                         raise ValidationError(
-                            f"Variant hash mismatch: {variant_hash=!r} != "
-                            f"{vdesc.hexdigest=!r}"
+                            f"Null variant must use {NULL_VARIANT_HASH} label"
                         )
-
-                    self.variants[variant_hash] = vdesc
+                    if (
+                        not vdesc.is_null_variant()
+                        and variant_label == NULL_VARIANT_HASH
+                    ):
+                        raise ValidationError(
+                            f"{NULL_VARIANT_HASH} label can only be used for "
+                            "the null variant"
+                        )
+                    self.variants[variant_label] = vdesc

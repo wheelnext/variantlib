@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 
 if TYPE_CHECKING:
     import pytest
@@ -32,13 +33,15 @@ def test_analyze_wheel_null_variant(
         [
             "analyze-wheel",
             "-i",
-            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-00000000.whl",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-"
+            f"{NULL_VARIANT_HASH}.whl",
         ]
     )
     assert (
         capsys.readouterr().out
-        == """\
-############################## Variant: `00000000` #############################
+        == f"""\
+############################## Variant: `{NULL_VARIANT_HASH}` \
+#############################
 ################################################################################
 """
     )
@@ -61,6 +64,27 @@ def test_analyze_wheel_variant(
 ############################## Variant: `5d8be4b9` #############################
 installable_plugin :: feat1 :: val1c
 installable_plugin :: feat2 :: val2b
+################################################################################
+"""
+    )
+
+
+def test_analyze_wheel_variant_custom_label(
+    capsys: pytest.CaptureFixture[str],
+    mocked_entry_points: None,
+) -> None:
+    main(
+        [
+            "analyze-wheel",
+            "-i",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-foo.whl",
+        ]
+    )
+    assert (
+        capsys.readouterr().out
+        == """\
+############################## Variant: `60567bd9` #############################
+installable_plugin :: feat1 :: val1c
 ################################################################################
 """
     )

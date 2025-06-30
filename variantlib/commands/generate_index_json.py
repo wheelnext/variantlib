@@ -41,6 +41,7 @@ def generate_index_json(args: list[str]) -> None:
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     output_files: dict[str, VariantsJson] = {}
+    seen_variants: dict[str, dict[str, list[str]]] = {}
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
@@ -51,7 +52,7 @@ def generate_index_json(args: list[str]) -> None:
             )
             continue
 
-        if (vhash := wheel_info.group("variant_hash")) is None:
+        if (vlabel := wheel_info.group("variant_label")) is None:
             logger.debug(
                 "Filepath: `%(input_file)s` ... is not a wheel variant. Skipping ...",
                 {"input_file": wheel.name},
@@ -59,8 +60,8 @@ def generate_index_json(args: list[str]) -> None:
             continue
 
         logger.info(
-            "Processing wheel: `%(wheel)s` with variant hash: `%(vhash)s`",
-            {"wheel": wheel.name, "vhash": vhash},
+            "Processing wheel: `%(wheel)s` with variant label: `%(vlabel)s`",
+            {"wheel": wheel.name, "vlabel": vlabel},
         )
 
         try:
@@ -73,7 +74,7 @@ def generate_index_json(args: list[str]) -> None:
                         and components[0].endswith(".dist-info")
                         and components[1] == VARIANT_DIST_INFO_FILENAME
                     ):
-                        variant_dist_info = VariantDistInfo(zip_file.read(name), vhash)
+                        variant_dist_info = VariantDistInfo(zip_file.read(name), vlabel)
                         break
                 else:
                     logger.warning(
@@ -100,9 +101,22 @@ def generate_index_json(args: list[str]) -> None:
                 variants_json.merge(variant_dist_info)
             except ValidationError:
                 logger.exception(
-                    "Failed to process wheel: `%(wheel)s` with variant hash: "
-                    "`%(vhash)s`",
-                    {"wheel": wheel.name, "vhash": vhash},
+                    "Failed to process wheel: `%(wheel)s` with variant label: "
+                    "`%(vlabel)s`",
+                    {"wheel": wheel.name, "vlabel": vlabel},
+                )
+
+        seen_variants.setdefault(namever, {}).setdefault(
+            variant_dist_info.variant_desc.hexdigest, []
+        ).append(vlabel)
+
+    for namever, variants in seen_variants.items():
+        for vhash, labels in variants.items():
+            if len(labels) > 1:
+                logger.error(
+                    "Multiple `%(namever)s` wheels share the same variant properties: "
+                    "all of %(labels)s correspond to variant hash `%(vhash)s`",
+                    {"namever": namever, "labels": sorted(labels), "vhash": vhash},
                 )
 
     for namever, variants_json in output_files.items():

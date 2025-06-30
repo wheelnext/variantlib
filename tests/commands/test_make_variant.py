@@ -7,6 +7,7 @@ import pytest
 
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_HASH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -33,10 +34,10 @@ def mocked_plugin_reqs(
 
 
 @pytest.mark.parametrize(
-    ("vhash", "properties"),
+    ("label", "properties"),
     [
         # Null Variant
-        ("00000000", None),
+        (NULL_VARIANT_HASH, None),
         # Variant 1
         (
             "5d8be4b9",
@@ -55,10 +56,13 @@ def mocked_plugin_reqs(
         ("fbe82642", ["installable_plugin :: feat2::val2b"]),
         ("fbe82642", ["installable_plugin::feat2 :: val2b"]),
         ("fbe82642", ["installable_plugin :: feat2 :: val2b"]),
+        # Custom labels
+        ("foo", ["installable_plugin::feat1::val1c"]),
+        ("bar", ["installable_plugin::feat2::val2b"]),
     ],
 )
 def test_make_variant(
-    vhash: str,
+    label: str,
     properties: list[str] | None,
     non_variant_wheel: Path,
     test_artifact_path: Path,
@@ -82,10 +86,13 @@ def test_make_variant(
             itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
         )
 
+    if len(label) != 8:
+        cmd_args.append(f"--variant-label={label}")
+
     main([*cmd_args])
 
     target_variant_wheel = (
-        non_variant_wheel.parent / f"test_package-0-py3-none-any-{vhash}.whl"
+        non_variant_wheel.parent / f"test_package-0-py3-none-any-{label}.whl"
     )
 
     output_f = tmp_path / target_variant_wheel.name
@@ -96,15 +103,32 @@ def test_make_variant(
     assert_zips_equal(target_variant_wheel, output_f)
 
 
+@pytest.mark.parametrize(
+    ("args", "error"),
+    [
+        ([], "error: one of the arguments -p/--property --null-variant is required"),
+        (["--property=x::y"], "argument -p/--property: invalid from_str value"),
+        (
+            ["--property=x::y::z", "--variant-label=123456789"],
+            "error: invalid variant label",
+        ),
+        (
+            ["--null-variant", "--variant-label=null"],
+            "error: --variant-label cannot be usedwith --null-variant",
+        ),
+    ],
+)
 def test_make_variant_error(
+    args: list[str],
+    error: str,
     non_variant_wheel: Path,
     test_artifact_path: Path,
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     pyproject_f = test_artifact_path / "test-package/pyproject.toml"
 
     with pytest.raises(SystemExit):
-        # "error: one of the arguments -p/--property --null-variant is required"
         main(
             [
                 "make-variant",
@@ -114,5 +138,8 @@ def test_make_variant_error(
                 str(tmp_path),
                 "--pyproject-toml",
                 str(pyproject_f.resolve()),
+                *args,
             ]
         )
+
+    assert error in capsys.readouterr().err
