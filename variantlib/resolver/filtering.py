@@ -232,7 +232,7 @@ def filter_variants_by_property(
                 # We never broke out of the loop, meaning no allowed property
                 # matched. Consequently, we reject this variant.
                 logger.info(
-                    "Variant `%(vhash)s` has been rejected because the none of the "
+                    "Variant `%(vhash)s` has been rejected because none of the "
                     "variant properties are compatible with this platform:"
                     "\n\t- %(vprops)s",
                     {
