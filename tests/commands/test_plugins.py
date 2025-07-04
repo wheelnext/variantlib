@@ -66,3 +66,33 @@ test_namespace :: name1 :: val1a
 test_namespace :: name1 :: val1b
 """
     )
+
+
+def test_plugins_validate_property(
+    capsys: pytest.CaptureFixture[str], mocked_entry_points: None
+) -> None:
+    main(
+        [
+            "plugins",
+            "validate-property",
+            "test_namespace :: name1 :: val1a",
+            "test_namespace :: name1::val1b",
+            "test_namespace :: name2 :: val2a",
+            "second_namespace:: name1:: val1a",
+            "second_namespace::name3 :: val3a",
+            "test_namespace  ::  name3    :: val3a",
+            "unknown_namespace::foo::bar",
+        ]
+    )
+    assert (
+        capsys.readouterr().out
+        == """\
+test_namespace :: name1 :: val1a : valid
+test_namespace :: name1 :: val1b : valid
+test_namespace :: name2 :: val2a : valid
+second_namespace :: name1 :: val1a : invalid
+second_namespace :: name3 :: val3a : valid
+test_namespace :: name3 :: val3a : invalid
+unknown_namespace :: foo :: bar : no-plugin
+"""
+    )
