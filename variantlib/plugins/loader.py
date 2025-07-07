@@ -20,7 +20,6 @@ from packaging.markers import default_environment
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
-from variantlib.errors import PluginMissingError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantProperty
@@ -30,7 +29,6 @@ from variantlib.validators.base import validate_matches_re
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from variantlib.models.variant import VariantDescription
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
     from variantlib.protocols import VariantNamespace
@@ -238,33 +236,6 @@ class BasePluginLoader:
         return VariantValidationResult(
             {VariantProperty(**vprop): result for vprop, result in results}
         )
-
-    def get_build_setup(self, variant_desc: VariantDescription) -> Any:
-        """Get build variables for a variant made of specified properties"""
-        self._check_plugins_loaded()
-        assert self._namespace_map is not None
-
-        namespaces = {vprop.namespace for vprop in variant_desc.properties}
-        try:
-            plugin_apis = [
-                self.plugin_api_values[namespace] for namespace in namespaces
-            ]
-        except KeyError as err:
-            raise PluginMissingError(f"No plugin found for namespace {err}") from None
-
-        if not plugin_apis:
-            return {}
-
-        return self._call_subprocess(
-            plugin_apis,
-            {
-                "get_build_setup": {
-                    "properties": [
-                        dataclasses.asdict(vprop) for vprop in variant_desc.properties
-                    ]
-                }
-            },
-        )["get_build_setup"]
 
     @property
     def plugin_api_values(self) -> dict[str, str]:

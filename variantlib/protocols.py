@@ -113,9 +113,3 @@ class PluginType(Protocol):
     def validate_property(self, variant_property: VariantPropertyType) -> bool:
         """Validate variant property, returns True if it's valid"""
         raise NotImplementedError
-
-    def get_build_setup(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[str, list[str]]:
-        """Get build variables for a variant made of specified properties"""
-        return {}

@@ -158,33 +158,6 @@ def main() -> int:
                 else:
                     results.extend((property_to_dict(vprop), None) for vprop in p_props)
             retval = {command: results}
-        elif command == "get_build_setup":
-            assert command_args
-            assert "properties" in command_args
-            ret_env: dict[str, list[str]] = {}
-            for plugin, p_props in group_properties_by_plugin(
-                command_args["properties"], namespace_map
-            ):
-                if plugin is None:
-                    raise KeyError(
-                        f"No provider for namespace {next(iter(p_props)).namespace}"
-                    )
-                if hasattr(plugin, "get_build_setup"):
-                    plugin_env = plugin.get_build_setup(p_props)
-
-                    try:
-                        validate_type(plugin_env, dict[str, list[str]])
-                    except ValidationError as err:
-                        raise TypeError(
-                            f"Provider {plugin.namespace}, get_build_setup() "
-                            f"method returned incorrect type. {err}"
-                        ) from None
-                else:
-                    plugin_env = {}
-
-                for k, v in plugin_env.items():
-                    ret_env.setdefault(k, []).extend(v)
-            retval = {command: ret_env}
         else:
             raise ValueError(f"Invalid command: {command}")
 

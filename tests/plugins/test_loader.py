@@ -16,11 +16,9 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import PluginError
-from variantlib.errors import PluginMissingError
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import ProviderInfo
@@ -338,46 +336,6 @@ def test_namespace_instantiation_returns_incorrect_type(
         pass
 
 
-def test_get_build_setup(
-    mocked_plugin_loader: BasePluginLoader,
-) -> None:
-    variant_desc = VariantDescription(
-        [
-            VariantProperty("test_namespace", "name1", "val1b"),
-            VariantProperty("second_namespace", "name3", "val3c"),
-            VariantProperty("incompatible_namespace", "flag1", "on"),
-            VariantProperty("incompatible_namespace", "flag4", "on"),
-        ]
-    )
-
-    # flag order may depend on (random) property ordering
-    assert {
-        k: sorted(v)
-        for k, v in mocked_plugin_loader.get_build_setup(variant_desc).items()
-    } == {
-        "cflags": ["-march=val1b", "-mflag1", "-mflag4"],
-        "cxxflags": ["-march=val1b", "-mflag1", "-mflag4"],
-        "ldflags": ["-Wl,--test-flag"],
-    }
-
-
-def test_get_build_setup_missing_plugin(
-    mocked_plugin_loader: BasePluginLoader,
-) -> None:
-    variant_desc = VariantDescription(
-        [
-            VariantProperty("test_namespace", "name1", "val1b"),
-            VariantProperty("missing_plugin", "name", "val"),
-        ]
-    )
-
-    with pytest.raises(
-        PluginMissingError,
-        match=r"No plugin found for namespace 'missing_plugin'",
-    ):
-        assert mocked_plugin_loader.get_build_setup(variant_desc)
-
-
 def test_namespaces(
     mocked_plugin_loader: BasePluginLoader,
 ) -> None:
@@ -588,7 +546,6 @@ def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:
         assert loader.namespaces == []
         assert loader.get_supported_configs() == {}
         assert loader.validate_properties([]) == VariantValidationResult({})
-        assert loader.get_build_setup(VariantDescription([])) == {}
 
 
 @pytest.mark.parametrize(

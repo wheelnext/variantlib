@@ -39,19 +39,6 @@ class MockedPluginA(PluginType):
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
         ]
 
-    def get_build_setup(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[str, list[str]]:
-        for prop in properties:
-            assert prop.namespace == self.namespace
-            if prop.feature == "name1":
-                return {
-                    "cflags": [f"-march={prop.value}"],
-                    "cxxflags": [f"-march={prop.value}"],
-                    "ldflags": ["-Wl,--test-flag"],
-                }
-        return {}
-
 
 MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values"))
 
@@ -107,21 +94,6 @@ class MockedPluginC(PluginType):
     ) -> list[VariantFeatureConfigType]:
         assert known_properties is None
         return []
-
-    def get_build_setup(
-        self, properties: frozenset[VariantPropertyType]
-    ) -> dict[str, list[str]]:
-        flag_opts = []
-
-        for prop in properties:
-            assert prop.namespace == self.namespace
-            assert prop.value == "on"
-            flag_opts.append(f"-m{prop.feature}")
-
-        return {
-            "cflags": flag_opts,
-            "cxxflags": flag_opts,
-        }
 
 
 class IndirectPath:
