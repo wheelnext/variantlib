@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.api import get_variant_label
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
@@ -105,15 +105,6 @@ def make_variant(args: list[str]) -> None:
     )
 
     parsed_args = parser.parse_args(args)
-
-    if parsed_args.variant_label is not None:
-        if parsed_args.null_variant:
-            parser.error("--variant-label cannot be usedwith --null-variant")
-        if not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label):
-            parser.error(
-                "invalid variant label (must be up to 8 alphanumeric characters): "
-                f"{parsed_args.variant_label!r}"
-            )
 
     try:
         pyproject_toml = VariantPyProjectToml.from_path(parsed_args.pyproject_toml)
@@ -229,8 +220,7 @@ def _make_variant(
         # Create a null variant
         vdesc = VariantDescription()
 
-    if variant_label is None:
-        variant_label = vdesc.hexdigest
+    variant_label = get_variant_label(vdesc, variant_label)
 
     # Determine output wheel filename
     output_filepath = (

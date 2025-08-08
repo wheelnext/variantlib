@@ -8,6 +8,7 @@ import pytest
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
 from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.errors import ValidationError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -109,12 +110,17 @@ def test_make_variant(
         ([], "error: one of the arguments -p/--property --null-variant is required"),
         (["--property=x::y"], "argument -p/--property: invalid from_str value"),
         (
-            ["--property=x::y::z", "--variant-label=123456789"],
-            "error: invalid variant label",
+            [
+                "--property=x::y::z",
+                "--skip-plugin-validation",
+                "--variant-label=123456789",
+            ],
+            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
+            "characters)",
         ),
         (
             ["--null-variant", "--variant-label=null"],
-            "error: --variant-label cannot be usedwith --null-variant",
+            "Variant label cannot be specified for the null variant",
         ),
     ],
 )
@@ -128,7 +134,7 @@ def test_make_variant_error(
 ) -> None:
     pyproject_f = test_artifact_path / "test-package/pyproject.toml"
 
-    with pytest.raises(SystemExit):
+    with pytest.raises((SystemExit, ValidationError)) as e:
         main(
             [
                 "make-variant",
@@ -142,4 +148,7 @@ def test_make_variant_error(
             ]
         )
 
-    assert error in capsys.readouterr().err
+    if isinstance(e.value, SystemExit):
+        assert error in capsys.readouterr().err
+    else:
+        assert error in str(e.value)

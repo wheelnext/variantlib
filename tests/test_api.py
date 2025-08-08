@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import string
 from collections.abc import Generator
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ from variantlib.api import VariantProperty
 from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_environment_dict
+from variantlib.api import get_variant_label
 from variantlib.api import get_variants_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
@@ -561,13 +563,100 @@ def test_make_variant_dist_info_invalid_label():
             VariantDescription([VariantProperty("a", "b", "c")]),
             variant_label=NULL_VARIANT_HASH,
         )
-    with pytest.raises(ValidationError, match=r"Invalid variant label: foo/bar"):
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(
+            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
+        ),
+    ):
         make_variant_dist_info(
             VariantDescription([VariantProperty("a", "b", "c")]),
             variant_label="foo/bar",
         )
-    with pytest.raises(ValidationError, match=r"Invalid variant label: 123456789"):
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(
+            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
+            "characters)"
+        ),
+    ):
         make_variant_dist_info(
             VariantDescription([VariantProperty("a", "b", "c")]),
             variant_label="123456789",
+        )
+
+
+def test_get_variant_label() -> None:
+    assert get_variant_label(VariantDescription()) == NULL_VARIANT_HASH
+    assert (
+        get_variant_label(VariantDescription(), NULL_VARIANT_HASH) == NULL_VARIANT_HASH
+    )
+
+    assert (
+        get_variant_label(VariantDescription([VariantProperty("a", "b", "c")]))
+        == "01a9783a"
+    )
+    assert (
+        get_variant_label(
+            VariantDescription(
+                [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")]
+            )
+        )
+        == "eb9a66a7"
+    )
+    assert (
+        get_variant_label(
+            VariantDescription(
+                [VariantProperty("d", "e", "f"), VariantProperty("a", "b", "c")]
+            )
+        )
+        == "eb9a66a7"
+    )
+
+    assert (
+        get_variant_label(VariantDescription([VariantProperty("a", "b", "c")]), "foo")
+        == "foo"
+    )
+    assert (
+        get_variant_label(
+            VariantDescription(
+                [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")]
+            ),
+            "foo",
+        )
+        == "foo"
+    )
+
+    with pytest.raises(
+        ValidationError, match=r"Variant label cannot be specified for the null variant"
+    ):
+        get_variant_label(VariantDescription([]), "foo")
+    with pytest.raises(
+        ValidationError,
+        match=rf"{NULL_VARIANT_HASH} label can be used only for the null variant",
+    ):
+        get_variant_label(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            NULL_VARIANT_HASH,
+        )
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(
+            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
+        ),
+    ):
+        get_variant_label(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            "foo/bar",
+        )
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(
+            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
+            "characters)"
+        ),
+    ):
+        get_variant_label(
+            VariantDescription([VariantProperty("a", "b", "c")]),
+            "123456789",
         )

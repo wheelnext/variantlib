@@ -41,6 +41,7 @@ __all__ = [
     "VariantProperty",
     "VariantValidationResult",
     "get_variant_environment_dict",
+    "get_variant_label",
     "get_variants_by_priority",
     "make_variant_dist_info",
     "validate_variant",
@@ -148,19 +149,7 @@ def make_variant_dist_info(
         variant_info = VariantInfo()
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
-    if variant_label is not None:
-        if vdesc.is_null_variant():
-            if variant_label != NULL_VARIANT_HASH:
-                raise ValidationError(
-                    "Variant label cannot be specified for the null variant"
-                )
-        elif variant_label == NULL_VARIANT_HASH:
-            raise ValidationError(
-                f"{NULL_VARIANT_HASH} label can be used only for the null variant"
-            )
-        elif not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(variant_label):
-            raise ValidationError(f"Invalid variant label: {variant_label}")
-        variant_json.variant_label = variant_label
+    variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
     return variant_json.to_str()
 
@@ -233,3 +222,35 @@ def get_variant_environment_dict(
         },
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
     }
+
+
+def get_variant_label(
+    variant_desc: VariantDescription,
+    custom_label: str | None = None,
+) -> str:
+    """
+    Get the label for the specified variant
+
+    Get the label corresponding to `variant_desc`. If `custom_label`
+    is provided, validate it and use it. If `custom_label` is invalid,
+    raises a `ValidationError`.
+    """
+
+    if custom_label is None:
+        return variant_desc.hexdigest
+
+    if variant_desc.is_null_variant():
+        if custom_label != NULL_VARIANT_HASH:
+            raise ValidationError(
+                "Variant label cannot be specified for the null variant"
+            )
+    elif custom_label == NULL_VARIANT_HASH:
+        raise ValidationError(
+            f"{NULL_VARIANT_HASH} label can be used only for the null variant"
+        )
+    elif not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(custom_label):
+        raise ValidationError(
+            f"Invalid variant label: {custom_label!r} "
+            "(must be up to 8 alphanumeric characters)"
+        )
+    return custom_label
