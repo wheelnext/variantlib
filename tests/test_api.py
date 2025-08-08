@@ -29,7 +29,7 @@ from variantlib.api import get_variant_label
 from variantlib.api import get_variants_by_priority
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
@@ -132,10 +132,10 @@ def test_get_variants_by_priority_roundtrip(
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             f"foo{vdesc.hexdigest[:4]}"
-            if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
-            else vdesc.hexdigest: vdesc.to_dict()
+            if custom_labels and not vdesc.is_null_variant()
+            else get_variant_label(vdesc): vdesc.to_dict()
             for vdesc in combinations
-            if explicit_null or vdesc.hexdigest != NULL_VARIANT_HASH
+            if explicit_null or not vdesc.is_null_variant()
         },
     }
 
@@ -148,8 +148,8 @@ def test_get_variants_by_priority_roundtrip(
 
     assert get_variants_by_priority(variants_json=typed_variants_json) == [
         f"foo{vdesc.hexdigest[:4]}"
-        if custom_labels and vdesc.hexdigest != NULL_VARIANT_HASH
-        else vdesc.hexdigest
+        if custom_labels and not vdesc.is_null_variant()
+        else get_variant_label(vdesc)
         for vdesc in combinations
     ]
 
@@ -222,7 +222,7 @@ def test_get_variants_by_priority_roundtrip_fuzz(
 
     variants_json = {
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            vdesc.hexdigest: vdesc.to_dict() for vdesc in combinations
+            get_variant_label(vdesc): vdesc.to_dict() for vdesc in combinations
         }
     }
 
@@ -236,7 +236,7 @@ def test_get_variants_by_priority_roundtrip_fuzz(
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
     assert get_variants_by_priority(variants_json=typed_variants_json) == [
-        vdesc.hexdigest for vdesc in combinations
+        get_variant_label(vdesc) for vdesc in combinations
     ]
 
 
@@ -552,16 +552,17 @@ def test_get_variant_environment_dict() -> None:
 
 def test_make_variant_dist_info_invalid_label():
     with pytest.raises(
-        ValidationError, match=r"Variant label cannot be specified for the null variant"
+        ValidationError,
+        match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
         make_variant_dist_info(VariantDescription([]), variant_label="foo")
     with pytest.raises(
         ValidationError,
-        match=rf"{NULL_VARIANT_HASH} label can be used only for the null variant",
+        match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         make_variant_dist_info(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            variant_label=NULL_VARIANT_HASH,
+            variant_label=NULL_VARIANT_LABEL,
         )
     with pytest.raises(
         ValidationError,
@@ -587,9 +588,10 @@ def test_make_variant_dist_info_invalid_label():
 
 
 def test_get_variant_label() -> None:
-    assert get_variant_label(VariantDescription()) == NULL_VARIANT_HASH
+    assert get_variant_label(VariantDescription()) == NULL_VARIANT_LABEL
     assert (
-        get_variant_label(VariantDescription(), NULL_VARIANT_HASH) == NULL_VARIANT_HASH
+        get_variant_label(VariantDescription(), NULL_VARIANT_LABEL)
+        == NULL_VARIANT_LABEL
     )
 
     assert (
@@ -628,16 +630,17 @@ def test_get_variant_label() -> None:
     )
 
     with pytest.raises(
-        ValidationError, match=r"Variant label cannot be specified for the null variant"
+        ValidationError,
+        match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
         get_variant_label(VariantDescription([]), "foo")
     with pytest.raises(
         ValidationError,
-        match=rf"{NULL_VARIANT_HASH} label can be used only for the null variant",
+        match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         get_variant_label(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            NULL_VARIANT_HASH,
+            NULL_VARIANT_LABEL,
         )
     with pytest.raises(
         ValidationError,

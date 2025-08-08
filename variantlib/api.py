@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantsJsonDict
@@ -83,7 +84,7 @@ def get_variants_by_priority(
         vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
     }
     # handle the implicit null variant
-    label_map.setdefault(NULL_VARIANT_HASH, NULL_VARIANT_HASH)
+    label_map.setdefault(NULL_VARIANT_HASH, NULL_VARIANT_LABEL)
 
     return [
         label_map[vdesc.hexdigest]
@@ -237,16 +238,20 @@ def get_variant_label(
     """
 
     if custom_label is None:
-        return variant_desc.hexdigest
+        return (
+            NULL_VARIANT_LABEL
+            if variant_desc.is_null_variant()
+            else variant_desc.hexdigest
+        )
 
     if variant_desc.is_null_variant():
-        if custom_label != NULL_VARIANT_HASH:
+        if custom_label != NULL_VARIANT_LABEL:
             raise ValidationError(
-                "Variant label cannot be specified for the null variant"
+                f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
             )
-    elif custom_label == NULL_VARIANT_HASH:
+    elif custom_label == NULL_VARIANT_LABEL:
         raise ValidationError(
-            f"{NULL_VARIANT_HASH} label can be used only for the null variant"
+            f"{NULL_VARIANT_LABEL!r} label can be used only for the null variant"
         )
     elif not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(custom_label):
         raise ValidationError(

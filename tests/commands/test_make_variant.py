@@ -7,7 +7,7 @@ import pytest
 
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.errors import ValidationError
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ def mocked_plugin_reqs(
     ("label", "properties"),
     [
         # Null Variant
-        (NULL_VARIANT_HASH, None),
+        (NULL_VARIANT_LABEL, None),
         # Variant 1
         (
             "5d8be4b9",
@@ -119,8 +119,8 @@ def test_make_variant(
             "characters)",
         ),
         (
-            ["--null-variant", "--variant-label=null"],
-            "Variant label cannot be specified for the null variant",
+            ["--null-variant", "--variant-label=zuul"],
+            "Null variant must always use 'null' label",
         ),
     ],
 )

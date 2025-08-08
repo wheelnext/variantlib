@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 
 if TYPE_CHECKING:
     import pytest
@@ -34,13 +34,13 @@ def test_analyze_wheel_null_variant(
             "analyze-wheel",
             "-i",
             "tests/artifacts/test-package/dist/test_package-0-py3-none-any-"
-            f"{NULL_VARIANT_HASH}.whl",
+            f"{NULL_VARIANT_LABEL}.whl",
         ]
     )
     assert (
         capsys.readouterr().out
         == f"""\
-############################## Variant: `{NULL_VARIANT_HASH}` \
+############################## Variant: `{NULL_VARIANT_LABEL}` \
 #############################
 ################################################################################
 """
