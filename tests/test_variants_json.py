@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -45,7 +45,7 @@ def test_validate_variants_json() -> None:
 
     variants_json = VariantsJson(data)
     assert variants_json.variants == {
-        NULL_VARIANT_HASH: VariantDescription(),
+        NULL_VARIANT_LABEL: VariantDescription(),
         "03e04d5e": VariantDescription(
             properties=[
                 VariantProperty(
@@ -503,12 +503,12 @@ def test_merge_variants() -> None:
 def test_null_variant_label():
     with pytest.raises(
         ValidationError,
-        match=rf"{NULL_VARIANT_HASH} label can only be used for the null variant",
+        match=rf"{NULL_VARIANT_LABEL!r} label can only be used for the null variant",
     ):
         VariantsJson(
-            {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_HASH: {"x": {"y": ["z"]}}}}
+            {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}}}
         )
     with pytest.raises(
-        ValidationError, match=rf"Null variant must use {NULL_VARIANT_HASH} label"
+        ValidationError, match=rf"Null variant must use {NULL_VARIANT_LABEL!r} label"
     ):
-        VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"null": {}}})
+        VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}}})

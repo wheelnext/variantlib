@@ -7,7 +7,7 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 from typing import Any
 
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY
@@ -153,16 +153,16 @@ class VariantsJson(VariantInfo):
                     ignore_subkeys=True,
                 ) as packed_vdesc:
                     vdesc = VariantDescription.from_dict(packed_vdesc)
-                    if vdesc.is_null_variant() and variant_label != NULL_VARIANT_HASH:
+                    if vdesc.is_null_variant() and variant_label != NULL_VARIANT_LABEL:
                         raise ValidationError(
-                            f"Null variant must use {NULL_VARIANT_HASH} label"
+                            f"Null variant must use {NULL_VARIANT_LABEL!r} label"
                         )
                     if (
                         not vdesc.is_null_variant()
-                        and variant_label == NULL_VARIANT_HASH
+                        and variant_label == NULL_VARIANT_LABEL
                     ):
                         raise ValidationError(
-                            f"{NULL_VARIANT_HASH} label can only be used for "
+                            f"{NULL_VARIANT_LABEL!r} label can only be used for "
                             "the null variant"
                         )
                     self.variants[variant_label] = vdesc
