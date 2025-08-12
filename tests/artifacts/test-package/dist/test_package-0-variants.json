@@ -20,7 +20,7 @@
         }
     },
     "variants": {
-        "00000000": {},
+        "null": {},
         "5d8be4b9": {
             "installable_plugin": {
                 "feat1": [

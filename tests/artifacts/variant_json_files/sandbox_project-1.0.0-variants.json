@@ -23,7 +23,7 @@
         }
     },
     "variants": {
-        "00000000": {},
+        "null": {},
         "38ea48ce": {
             "fictional_hw": {
                 "architecture": [

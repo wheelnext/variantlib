@@ -7,7 +7,7 @@ import pytest
 
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import NULL_VARIANT_LABEL
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -37,7 +37,7 @@ def mocked_plugin_reqs(
     ("label", "properties"),
     [
         # Null Variant
-        (NULL_VARIANT_HASH, None),
+        (NULL_VARIANT_LABEL, None),
         # Variant 1
         (
             "5d8be4b9",
@@ -86,7 +86,7 @@ def test_make_variant(
             itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
         )
 
-    if len(label) != 8:
+    if len(label) != 8 and label != "null":
         cmd_args.append(f"--variant-label={label}")
 
     main([*cmd_args])
@@ -113,8 +113,12 @@ def test_make_variant(
             "error: invalid variant label",
         ),
         (
+            ["--property=x::y::z", "--variant-label=null"],
+            "error: invalid variant label",
+        ),
+        (
             ["--null-variant", "--variant-label=null"],
-            "error: --variant-label cannot be usedwith --null-variant",
+            "error: --variant-label cannot be used with --null-variant",
         ),
     ],
 )
