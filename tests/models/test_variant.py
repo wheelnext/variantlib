@@ -7,7 +7,6 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -238,7 +237,7 @@ def test_variantprop_sorting() -> None:
 def test_null_variant() -> None:
     vdesc = VariantDescription()
     assert vdesc.properties == []
-    assert vdesc.hexdigest == NULL_VARIANT_HASH
+    assert vdesc.hexdigest == hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LEN]
 
 
 def test_variantdescription_initialization() -> None:

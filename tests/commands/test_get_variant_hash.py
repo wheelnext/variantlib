@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import hashlib
 from itertools import chain
 
 import pytest
 
 from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_HASH
+from variantlib.constants import VARIANT_HASH_LEN
 
 
 @pytest.mark.parametrize(
     ("properties", "expected"),
     [
-        ([], NULL_VARIANT_HASH),
+        ([], hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LEN]),
         (["a::b::c"], "01a9783a"),
         (["d::e::f"], "41665eee"),
         (["a::b::c", "d::e::f"], "eb9a66a7"),

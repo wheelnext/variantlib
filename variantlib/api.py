@@ -8,7 +8,6 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
-from variantlib.constants import NULL_VARIANT_HASH
 from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_HASH_LEN
@@ -84,7 +83,7 @@ def get_variants_by_priority(
         vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
     }
     # handle the implicit null variant
-    label_map.setdefault(NULL_VARIANT_HASH, NULL_VARIANT_LABEL)
+    label_map.setdefault(VariantDescription([]).hexdigest, NULL_VARIANT_LABEL)
 
     return [
         label_map[vdesc.hexdigest]
