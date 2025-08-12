@@ -75,22 +75,32 @@ class VariantsJson(VariantInfo):
         if self.property_priorities:
             yield (VARIANT_INFO_PROPERTY_KEY, self.property_priorities)
 
+    def providers_dict(self) -> dict[str, dict[str, str | list[str] | bool]]:
+        """Get a dictionary of providers in a format suitable for JSON serialization"""
+        return {
+            namespace: dict(self._provider_info_to_json(provider_info))
+            for namespace, provider_info in self.providers.items()
+        }
+
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
         data: dict[str, Any] = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
             VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
-            VARIANT_INFO_PROVIDER_DATA_KEY: {
-                namespace: dict(self._provider_info_to_json(provider_info))
-                for namespace, provider_info in self.providers.items()
-            },
+            VARIANT_INFO_PROVIDER_DATA_KEY: self.providers_dict(),
             VARIANTS_JSON_VARIANT_DATA_KEY: {
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
 
         return json.dumps(data, indent=4, sort_keys=True)
+
+    @property
+    def provider_hash(self) -> int:
+        encoded_dict = json.dumps(self.providers_dict(), sort_keys=True).encode("utf-8")
+
+        return hash(encoded_dict)
 
     def merge(self, variant_dist_info: Self) -> None:
         """Merge info from another wheel (VariantsJson instance)"""
@@ -112,10 +122,17 @@ class VariantsJson(VariantInfo):
                     f"Expected: {old_value!r}, found {new_value!r}"
                 )
 
+        if self.provider_hash != variant_dist_info.provider_hash:
+            raise ValidationError(
+                f"Inconsistency in providers when merging variants:\n"
+                f"Before:\n{self.providers}.\n\nAfter:\n{variant_dist_info.providers}."
+            )
+
         for namespace, provider_info in variant_dist_info.providers.items():
             if (old_provider_info := self.providers.get(namespace)) is None:
                 # If provider not yet specified, just copy it
                 self.providers[namespace] = provider_info
+
             else:
                 # Otherwise, merge requirements and verify consistency
                 for req_str in provider_info.requires:

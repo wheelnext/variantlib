@@ -355,27 +355,27 @@ def test_roundtrip() -> None:
 
 
 def test_merge_variants() -> None:
-    default_prios: PriorityJsonDict = {
+    priority_data: PriorityJsonDict = {
         VARIANT_INFO_NAMESPACE_KEY: ["a", "b"],
         VARIANT_INFO_FEATURE_KEY: {"a": ["a"], "b": ["b"]},
         VARIANT_INFO_PROPERTY_KEY: {"a": {"a": ["a"]}, "b": {"b": ["b"]}},
     }
 
-    provider_b: ProviderPluginJsonDict = {
-        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["b"],
-        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version > '3.12'",
-        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "b:B",
+    provider_data: dict[str, ProviderPluginJsonDict] = {
+        "a": {
+            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a"],
+            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
+        },
+        "b": {
+            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["b"],
+            VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version > '3.12'",
+            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "b:B",
+        },
     }
 
     json_a: VariantsJsonDict = {
-        VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
-        VARIANT_INFO_PROVIDER_DATA_KEY: {
-            "a": {
-                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a"],
-                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
-            },
-            "b": provider_b,
-        },
+        VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
+        VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             "54357fe4": {
                 "a": {
@@ -388,14 +388,8 @@ def test_merge_variants() -> None:
         },
     }
     json_b: VariantsJsonDict = {
-        VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
-        VARIANT_INFO_PROVIDER_DATA_KEY: {
-            "a": {
-                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a2"],
-                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
-            },
-            "b": provider_b,
-        },
+        VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
+        VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             "48b561bc": {
                 "a": {
@@ -409,14 +403,8 @@ def test_merge_variants() -> None:
     }
     merged = VariantsJson(
         {
-            VARIANT_INFO_DEFAULT_PRIO_KEY: default_prios,
-            VARIANT_INFO_PROVIDER_DATA_KEY: {
-                "a": {
-                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["a", "a2"],
-                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "a:A",
-                },
-                "b": provider_b,
-            },
+            VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
+            VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
             VARIANTS_JSON_VARIANT_DATA_KEY: {
                 "48b561bc": {
                     "a": {
@@ -486,7 +474,8 @@ def test_merge_variants() -> None:
         VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
     ]
     with pytest.raises(
-        ValidationError, match=r"Inconsistency in providers\['b'\].enable_if"
+        ValidationError,
+        match="Inconsistency in providers when merging variants",
     ):
         v1.merge(VariantsJson(_json_data))
 
@@ -495,7 +484,8 @@ def test_merge_variants() -> None:
         VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
     ] = "test:Test"
     with pytest.raises(
-        ValidationError, match=r"Inconsistency in providers\['a'\].plugin_api"
+        ValidationError,
+        match="Inconsistency in providers when merging variants",
     ):
         v1.merge(VariantsJson(_json_data))
 

@@ -23,6 +23,7 @@ def generate_index_json(args: list[str]) -> None:
         prog=f"{__package_name__} generate-index-json",
         description="Generate a JSON index of all package variants",
     )
+
     parser.add_argument(
         "-d",
         "--directory",
