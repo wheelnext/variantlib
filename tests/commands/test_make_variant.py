@@ -8,7 +8,6 @@ import pytest
 from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
 from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.errors import ValidationError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -87,7 +86,7 @@ def test_make_variant(
             itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
         )
 
-    if len(label) != 8:
+    if len(label) != 8 and label != "null":
         cmd_args.append(f"--variant-label={label}")
 
     main([*cmd_args])
@@ -110,17 +109,16 @@ def test_make_variant(
         ([], "error: one of the arguments -p/--property --null-variant is required"),
         (["--property=x::y"], "argument -p/--property: invalid from_str value"),
         (
-            [
-                "--property=x::y::z",
-                "--skip-plugin-validation",
-                "--variant-label=123456789",
-            ],
-            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
-            "characters)",
+            ["--property=x::y::z", "--variant-label=123456789"],
+            "error: invalid variant label",
         ),
         (
-            ["--null-variant", "--variant-label=zuul"],
-            "Null variant must always use 'null' label",
+            ["--property=x::y::z", "--variant-label=null"],
+            "error: invalid variant label",
+        ),
+        (
+            ["--null-variant", "--variant-label=null"],
+            "error: --variant-label cannot be used with --null-variant",
         ),
     ],
 )
@@ -134,7 +132,7 @@ def test_make_variant_error(
 ) -> None:
     pyproject_f = test_artifact_path / "test-package/pyproject.toml"
 
-    with pytest.raises((SystemExit, ValidationError)) as e:
+    with pytest.raises(SystemExit):
         main(
             [
                 "make-variant",
@@ -148,7 +146,4 @@ def test_make_variant_error(
             ]
         )
 
-    if isinstance(e.value, SystemExit):
-        assert error in capsys.readouterr().err
-    else:
-        assert error in str(e.value)
+    assert error in capsys.readouterr().err
