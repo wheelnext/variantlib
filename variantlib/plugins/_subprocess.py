@@ -114,7 +114,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     commands = json.load(sys.stdin)
-    plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api)))
+    plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api), strict=True))
     namespace_map = {plugin.namespace: plugin for plugin in plugins.values()}
 
     retval: dict[str, Any] = {}

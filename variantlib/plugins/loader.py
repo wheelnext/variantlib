@@ -34,12 +34,8 @@ if TYPE_CHECKING:
     from variantlib.models.variant_info import VariantInfo
     from variantlib.protocols import VariantNamespace
 
-if sys.version_info >= (3, 10):
-    from importlib.metadata import Distribution
-    from importlib.metadata import entry_points
-else:
-    from importlib_metadata import Distribution
-    from importlib_metadata import entry_points
+from importlib.metadata import Distribution
+from importlib.metadata import entry_points
 
 if sys.version_info >= (3, 11):
     from typing import Self

@@ -5,7 +5,6 @@ import sys
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
-from typing import Callable
 
 import pytest
 
@@ -34,6 +33,8 @@ from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from variantlib.protocols import VariantPropertyType
 
 if sys.version_info >= (3, 11):
@@ -399,7 +400,7 @@ def test_load_plugin_invalid_arg() -> None:
                 ),
                 "second_namespace": ProviderInfo(
                     # always true
-                    enable_if="python_version >= '3.9'",
+                    enable_if="python_version >= '3.10'",
                     plugin_api="tests.mocked_plugins:MockedPluginB",
                 ),
                 "incompatible_namespace": ProviderInfo(

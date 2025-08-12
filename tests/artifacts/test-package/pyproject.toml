@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "test-package"
 version = "0"
 description = "Installable package for testing"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [variant.default-priorities]
 namespace = ["installable_plugin", "non_existing_plugin"]

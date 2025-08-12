@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "variantlib"
 description = "A library to provide support for variants"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
     { name = "Jonathan Dekhtiar", email = "jonathan@dekhtiar.com" },
@@ -90,7 +90,7 @@ check_untyped_defs = true
 
 [tool.tox]
 requires = ["tox>=4.19"]
-env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9", "pypy3.10", "pypy3.11"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "pypy3.10", "pypy3.10", "pypy3.11"]
 
 [tool.tox.env_run_base]
 description = "Run tests under {base_python}"

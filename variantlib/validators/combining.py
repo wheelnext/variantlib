@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import TypeVar
 
 from variantlib.errors import ValidationError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
