@@ -17,7 +17,7 @@ from typing import cast
 
 from packaging.markers import Marker
 from packaging.markers import default_environment
-
+from variantlib.constants import NAMESPACE_NONE
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
+    from variantlib.protocols import VariantFeatureName
+    from variantlib.protocols import VariantFeatureValue
     from variantlib.protocols import VariantNamespace
 
 from importlib.metadata import Distribution
@@ -54,12 +56,15 @@ class BasePluginLoader:
     def __init__(
         self,
         venv_python_executable: Path | None = None,
+        none_properties: dict[VariantFeatureName, set[VariantFeatureValue]]
+        | None = None,
     ) -> None:
         self._python_executable = (
             venv_python_executable
             if venv_python_executable is not None
             else Path(sys.executable)
         )
+        self._none_properties = none_properties or {}
 
     def __enter__(self) -> Self:
         if self._namespace_map is not None:
@@ -182,8 +187,19 @@ class BasePluginLoader:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
+        provider_cfgs = {}
+        if self._none_properties:
+            # order does not matter here, as package config always sorts them
+            provider_cfgs[NAMESPACE_NONE] = ProviderConfig(
+                namespace=NAMESPACE_NONE,
+                configs=[
+                    VariantFeatureConfig(name=name, values=list(values))
+                    for name, values in self._none_properties.items()
+                ],
+            )
+
         if not self._namespace_map:
-            return {}
+            return provider_cfgs
 
         configs = self._call_subprocess(
             list(self._namespace_map.keys()),
@@ -196,7 +212,6 @@ class BasePluginLoader:
             },
         )["get_supported_configs"]
 
-        provider_cfgs = {}
         for plugin_api, plugin_configs in configs.items():
             namespace = self._namespace_map[plugin_api]
 
@@ -218,21 +233,37 @@ class BasePluginLoader:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
+        ret: dict[VariantProperty, bool | None] = {}
+        plugin_properties = []
+        for vprop in properties:
+            # handle "none" properties immediately
+            if vprop.namespace == NAMESPACE_NONE:
+                ret[vprop] = vprop.value in self._none_properties.get(
+                    vprop.feature, set()
+                )
+            else:
+                plugin_properties.append(vprop)
+
         if not self._namespace_map:
-            return VariantValidationResult(dict.fromkeys(properties))
+            # short-circuit plugin_properties if we have no plugins loaded
+            ret.update(dict.fromkeys(plugin_properties))
+        elif plugin_properties:
+            # call to the plugin if we have any plugin_properties left
+            json_results = self._call_subprocess(
+                list(self._namespace_map.keys()),
+                {
+                    "validate_properties": {
+                        "properties": [
+                            dataclasses.asdict(vprop) for vprop in properties
+                        ]
+                    }
+                },
+            )["validate_properties"]
+            ret.update(
+                {VariantProperty(**vprop): result for vprop, result in json_results}
+            )
 
-        results = self._call_subprocess(
-            list(self._namespace_map.keys()),
-            {
-                "validate_properties": {
-                    "properties": [dataclasses.asdict(vprop) for vprop in properties]
-                }
-            },
-        )["validate_properties"]
-
-        return VariantValidationResult(
-            {VariantProperty(**vprop): result for vprop, result in results}
-        )
+        return VariantValidationResult(ret)
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
@@ -264,7 +295,10 @@ class PluginLoader(BasePluginLoader):
         self._enable_optional_plugins = enable_optional_plugins
         self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
-        super().__init__(venv_python_executable=venv_python_executable)
+        super().__init__(
+            venv_python_executable=venv_python_executable,
+            none_properties=variant_info.get_none_properties(),
+        )
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
         # if enable_optional_plugins is a bool, it controls all plugins

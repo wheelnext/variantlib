@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
-
+from variantlib.constants import NAMESPACE_NONE
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -102,11 +102,26 @@ class VariantInfo:
 
         if namespaces is None:
             namespaces = set(self.namespace_priorities)
+        # "none" provider has no dependencies
+        namespaces.discard(NAMESPACE_NONE)
 
         requirements = set()
         for namespace in namespaces:
             requirements.update(self.providers[namespace].requires)
         return requirements
+
+    def get_none_properties(self) -> dict[VariantFeatureName, set[VariantFeatureValue]]:
+        """
+        Get a dictionary of supported "none" namespace properties
+        """
+
+        if NAMESPACE_NONE not in self.namespace_priorities:
+            return {}
+
+        return {
+            vfeat: set(self.property_priorities.get(NAMESPACE_NONE, {}).get(vfeat, []))
+            for vfeat in self.feature_priorities.get(NAMESPACE_NONE, [])
+        }
 
     def _process_common(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
@@ -159,6 +174,11 @@ class VariantInfo:
         ) as providers:
             validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
             namespaces = list(providers.keys())
+            if NAMESPACE_NONE in namespaces:
+                raise ValidationError(
+                    f"{validator.key}: namespace {NAMESPACE_NONE!r} must not be defined"
+                )
+
             self.providers = {}
             for namespace in namespaces:
                 with validator.get(namespace, dict[str, Any], {}):
@@ -204,9 +224,10 @@ class VariantInfo:
             ]
         )
 
-        if set(self.namespace_priorities) != all_providers:
+        namespace_prio_set = set(self.namespace_priorities) - {NAMESPACE_NONE}
+        if namespace_prio_set != all_providers:
             raise ValidationError(
                 f"{namespace_prios_key} must specify the same namespaces "
                 f"as {all_providers_key} keys; currently: "
-                f"{set(self.namespace_priorities)} vs. {all_providers}"
+                f"{namespace_prio_set} vs. {all_providers}"
             )

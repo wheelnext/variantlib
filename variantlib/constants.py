@@ -8,6 +8,7 @@ VARIANT_HASH_LEN = 8
 NULL_VARIANT_LABEL = "null"
 CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
+NAMESPACE_NONE = "none"
 
 # Common variant info keys (used in pyproject.toml and variants.json)
 VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
