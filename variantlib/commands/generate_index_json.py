@@ -4,6 +4,7 @@ import argparse
 import logging
 import pathlib
 import zipfile
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
@@ -23,7 +24,6 @@ def generate_index_json(args: list[str]) -> None:
         prog=f"{__package_name__} generate-index-json",
         description="Generate a JSON index of all package variants",
     )
-
     parser.add_argument(
         "-d",
         "--directory",
@@ -42,7 +42,9 @@ def generate_index_json(args: list[str]) -> None:
         raise NotADirectoryError(f"Directory not found: `{directory}`")
 
     output_files: dict[str, VariantsJson] = {}
-    seen_variants: dict[str, dict[str, list[str]]] = {}
+    seen_variants: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
 
     for wheel in directory.glob("*.whl"):
         # Skip non wheel variants
@@ -107,9 +109,7 @@ def generate_index_json(args: list[str]) -> None:
                     {"wheel": wheel.name, "vlabel": vlabel},
                 )
 
-        seen_variants.setdefault(namever, {}).setdefault(
-            variant_dist_info.variant_desc.hexdigest, []
-        ).append(vlabel)
+        seen_variants[namever][variant_dist_info.variant_desc.hexdigest].add(vlabel)
 
     for namever, variants in seen_variants.items():
         for vhash, labels in variants.items():
