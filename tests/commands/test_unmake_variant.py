@@ -13,9 +13,9 @@ from variantlib.constants import NULL_VARIANT_LABEL
     "filename",
     [
         f"test_package-0-py3-none-any-{NULL_VARIANT_LABEL}.whl",
-        "test_package-0-py3-none-any-5d8be4b9.whl",
-        "test_package-0-py3-none-any-60567bd9.whl",
-        "test_package-0-py3-none-any-fbe82642.whl",
+        "test_package-0-py3-none-any-5d8be4b9857b08d4.whl",
+        "test_package-0-py3-none-any-60567bd9089307ec.whl",
+        "test_package-0-py3-none-any-fbe8264248d394d8.whl",
         "test_package-0-py3-none-any-foo.whl",
         "test_package-0-py3-none-any-bar.whl",
     ],

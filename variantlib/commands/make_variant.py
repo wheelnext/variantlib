@@ -116,7 +116,7 @@ def make_variant(args: list[str]) -> None:
             )
         if not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label):
             parser.error(
-                "invalid variant label (must be up to 8 alphanumeric characters): "
+                "invalid variant label (must be up to 16 alphanumeric characters): "
                 f"{parsed_args.variant_label!r}"
             )
 

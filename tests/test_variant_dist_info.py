@@ -27,12 +27,12 @@ VARIANT_JSON = {
     VARIANT_INFO_PROVIDER_DATA_KEY: {
         "ns": {VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns-pkg"]}
     },
-    VARIANTS_JSON_VARIANT_DATA_KEY: {"bdbc6ca0": {"ns": {"f": ["v"]}}},
+    VARIANTS_JSON_VARIANT_DATA_KEY: {"bdbc6ca0e0adb070": {"ns": {"f": ["v"]}}},
 }
 
 
 @pytest.mark.parametrize("json_type", [str, bytes])
-@pytest.mark.parametrize("expected_label", [None, "bdbc6ca0"])
+@pytest.mark.parametrize("expected_label", [None, "bdbc6ca0e0adb070"])
 def test_variant_dist_info(json_type: type, expected_label: str | None) -> None:
     vjson_str = (
         json.dumps(VARIANT_JSON)
@@ -52,7 +52,7 @@ def test_variant_dist_info(json_type: type, expected_label: str | None) -> None:
 
 @pytest.mark.parametrize("expected_label", [None, "fancy1"])
 def test_variant_dist_info_custom_label(expected_label: str | None) -> None:
-    vjson_str = json.dumps(VARIANT_JSON).replace("bdbc6ca0", "fancy1")
+    vjson_str = json.dumps(VARIANT_JSON).replace("bdbc6ca0e0adb070", "fancy1")
     variant_dist_info = VariantDistInfo(vjson_str, expected_label=expected_label)
     assert variant_dist_info.namespace_priorities == ["ns"]
     assert variant_dist_info.feature_priorities == {}

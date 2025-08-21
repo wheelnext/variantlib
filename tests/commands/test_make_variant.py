@@ -40,22 +40,22 @@ def mocked_plugin_reqs(
         (NULL_VARIANT_LABEL, None),
         # Variant 1
         (
-            "5d8be4b9",
+            "5d8be4b9857b08d4",
             [
                 "installable_plugin::feat1::val1c",
                 "installable_plugin::feat2::val2b",
             ],
         ),
         # Variant 2
-        ("60567bd9", ["installable_plugin::feat1::val1c"]),
-        ("60567bd9", ["installable_plugin :: feat1::val1c"]),
-        ("60567bd9", ["installable_plugin::feat1 :: val1c"]),
-        ("60567bd9", ["installable_plugin :: feat1 :: val1c"]),
+        ("60567bd9089307ec", ["installable_plugin::feat1::val1c"]),
+        ("60567bd9089307ec", ["installable_plugin :: feat1::val1c"]),
+        ("60567bd9089307ec", ["installable_plugin::feat1 :: val1c"]),
+        ("60567bd9089307ec", ["installable_plugin :: feat1 :: val1c"]),
         # Variant 3
-        ("fbe82642", ["installable_plugin::feat2::val2b"]),
-        ("fbe82642", ["installable_plugin :: feat2::val2b"]),
-        ("fbe82642", ["installable_plugin::feat2 :: val2b"]),
-        ("fbe82642", ["installable_plugin :: feat2 :: val2b"]),
+        ("fbe8264248d394d8", ["installable_plugin::feat2::val2b"]),
+        ("fbe8264248d394d8", ["installable_plugin :: feat2::val2b"]),
+        ("fbe8264248d394d8", ["installable_plugin::feat2 :: val2b"]),
+        ("fbe8264248d394d8", ["installable_plugin :: feat2 :: val2b"]),
         # Custom labels
         ("foo", ["installable_plugin::feat1::val1c"]),
         ("bar", ["installable_plugin::feat2::val2b"]),
@@ -86,7 +86,7 @@ def test_make_variant(
             itertools.chain.from_iterable(["-p", vprop] for vprop in properties)
         )
 
-    if len(label) != 8 and label != "null":
+    if label != "null":
         cmd_args.append(f"--variant-label={label}")
 
     main([*cmd_args])
@@ -109,7 +109,7 @@ def test_make_variant(
         ([], "error: one of the arguments -p/--property --null-variant is required"),
         (["--property=x::y"], "argument -p/--property: invalid from_str value"),
         (
-            ["--property=x::y::z", "--variant-label=123456789"],
+            ["--property=x::y::z", "--variant-label=0123456789abcdefg"],
             "error: invalid variant label",
         ),
         (
