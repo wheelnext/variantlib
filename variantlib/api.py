@@ -132,6 +132,7 @@ def validate_variant(
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
+        include_build_plugins=True,
     ) as plugin_loader:
         return plugin_loader.validate_properties(properties=variant_desc.properties)
 

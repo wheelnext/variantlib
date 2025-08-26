@@ -444,3 +444,31 @@ def test_no_plugin_api() -> None:
     )
     assert pyproject_toml.providers["ns"].plugin_api is None
     assert pyproject_toml.providers["ns"].object_reference == "my_plugin"
+
+
+def test_get_package_defined_properties() -> None:
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
+    assert pyproj.get_package_defined_properties() == {
+        "ns1": {
+            "f2": ["p1"],
+        },
+        "ns2": {
+            "f1": ["p2"],
+            "f2": [],
+        },
+    }
+    assert pyproj.get_package_defined_properties({"ns1", "ns2", "ns3"}) == {
+        "ns1": {
+            "f2": ["p1"],
+        },
+        "ns2": {
+            "f1": ["p2"],
+            "f2": [],
+        },
+    }
+    assert pyproj.get_package_defined_properties({"ns1"}) == {
+        "ns1": {
+            "f2": ["p1"],
+        },
+    }
+    assert pyproj.get_package_defined_properties({"ns3"}) == {}

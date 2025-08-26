@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from typing import Any
 
 from packaging.requirements import Requirement
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
@@ -21,6 +21,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
 from variantlib.protocols import VariantFeatureName
@@ -31,20 +32,35 @@ if TYPE_CHECKING:
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
+class PluginUse(StrEnum):
+    NONE = "none"
+    BUILD = "build"
+    INSTALL = "install"
+
+
 @dataclass
 class ProviderInfo:
     plugin_api: str | None = None
     enable_if: str | None = None
     optional: bool = False
+    plugin_use: PluginUse = PluginUse.INSTALL
     requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.plugin_api is None and not self.requires:
-            raise ValidationError("Either plugin-api or requires need to be specified")
+        if (
+            self.plugin_use != PluginUse.NONE
+            and self.plugin_api is None
+            and not self.requires
+        ):
+            raise ValidationError(
+                "Either plugin-api or requires need to be specified when "
+                f"plugin-use != '{PluginUse.NONE}'"
+            )
 
     @property
     def object_reference(self) -> str:
         """Get effective object reference from plugin-api or requires"""
+        assert self.plugin_use != PluginUse.NONE
         if self.plugin_api is not None:
             return self.plugin_api
         # TODO: how far should we normalize it?
@@ -85,13 +101,16 @@ class VariantInfo:
                     enable_if=provider_data.enable_if,
                     optional=provider_data.optional,
                     plugin_api=provider_data.plugin_api,
+                    plugin_use=provider_data.plugin_use,
                 )
                 for namespace, provider_data in self.providers.items()
             },
         }
 
     def get_provider_requires(
-        self, namespaces: set[VariantNamespace] | None = None
+        self,
+        namespaces: set[VariantNamespace] | None = None,
+        include_build_plugins: bool = True,
     ) -> set[str]:
         """
         Get list of requirements for providers in variant info
@@ -105,8 +124,33 @@ class VariantInfo:
 
         requirements = set()
         for namespace in namespaces:
-            requirements.update(self.providers[namespace].requires)
+            provider = self.providers[namespace]
+            if provider.plugin_use == PluginUse.NONE:
+                continue
+            if provider.plugin_use == PluginUse.BUILD and not include_build_plugins:
+                continue
+            requirements.update(provider.requires)
         return requirements
+
+    def get_package_defined_properties(
+        self,
+        namespaces: set[VariantNamespace] | None = None,
+    ) -> dict[VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]]:
+        """
+        Build a tree of properties listed in default-priorities
+
+        If `namespaces` is not None, only properties for given namespaces
+        will be returned. Otherwise, all properties will be returned.
+        """
+
+        return {
+            namespace: {
+                vfeat: self.property_priorities.get(namespace, {}).get(vfeat, [])
+                for vfeat in self.feature_priorities.get(namespace, [])
+            }
+            for namespace in self.namespace_priorities
+            if namespaces is None or namespace in namespaces
+        }
 
     def _process_common(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
@@ -180,18 +224,32 @@ class VariantInfo:
                     ) as provider_enable_if:
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
-                    if provider_plugin_api is None and not provider_requires:
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY, str, None
+                    ) as provider_plugin_use:
+                        if provider_plugin_use is not None:
+                            validator.matches_enum(PluginUse)
+
+                    if (
+                        provider_plugin_use != PluginUse.NONE
+                        and provider_plugin_api is None
+                        and not provider_requires
+                    ):
                         raise ValidationError(
                             f"{validator.key}: either "
                             f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
                             f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
-                            "specified"
+                            f"specified for {VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY}"
+                            f" != '{PluginUse.NONE}'"
                         )
                     self.providers[namespace] = ProviderInfo(
                         requires=list(provider_requires),
                         enable_if=provider_enable_if,
                         optional=provider_optional,
                         plugin_api=provider_plugin_api,
+                        plugin_use=provider_plugin_use
+                        if provider_plugin_use is not None
+                        else PluginUse.INSTALL,
                     )
 
         all_providers = set(self.providers.keys())

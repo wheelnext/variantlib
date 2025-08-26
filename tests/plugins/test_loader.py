@@ -538,7 +538,7 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
 @pytest.mark.parametrize(
     "loader_call",
     [
-        partial(PluginLoader, VariantInfo()),
+        partial(PluginLoader, VariantInfo(), include_build_plugins=True),
         partial(ListPluginLoader, []),
     ],
 )

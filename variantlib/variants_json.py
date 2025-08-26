@@ -17,6 +17,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
@@ -25,6 +26,7 @@ from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
@@ -67,6 +69,8 @@ class VariantsJson(VariantInfo):
             yield (VARIANT_INFO_PROVIDER_OPTIONAL_KEY, provider_info.optional)
         if provider_info.plugin_api is not None:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
+        if provider_info.plugin_use != PluginUse.INSTALL:
+            yield (VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY, provider_info.plugin_use)
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
         yield (VARIANT_INFO_NAMESPACE_KEY, self.namespace_priorities)
