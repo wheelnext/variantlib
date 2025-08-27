@@ -10,8 +10,8 @@ from hypothesis import strategies as st
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.errors import ValidationError
+from variantlib.models.variant import VARIANT_HASH_LENGTH
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 
@@ -237,7 +237,7 @@ def test_variantprop_sorting() -> None:
 def test_null_variant() -> None:
     vdesc = VariantDescription()
     assert vdesc.properties == []
-    assert vdesc.hexdigest == hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LEN]
+    assert vdesc.hexdigest == hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LENGTH]
 
 
 def test_variantdescription_initialization() -> None:
@@ -327,7 +327,7 @@ def test_variantdescription_hexdigest() -> None:
         b"omnicorp :: custom_feat :: secret_value\n"
         b"tyrell_corporation :: client_id :: secret_pass\n"
     )
-    expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LEN]
+    expected_hexdigest = hash_object.hexdigest()[:VARIANT_HASH_LENGTH]
 
     assert vdesc.hexdigest == expected_hexdigest
 
@@ -473,4 +473,4 @@ def test_fuzzy_variantdescription(vprop: list[VariantProperty]) -> None:
 )
 def test_random_hexdigest(vdesc: VariantDescription) -> None:
     assert isinstance(vdesc.hexdigest, str)
-    assert len(vdesc.hexdigest) == VARIANT_HASH_LEN
+    assert len(vdesc.hexdigest) == VARIANT_HASH_LENGTH

@@ -43,6 +43,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -567,7 +568,8 @@ def test_make_variant_dist_info_invalid_label():
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
+            f"Invalid variant label: 'foo/bar' (must be up to {VARIANT_LABEL_LENGTH} "
+            "alphanumeric characters)"
         ),
     ):
         make_variant_dist_info(
@@ -577,13 +579,13 @@ def test_make_variant_dist_info_invalid_label():
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
-            "characters)"
+            "Invalid variant label: '12345678901234567' (must be up to "
+            f"{VARIANT_LABEL_LENGTH} alphanumeric characters)"
         ),
     ):
         make_variant_dist_info(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            variant_label="123456789",
+            variant_label="12345678901234567",
         )
 
 
@@ -645,7 +647,8 @@ def test_get_variant_label() -> None:
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
+            f"Invalid variant label: 'foo/bar' (must be up to {VARIANT_LABEL_LENGTH} "
+            "alphanumeric characters)"
         ),
     ):
         get_variant_label(
@@ -655,11 +658,11 @@ def test_get_variant_label() -> None:
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
-            "characters)"
+            "Invalid variant label: '12345678901234567' (must be up to "
+            f"{VARIANT_LABEL_LENGTH} alphanumeric characters)"
         ),
     ):
         get_variant_label(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            "123456789",
+            "12345678901234567",
         )

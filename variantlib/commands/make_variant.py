@@ -21,6 +21,7 @@ from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
+from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.errors import ValidationError
 from variantlib.pyproject_toml import VariantPyProjectToml
 
@@ -116,8 +117,8 @@ def make_variant(args: list[str]) -> None:
             )
         if not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(parsed_args.variant_label):
             parser.error(
-                "invalid variant label (must be up to 8 alphanumeric characters): "
-                f"{parsed_args.variant_label!r}"
+                f"invalid variant label (must be up to {VARIANT_LABEL_LENGTH} "
+                "alphanumeric characters): {parsed_args.variant_label!r}"
             )
 
     try:
