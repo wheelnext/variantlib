@@ -26,7 +26,7 @@ def test_generate_index_json(
     filenames = [
         "test_package-0-py3-none-any.whl",
         f"test_package-0-py3-none-any-{NULL_VARIANT_LABEL}.whl",
-        "test_package-0-py3-none-any-5d8be4b9857b08d4.whl",
+        "test_package-0-py3-none-any-5d8be4b9.whl",
     ]
     artifact_dir = Path("tests/artifacts/test-package/dist")
     for filename in filenames:
@@ -52,7 +52,7 @@ def test_generate_index_json(
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             NULL_VARIANT_LABEL: {},
-            "5d8be4b9857b08d4": {
+            "5d8be4b9": {
                 "installable_plugin": {
                     "feat1": ["val1c"],
                     "feat2": ["val2b"],
@@ -67,7 +67,7 @@ def test_duplicate_descriptions(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     filenames = [
-        "test_package-0-py3-none-any-60567bd9089307ec.whl",
+        "test_package-0-py3-none-any-60567bd9.whl",
         "test_package-0-py3-none-any-foo.whl",
     ]
     artifact_dir = Path("tests/artifacts/test-package/dist")
@@ -77,6 +77,5 @@ def test_duplicate_descriptions(
     main(["generate-index-json", "-d", str(tmp_path)])
     assert (
         "Multiple `test_package-0` wheels share the same variant properties: "
-        "all of ['60567bd9089307ec', 'foo'] correspond to variant hash "
-        "`60567bd9089307ec`"
+        "all of ['60567bd9', 'foo'] correspond to variant hash `60567bd9`"
     ) in caplog.text

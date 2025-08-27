@@ -14,7 +14,7 @@ from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_LABEL_LENGTH
+from variantlib.constants import VARIANT_HASH_LEN
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
@@ -209,7 +209,7 @@ class VariantDescription(BaseModel):
         # length, containing only hexadecimal digits. This may be used to exchange the
         # value safely in email or other non-binary environments.
         # Source: https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest
-        return hash_object.hexdigest()[:VARIANT_LABEL_LENGTH]
+        return hash_object.hexdigest()[:VARIANT_HASH_LEN]
 
     @classmethod
     def deserialize(cls, properties: list[dict[str, str]]) -> Self:

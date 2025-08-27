@@ -339,8 +339,8 @@ def test_to_str() -> None:
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "b3b0305cd025bb71": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
-            "9177ff3ff8848245": {"ns2": {"f2": ["v2"]}},
+            "b3b0305c": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
+            "9177ff3f": {"ns2": {"f2": ["v2"]}},
         },
     }
 

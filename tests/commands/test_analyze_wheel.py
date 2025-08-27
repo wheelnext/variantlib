@@ -55,13 +55,13 @@ def test_analyze_wheel_variant(
         [
             "analyze-wheel",
             "-i",
-            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-5d8be4b9857b08d4.whl",
+            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-5d8be4b9.whl",
         ]
     )
     assert (
         capsys.readouterr().out
         == """\
-############################## Variant: `5d8be4b9857b08d4` #############################
+############################## Variant: `5d8be4b9` #############################
 installable_plugin :: feat1 :: val1c
 installable_plugin :: feat2 :: val2b
 ################################################################################
@@ -83,7 +83,7 @@ def test_analyze_wheel_variant_custom_label(
     assert (
         capsys.readouterr().out
         == """\
-############################## Variant: `60567bd9089307ec` #############################
+############################## Variant: `60567bd9` #############################
 installable_plugin :: feat1 :: val1c
 ################################################################################
 """

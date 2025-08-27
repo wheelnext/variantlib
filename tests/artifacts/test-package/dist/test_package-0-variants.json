@@ -1,0 +1,63 @@
+{
+    "$schema": "https://variants-schema.wheelnext.dev/",
+    "default-priorities": {
+        "namespace": [
+            "installable_plugin",
+            "non_existing_plugin"
+        ]
+    },
+    "providers": {
+        "installable_plugin": {
+            "requires": [
+                "test-plugin-package"
+            ]
+        },
+        "non_existing_plugin": {
+            "optional": true,
+            "requires": [
+                "do-not-install-me"
+            ]
+        }
+    },
+    "variants": {
+        "null": {},
+        "5d8be4b9": {
+            "installable_plugin": {
+                "feat1": [
+                    "val1c"
+                ],
+                "feat2": [
+                    "val2b"
+                ]
+            }
+        },
+        "60567bd9": {
+            "installable_plugin": {
+                "feat1": [
+                    "val1c"
+                ]
+            }
+        },
+        "bar": {
+            "installable_plugin": {
+                "feat2": [
+                    "val2b"
+                ]
+            }
+        },
+        "fbe82642": {
+            "installable_plugin": {
+                "feat2": [
+                    "val2b"
+                ]
+            }
+        },
+        "foo": {
+            "installable_plugin": {
+                "feat1": [
+                    "val1c"
+                ]
+            }
+        }
+    }
+}

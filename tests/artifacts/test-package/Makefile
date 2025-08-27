@@ -46,3 +46,5 @@ build: clean ## builds source and wheel package
 	flit build --format wheel \
 		-p "installable_plugin :: feat2 :: val2b" \
 		--variant-label=bar
+
+	variantlib generate-index-json -d dist/

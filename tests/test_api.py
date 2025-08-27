@@ -364,7 +364,7 @@ def test_make_variant_dist_info(
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {},
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            label if label else "67fcaf3822d7fa3f": {
+            label if label else "67fcaf38": {
                 "ns1": {
                     "f1": ["p1"],
                     "f2": ["p2"],
@@ -567,8 +567,7 @@ def test_make_variant_dist_info_invalid_label():
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: 'foo/bar' (must be up to 16 alphanumeric "
-            "characters)"
+            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
         ),
     ):
         make_variant_dist_info(
@@ -578,13 +577,13 @@ def test_make_variant_dist_info_invalid_label():
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: '0123456789abcdefg' (must be up to 16 alphanumeric "
+            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
             "characters)"
         ),
     ):
         make_variant_dist_info(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            variant_label="0123456789abcdefg",
+            variant_label="123456789",
         )
 
 
@@ -597,7 +596,7 @@ def test_get_variant_label() -> None:
 
     assert (
         get_variant_label(VariantDescription([VariantProperty("a", "b", "c")]))
-        == "01a9783a675c61b7"
+        == "01a9783a"
     )
     assert (
         get_variant_label(
@@ -605,7 +604,7 @@ def test_get_variant_label() -> None:
                 [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")]
             )
         )
-        == "eb9a66a78027e823"
+        == "eb9a66a7"
     )
     assert (
         get_variant_label(
@@ -613,7 +612,7 @@ def test_get_variant_label() -> None:
                 [VariantProperty("d", "e", "f"), VariantProperty("a", "b", "c")]
             )
         )
-        == "eb9a66a78027e823"
+        == "eb9a66a7"
     )
 
     assert (
@@ -646,8 +645,7 @@ def test_get_variant_label() -> None:
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: 'foo/bar' (must be up to 16 alphanumeric "
-            "characters)"
+            "Invalid variant label: 'foo/bar' (must be up to 8 alphanumeric characters)"
         ),
     ):
         get_variant_label(
@@ -657,11 +655,11 @@ def test_get_variant_label() -> None:
     with pytest.raises(
         ValidationError,
         match=re.escape(
-            "Invalid variant label: '0123456789abcdefg' (must be up to 16 alphanumeric "
+            "Invalid variant label: '123456789' (must be up to 8 alphanumeric "
             "characters)"
         ),
     ):
         get_variant_label(
             VariantDescription([VariantProperty("a", "b", "c")]),
-            "0123456789abcdefg",
+            "123456789",
         )

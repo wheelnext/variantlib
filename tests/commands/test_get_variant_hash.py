@@ -6,18 +6,18 @@ from itertools import chain
 import pytest
 
 from variantlib.commands.main import main
-from variantlib.constants import VARIANT_LABEL_LENGTH
+from variantlib.constants import VARIANT_HASH_LEN
 
 
 @pytest.mark.parametrize(
     ("properties", "expected"),
     [
-        ([], hashlib.sha256(b"").hexdigest()[:VARIANT_LABEL_LENGTH]),
-        (["a::b::c"], "01a9783a675c61b7"),
-        (["d::e::f"], "41665eeed4205577"),
-        (["a::b::c", "d::e::f"], "eb9a66a78027e823"),
-        (["d::e::f", "a::b::c"], "eb9a66a78027e823"),
-        (["a::b::c", "d::e::f", "a::c::b"], "1e9328d51fa75de2"),
+        ([], hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LEN]),
+        (["a::b::c"], "01a9783a"),
+        (["d::e::f"], "41665eee"),
+        (["a::b::c", "d::e::f"], "eb9a66a7"),
+        (["d::e::f", "a::b::c"], "eb9a66a7"),
+        (["a::b::c", "d::e::f", "a::c::b"], "1e9328d5"),
     ],
 )
 def test_get_variant_hash(
