@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
-from enum import StrEnum
+from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -32,7 +32,9 @@ if TYPE_CHECKING:
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
-class PluginUse(StrEnum):
+class PluginUse(str, Enum):
+    __str__ = str.__str__
+
     NONE = "none"
     BUILD = "build"
     INSTALL = "install"
