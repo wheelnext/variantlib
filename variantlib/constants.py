@@ -115,6 +115,7 @@ ProviderPluginJsonDict = TypedDict(
         "requires": list[str],
         "enable-if": str,
         "optional": bool,
+        "plugin-use": Literal["build", "install", "none"],
     },
     total=False,
 )

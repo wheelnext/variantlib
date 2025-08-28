@@ -45,7 +45,7 @@ class KeyTrackingValidator:
     def matches_enum(self, enum: type[Enum]) -> None:
         if self._data[-1] not in enum:
             raise ValidationError(
-                f"{self.key}: expected one of {list(enum.__members__.keys())}, "
+                f"{self.key}: Expected one of {list(enum.__members__.keys())}, "
                 f"got {self._data[-1]}"
             )
 

@@ -14,8 +14,10 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
+from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
@@ -47,6 +49,7 @@ version = "1.2.3"
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns1_provider.plugin:NS1Plugin"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns2]
+{VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY} = "build"
 {VARIANT_INFO_PROVIDER_REQUIRES_KEY} = [
     "ns2_provider; python_version >= '3.11'",
     "old_ns2_provider; python_version < '3.11'",
@@ -89,6 +92,7 @@ def test_pyproject_toml() -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
+            plugin_use=PluginUse.BUILD,
         ),
     }
 
@@ -111,6 +115,7 @@ def test_pyproject_toml_minimal() -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
+            plugin_use=PluginUse.BUILD,
         ),
     }
 
@@ -278,6 +283,23 @@ def test_invalid_provider_plugin_api() -> None:
         )
 
 
+def test_invalid_provider_plugin_use() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
+        rf"{VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY}: Expected one of ",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: "foo"}
+                    }
+                }
+            }
+        )
+
+
 def test_missing_provider_plugin_api() -> None:
     with pytest.raises(
         ValidationError,
@@ -401,6 +423,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
+            plugin_use=PluginUse.BUILD,
         ),
     }
 

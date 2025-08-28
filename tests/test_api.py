@@ -42,6 +42,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -390,6 +391,7 @@ def test_make_variant_dist_info(
                     ],
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
                     VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
+                    VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: "build",
                 },
             }
         )
@@ -431,6 +433,7 @@ def test_make_variant_dist_info(
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
+                expand_build_plugin_properties=False,
             )
         )
         == expected
