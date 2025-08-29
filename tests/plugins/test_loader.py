@@ -20,6 +20,7 @@ from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
@@ -580,3 +581,140 @@ def test_filter_plugins(value: list[VariantNamespace]) -> None:
     expected_namespaces.discard("frobnicate")
     with PluginLoader(variant_info, filter_plugins=value) as loader:
         assert set(loader.namespaces) == expected_namespaces
+
+
+@pytest.mark.parametrize("include_build_plugins", [False, True])
+def test_package_defined_properties(include_build_plugins: bool) -> None:
+    variant_info = VariantInfo(
+        namespace_priorities=[
+            "test_namespace",
+            "second_namespace",
+            "private",
+        ],
+        feature_priorities={
+            "test_namespace": ["foo"],
+            "second_namespace": ["bar"],
+            "private": ["baz"],
+        },
+        property_priorities={
+            "test_namespace": {
+                "foo": ["v1", "v2"],
+                "bar": ["v3", "v4"],
+                "baz": ["v5", "v6"],
+            },
+            "second_namespace": {
+                "foo": ["v1", "v2"],
+                "bar": ["v3", "v4"],
+                "baz": ["v5", "v6"],
+            },
+            "private": {
+                "foo": ["v1", "v2"],
+                "bar": ["v3", "v4"],
+                "baz": ["v5", "v6"],
+            },
+        },
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginA"
+            ),
+            "second_namespace": ProviderInfo(
+                plugin_api="tests.mocked_plugins:MockedPluginB",
+                plugin_use=PluginUse.BUILD,
+            ),
+            "private": ProviderInfo(
+                plugin_api="ignored",
+                plugin_use=PluginUse.NONE,
+                requires=["ignored"],
+            ),
+        },
+    )
+
+    namespaces = {"test_namespace"}
+    configs = {
+        "test_namespace": ProviderConfig(
+            namespace="test_namespace",
+            configs=[
+                VariantFeatureConfig(
+                    name="name1",
+                    values=[
+                        "val1a",
+                        "val1b",
+                    ],
+                ),
+                VariantFeatureConfig(
+                    name="name2",
+                    values=[
+                        "val2a",
+                        "val2b",
+                        "val2c",
+                    ],
+                ),
+            ],
+        ),
+        "second_namespace": ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig(
+                    name="bar",
+                    values=[
+                        "v3",
+                        "v4",
+                    ],
+                ),
+            ],
+        ),
+        "private": ProviderConfig(
+            namespace="private",
+            configs=[
+                VariantFeatureConfig(
+                    name="baz",
+                    values=[
+                        "v5",
+                        "v6",
+                    ],
+                ),
+            ],
+        ),
+    }
+    expected_validated: dict[VariantProperty, bool | None] = {
+        VariantProperty("test_namespace", "name1", "val1a"): True,
+        VariantProperty("test_namespace", "foo", "v1"): False,
+        VariantProperty("test_namespace", "bar", "v3"): False,
+        VariantProperty("test_namespace", "baz", "v6"): False,
+        VariantProperty("second_namespace", "name3", "val3b"): True,
+        VariantProperty("second_namespace", "foo", "v1"): False,
+        VariantProperty("second_namespace", "bar", "v3"): False,
+        VariantProperty("second_namespace", "baz", "v6"): False,
+        VariantProperty("private", "foo", "v1"): False,
+        VariantProperty("private", "bar", "v3"): False,
+        VariantProperty("private", "baz", "v6"): True,
+    }
+
+    if include_build_plugins:
+        namespaces.add("second_namespace")
+        # Note: technically a plugin returning a different value is not a valid use.
+        # However, here it is used to verify that the correct code path is used.
+        configs["second_namespace"] = ProviderConfig(
+            namespace="second_namespace",
+            configs=[
+                VariantFeatureConfig(
+                    name="name3",
+                    values=[
+                        "val3a",
+                    ],
+                ),
+            ],
+        )
+
+    with PluginLoader(
+        variant_info, include_build_plugins=include_build_plugins
+    ) as loader:
+        assert set(loader.namespaces) == namespaces
+        assert loader.get_supported_configs() == configs
+        if include_build_plugins:
+            assert loader.validate_properties(
+                expected_validated.keys()
+            ) == VariantValidationResult(expected_validated)
+        else:
+            with pytest.raises(AssertionError):
+                loader.validate_properties([])

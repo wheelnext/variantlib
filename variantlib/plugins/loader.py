@@ -263,7 +263,7 @@ class BasePluginLoader:
                 {
                     "validate_properties": {
                         "properties": [
-                            dataclasses.asdict(vprop) for vprop in properties
+                            dataclasses.asdict(vprop) for vprop in plugin_properties
                         ]
                     }
                 },
