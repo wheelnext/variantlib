@@ -672,9 +672,7 @@ def test_get_variant_label() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "plugin_use", [PluginUse.BUILD, PluginUse.INSTALL, PluginUse.NONE]
-)
+@pytest.mark.parametrize("plugin_use", PluginUse.__members__.values())
 def test_make_variant_dist_info_expand_build_plugin_properties(
     plugin_use: PluginUse,
 ) -> None:

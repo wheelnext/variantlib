@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
@@ -300,19 +301,32 @@ def test_invalid_provider_plugin_use() -> None:
         )
 
 
-def test_missing_provider_plugin_api() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
-        rf"either {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
-        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
-    ):
+@pytest.mark.parametrize("plugin_use", PluginUse.__members__.values())
+def test_missing_provider_plugin_api(plugin_use: PluginUse) -> None:
+    expected = (
+        pytest.raises(
+            ValidationError,
+            match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+            rf"either {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
+            rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
+        )
+        if plugin_use != PluginUse.NONE
+        else nullcontext()
+    )
+
+    with expected:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_INFO_PROVIDER_REQUIRES_KEY: []}
-                    }
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
+                            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: str(plugin_use),
+                        }
+                    },
                 }
             }
         )
