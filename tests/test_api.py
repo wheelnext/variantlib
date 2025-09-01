@@ -304,51 +304,57 @@ def test_validate_variant(optional: bool) -> None:
             "test_namespace",
             "second_namespace",
             "incompatible_namespace",
+            "private",
         ],
+        feature_priorities={
+            "private": ["build_type"],
+        },
+        property_priorities={"private": {"build_type": ["debug", "release"]}},
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginA",
+                optional=optional,
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginB",
+                optional=optional,
+                plugin_use=PluginUse.BUILD,
             ),
             "incompatible_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginC", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginC",
+                optional=optional,
+            ),
+            "private": ProviderInfo(
+                plugin_api="donotuseme",
+                requires=["donotuseme"],
+                optional=optional,
+                plugin_use=PluginUse.NONE,
             ),
         },
     )
 
+    expected = {
+        VariantProperty("test_namespace", "name1", "val1d"): True,
+        VariantProperty("test_namespace", "name2", "val2d"): False,
+        VariantProperty("test_namespace", "name3", "val3a"): False,
+        VariantProperty("second_namespace", "name3", "val3a"): True,
+        VariantProperty("incompatible_namespace", "flag1", "on"): True,
+        VariantProperty("incompatible_namespace", "flag2", "off"): False,
+        VariantProperty("incompatible_namespace", "flag5", "on"): False,
+        VariantProperty("missing_namespace", "name", "val"): None,
+        VariantProperty("private", "build_type", "debug"): True,
+        VariantProperty("private", "build_type", "minsizerel"): False,
+        VariantProperty("private", "build_type", "release"): True,
+        VariantProperty("private", "cow", "moo"): False,
+    }
+
     # Verify whether the variant properties are valid
     res = validate_variant(
-        VariantDescription(
-            [
-                VariantProperty("test_namespace", "name1", "val1d"),
-                VariantProperty("test_namespace", "name2", "val2d"),
-                VariantProperty("test_namespace", "name3", "val3a"),
-                VariantProperty("second_namespace", "name3", "val3a"),
-                VariantProperty("incompatible_namespace", "flag1", "on"),
-                VariantProperty("incompatible_namespace", "flag2", "off"),
-                VariantProperty("incompatible_namespace", "flag5", "on"),
-                VariantProperty("missing_namespace", "name", "val"),
-                VariantProperty("private", "build_type", "debug"),
-            ]
-        ),
+        VariantDescription(list(expected.keys())),
         variant_info=variant_info,
     )
 
-    assert res == VariantValidationResult(
-        {
-            VariantProperty("test_namespace", "name1", "val1d"): True,
-            VariantProperty("test_namespace", "name2", "val2d"): False,
-            VariantProperty("test_namespace", "name3", "val3a"): False,
-            VariantProperty("second_namespace", "name3", "val3a"): True,
-            VariantProperty("incompatible_namespace", "flag1", "on"): True,
-            VariantProperty("incompatible_namespace", "flag2", "off"): False,
-            VariantProperty("incompatible_namespace", "flag5", "on"): False,
-            VariantProperty("missing_namespace", "name", "val"): None,
-            VariantProperty("private", "build_type", "debug"): None,
-        }
-    )
+    assert res == VariantValidationResult(expected)
     assert not res.is_valid()
 
 
