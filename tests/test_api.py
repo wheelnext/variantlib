@@ -298,7 +298,7 @@ def test_validation_result_properties() -> None:
 
 
 @pytest.mark.parametrize("optional", [False, True])
-def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None:
+def test_validate_variant(optional: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",

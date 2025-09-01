@@ -23,27 +23,22 @@ settings.load_profile(
 )
 
 
-@pytest.fixture(scope="session")
-def mocked_plugin_apis() -> list[str]:
-    return [
-        "tests.mocked_plugins:MockedPluginA",
-        "tests.mocked_plugins:MockedPluginB",
-        "tests.mocked_plugins:MockedPluginC",
-    ]
+MOCKED_PLUGIN_APIS = [
+    "tests.mocked_plugins:MockedPluginA",
+    "tests.mocked_plugins:MockedPluginB",
+    "tests.mocked_plugins:MockedPluginC",
+]
 
 
 @pytest.fixture(scope="session")
-def mocked_plugin_loader(
-    mocked_plugin_apis: list[str],
-) -> Generator[BasePluginLoader]:
-    with ListPluginLoader(mocked_plugin_apis) as loader:
+def mocked_plugin_loader() -> Generator[BasePluginLoader]:
+    with ListPluginLoader(MOCKED_PLUGIN_APIS) as loader:
         yield loader
 
 
 @pytest.fixture
 def mocked_entry_points(
     mocker: MockerFixture,
-    mocked_plugin_apis: list[str],
 ) -> None:
     mocker.patch("variantlib.plugins.loader.entry_points")().select.return_value = [
         MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
