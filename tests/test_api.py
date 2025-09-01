@@ -742,3 +742,34 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
         )
         == expected
     )
+
+
+def test_make_variant_dist_info_invalid_build_plugin() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("test_namespace", "name1", "val1d"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MockedPluginA"
+    vinfo = VariantInfo(
+        namespace_priorities=["test_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api=plugin_api,
+                optional=True,
+                plugin_use=PluginUse.BUILD,
+            )
+        },
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Property 'test_namespace :: name1 :: val1d' is not installable "
+        r"according to the respective provider plugin; is plugin-use == 'build' valid "
+        "for this plugin?",
+    ):
+        make_variant_dist_info(
+            vdesc,
+            variant_info=vinfo,
+            expand_build_plugin_properties=True,
+        )

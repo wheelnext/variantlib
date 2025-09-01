@@ -195,6 +195,7 @@ def make_variant_dist_info(
                 configs = plugin_loader.get_supported_configs(
                     known_properties=vdesc.properties
                 ).values()
+
             for config in configs:
                 if config.namespace not in build_namespaces:
                     continue
@@ -210,6 +211,26 @@ def make_variant_dist_info(
                     for value in vfeat.values:
                         if value not in prop_prios:
                             prop_prios.append(value)
+
+        # Validate that we did not end up using an unsupported property.
+        # This could happen in two cases:
+        # 1. validate_variant() was not called.
+        # 2. The plugin's get_supported_configs() does not match its
+        #    validate_property() behavior.
+        # Both are invalid, therefore we just raise an exception.
+        for vprop in vdesc.properties:
+            if vprop.namespace not in build_namespaces:
+                continue
+            if (
+                vprop.feature not in variant_json.feature_priorities[vprop.namespace]
+                or vprop.value
+                not in variant_json.property_priorities[vprop.namespace][vprop.feature]
+            ):
+                raise ValidationError(
+                    f"Property {vprop.to_str()!r} is not installable according to the "
+                    "respective provider plugin; is plugin-use == 'build' valid for "
+                    "this plugin?"
+                )
 
     return variant_json.to_str()
 
