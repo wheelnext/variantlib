@@ -37,7 +37,7 @@ class PluginUse(str, Enum):
 
     NONE = "none"
     BUILD = "build"
-    INSTALL = "install"
+    ALL = "all"
 
 
 @dataclass
@@ -45,7 +45,7 @@ class ProviderInfo:
     plugin_api: str | None = None
     enable_if: str | None = None
     optional: bool = False
-    plugin_use: PluginUse = PluginUse.INSTALL
+    plugin_use: PluginUse = PluginUse.ALL
     requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -251,7 +251,7 @@ class VariantInfo:
                         plugin_api=provider_plugin_api,
                         plugin_use=provider_plugin_use
                         if provider_plugin_use is not None
-                        else PluginUse.INSTALL,
+                        else PluginUse.ALL,
                     )
 
         all_providers = set(self.providers.keys())

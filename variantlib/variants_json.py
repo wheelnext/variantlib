@@ -69,7 +69,7 @@ class VariantsJson(VariantInfo):
             yield (VARIANT_INFO_PROVIDER_OPTIONAL_KEY, provider_info.optional)
         if provider_info.plugin_api is not None:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
-        if provider_info.plugin_use != PluginUse.INSTALL:
+        if provider_info.plugin_use != PluginUse.ALL:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY, provider_info.plugin_use)
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
