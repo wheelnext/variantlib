@@ -18,6 +18,7 @@ VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
 VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: Literal["optional"] = "optional"
 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
+VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: Literal["plugin-use"] = "plugin-use"
 VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
@@ -114,6 +115,7 @@ ProviderPluginJsonDict = TypedDict(
         "requires": list[str],
         "enable-if": str,
         "optional": bool,
+        "plugin-use": Literal["build", "install", "none"],
     },
     total=False,
 )

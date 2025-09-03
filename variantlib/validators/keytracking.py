@@ -11,6 +11,7 @@ from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
     import re
+    from enum import Enum
 
 
 class KeyTrackingValidator:
@@ -40,6 +41,13 @@ class KeyTrackingValidator:
 
     def list_matches_re(self, pattern: str | re.Pattern[str]) -> None:
         return validate_list_matches_re(self._data[-1], pattern, self.key)
+
+    def matches_enum(self, enum: type[Enum]) -> None:
+        if self._data[-1] not in enum.__members__.values():
+            raise ValidationError(
+                f"{self.key}: Expected one of {list(enum.__members__.values())}, "
+                f"got {self._data[-1]}"
+            )
 
     @contextmanager
     def get(

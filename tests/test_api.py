@@ -42,6 +42,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -52,6 +53,7 @@ from variantlib.errors import ValidationError
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
+from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -296,57 +298,63 @@ def test_validation_result_properties() -> None:
 
 
 @pytest.mark.parametrize("optional", [False, True])
-def test_validate_variant(mocked_plugin_apis: list[str], optional: bool) -> None:
+def test_validate_variant(optional: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
             "second_namespace",
             "incompatible_namespace",
+            "private",
         ],
+        feature_priorities={
+            "private": ["build_type"],
+        },
+        property_priorities={"private": {"build_type": ["debug", "release"]}},
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginA",
+                optional=optional,
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginB",
+                optional=optional,
+                plugin_use=PluginUse.BUILD,
             ),
             "incompatible_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginC", optional=optional
+                plugin_api="tests.mocked_plugins:MockedPluginC",
+                optional=optional,
+            ),
+            "private": ProviderInfo(
+                plugin_api="donotuseme",
+                requires=["donotuseme"],
+                optional=optional,
+                plugin_use=PluginUse.NONE,
             ),
         },
     )
 
+    expected = {
+        VariantProperty("test_namespace", "name1", "val1d"): True,
+        VariantProperty("test_namespace", "name2", "val2d"): False,
+        VariantProperty("test_namespace", "name3", "val3a"): False,
+        VariantProperty("second_namespace", "name3", "val3a"): True,
+        VariantProperty("incompatible_namespace", "flag1", "on"): True,
+        VariantProperty("incompatible_namespace", "flag2", "off"): False,
+        VariantProperty("incompatible_namespace", "flag5", "on"): False,
+        VariantProperty("missing_namespace", "name", "val"): None,
+        VariantProperty("private", "build_type", "debug"): True,
+        VariantProperty("private", "build_type", "minsizerel"): False,
+        VariantProperty("private", "build_type", "release"): True,
+        VariantProperty("private", "cow", "moo"): False,
+    }
+
     # Verify whether the variant properties are valid
     res = validate_variant(
-        VariantDescription(
-            [
-                VariantProperty("test_namespace", "name1", "val1d"),
-                VariantProperty("test_namespace", "name2", "val2d"),
-                VariantProperty("test_namespace", "name3", "val3a"),
-                VariantProperty("second_namespace", "name3", "val3a"),
-                VariantProperty("incompatible_namespace", "flag1", "on"),
-                VariantProperty("incompatible_namespace", "flag2", "off"),
-                VariantProperty("incompatible_namespace", "flag5", "on"),
-                VariantProperty("missing_namespace", "name", "val"),
-                VariantProperty("private", "build_type", "debug"),
-            ]
-        ),
+        VariantDescription(list(expected.keys())),
         variant_info=variant_info,
     )
 
-    assert res == VariantValidationResult(
-        {
-            VariantProperty("test_namespace", "name1", "val1d"): True,
-            VariantProperty("test_namespace", "name2", "val2d"): False,
-            VariantProperty("test_namespace", "name3", "val3a"): False,
-            VariantProperty("second_namespace", "name3", "val3a"): True,
-            VariantProperty("incompatible_namespace", "flag1", "on"): True,
-            VariantProperty("incompatible_namespace", "flag2", "off"): False,
-            VariantProperty("incompatible_namespace", "flag5", "on"): False,
-            VariantProperty("missing_namespace", "name", "val"): None,
-            VariantProperty("private", "build_type", "debug"): None,
-        }
-    )
+    assert res == VariantValidationResult(expected)
     assert not res.is_valid()
 
 
@@ -390,6 +398,7 @@ def test_make_variant_dist_info(
                     ],
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
                     VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
+                    VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: "build",
                 },
             }
         )
@@ -431,6 +440,7 @@ def test_make_variant_dist_info(
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
+                expand_build_plugin_properties=False,
             )
         )
         == expected
@@ -665,4 +675,107 @@ def test_get_variant_label() -> None:
         get_variant_label(
             VariantDescription([VariantProperty("a", "b", "c")]),
             "12345678901234567",
+        )
+
+
+@pytest.mark.parametrize("plugin_use", PluginUse.__members__.values())
+def test_make_variant_dist_info_expand_build_plugin_properties(
+    plugin_use: PluginUse,
+) -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("test_namespace", "name1", "val1a"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MockedPluginA"
+    vinfo = VariantInfo(
+        namespace_priorities=["test_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api=plugin_api,
+                optional=True,
+                plugin_use=plugin_use,
+            )
+        },
+    )
+
+    expected: VariantsJsonDict = {
+        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: ["test_namespace"],
+        },
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
+            "test_namespace": {
+                VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
+            },
+        },
+        VARIANTS_JSON_VARIANT_DATA_KEY: {
+            "test": {
+                "test_namespace": {
+                    "name1": ["val1a"],
+                }
+            },
+        },
+    }
+
+    if plugin_use == PluginUse.NONE:
+        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
+            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
+        ] = "none"
+    if plugin_use == PluginUse.BUILD:
+        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
+            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
+        ] = "build"
+        expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
+            "test_namespace": ["name1", "name2"],
+        }
+        expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY] = {
+            "test_namespace": {
+                "name1": ["val1a", "val1b"],
+                "name2": ["val2a", "val2b", "val2c"],
+            },
+        }
+
+    assert (
+        json.loads(
+            make_variant_dist_info(
+                vdesc,
+                variant_info=vinfo,
+                variant_label="test",
+                expand_build_plugin_properties=True,
+            )
+        )
+        == expected
+    )
+
+
+def test_make_variant_dist_info_invalid_build_plugin() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("test_namespace", "name1", "val1d"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MockedPluginA"
+    vinfo = VariantInfo(
+        namespace_priorities=["test_namespace"],
+        providers={
+            "test_namespace": ProviderInfo(
+                plugin_api=plugin_api,
+                optional=True,
+                plugin_use=PluginUse.BUILD,
+            )
+        },
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Property 'test_namespace :: name1 :: val1d' is not installable "
+        r"according to the respective provider plugin; is plugin-use == 'build' valid "
+        "for this plugin?",
+    ):
+        make_variant_dist_info(
+            vdesc,
+            variant_info=vinfo,
+            expand_build_plugin_properties=True,
         )

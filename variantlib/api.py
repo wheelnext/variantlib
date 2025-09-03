@@ -18,6 +18,7 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
+from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
@@ -132,6 +133,7 @@ def validate_variant(
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
+        include_build_plugins=True,
     ) as plugin_loader:
         return plugin_loader.validate_properties(properties=variant_desc.properties)
 
@@ -140,8 +142,25 @@ def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_info: VariantInfo | None = None,
     variant_label: str | None = None,
+    expand_build_plugin_properties: bool = True,
+    venv_python_executable: str | pathlib.Path | None = None,
 ) -> str:
-    """Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)"""
+    """
+    Return the data for *.dist-info/{VARIANT_DIST_INFO_FILENAME} (as str)
+
+    vdesc provides the description for the current variant.
+
+    variant_info provides the common variant information (taken e.g. from
+    pyproject.toml). If not specified, an empty variant information is used
+    instead.
+
+    variant_label specifies the variant label to use. If not specified,
+    the default of variant hash is used.
+
+    If expand_build_plugin_properties is True, then default-priorities
+    for plugins with plugin-use == "build" will be filled with the current
+    list of supported properties.
+    """
 
     # If we have been parsed VariantInfo, convert it to DistMetadata.
     # If not, start with an empty class.
@@ -150,6 +169,68 @@ def make_variant_dist_info(
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
+
+    if expand_build_plugin_properties:
+        namespaces = {vprop.namespace for vprop in vdesc.properties}
+        build_namespaces = {
+            ns
+            for ns in namespaces
+            if ns in variant_info.providers
+            and variant_info.providers[ns].plugin_use == PluginUse.BUILD
+        }
+        if build_namespaces:
+            venv_python_executable = (
+                venv_python_executable
+                if venv_python_executable is None
+                else pathlib.Path(venv_python_executable)
+            )
+
+            with PluginLoader(
+                variant_info=variant_info,
+                venv_python_executable=venv_python_executable,
+                enable_optional_plugins=True,
+                filter_plugins=list(build_namespaces),
+                include_build_plugins=True,
+            ) as plugin_loader:
+                configs = plugin_loader.get_supported_configs(
+                    known_properties=vdesc.properties
+                ).values()
+
+            for config in configs:
+                if config.namespace not in build_namespaces:
+                    continue
+                for vfeat in config.configs:
+                    feature_prios = variant_json.feature_priorities.setdefault(
+                        config.namespace, []
+                    )
+                    prop_prios = variant_json.property_priorities.setdefault(
+                        config.namespace, {}
+                    ).setdefault(vfeat.name, [])
+                    if vfeat.name not in feature_prios:
+                        feature_prios.append(vfeat.name)
+                    for value in vfeat.values:
+                        if value not in prop_prios:
+                            prop_prios.append(value)
+
+        # Validate that we did not end up using an unsupported property.
+        # This could happen in two cases:
+        # 1. validate_variant() was not called.
+        # 2. The plugin's get_supported_configs() does not match its
+        #    validate_property() behavior.
+        # Both are invalid, therefore we just raise an exception.
+        for vprop in vdesc.properties:
+            if vprop.namespace not in build_namespaces:
+                continue
+            if (
+                vprop.feature not in variant_json.feature_priorities[vprop.namespace]
+                or vprop.value
+                not in variant_json.property_priorities[vprop.namespace][vprop.feature]
+            ):
+                raise ValidationError(
+                    f"Property {vprop.to_str()!r} is not installable according to the "
+                    "respective provider plugin; is plugin-use == 'build' valid for "
+                    "this plugin?"
+                )
 
     return variant_json.to_str()
 
