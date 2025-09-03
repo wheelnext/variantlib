@@ -43,10 +43,10 @@ class KeyTrackingValidator:
         return validate_list_matches_re(self._data[-1], pattern, self.key)
 
     def matches_enum(self, enum: type[Enum]) -> None:
-        if self._data[-1] not in enum.__members__.values():
+        allowed = {str(x) for x in enum.__members__.values()}
+        if self._data[-1] not in allowed:
             raise ValidationError(
-                f"{self.key}: Expected one of {list(enum.__members__.values())}, "
-                f"got {self._data[-1]}"
+                f"{self.key}: Expected one of {allowed}, got {self._data[-1]!r}"
             )
 
     @contextmanager
