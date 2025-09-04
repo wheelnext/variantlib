@@ -73,9 +73,7 @@ def get_variants_by_priority(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs(
-                    known_properties=variants_json.get_known_properties()
-                ).values()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
 
@@ -192,9 +190,7 @@ def make_variant_dist_info(
                 filter_plugins=list(build_namespaces),
                 include_build_plugins=True,
             ) as plugin_loader:
-                configs = plugin_loader.get_supported_configs(
-                    known_properties=vdesc.properties
-                ).values()
+                configs = plugin_loader.get_supported_configs().values()
 
             for config in configs:
                 if config.namespace not in build_namespaces:
@@ -273,9 +269,7 @@ def check_variant_supported(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs(
-                    known_properties=vdesc.properties
-                ).values()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
 

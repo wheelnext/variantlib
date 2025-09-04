@@ -183,7 +183,7 @@ class BasePluginLoader:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
     def get_supported_configs(
-        self, known_properties: Collection[VariantProperty] = ()
+        self,
     ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
         self._check_plugins_loaded()
@@ -208,13 +208,7 @@ class BasePluginLoader:
 
         configs = self._call_subprocess(
             list(self._namespace_map.keys()),
-            {
-                "get_supported_configs": {
-                    "properties": [
-                        dataclasses.asdict(vprop) for vprop in known_properties
-                    ]
-                }
-            },
+            {"get_supported_configs": {}},
         )["get_supported_configs"]
 
         for plugin_api, plugin_configs in configs.items():

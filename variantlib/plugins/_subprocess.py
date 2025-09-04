@@ -128,8 +128,7 @@ def main() -> int:
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
             }
         elif command == "get_supported_configs":
-            assert command_args
-            assert "properties" in command_args
+            assert not command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
                     plugin.get_supported_configs(None),
