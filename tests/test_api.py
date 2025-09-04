@@ -84,13 +84,11 @@ def configs(
 
 
 @pytest.mark.parametrize("construct", [False, True])
-@pytest.mark.parametrize("test_dynamic", [False, True])
 @pytest.mark.parametrize("custom_labels", [False, True])
 @pytest.mark.parametrize("explicit_null", [False, True])
 def test_get_variants_by_priority_roundtrip(
     configs: list[ProviderConfig],
     construct: bool,
-    test_dynamic: bool,
     custom_labels: bool,
     explicit_null: bool,
 ) -> None:
@@ -107,19 +105,6 @@ def test_get_variants_by_priority_roundtrip(
     combinations: list[VariantDescription] = [
         *list(get_combinations(configs, namespace_priorities)),
     ]
-    if test_dynamic:
-        combinations.insert(
-            -1,
-            VariantDescription(
-                properties=[
-                    VariantProperty(
-                        namespace="second_namespace",
-                        feature="name3",
-                        value="val3dynamic",
-                    )
-                ]
-            ),
-        )
 
     variants_json = {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,

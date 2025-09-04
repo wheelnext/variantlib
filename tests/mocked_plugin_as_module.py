@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 
 namespace = "module_namespace"
-dynamic = False
 
 
 def validate_property(

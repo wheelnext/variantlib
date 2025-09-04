@@ -68,6 +68,9 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
                 f"{', '.join(sorted(missing_attributes))})"
             )
 
+        if getattr(plugin_instance, "dynamic", False):
+            raise RuntimeError("Dynamic plugins are no longer supported")
+
         yield plugin_instance
 
 
@@ -129,15 +132,7 @@ def main() -> int:
             assert "properties" in command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
-                    plugin.get_supported_configs(
-                        frozenset(
-                            VariantProperty(**prop)
-                            for prop in command_args["properties"]
-                            if prop["namespace"] == plugin.namespace
-                        )
-                        if plugin.dynamic
-                        else None
-                    ),
+                    plugin.get_supported_configs(None),
                     plugin,
                     command,
                 )

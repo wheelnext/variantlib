@@ -14,7 +14,6 @@ class FeatConfig:
 
 
 namespace = "installable_plugin"
-dynamic = False
 
 
 def validate_property(

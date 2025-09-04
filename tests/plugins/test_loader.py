@@ -49,7 +49,6 @@ RANDOM_STUFF = 123
 
 class ClashingPlugin(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
-    dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     def validate_property(self, variant_property: VariantPropertyType) -> bool:
         return variant_property.feature == "name1" and variant_property.value in [
@@ -67,7 +66,6 @@ class ClashingPlugin(PluginType):
 
 class ExceptionPluginBase(PluginType):
     namespace = "exception_test"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
-    dynamic = False  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
     returned_value: list[VariantFeatureConfigType]
 
@@ -100,31 +98,6 @@ def test_get_supported_configs(
     }
 
 
-def test_get_supported_configs_dynamic(
-    mocked_plugin_loader: BasePluginLoader,
-) -> None:
-    assert mocked_plugin_loader.get_supported_configs(
-        [
-            VariantProperty("test_namespace", "name1", "val1z"),
-            VariantProperty("second_namespace", "name3", "val3abcd"),
-        ]
-    ) == {
-        "second_namespace": ProviderConfig(
-            namespace="second_namespace",
-            configs=[
-                VariantFeatureConfig("name3", ["val3a", "val3abcd"]),
-            ],
-        ),
-        "test_namespace": ProviderConfig(
-            namespace="test_namespace",
-            configs=[
-                VariantFeatureConfig("name1", ["val1a", "val1b"]),
-                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
-            ],
-        ),
-    }
-
-
 def test_validate_properties(
     mocked_plugin_loader: BasePluginLoader,
 ) -> None:
@@ -137,8 +110,8 @@ def test_validate_properties(
         VariantProperty("incompatible_namespace", "flag5", "on"): False,
         VariantProperty("second_namespace", "name2", "val3a"): False,
         VariantProperty("second_namespace", "name3", "val3a"): True,
-        VariantProperty("second_namespace", "name3", "val9a"): True,
-        VariantProperty("second_namespace", "name3", "anything"): True,
+        VariantProperty("second_namespace", "name3", "val9a"): False,
+        VariantProperty("second_namespace", "name3", "anything"): False,
         VariantProperty("test_namespace", "name1", "val1a"): True,
         VariantProperty("test_namespace", "name1", "val1b"): True,
         VariantProperty("test_namespace", "name1", "val1c"): True,
@@ -255,7 +228,6 @@ def test_namespace_incorrect_name() -> None:
 
 class IncompletePlugin:
     namespace = "incomplete_plugin"
-    dynamic = False
 
     def get_supported_configs(
         self, known_properties: frozenset[VariantPropertyType] | None
@@ -268,7 +240,7 @@ def test_namespace_incorrect_type() -> None:
         pytest.raises(
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
-            r"the PluginType prototype: 123 \(missing attributes: dynamic, "
+            r"the PluginType prototype: 123 \(missing attributes: "
             r"get_supported_configs, namespace, validate_property\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
@@ -306,7 +278,6 @@ def test_namespace_instantiation_raises() -> None:
 
 class CrossTypeInstantiationPlugin:
     namespace = "cross_plugin"
-    dynamic = False
 
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
