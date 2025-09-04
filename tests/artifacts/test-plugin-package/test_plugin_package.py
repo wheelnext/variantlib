@@ -27,9 +27,7 @@ def validate_property(
 
 
 def get_supported_configs(
-    known_properties: frozenset[VariantPropertyType] | None,
 ) -> list[FeatConfig]:
-    assert known_properties is None
     return [
         FeatConfig("feat1", ["val1c", "val1b"]),
     ]

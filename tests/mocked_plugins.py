@@ -29,10 +29,7 @@ class MockedPluginA(PluginType):
             and variant_property.value in ["val2a", "val2b", "val2c"]
         )
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        assert known_properties is None
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"]),
             VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
@@ -55,10 +52,7 @@ class MockedPluginB:
             "val3c",
         ]
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[MyVariantFeatureConfig]:
-        assert known_properties is None
+    def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
         return [
             MyVariantFeatureConfig("name3", ["val3a"]),
         ]
@@ -83,10 +77,7 @@ class MockedPluginC(PluginType):
             and variant_property.value == "on"
         )
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
-        assert known_properties is None
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 

@@ -91,9 +91,7 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError
 

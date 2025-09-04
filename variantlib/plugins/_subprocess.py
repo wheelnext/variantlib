@@ -131,7 +131,7 @@ def main() -> int:
             assert not command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
-                    plugin.get_supported_configs(None),
+                    plugin.get_supported_configs(),
                     plugin,
                     command,
                 )

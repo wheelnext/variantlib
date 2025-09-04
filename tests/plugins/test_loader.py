@@ -58,9 +58,7 @@ class ClashingPlugin(PluginType):
             "val1d",
         ]
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -72,9 +70,7 @@ class ExceptionPluginBase(PluginType):
     def validate_property(self, variant_property: VariantPropertyType) -> bool:
         return True
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return self.returned_value
 
 
@@ -229,9 +225,7 @@ def test_namespace_incorrect_name() -> None:
 class IncompletePlugin:
     namespace = "incomplete_plugin"
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -257,9 +251,7 @@ class RaisingInstantiationPlugin:
     def validate_property(self, variant_property: VariantPropertyType) -> bool:
         return True
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType]
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -285,9 +277,7 @@ class CrossTypeInstantiationPlugin:
     def validate_property(self, variant_property: VariantPropertyType) -> bool:
         return True
 
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
 
 
