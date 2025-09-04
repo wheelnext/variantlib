@@ -91,11 +91,11 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
-        """Get supported configs for the current system"""
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        """Get all valid configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        """Validate variant property, returns True if it's valid"""
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+        """Get supported configs for the current system"""
         raise NotImplementedError

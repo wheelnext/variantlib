@@ -77,7 +77,6 @@ show = "variantlib.commands.config.show:show"
 [project.entry-points."variantlib.actions.plugins"]
 list = "variantlib.commands.plugins.list_plugins:list_plugins"
 get-supported-configs = "variantlib.commands.plugins.get_supported_configs:get_supported_configs"
-validate-property = "variantlib.commands.plugins.validate_property:validate_property"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]

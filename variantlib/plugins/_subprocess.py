@@ -74,9 +74,9 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
         yield plugin_instance
 
 
-def process_configs(
+def validate_configs(
     configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
-) -> list[dict[str, str | list[str]]]:
+) -> None:
     try:
         validate_type(configs, list[VariantFeatureConfigType])
     except ValidationError as err:
@@ -85,7 +85,24 @@ def process_configs(
             f"method returned incorrect type. {err}"
         ) from None
 
+
+def process_configs(
+    configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
+) -> list[dict[str, str | list[str]]]:
+    validate_configs(configs, plugin_instance, method)
     return [{"name": vfeat.name, "values": vfeat.values} for vfeat in configs]
+
+
+def configs_to_dict(
+    configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
+) -> dict[str, list[str]]:
+    validate_configs(configs, plugin_instance, method)
+    if not configs:
+        raise TypeError(
+            f"Provider {plugin_instance.namespace}, {method}() "
+            "returned no valid configs!"
+        )
+    return {config.name: config.values for config in configs}
 
 
 def group_properties_by_plugin(
@@ -145,8 +162,14 @@ def main() -> int:
                 command_args["properties"], namespace_map
             ):
                 if plugin is not None:
+                    configs = configs_to_dict(
+                        plugin.get_all_configs(), plugin, "get_all_configs"
+                    )
                     results.extend(
-                        (property_to_dict(vprop), plugin.validate_property(vprop))
+                        (
+                            property_to_dict(vprop),
+                            vprop.value in configs.get(vprop.feature, []),
+                        )
                         for vprop in p_props
                     )
                 else:

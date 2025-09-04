@@ -212,7 +212,7 @@ def make_variant_dist_info(
         # This could happen in two cases:
         # 1. validate_variant() was not called.
         # 2. The plugin's get_supported_configs() does not match its
-        #    validate_property() behavior.
+        #    get_all_configs().
         # Both are invalid, therefore we just raise an exception.
         for vprop in vdesc.properties:
             if vprop.namespace not in build_namespaces:

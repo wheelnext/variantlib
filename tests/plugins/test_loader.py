@@ -36,7 +36,6 @@ from variantlib.variants_json import VariantsJson
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from variantlib.protocols import VariantPropertyType
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -50,12 +49,9 @@ RANDOM_STUFF = 123
 class ClashingPlugin(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        return variant_property.feature == "name1" and variant_property.value in [
-            "val1a",
-            "val1b",
-            "val1c",
-            "val1d",
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
         ]
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
@@ -67,8 +63,8 @@ class ExceptionPluginBase(PluginType):
 
     returned_value: list[VariantFeatureConfigType]
 
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        return True
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return self.returned_value
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return self.returned_value
@@ -235,7 +231,7 @@ def test_namespace_incorrect_type() -> None:
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
             r"the PluginType prototype: 123 \(missing attributes: "
-            r"get_supported_configs, namespace, validate_property\)",
+            r"get_all_configs, get_supported_configs, namespace\)",
         ),
         ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
     ):
@@ -248,8 +244,8 @@ class RaisingInstantiationPlugin:
     def __init__(self) -> None:
         raise RuntimeError("I failed to initialize")
 
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        return True
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return []
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
@@ -274,8 +270,8 @@ class CrossTypeInstantiationPlugin:
     def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
         return IncompletePlugin()
 
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        return True
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        return []
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return []
@@ -292,7 +288,7 @@ def test_namespace_instantiation_returns_incorrect_type(
                 f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
                 "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
             )
-            + r".*(missing attributes: validate_property)",
+            + r".*(missing attributes: get_all_configs)",
         ),
         ListPluginLoader([f"tests.plugins.test_loader:{cls}"]),
     ):
