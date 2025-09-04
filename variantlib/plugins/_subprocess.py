@@ -68,9 +68,6 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
                 f"{', '.join(sorted(missing_attributes))})"
             )
 
-        if getattr(plugin_instance, "dynamic", False):
-            raise RuntimeError("Dynamic plugins are no longer supported")
-
         yield plugin_instance
 
 
