@@ -31,7 +31,7 @@ VALIDATION_VARIANT_LABEL_REGEX = re.compile(rf"[0-9a-z._]{{1,{VARIANT_LABEL_LENG
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
-VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.,!>~<=]+")
+VALIDATION_VALUE_REGEX = re.compile(r"[a-z0-9_.]+")
 
 VALIDATION_FEATURE_REGEX = re.compile(
     rf"""

@@ -6,7 +6,6 @@ import json
 import sys
 from dataclasses import dataclass
 from functools import reduce
-from itertools import groupby
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -15,7 +14,6 @@ from typing import Any
 # checkers and easier debugging.
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
-from variantlib.protocols import VariantPropertyType
 from variantlib.validators.base import ValidationError
 from variantlib.validators.base import validate_type
 
@@ -81,27 +79,7 @@ def process_configs(
             f"Provider {plugin_instance.namespace}, {method}() "
             f"method returned incorrect type. {err}"
         ) from None
-
     return [{"name": vfeat.name, "values": vfeat.values} for vfeat in configs]
-
-
-def group_properties_by_plugin(
-    properties: list[dict[str, str]], namespace_map: dict[str, PluginType]
-) -> Generator[tuple[PluginType | None, frozenset[VariantProperty]]]:
-    for namespace, p_props in groupby(
-        sorted(properties, key=lambda prop: prop["namespace"]),
-        lambda prop: prop["namespace"],
-    ):
-        plugin = namespace_map.get(namespace)
-        yield (plugin, frozenset(VariantProperty(**prop) for prop in p_props))
-
-
-def property_to_dict(vprop: VariantPropertyType) -> dict[str, str]:
-    return {
-        "namespace": vprop.namespace,
-        "feature": vprop.feature,
-        "value": vprop.value,
-    }
 
 
 def main() -> int:
@@ -115,7 +93,6 @@ def main() -> int:
     args = parser.parse_args()
     commands = json.load(sys.stdin)
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api), strict=True))
-    namespace_map = {plugin.namespace: plugin for plugin in plugins.values()}
 
     retval: dict[str, Any] = {}
     for command, command_args in commands.items():
@@ -124,40 +101,26 @@ def main() -> int:
             retval[command] = {
                 plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
             }
-        elif command == "get_supported_configs":
-            assert command_args
-            assert "properties" in command_args
+        elif command == "get_all_configs":
+            assert not command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
-                    plugin.get_supported_configs(
-                        frozenset(
-                            VariantProperty(**prop)
-                            for prop in command_args["properties"]
-                            if prop["namespace"] == plugin.namespace
-                        )
-                        if plugin.dynamic
-                        else None
-                    ),
+                    plugin.get_all_configs(),
                     plugin,
                     command,
                 )
                 for plugin_api, plugin in plugins.items()
             }
-        elif command == "validate_properties":
-            assert command_args
-            assert "properties" in command_args
-            results: list[tuple[dict[str, str], bool | None]] = []
-            for plugin, p_props in group_properties_by_plugin(
-                command_args["properties"], namespace_map
-            ):
-                if plugin is not None:
-                    results.extend(
-                        (property_to_dict(vprop), plugin.validate_property(vprop))
-                        for vprop in p_props
-                    )
-                else:
-                    results.extend((property_to_dict(vprop), None) for vprop in p_props)
-            retval = {command: results}
+        elif command == "get_supported_configs":
+            assert not command_args
+            retval[command] = {  # pyright: ignore[reportArgumentType]
+                plugin_api: process_configs(
+                    plugin.get_supported_configs(),
+                    plugin,
+                    command,
+                )
+                for plugin_api, plugin in plugins.items()
+            }
         else:
             raise ValueError(f"Invalid command: {command}")
 

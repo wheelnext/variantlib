@@ -73,9 +73,7 @@ def get_variants_by_priority(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs(
-                    known_properties=variants_json.get_known_properties()
-                ).values()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
 
@@ -135,7 +133,19 @@ def validate_variant(
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
         include_build_plugins=True,
     ) as plugin_loader:
-        return plugin_loader.validate_properties(properties=variant_desc.properties)
+        configs = {
+            namespace: {cfeat.name: cfeat.values for cfeat in configs.configs}
+            for namespace, configs in plugin_loader.get_all_configs().items()
+        }
+
+    return VariantValidationResult(
+        {
+            vprop: None
+            if vprop.namespace not in configs
+            else (vprop.value in configs[vprop.namespace].get(vprop.feature, []))
+            for vprop in variant_desc.properties
+        }
+    )
 
 
 def make_variant_dist_info(
@@ -192,9 +202,7 @@ def make_variant_dist_info(
                 filter_plugins=list(build_namespaces),
                 include_build_plugins=True,
             ) as plugin_loader:
-                configs = plugin_loader.get_supported_configs(
-                    known_properties=vdesc.properties
-                ).values()
+                configs = plugin_loader.get_supported_configs().values()
 
             for config in configs:
                 if config.namespace not in build_namespaces:
@@ -216,7 +224,7 @@ def make_variant_dist_info(
         # This could happen in two cases:
         # 1. validate_variant() was not called.
         # 2. The plugin's get_supported_configs() does not match its
-        #    validate_property() behavior.
+        #    get_all_configs().
         # Both are invalid, therefore we just raise an exception.
         for vprop in vdesc.properties:
             if vprop.namespace not in build_namespaces:
@@ -273,9 +281,7 @@ def check_variant_supported(
         supported_vprops = list(
             itertools.chain.from_iterable(
                 provider_cfg.to_list_of_properties()
-                for provider_cfg in plugin_loader.get_supported_configs(
-                    known_properties=vdesc.properties
-                ).values()
+                for provider_cfg in plugin_loader.get_supported_configs().values()
             )
         )
 

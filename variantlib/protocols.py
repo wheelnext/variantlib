@@ -58,29 +58,6 @@ class VariantFeatureConfigType(Protocol):
 
 
 @runtime_checkable
-class VariantPropertyType(Protocol):
-    """A protocol for variant properties"""
-
-    @property
-    @abstractmethod
-    def namespace(self) -> VariantNamespace:
-        """Namespace (from plugin)"""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def feature(self) -> VariantFeatureName:
-        """Feature name (within the namespace)"""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def value(self) -> VariantFeatureValue:
-        """Feature value"""
-        raise NotImplementedError
-
-
-@runtime_checkable
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
@@ -90,26 +67,12 @@ class PluginType(Protocol):
         """Plugin namespace"""
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def dynamic(self) -> bool:
-        """
-        Is this a dynamic plugin?
-
-        This property / attribute should return True if the configs
-        returned `get_supported_configs()` depend on `known_properties`
-        input.  If it is False, `known_properties` will be `None`.
-        """
+    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+        """Get all valid configs for the plugin"""
         raise NotImplementedError
 
     @abstractmethod
-    def get_supported_configs(
-        self, known_properties: frozenset[VariantPropertyType] | None
-    ) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def validate_property(self, variant_property: VariantPropertyType) -> bool:
-        """Validate variant property, returns True if it's valid"""
         raise NotImplementedError
