@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class FeatConfig:
+class VariantFeatureConfig:
     name: str
     values: list[str]
 
@@ -17,7 +17,7 @@ namespace = "module_namespace"
 
 
 def get_all_configs() -> list[VariantFeatureConfigType]:
-    return [FeatConfig("feature", ["a", "b"])]
+    return [VariantFeatureConfig("feature", ["a", "b"])]
 
 
 def get_supported_configs() -> list[VariantFeatureConfigType]:
