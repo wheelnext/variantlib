@@ -133,7 +133,19 @@ def validate_variant(
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
         include_build_plugins=True,
     ) as plugin_loader:
-        return plugin_loader.validate_properties(properties=variant_desc.properties)
+        configs = {
+            namespace: {cfeat.name: cfeat.values for cfeat in configs.configs}
+            for namespace, configs in plugin_loader.get_all_configs().items()
+        }
+
+    return VariantValidationResult(
+        {
+            vprop: None
+            if vprop.namespace not in configs
+            else (vprop.value in configs[vprop.namespace].get(vprop.feature, []))
+            for vprop in variant_desc.properties
+        }
+    )
 
 
 def make_variant_dist_info(

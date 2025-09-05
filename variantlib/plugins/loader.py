@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import importlib
 import importlib.resources
 import json
@@ -22,13 +21,12 @@ from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant import VariantProperty
-from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import PluginUse
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
     from types import TracebackType
+    from typing import Literal
 
     from variantlib.models.variant_info import ProviderInfo
     from variantlib.models.variant_info import VariantInfo
@@ -182,10 +180,11 @@ class BasePluginLoader:
         if self._namespace_map is None:
             raise NoPluginFoundError("No plugin has been loaded in the environment.")
 
-    def get_supported_configs(
+    def _get_configs(
         self,
+        method: Literal["get_all_configs", "get_supported_configs"],
+        require_non_empty: bool,
     ) -> dict[str, ProviderConfig]:
-        """Get a mapping of namespaces to supported configs"""
         self._check_plugins_loaded()
         assert self._namespace_map is not None
 
@@ -208,13 +207,17 @@ class BasePluginLoader:
 
         configs = self._call_subprocess(
             list(self._namespace_map.keys()),
-            {"get_supported_configs": {}},
-        )["get_supported_configs"]
+            {method: {}},
+        )[method]
 
         for plugin_api, plugin_configs in configs.items():
             namespace = self._namespace_map[plugin_api]
 
             if not plugin_configs:
+                if require_non_empty:
+                    raise PluginError(
+                        f"Provider {namespace}, {method}() returned no valid configs!"
+                    )
                 continue
 
             provider_cfgs[namespace] = ProviderConfig(
@@ -226,47 +229,17 @@ class BasePluginLoader:
 
         return provider_cfgs
 
-    def validate_properties(
-        self, properties: Collection[VariantProperty]
-    ) -> VariantValidationResult:
-        self._check_plugins_loaded()
-        assert self._namespace_map is not None
+    def get_all_configs(
+        self,
+    ) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to all valid configs"""
+        return self._get_configs("get_all_configs", require_non_empty=True)
 
-        ret: dict[VariantProperty, bool | None] = {}
-        plugin_properties = []
-        for vprop in properties:
-            if vprop.namespace in self._namespace_map.values():
-                # use the plugin if loaded
-                plugin_properties.append(vprop)
-            elif vprop.namespace in self._package_defined_properties:
-                # otherwise, look it up in PDP
-                ret[vprop] = vprop.value in self._package_defined_properties.get(
-                    vprop.namespace, {}
-                ).get(vprop.feature, set())
-            else:
-                # if it's not in PDP either, it's "unknown"
-                ret[vprop] = None
-
-        if not self._namespace_map:
-            # short-circuit plugin_properties if we have no plugins loaded
-            ret.update(dict.fromkeys(plugin_properties))
-        elif plugin_properties:
-            # call to the plugin if we have any plugin_properties left
-            json_results = self._call_subprocess(
-                list(self._namespace_map.keys()),
-                {
-                    "validate_properties": {
-                        "properties": [
-                            dataclasses.asdict(vprop) for vprop in plugin_properties
-                        ]
-                    }
-                },
-            )["validate_properties"]
-            ret.update(
-                {VariantProperty(**vprop): result for vprop, result in json_results}
-            )
-
-        return VariantValidationResult(ret)
+    def get_supported_configs(
+        self,
+    ) -> dict[str, ProviderConfig]:
+        """Get a mapping of namespaces to supported configs"""
+        return self._get_configs("get_supported_configs", require_non_empty=False)
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
@@ -373,14 +346,14 @@ class PluginLoader(BasePluginLoader):
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)
 
-    def validate_properties(
-        self, properties: Collection[VariantProperty]
-    ) -> VariantValidationResult:
+    def get_all_configs(
+        self,
+    ) -> dict[str, ProviderConfig]:
         assert self._include_build_plugins, (
-            "To use validate_properties(), use PluginLoader(include_build_plugins=True)"
+            "To use get_all_configs(), use PluginLoader(include_build_plugins=True)"
         )
 
-        return super().validate_properties(properties)
+        return super().get_all_configs()
 
 
 class EntryPointPluginLoader(BasePluginLoader):

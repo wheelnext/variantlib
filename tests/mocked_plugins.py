@@ -64,7 +64,7 @@ class MockedPluginC(PluginType):
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            MyVariantFeatureConfig(x, "on")
+            MyVariantFeatureConfig(x, ["on"])
             for x in ("flag1", "flag2", "flag3", "flag4")
         ]
 
