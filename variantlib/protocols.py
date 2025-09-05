@@ -58,29 +58,6 @@ class VariantFeatureConfigType(Protocol):
 
 
 @runtime_checkable
-class VariantPropertyType(Protocol):
-    """A protocol for variant properties"""
-
-    @property
-    @abstractmethod
-    def namespace(self) -> VariantNamespace:
-        """Namespace (from plugin)"""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def feature(self) -> VariantFeatureName:
-        """Feature name (within the namespace)"""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def value(self) -> VariantFeatureValue:
-        """Feature value"""
-        raise NotImplementedError
-
-
-@runtime_checkable
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
