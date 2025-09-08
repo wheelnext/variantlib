@@ -51,6 +51,11 @@ class VariantFeatureConfigType(Protocol):
         raise NotImplementedError
 
     @property
+    def multi_value(self) -> bool:
+        """Does this property allow multiple values per variant?"""
+        return False
+
+    @property
     @abstractmethod
     def values(self) -> list[VariantFeatureValue]:
         """Ordered list of values, most preferred first"""

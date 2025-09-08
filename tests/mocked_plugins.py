@@ -31,7 +31,9 @@ class MockedPluginA(PluginType):
         ]
 
 
-MyVariantFeatureConfig = namedtuple("MyVariantFeatureConfig", ("name", "values"))
+MyVariantFeatureConfig = namedtuple(
+    "MyVariantFeatureConfig", ("name", "values", "multi_value")
+)
 
 
 # NB: this plugin deliberately does not inherit from PluginType
@@ -41,12 +43,14 @@ class MockedPluginB:
 
     def get_all_configs(self) -> list[MyVariantFeatureConfig]:
         return [
-            MyVariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+            MyVariantFeatureConfig(
+                "name3", ["val3a", "val3b", "val3c"], multi_value=False
+            ),
         ]
 
     def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
         return [
-            MyVariantFeatureConfig("name3", ["val3a"]),
+            MyVariantFeatureConfig("name3", ["val3a"], multi_value=False),
         ]
 
 
@@ -64,7 +68,7 @@ class MockedPluginC(PluginType):
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            MyVariantFeatureConfig(x, ["on"])
+            MyVariantFeatureConfig(x, ["on"], multi_value=False)
             for x in ("flag1", "flag2", "flag3", "flag4")
         ]
 

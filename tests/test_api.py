@@ -18,11 +18,6 @@ from trycast import trycast
 from tests.test_pyproject_toml import PYPROJECT_TOML
 from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
 from tests.utils import get_combinations
-from variantlib.api import ProviderConfig
-from variantlib.api import VariantDescription
-from variantlib.api import VariantFeatureConfig
-from variantlib.api import VariantProperty
-from variantlib.api import VariantValidationResult
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_environment_dict
 from variantlib.api import get_variant_label
@@ -53,6 +48,12 @@ from variantlib.errors import ValidationError
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
 from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
+from variantlib.models.provider import ProviderConfig
+from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantFeature
+from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
@@ -248,14 +249,15 @@ def test_validation_result_is_valid(
     bools: tuple[bool, ...], valid: bool, valid_strict: bool
 ) -> None:
     res = VariantValidationResult(
-        {
+        results={
             VariantProperty(
                 string.ascii_lowercase[i],
                 string.ascii_lowercase[i],
                 string.ascii_lowercase[i],
             ): var_res
             for i, var_res in enumerate(bools)
-        }
+        },
+        multi_value_violations=frozenset(),
     )
     assert res.is_valid() == valid
     assert res.is_valid(allow_unknown_plugins=False) == valid_strict
@@ -263,13 +265,14 @@ def test_validation_result_is_valid(
 
 def test_validation_result_properties() -> None:
     res = VariantValidationResult(
-        {
+        results={
             VariantProperty("blas", PYPROJECT_TOML_TOP_KEY, "mkl"): True,
             VariantProperty("cuda", "runtime", "12.0"): None,
             VariantProperty("blas", "invariant", "lkm"): False,
             VariantProperty("x86_64", "baseline", "v10"): False,
             VariantProperty("orange", "juice", "good"): None,
-        }
+        },
+        multi_value_violations=frozenset(),
     )
 
     assert res.invalid_properties == [
@@ -339,7 +342,9 @@ def test_validate_variant(optional: bool) -> None:
         variant_info=variant_info,
     )
 
-    assert res == VariantValidationResult(expected)
+    assert res == VariantValidationResult(
+        expected, frozenset({VariantFeature("private", "build_type")})
+    )
     assert not res.is_valid()
 
 

@@ -16,6 +16,7 @@ from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
 from variantlib.models.variant_info import PluginUse
@@ -134,17 +135,39 @@ def validate_variant(
         include_build_plugins=True,
     ) as plugin_loader:
         configs = {
-            namespace: {cfeat.name: cfeat.values for cfeat in configs.configs}
+            namespace: {
+                cfeat.name: (cfeat.values, cfeat.multi_value)
+                for cfeat in configs.configs
+            }
             for namespace, configs in plugin_loader.get_all_configs().items()
         }
 
     return VariantValidationResult(
-        {
+        results={
             vprop: None
             if vprop.namespace not in configs
-            else (vprop.value in configs[vprop.namespace].get(vprop.feature, []))
+            else (
+                vprop.value
+                in configs[vprop.namespace].get(vprop.feature, ([], False))[0]
+            )
             for vprop in variant_desc.properties
-        }
+        },
+        multi_value_violations=frozenset(
+            {
+                VariantFeature(namespace, feature)
+                for namespace, features in configs.items()
+                for feature, (_, multi_value) in features.items()
+                if not multi_value
+                and len(
+                    [
+                        True
+                        for vprop in variant_desc.properties
+                        if vprop.namespace == namespace and vprop.feature == feature
+                    ]
+                )
+                > 1
+            }
+        ),
     )
 
 
