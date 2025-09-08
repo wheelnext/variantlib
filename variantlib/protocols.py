@@ -67,6 +67,17 @@ class PluginType(Protocol):
         """Plugin namespace"""
         raise NotImplementedError
 
+    @property
+    def has_fixed_supported_configs(self) -> bool:
+        """
+        Does get_supported_configs() return a fixed list?
+
+        If this is True, then get_supported_configs() must return a fixed
+        list that does not depend on platform in any way.  This permits
+        the plugin being used with 'plugin-use = "build"'.
+        """
+        return False
+
     @abstractmethod
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         """Get all valid configs for the plugin"""

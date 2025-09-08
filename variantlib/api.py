@@ -202,7 +202,9 @@ def make_variant_dist_info(
                 filter_plugins=list(build_namespaces),
                 include_build_plugins=True,
             ) as plugin_loader:
-                configs = plugin_loader.get_supported_configs().values()
+                configs = plugin_loader.get_supported_configs(
+                    require_fixed=True
+                ).values()
 
             for config in configs:
                 if config.namespace not in build_namespaces:
