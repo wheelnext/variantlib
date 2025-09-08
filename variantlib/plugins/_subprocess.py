@@ -90,9 +90,26 @@ def main() -> int:
         help="Load specified plugin API",
         required=True,
     )
+    parser.add_argument(
+        "--require-fixed",
+        action="store_true",
+        help="Require all plugins to provide fixed supported configs",
+    )
     args = parser.parse_args()
     commands = json.load(sys.stdin)
     plugins = dict(zip(args.plugin_api, load_plugins(args.plugin_api), strict=True))
+
+    if args.require_fixed:
+        non_fixed_plugins = {
+            plugin.namespace
+            for plugin in plugins.values()
+            if not getattr(plugin, "has_fixed_supported_configs", False)
+        }
+        if non_fixed_plugins:
+            raise TypeError(
+                f"Providers for namespaces {non_fixed_plugins} do not provide fixed "
+                f"supported configs, they cannot be used with plugin-use = 'build'"
+            )
 
     retval: dict[str, Any] = {}
     for command, command_args in commands.items():
