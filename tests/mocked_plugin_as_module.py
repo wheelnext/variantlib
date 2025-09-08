@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 class VariantFeatureConfig:
     name: str
     values: list[str]
+    multi_value: bool = False
 
 
 namespace = "module_namespace"

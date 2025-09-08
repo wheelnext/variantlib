@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class FeatConfig:
     name: str
     values: list[str]
+    multi_value: bool = False
 
 
 namespace = "installable_plugin"

@@ -107,7 +107,8 @@ def test_name_config_repr() -> None:
         name="attr_name_a", values=["7", "4", "8.4.3", "12.1"]
     )
     expected_repr = (
-        "VariantFeatureConfig(name='attr_name_a', values=['7', '4', '8.4.3', '12.1'])"
+        "VariantFeatureConfig(name='attr_name_a', values=['7', '4', '8.4.3', '12.1'], "
+        "multi_value=False)"
     )
     assert repr(vfeat_config) == expected_repr
 
@@ -199,9 +200,12 @@ def test_provider_config_repr() -> None:
     )
 
     expected_repr = (
-        "ProviderConfig(namespace='provider_name', "
-        "configs=[VariantFeatureConfig(name='attr_name_a', values=['7', '4', '8', '12']), "  # noqa: E501
-        "VariantFeatureConfig(name='attr_name_b', values=['3', '7', '2', '18'])])"
+        "ProviderConfig(namespace='provider_name', configs=["
+        "VariantFeatureConfig(name='attr_name_a', values=['7', '4', '8', '12'], "
+        "multi_value=False), "
+        "VariantFeatureConfig(name='attr_name_b', values=['3', '7', '2', '18'], "
+        "multi_value=False)"
+        "])"
     )
     assert repr(provider_config) == expected_repr
 

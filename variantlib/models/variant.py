@@ -252,10 +252,13 @@ class VariantDescription(BaseModel):
 @dataclass(frozen=True)
 class VariantValidationResult:
     results: dict[VariantProperty, bool | None]
+    multi_value_violations: frozenset[VariantFeature]
 
     def is_valid(self, allow_unknown_plugins: bool = True) -> bool:
-        return False not in self.results.values() and (
-            allow_unknown_plugins or None not in self.results.values()
+        return (
+            not self.multi_value_violations
+            and False not in self.results.values()
+            and (allow_unknown_plugins or None not in self.results.values())
         )
 
     @property
