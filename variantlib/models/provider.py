@@ -58,6 +58,8 @@ class VariantFeatureConfig(BaseModel):
         }
     )
 
+    multi_value: bool
+
 
 @dataclass(frozen=True)
 class ProviderConfig(BaseModel):

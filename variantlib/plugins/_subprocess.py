@@ -71,7 +71,7 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
 
 def process_configs(
     configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
-) -> list[dict[str, str | list[str]]]:
+) -> list[dict[str, bool | str | list[str]]]:
     try:
         validate_type(configs, list[VariantFeatureConfigType])
     except ValidationError as err:
@@ -79,7 +79,10 @@ def process_configs(
             f"Provider {plugin_instance.namespace}, {method}() "
             f"method returned incorrect type. {err}"
         ) from None
-    return [{"name": vfeat.name, "values": vfeat.values} for vfeat in configs]
+    return [
+        {"name": vfeat.name, "values": vfeat.values, "multi_value": vfeat.multi_value}
+        for vfeat in configs
+    ]
 
 
 def main() -> int:
