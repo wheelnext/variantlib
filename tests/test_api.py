@@ -150,20 +150,20 @@ def test_get_variants_by_priority_roundtrip(
         ProviderConfig(
             namespace="a",
             configs=[
-                VariantFeatureConfig(name="a1", values=["x"]),
-                VariantFeatureConfig(name="a2", values=["x"]),
+                VariantFeatureConfig(name="a1", values=["x"], multi_value=False),
+                VariantFeatureConfig(name="a2", values=["x"], multi_value=False),
             ],
         ),
         ProviderConfig(
             namespace="b",
             configs=[
-                VariantFeatureConfig(name="b1", values=["x"]),
+                VariantFeatureConfig(name="b1", values=["x"], multi_value=False),
             ],
         ),
         ProviderConfig(
             namespace="c",
             configs=[
-                VariantFeatureConfig(name="c1", values=["x"]),
+                VariantFeatureConfig(name="c1", values=["x"], multi_value=False),
             ],
         ),
     ]
@@ -189,6 +189,7 @@ def test_get_variants_by_priority_roundtrip(
                         unique=True,
                         elements=st.from_regex(VALIDATION_VALUE_REGEX, fullmatch=True),
                     ),
+                    multi_value=st.booleans(),
                 ),
             ),
         ),
@@ -327,6 +328,7 @@ def test_validate_variant(optional: bool) -> None:
         VariantProperty("test_namespace", "name2", "val2d"): False,
         VariantProperty("test_namespace", "name3", "val3a"): False,
         VariantProperty("second_namespace", "name3", "val3a"): True,
+        VariantProperty("second_namespace", "name3", "val3z"): False,
         VariantProperty("incompatible_namespace", "flag1", "on"): True,
         VariantProperty("incompatible_namespace", "flag2", "off"): False,
         VariantProperty("incompatible_namespace", "flag5", "on"): False,
@@ -344,7 +346,15 @@ def test_validate_variant(optional: bool) -> None:
     )
 
     assert res == VariantValidationResult(
-        expected, frozenset({VariantFeature("private", "build_type")})
+        expected,
+        multi_value_violations=frozenset(
+            {
+                VariantFeature(
+                    namespace="second_namespace",
+                    feature="name3",
+                ),
+            }
+        ),
     )
     assert not res.is_valid()
 

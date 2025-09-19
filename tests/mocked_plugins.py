@@ -22,14 +22,20 @@ class MockedPluginA(PluginType):
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-            VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            VariantFeatureConfig(
+                "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
+            ),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
         ]
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            VariantFeatureConfig("name1", ["val1a", "val1b"]),
-            VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+            VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
         ]
 
 

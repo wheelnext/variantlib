@@ -50,7 +50,9 @@ class ClashingPlugin(PluginType):
 
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
-            VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
+            VariantFeatureConfig(
+                "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
+            ),
         ]
 
     def get_supported_configs(self) -> list[VariantFeatureConfigType]:
@@ -81,38 +83,48 @@ def test_get_all_configs(
                     values=[
                         "on",
                     ],
+                    multi_value=False,
                 ),
                 VariantFeatureConfig(
                     name="flag2",
                     values=[
                         "on",
                     ],
+                    multi_value=False,
                 ),
                 VariantFeatureConfig(
                     name="flag3",
                     values=[
                         "on",
                     ],
+                    multi_value=False,
                 ),
                 VariantFeatureConfig(
                     name="flag4",
                     values=[
                         "on",
                     ],
+                    multi_value=False,
                 ),
             ],
         ),
         "second_namespace": ProviderConfig(
             namespace="second_namespace",
             configs=[
-                VariantFeatureConfig("name3", ["val3a", "val3b", "val3c"]),
+                VariantFeatureConfig(
+                    "name3", ["val3a", "val3b", "val3c"], multi_value=False
+                ),
             ],
         ),
         "test_namespace": ProviderConfig(
             namespace="test_namespace",
             configs=[
-                VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),
-                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+                VariantFeatureConfig(
+                    "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
+                ),
+                VariantFeatureConfig(
+                    "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                ),
             ],
         ),
     }
@@ -125,14 +137,16 @@ def test_get_supported_configs(
         "second_namespace": ProviderConfig(
             namespace="second_namespace",
             configs=[
-                VariantFeatureConfig("name3", ["val3a"]),
+                VariantFeatureConfig("name3", ["val3a"], multi_value=False),
             ],
         ),
         "test_namespace": ProviderConfig(
             namespace="test_namespace",
             configs=[
-                VariantFeatureConfig("name1", ["val1a", "val1b"]),
-                VariantFeatureConfig("name2", ["val2a", "val2b", "val2c"]),
+                VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+                VariantFeatureConfig(
+                    "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                ),
             ],
         ),
     }
@@ -157,8 +171,8 @@ def test_namespace_clash() -> None:
 
 class IncorrectListTypePlugin(ExceptionPluginBase):
     returned_value = (
-        VariantFeatureConfig("k1", ["v1"]),
-        VariantFeatureConfig("k2", ["v2"]),
+        VariantFeatureConfig("k1", ["v1"], multi_value=False),
+        VariantFeatureConfig("k2", ["v2"], multi_value=False),
     )  # type: ignore[assignment]
 
 
@@ -631,6 +645,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "val1a",
                         "val1b",
                     ],
+                    multi_value=False,
                 ),
                 VariantFeatureConfig(
                     name="name2",
@@ -639,6 +654,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "val2b",
                         "val2c",
                     ],
+                    multi_value=False,
                 ),
             ],
         ),
@@ -651,6 +667,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "v3",
                         "v4",
                     ],
+                    multi_value=True,
                 ),
             ],
         ),
@@ -663,6 +680,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "v5",
                         "v6",
                     ],
+                    multi_value=True,
                 ),
             ],
         ),
@@ -680,7 +698,8 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                     values=[
                         "val3a",
                     ],
-                ),
+                    multi_value=False,
+                )
             ],
         )
 

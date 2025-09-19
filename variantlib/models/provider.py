@@ -58,7 +58,7 @@ class VariantFeatureConfig(BaseModel):
         }
     )
 
-    multi_value: bool = False
+    multi_value: bool
 
 
 @dataclass(frozen=True)
