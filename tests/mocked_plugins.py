@@ -18,6 +18,8 @@ class MockedEntryPoint:
 class MockedPluginA(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
+    is_build_plugin = True
+
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b", "val1c", "val1d"]),

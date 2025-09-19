@@ -49,6 +49,7 @@ from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
+from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
@@ -758,6 +759,35 @@ def test_make_variant_dist_info_invalid_build_plugin() -> None:
         match=r"Property 'test_namespace :: name1 :: val1d' is not installable "
         r"according to the respective provider plugin; is plugin-use == 'build' valid "
         "for this plugin?",
+    ):
+        make_variant_dist_info(
+            vdesc,
+            variant_info=vinfo,
+            expand_build_plugin_properties=True,
+        )
+
+
+def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("second_namespace", "name3", "val3a"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MockedPluginB"
+    vinfo = VariantInfo(
+        namespace_priorities=["second_namespace"],
+        providers={
+            "second_namespace": ProviderInfo(
+                plugin_api=plugin_api,
+                plugin_use=PluginUse.BUILD,
+            )
+        },
+    )
+
+    with pytest.raises(
+        PluginError,
+        match=r"Providers for namespaces {'second_namespace'} do not provide fixed "
+        r"supported configs, they cannot be used with plugin-use = 'build'",
     ):
         make_variant_dist_info(
             vdesc,

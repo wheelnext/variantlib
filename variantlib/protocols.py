@@ -67,6 +67,22 @@ class PluginType(Protocol):
         """Plugin namespace"""
         raise NotImplementedError
 
+    @property
+    def is_build_plugin(self) -> bool:
+        """
+        Is this plugin valid for `plugin-use = "build"`?
+
+        If this is True, then `get_supported_configs()` must always
+        return the same values, irrespective of the platform used.
+        This permits the plugin to be used with `plugin-use = "build"`,
+        where the supported properties are recorded at build time.
+
+        If the value of `get_supported_configs()` may change in any way
+        depending on the platform used, then it must be False
+        (the default).
+        """
+        return False
+
     @abstractmethod
     def get_all_configs(self) -> list[VariantFeatureConfigType]:
         """Get all valid configs for the plugin"""

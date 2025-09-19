@@ -83,7 +83,10 @@ class BasePluginLoader:
         self._namespace_map = None
 
     def _call_subprocess(
-        self, plugin_apis: list[str], commands: dict[str, Any]
+        self,
+        plugin_apis: list[str],
+        commands: dict[str, Any],
+        args: Collection[str] = (),
     ) -> dict[str, Any]:
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
             # Copy `variantlib/plugins/loader.py` into the temp_dir
@@ -110,7 +113,7 @@ class BasePluginLoader:
                 ).read_bytes()
             )
 
-            args = []
+            args = [*args]
             for plugin_api in plugin_apis:
                 args += ["--plugin-api", plugin_api]
 
@@ -184,6 +187,7 @@ class BasePluginLoader:
         self,
         method: Literal["get_all_configs", "get_supported_configs"],
         require_non_empty: bool,
+        require_fixed: bool,
     ) -> dict[str, ProviderConfig]:
         self._check_plugins_loaded()
         assert self._namespace_map is not None
@@ -208,6 +212,7 @@ class BasePluginLoader:
         configs = self._call_subprocess(
             list(self._namespace_map.keys()),
             {method: {}},
+            args=["--require-fixed"] if require_fixed else [],
         )[method]
 
         for plugin_api, plugin_configs in configs.items():
@@ -233,13 +238,20 @@ class BasePluginLoader:
         self,
     ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to all valid configs"""
-        return self._get_configs("get_all_configs", require_non_empty=True)
+        return self._get_configs(
+            "get_all_configs", require_non_empty=True, require_fixed=False
+        )
 
     def get_supported_configs(
         self,
+        require_fixed: bool = False,
     ) -> dict[str, ProviderConfig]:
         """Get a mapping of namespaces to supported configs"""
-        return self._get_configs("get_supported_configs", require_non_empty=False)
+        return self._get_configs(
+            "get_supported_configs",
+            require_non_empty=False,
+            require_fixed=require_fixed,
+        )
 
     @property
     def plugin_api_values(self) -> dict[str, str]:
