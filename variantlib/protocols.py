@@ -68,13 +68,18 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @property
-    def has_fixed_supported_configs(self) -> bool:
+    def is_build_plugin(self) -> bool:
         """
-        Does get_supported_configs() return a fixed list?
+        Is this plugin valid for `plugin-use = "build"`?
 
-        If this is True, then get_supported_configs() must return a fixed
-        list that does not depend on platform in any way.  This permits
-        the plugin being used with 'plugin-use = "build"'.
+        If this is True, then `get_supported_configs()` must always
+        return the same values, irrespective of the platform used.
+        This permits the plugin to be used with `plugin-use = "build"`,
+        where the supported properties are recorded at build time.
+
+        If the value of `get_supported_configs()` may change in any way
+        depending on the platform used, then it must be False
+        (the default).
         """
         return False
 

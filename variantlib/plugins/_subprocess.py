@@ -103,7 +103,7 @@ def main() -> int:
         non_fixed_plugins = {
             plugin.namespace
             for plugin in plugins.values()
-            if not getattr(plugin, "has_fixed_supported_configs", False)
+            if not getattr(plugin, "is_build_plugin", False)
         }
         if non_fixed_plugins:
             raise TypeError(
