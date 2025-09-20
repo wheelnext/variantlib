@@ -24,8 +24,7 @@ jobs:
       - name: Install the package and test dependencies
         run: |
           uv venv
-          uv pip install --upgrade pip
-          uv pip install -e '.[dev,test,cli]'
+          uv sync --frozen --extra dev --extra test --extra cli
 
       # Consider using pre-commit.ci for open source project
       - name: Run pre-commit
@@ -52,7 +51,6 @@ jobs:
       - name: Install the package and test dependencies
         run: |
           uv venv
-          uv pip install --upgrade pip
-          uv pip install -e '.[test]'
+          uv sync --frozen --extra test --extra cli
       - name: Run tests
         run: uv run --no-project pytest -nauto
