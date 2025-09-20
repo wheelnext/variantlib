@@ -4,7 +4,6 @@ import hashlib
 from itertools import chain
 
 import pytest
-
 from variantlib.commands.main import main
 from variantlib.models.variant import VARIANT_HASH_LENGTH
 

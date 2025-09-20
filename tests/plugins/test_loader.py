@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-
+from build.env import DefaultIsolatedEnv
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -156,8 +156,10 @@ def test_namespace_clash() -> None:
     with (
         pytest.raises(
             RuntimeError,
-            match="Two plugins found using the same namespace test_namespace. Refusing "
-            "to proceed.",
+            match=(
+                r"Two plugins found using the same namespace test_namespace. "
+                r"Refusing to proceed."
+            ),
         ),
         ListPluginLoader(
             [
@@ -245,8 +247,10 @@ def test_namespace_missing_module() -> None:
     with (
         pytest.raises(
             PluginError,
-            match="Loading the plugin from 'tests.no_such_module:foo' failed: "
-            "No module named 'tests.no_such_module'",
+            match=(
+                r"Loading the plugin from 'tests.no_such_module:foo' failed: "
+                r"No module named 'tests.no_such_module'"
+            ),
         ),
         ListPluginLoader(["tests.no_such_module:foo"]),
     ):
@@ -257,9 +261,11 @@ def test_namespace_incorrect_name() -> None:
     with (
         pytest.raises(
             PluginError,
-            match="Loading the plugin from 'tests.plugins.test_loader:no_such_name' "
-            "failed: module 'tests.plugins.test_loader' has no attribute "
-            "'no_such_name'",
+            match=(
+                r"Loading the plugin from 'tests.plugins.test_loader:no_such_name' "
+                r"failed: module 'tests.plugins.test_loader' has no attribute "
+                "'no_such_name'"
+            ),
         ),
         ListPluginLoader([("tests.plugins.test_loader:no_such_name")]),
     ):
@@ -303,9 +309,11 @@ def test_namespace_instantiation_raises() -> None:
     with (
         pytest.raises(
             PluginError,
-            match="Instantiating the plugin from "
-            "'tests.plugins.test_loader:RaisingInstantiationPlugin' failed: "
-            "I failed to initialize",
+            match=(
+                "Instantiating the plugin from "
+                r"'tests.plugins.test_loader:RaisingInstantiationPlugin' failed: "
+                "I failed to initialize"
+            ),
         ),
         ListPluginLoader(["tests.plugins.test_loader:RaisingInstantiationPlugin"]),
     ):
@@ -465,8 +473,6 @@ def test_load_plugins_from_entry_points(mocked_entry_points: None) -> None:
 
 
 def test_plugin_in_venv(test_plugin_package_req: str) -> None:
-    from build.env import DefaultIsolatedEnv
-
     variant_info = VariantInfo(
         namespace_priorities=["installable_plugin"],
         providers={

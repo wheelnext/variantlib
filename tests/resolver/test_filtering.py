@@ -5,7 +5,6 @@ import random
 from collections import deque
 
 import pytest
-
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature

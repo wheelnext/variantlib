@@ -8,7 +8,6 @@ from typing import Union
 from typing import runtime_checkable
 
 import pytest
-
 from variantlib.errors import ValidationError
 from variantlib.validators.base import validate_type
 

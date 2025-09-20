@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
-from tests.utils import assert_zips_equal
 from variantlib.commands.main import main
 from variantlib.constants import NULL_VARIANT_LABEL
+
+from tests.utils import assert_zips_equal
 
 
 @pytest.mark.parametrize(

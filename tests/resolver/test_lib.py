@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from deepdiff import DeepDiff
 from deepdiff.operator import BaseOperator
-
 from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription

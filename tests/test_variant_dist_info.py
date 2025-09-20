@@ -5,7 +5,6 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
-
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY

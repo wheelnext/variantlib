@@ -5,7 +5,6 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
-
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_FEATURE_KEY

@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING
 import platformdirs
 import pytest
 import tomlkit
-
-from variantlib import __package_name__
 from variantlib.configuration import ConfigEnvironments
 from variantlib.configuration import VariantConfiguration
 from variantlib.configuration import get_configuration_files
 from variantlib.constants import CONFIG_FILENAME
 from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
+
+from variantlib import __package_name__
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

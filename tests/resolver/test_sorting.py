@@ -4,7 +4,6 @@ import sys
 from typing import Any
 
 import pytest
-
 from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
@@ -338,7 +337,7 @@ def test_sort_variants_descriptions_ranking_validation_error(
     vprops = [VariantProperty(namespace="omnicorp", feature="feat", value="value")]
 
     # Test with a completely different property (same feature, different value)
-    with pytest.raises(ValidationError, match="Filtering should be applied first."):
+    with pytest.raises(ValidationError, match="Filtering should be applied first"):
         sort_variants_descriptions(
             vdescs=[vdesc],
             property_priorities=vprops,

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import tomlkit
-
 from variantlib.commands.main import main
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY

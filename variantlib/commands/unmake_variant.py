@@ -110,7 +110,7 @@ def _unmake_variant(
                         f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
                     ).encode()
                     for line in input_file:
-                        rec_filename, sha256, size = line.split(b",")
+                        rec_filename, _sha256, _size = line.split(b",")
                         if rec_filename != variant_dist_info_path:
                             output_file.write(line)
                 else:

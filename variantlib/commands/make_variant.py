@@ -10,7 +10,8 @@ import sys
 import zipfile
 from contextlib import nullcontext
 from subprocess import CalledProcessError
-from typing import TYPE_CHECKING
+
+from build.env import DefaultIsolatedEnv
 
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
@@ -172,14 +173,9 @@ def _make_variant(
         vdesc = VariantDescription(properties=properties)
 
         if validate_properties:
-            if TYPE_CHECKING:
-                from build.env import DefaultIsolatedEnv
-
-                env_factory: DefaultIsolatedEnv | nullcontext[None]
+            env_factory: DefaultIsolatedEnv | nullcontext[None]
 
             if use_isolation:
-                from build.env import DefaultIsolatedEnv
-
                 # make it really verbose to make mypy happy
                 if installer is None:
                     env_factory = DefaultIsolatedEnv()
@@ -269,7 +265,7 @@ def _make_variant(
                     with output_zip.open(file_info, "w") as output_file:
                         for line in input_file:
                             new_line = line
-                            rec_filename, sha256, size = line.split(b",")
+                            rec_filename, _sha256, _size = line.split(b",")
                             # Skip existing hash for the discarded copy.
                             if rec_filename.decode("utf-8") == dist_info_path:
                                 continue

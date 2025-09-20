@@ -14,10 +14,6 @@ from hypothesis import given
 from hypothesis import settings
 from hypothesis import strategies as st
 from trycast import trycast
-
-from tests.test_pyproject_toml import PYPROJECT_TOML
-from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
-from tests.utils import get_combinations
 from variantlib.api import check_variant_supported
 from variantlib.api import get_variant_environment_dict
 from variantlib.api import get_variant_label
@@ -61,11 +57,14 @@ from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
+from tests.test_pyproject_toml import PYPROJECT_TOML
+from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
+from tests.utils import get_combinations
+
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     from pytest_mock import MockerFixture
-
     from variantlib.plugins.loader import BasePluginLoader
 
 

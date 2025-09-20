@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from variantlib.commands.main import main
 from variantlib.configuration import get_configuration_files
 

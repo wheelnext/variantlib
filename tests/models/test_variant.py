@@ -6,7 +6,6 @@ import string
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
+from types import SimpleNamespace
 
+import pytest
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
@@ -193,8 +194,6 @@ def test_empty_provider_config() -> None:
 def test_provider_config_invalid_vfeat_config_type() -> None:
     """Test that invalid `VariantFeatureConfig` types within ProviderConfig raise an
     error."""
-    from types import SimpleNamespace
-
     with pytest.raises(ValidationError):
         ProviderConfig(
             namespace="provider_name",

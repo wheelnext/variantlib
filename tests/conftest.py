@@ -6,10 +6,10 @@ import pytest
 from hypothesis import Verbosity
 from hypothesis import settings
 from pytest_mock import MockerFixture
-
-from tests.mocked_plugins import MockedEntryPoint
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import ListPluginLoader
+
+from tests.mocked_plugins import MockedEntryPoint
 
 # Set PYTHONPATH to ensure that tests can find plugins
 os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
