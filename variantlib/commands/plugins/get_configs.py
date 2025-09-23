@@ -6,7 +6,6 @@ import sys
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from variantlib.plugins.loader import BasePluginLoader
@@ -46,10 +45,12 @@ def get_configs(args: list[str], plugin_loader: BasePluginLoader) -> None:
         if parsed_args.namespace not in (provider_cfg.namespace, None):
             continue
 
+        sys.stdout.write(f"{provider_cfg.namespace}:\n")
         for feature in provider_cfg.configs:
             if parsed_args.feature not in (feature.name, None):
                 continue
 
+            mv = "multi-value" if feature.multi_value else "single-value"
+            sys.stdout.write(f"  {feature.name}: ({mv})\n")
             for value in feature.values:
-                vprop = VariantProperty(provider_cfg.namespace, feature.name, value)
-                sys.stdout.write(f"{vprop.to_str()}\n")
+                sys.stdout.write(f"    {value}\n")
