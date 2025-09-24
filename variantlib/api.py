@@ -324,16 +324,20 @@ def check_variant_supported(
 
 def get_variant_environment_dict(
     variant_desc: VariantDescription,
-) -> dict[str, set[str]]:
+    variant_label: str | None = None,
+) -> dict[str, set[str] | str]:
     """Get the dict for packaging Marker.evaluate()"""
 
-    return {
+    ret: dict[str, set[str] | str] = {
         "variant_namespaces": {vprop.namespace for vprop in variant_desc.properties},
         "variant_features": {
             vprop.feature_object.to_str() for vprop in variant_desc.properties
         },
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
     }
+    if variant_label is not None:
+        ret["variant_label"] = variant_label
+    return ret
 
 
 def get_variant_label(

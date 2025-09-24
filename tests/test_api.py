@@ -531,7 +531,8 @@ def test_check_variant_supported_generic() -> None:
     )
 
 
-def test_get_variant_environment_dict() -> None:
+@pytest.mark.parametrize("label", [None, "foo"])
+def test_get_variant_environment_dict(label: str | None) -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("ns1", "feat1", "val1"),
@@ -540,7 +541,7 @@ def test_get_variant_environment_dict() -> None:
             VariantProperty("ns3", "feat2", "val2"),
         ]
     )
-    assert get_variant_environment_dict(vdesc) == {
+    expected: dict[str, set[str] | str] = {
         "variant_features": {
             "ns1 :: feat1",
             "ns1 :: feat2",
@@ -559,6 +560,9 @@ def test_get_variant_environment_dict() -> None:
             "ns3 :: feat2 :: val2",
         },
     }
+    if label is not None:
+        expected["variant_label"] = label
+    assert get_variant_environment_dict(vdesc, label) == expected
 
 
 def test_make_variant_dist_info_invalid_label():
