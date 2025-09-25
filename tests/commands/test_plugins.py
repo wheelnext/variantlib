@@ -31,20 +31,30 @@ def test_plugins_get_all_configs(
     assert (
         capsys.readouterr().out
         == """\
-test_namespace :: name1 :: val1a
-test_namespace :: name1 :: val1b
-test_namespace :: name1 :: val1c
-test_namespace :: name1 :: val1d
-test_namespace :: name2 :: val2a
-test_namespace :: name2 :: val2b
-test_namespace :: name2 :: val2c
-second_namespace :: name3 :: val3a
-second_namespace :: name3 :: val3b
-second_namespace :: name3 :: val3c
-incompatible_namespace :: flag1 :: on
-incompatible_namespace :: flag2 :: on
-incompatible_namespace :: flag3 :: on
-incompatible_namespace :: flag4 :: on
+test_namespace:
+  name1: (single-value)
+    val1a
+    val1b
+    val1c
+    val1d
+  name2: (single-value)
+    val2a
+    val2b
+    val2c
+second_namespace:
+  name3: (single-value)
+    val3a
+    val3b
+    val3c
+incompatible_namespace:
+  flag1: (single-value)
+    on
+  flag2: (single-value)
+    on
+  flag3: (single-value)
+    on
+  flag4: (single-value)
+    on
 """
     )
 
@@ -57,9 +67,11 @@ def test_plugins_get_all_configs_filter_namespace(
     assert (
         capsys.readouterr().out
         == """\
-second_namespace :: name3 :: val3a
-second_namespace :: name3 :: val3b
-second_namespace :: name3 :: val3c
+second_namespace:
+  name3: (single-value)
+    val3a
+    val3b
+    val3c
 """
     )
 
@@ -72,10 +84,14 @@ def test_plugins_get_all_configs_filter_feature(
     assert (
         capsys.readouterr().out
         == """\
-test_namespace :: name1 :: val1a
-test_namespace :: name1 :: val1b
-test_namespace :: name1 :: val1c
-test_namespace :: name1 :: val1d
+test_namespace:
+  name1: (single-value)
+    val1a
+    val1b
+    val1c
+    val1d
+second_namespace:
+incompatible_namespace:
 """
     )
 
@@ -88,12 +104,17 @@ def test_plugins_get_supported_configs(
     assert (
         capsys.readouterr().out
         == """\
-test_namespace :: name1 :: val1a
-test_namespace :: name1 :: val1b
-test_namespace :: name2 :: val2a
-test_namespace :: name2 :: val2b
-test_namespace :: name2 :: val2c
-second_namespace :: name3 :: val3a
+test_namespace:
+  name1: (single-value)
+    val1a
+    val1b
+  name2: (single-value)
+    val2a
+    val2b
+    val2c
+second_namespace:
+  name3: (single-value)
+    val3a
 """
     )
 
@@ -106,7 +127,9 @@ def test_plugins_get_supported_configs_filter_namespace(
     assert (
         capsys.readouterr().out
         == """\
-second_namespace :: name3 :: val3a
+second_namespace:
+  name3: (single-value)
+    val3a
 """
     )
 
@@ -119,7 +142,10 @@ def test_plugins_get_supported_configs_filter_feature(
     assert (
         capsys.readouterr().out
         == """\
-test_namespace :: name1 :: val1a
-test_namespace :: name1 :: val1b
+test_namespace:
+  name1: (single-value)
+    val1a
+    val1b
+second_namespace:
 """
     )
