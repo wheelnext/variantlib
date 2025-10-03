@@ -16,7 +16,7 @@ class VariantFeatureConfigTypeSubclass(VariantFeatureConfigType):
     values = ["b"]
     multi_value = False
 
-    def __init__(self, *args):
+    def __init__(self, **kwargs):
         pass
 
 
