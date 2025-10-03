@@ -60,12 +60,14 @@ def test_plugin_type_abstract(missing: str) -> None:
 
         if missing != "get_all_configs":
 
-            def get_all_configs(self) -> list[VariantFeatureConfigType]:
+            @staticmethod
+            def get_all_configs() -> list[VariantFeatureConfigType]:
                 return []
 
         if missing != "get_supported_configs":
 
-            def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+            @staticmethod
+            def get_supported_configs() -> list[VariantFeatureConfigType]:
                 return []
 
     with pytest.raises(TypeError):
