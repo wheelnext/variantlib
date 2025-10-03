@@ -15,6 +15,7 @@ class VariantFeatureConfig:
 
 
 namespace = "module_namespace"
+is_build_plugin = False
 
 
 def get_all_configs() -> list[VariantFeatureConfigType]:
