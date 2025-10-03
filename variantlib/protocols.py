@@ -67,6 +67,9 @@ class VariantFeatureConfigType(Protocol):
 class PluginType(Protocol):
     """A protocol for plugin classes"""
 
+    # Note: properties are used here for docstring purposes, these must
+    # be actually implemented as attributes.
+
     @property
     @abstractmethod
     def namespace(self) -> VariantNamespace:
@@ -89,12 +92,14 @@ class PluginType(Protocol):
         """
         return False
 
+    @classmethod
     @abstractmethod
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    def get_all_configs(cls) -> list[VariantFeatureConfigType]:
         """Get all valid configs for the plugin"""
         raise NotImplementedError
 
+    @classmethod
     @abstractmethod
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    def get_supported_configs(cls) -> list[VariantFeatureConfigType]:
         """Get supported configs for the current system"""
         raise NotImplementedError
