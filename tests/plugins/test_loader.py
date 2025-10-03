@@ -48,14 +48,16 @@ RANDOM_STUFF = 123
 class ClashingPlugin(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    @classmethod
+    def get_all_configs(cls) -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig(
                 "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
             ),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    @classmethod
+    def get_supported_configs(cls) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -64,11 +66,13 @@ class ExceptionPluginBase(PluginType):
 
     returned_value: list[VariantFeatureConfigType]
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
-        return self.returned_value
+    @classmethod
+    def get_all_configs(cls) -> list[VariantFeatureConfigType]:
+        return cls.returned_value
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
-        return self.returned_value
+    @classmethod
+    def get_supported_configs(cls) -> list[VariantFeatureConfigType]:
+        return cls.returned_value
 
 
 def test_get_all_configs(
@@ -275,7 +279,8 @@ def test_namespace_incorrect_name() -> None:
 class IncompletePlugin:
     namespace = "incomplete_plugin"
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    @classmethod
+    def get_supported_configs(cls) -> list[VariantFeatureConfigType]:
         return []
 
 
@@ -292,48 +297,7 @@ def test_namespace_incorrect_type() -> None:
         pass
 
 
-class RaisingInstantiationPlugin:
-    namespace = "raising_plugin"
-
-    def __init__(self) -> None:
-        raise RuntimeError("I failed to initialize")
-
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
-        return []
-
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
-        return []
-
-
-def test_namespace_instantiation_raises() -> None:
-    with (
-        pytest.raises(
-            PluginError,
-            match=(
-                "Instantiating the plugin from "
-                r"'tests.plugins.test_loader:RaisingInstantiationPlugin' failed: "
-                "I failed to initialize"
-            ),
-        ),
-        ListPluginLoader(["tests.plugins.test_loader:RaisingInstantiationPlugin"]),
-    ):
-        pass
-
-
-class CrossTypeInstantiationPlugin:
-    namespace = "cross_plugin"
-
-    def __new__(cls) -> IncompletePlugin:  # type: ignore[misc]
-        return IncompletePlugin()
-
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
-        return []
-
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
-        return []
-
-
-@pytest.mark.parametrize("cls", ["IncompletePlugin", "CrossTypeInstantiationPlugin"])
+@pytest.mark.parametrize("cls", ["IncompletePlugin"])
 def test_namespace_instantiation_returns_incorrect_type(
     cls: type,
 ) -> None:
@@ -342,9 +306,9 @@ def test_namespace_instantiation_returns_incorrect_type(
             PluginError,
             match=re.escape(
                 f"'tests.plugins.test_loader:{cls}' does not meet the PluginType "
-                "prototype: <tests.plugins.test_loader.IncompletePlugin object at"
-            )
-            + r".*(missing attributes: get_all_configs)",
+                "prototype: <class 'tests.plugins.test_loader.IncompletePlugin'> "
+                "(missing attributes: get_all_configs)"
+            ),
         ),
         ListPluginLoader([f"tests.plugins.test_loader:{cls}"]),
     ):
@@ -359,16 +323,6 @@ def test_namespaces(
         "second_namespace",
         "incompatible_namespace",
     ]
-
-
-def test_non_class_attrs() -> None:
-    with ListPluginLoader(
-        [
-            "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_a",
-            "tests.mocked_plugins:IndirectPath.MoreIndirection.plugin_b",
-        ]
-    ) as loader:
-        assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
 def test_non_callable_plugin() -> None:

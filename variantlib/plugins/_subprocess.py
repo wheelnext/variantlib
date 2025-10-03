@@ -35,25 +35,11 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
         try:
             module = importlib.import_module(import_name)
             attr_chain = attr_path.split(".") if attr_path else []
-            plugin_callable = reduce(getattr, attr_chain, module)
+            plugin_instance = reduce(getattr, attr_chain, module)
         except Exception as exc:
             raise RuntimeError(
                 f"Loading the plugin from {plugin_api!r} failed: {exc}"
             ) from exc
-
-        # plugin-api can either be a callable (e.g. a class to instantiate
-        # or a function to call) or a ready object
-        plugin_instance: PluginType
-        if callable(plugin_callable):
-            try:
-                # Instantiate the plugin
-                plugin_instance = plugin_callable()
-            except Exception as exc:
-                raise RuntimeError(
-                    f"Instantiating the plugin from {plugin_api!r} failed: {exc}"
-                ) from exc
-        else:
-            plugin_instance = plugin_callable  # pyright: ignore[reportAssignmentType]
 
         # We cannot use isinstance() here since some of the PluginType methods
         # are optional. Instead, we use @abstractmethod decorator to naturally

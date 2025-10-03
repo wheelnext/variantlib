@@ -20,7 +20,8 @@ class MockedPluginA(PluginType):
 
     is_build_plugin = True
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    @staticmethod
+    def get_all_configs() -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig(
                 "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
@@ -30,7 +31,8 @@ class MockedPluginA(PluginType):
             ),
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
             VariantFeatureConfig(
@@ -49,14 +51,16 @@ MyVariantFeatureConfig = namedtuple(
 class MockedPluginB:
     namespace = "second_namespace"
 
-    def get_all_configs(self) -> list[MyVariantFeatureConfig]:
+    @classmethod
+    def get_all_configs(cls) -> list[MyVariantFeatureConfig]:
         return [
             MyVariantFeatureConfig(
                 "name3", ["val3a", "val3b", "val3c"], multi_value=False
             ),
         ]
 
-    def get_supported_configs(self) -> list[MyVariantFeatureConfig]:
+    @classmethod
+    def get_supported_configs(cls) -> list[MyVariantFeatureConfig]:
         return [
             MyVariantFeatureConfig("name3", ["val3a"], multi_value=False),
         ]
@@ -74,26 +78,20 @@ class MyFlag:
 class MockedPluginC(PluginType):
     namespace = "incompatible_namespace"
 
-    def get_all_configs(self) -> list[VariantFeatureConfigType]:
+    @classmethod
+    def get_all_configs(cls) -> list[VariantFeatureConfigType]:
         return [
             MyVariantFeatureConfig(x, ["on"], multi_value=False)
             for x in ("flag1", "flag2", "flag3", "flag4")
         ]
 
-    def get_supported_configs(self) -> list[VariantFeatureConfigType]:
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
         return []
 
 
 class IndirectPath:
     class MoreIndirection:
-        @classmethod
-        def plugin_a(cls) -> MockedPluginA:
-            return MockedPluginA()
-
-        @staticmethod
-        def plugin_b() -> MockedPluginB:
-            return MockedPluginB()
-
         object_a = MockedPluginA()
 
 
