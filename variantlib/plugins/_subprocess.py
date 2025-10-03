@@ -52,7 +52,9 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
                 f"{', '.join(sorted(missing_attributes))})"
             )
 
-        yield plugin_instance
+        # TODO: mypy complains about ModuleType -> PluginType conversion when PluginType
+        # contains class methods but not otherwise. Need to confirm if it's a mypy bug.
+        yield plugin_instance  # type: ignore[misc]
 
 
 def process_configs(
