@@ -253,7 +253,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     variants_json.namespace_priorities.append("ns")
     variants_json.feature_priorities["ns"] = ["foo"]
     variants_json.property_priorities["fictional_tech"]["foo"] = ["bar"]
-    variants_json.providers["ns"] = ProviderInfo(plugin_api="foo:bar")
+    variants_json.providers["ns"] = ProviderInfo(requires=["bar"], plugin_api="foo:bar")
     variants_json.providers["fictional_hw"].enable_if = None
     variants_json.providers["fictional_tech"].requires.append("frobnicate")
 

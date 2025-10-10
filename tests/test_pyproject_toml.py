@@ -393,6 +393,7 @@ def test_extra_provider_data_key() -> None:
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "frobnicate:Plugin",
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["foo"],
                             "foo": {},
                         }
                     }
@@ -410,7 +411,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     pyproj.namespace_priorities.append("ns4")
     pyproj.feature_priorities["ns4"] = ["foo"]
     pyproj.property_priorities["ns2"]["foo"] = ["bar"]
-    pyproj.providers["ns4"] = ProviderInfo(plugin_api="foo:bar")
+    pyproj.providers["ns4"] = ProviderInfo(requires=["foo"], plugin_api="foo:bar")
     pyproj.providers["ns1"].enable_if = None
     pyproj.providers["ns2"].requires.append("frobnicate")
 
