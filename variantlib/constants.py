@@ -65,6 +65,8 @@ VALIDATION_PROVIDER_PLUGIN_API_REGEX = re.compile(
 )
 VALIDATION_PROVIDER_REQUIRES_REGEX = re.compile(r"[\S ]+")
 
+VARIANT_ABI_DEPENDENCY_NAMESPACE: Literal["abi_dependency"] = "abi_dependency"
+
 
 # VALIDATION_PYTHON_PACKAGE_NAME_REGEX = re.compile(r"[^\s-]+?")
 # Per PEP 508: https://peps.python.org/pep-0508/#names

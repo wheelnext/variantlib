@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import logging
+import os
+from importlib import metadata
 from typing import TYPE_CHECKING
 
+from packaging.utils import canonicalize_name
+
+from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -19,6 +25,18 @@ if TYPE_CHECKING:
     from variantlib.protocols import VariantFeatureName
     from variantlib.protocols import VariantFeatureValue
     from variantlib.protocols import VariantNamespace
+
+logger = logging.getLogger(__name__)
+
+
+def _normalize_package_name(name: str) -> str:
+    # VALIDATION_FEATURE_NAME_REGEX does not accepts "-"
+    return canonicalize_name(name).replace("-", "_")
+
+
+def _normalize_package_version(version: str) -> str:
+    # VALIDATION_VALUE_REGEX does not accepts "+"
+    return version.split("+", maxsplit=1)[0]
 
 
 def filter_variants(
@@ -124,8 +142,62 @@ def sort_and_filter_supported_variants(
     :param property_priorities: Ordered list of `VariantProperty` objects.
     :return: Sorted and filtered list of `VariantDescription` objects.
     """
-    validate_type(vdescs, list[VariantDescription])
 
+    validate_type(vdescs, list[VariantDescription])
+    validate_type(supported_vprops, list[VariantProperty])
+
+    if namespace_priorities is None:
+        namespace_priorities = []
+
+    # ======================================================================= #
+    #                         ABI DEPENDENCY INJECTION                        #
+    # ======================================================================= #
+
+    # 1. Manually fed from environment variable
+    #    Note: come first for "implicit higher priority"
+    #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
+    if variant_abi_deps_env := os.environ.get("NV_VARIANT_PROVIDER_FORCE_SM_ARCH"):
+        for pkg_spec in variant_abi_deps_env.split(","):
+            try:
+                pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
+            except ValueError:
+                logger.exception(
+                    "`NV_VARIANT_PROVIDER_FORCE_SM_ARCH` received an invalid value "
+                    "`%(pkg_spec)s`. It will be ignored.\n"
+                    "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
+                    {"pkg_spec": pkg_spec},
+                )
+                continue
+
+            supported_vprops.append(
+                VariantProperty(
+                    namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
+                    feature=_normalize_package_name(pkg_name),
+                    value=_normalize_package_version(pkg_version),
+                )
+            )
+
+    # 2. Automatically populate from the current python environment
+    packages = [
+        (dist.metadata["Name"], dist.version) for dist in metadata.distributions()
+    ]
+    for pkg_name, pkg_version in sorted(packages):
+        supported_vprops.append(
+            VariantProperty(
+                namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
+                feature=_normalize_package_name(pkg_name),
+                value=_normalize_package_version(pkg_version),
+            )
+        )
+
+    # 3. Adding `VARIANT_ABI_DEPENDENCY_NAMESPACE` at the back of`namespace_priorities`
+    namespace_priorities.append(VARIANT_ABI_DEPENDENCY_NAMESPACE)
+
+    # ======================================================================= #
+    #                               NULL VARIANT                              #
+    # ======================================================================= #
+
+    # Adding the `null-variant` to the list - always "compatible"
     if (null_variant := VariantDescription()) not in vdescs:
         """Add a null variant description to the list."""
         # This is needed to ensure that we always consider the null variant
@@ -139,7 +211,9 @@ def sort_and_filter_supported_variants(
         """No supported properties provided, return no variants."""
         return []
 
-    validate_type(supported_vprops, list[VariantProperty])
+    # ======================================================================= #
+    #                                FILTERING                                #
+    # ======================================================================= #
 
     # Step 1: we remove any duplicate, or unsupported `VariantDescription` on
     #         this platform.
@@ -152,6 +226,10 @@ def sort_and_filter_supported_variants(
             forbidden_properties=forbidden_properties,
         )
     )
+
+    # ======================================================================= #
+    #                                 SORTING                                 #
+    # ======================================================================= #
 
     # Step 2: we sort the supported `VariantProperty`s based on their respective
     #         priority.
