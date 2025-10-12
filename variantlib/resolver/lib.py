@@ -6,6 +6,7 @@ from importlib import metadata
 from typing import TYPE_CHECKING
 
 from packaging.utils import canonicalize_name
+from packaging.version import Version
 
 from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
 from variantlib.models.variant import VariantDescription
@@ -34,9 +35,11 @@ def _normalize_package_name(name: str) -> str:
     return canonicalize_name(name).replace("-", "_")
 
 
-def _normalize_package_version(version: str) -> str:
-    # VALIDATION_VALUE_REGEX does not accepts "+"
-    return version.split("+", maxsplit=1)[0]
+def _generate_version_matches(version: str) -> Generator[str]:
+    vspec = Version(version)
+    yield f"{vspec.major}"
+    yield f"{vspec.major}.{vspec.minor}"
+    yield f"{vspec.major}.{vspec.minor}.{vspec.micro}"
 
 
 def filter_variants(
@@ -156,25 +159,26 @@ def sort_and_filter_supported_variants(
     # 1. Manually fed from environment variable
     #    Note: come first for "implicit higher priority"
     #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
-    if variant_abi_deps_env := os.environ.get("NV_VARIANT_PROVIDER_FORCE_SM_ARCH"):
+    if variant_abi_deps_env := os.environ.get("VARIANT_ABI_DEPENDENCY"):
         for pkg_spec in variant_abi_deps_env.split(","):
             try:
                 pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
             except ValueError:
                 logger.exception(
-                    "`NV_VARIANT_PROVIDER_FORCE_SM_ARCH` received an invalid value "
+                    "`VARIANT_ABI_DEPENDENCY` received an invalid value "
                     "`%(pkg_spec)s`. It will be ignored.\n"
                     "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
                     {"pkg_spec": pkg_spec},
                 )
                 continue
 
-            supported_vprops.append(
+            supported_vprops.extend(
                 VariantProperty(
                     namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
                     feature=_normalize_package_name(pkg_name),
-                    value=_normalize_package_version(pkg_version),
+                    value=_ver,
                 )
+                for _ver in _generate_version_matches(pkg_version)
             )
 
     # 2. Automatically populate from the current python environment
@@ -182,12 +186,13 @@ def sort_and_filter_supported_variants(
         (dist.metadata["Name"], dist.version) for dist in metadata.distributions()
     ]
     for pkg_name, pkg_version in sorted(packages):
-        supported_vprops.append(
+        supported_vprops.extend(
             VariantProperty(
                 namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
                 feature=_normalize_package_name(pkg_name),
-                value=_normalize_package_version(pkg_version),
+                value=_ver,
             )
+            for _ver in _generate_version_matches(pkg_version)
         )
 
     # 3. Adding `VARIANT_ABI_DEPENDENCY_NAMESPACE` at the back of`namespace_priorities`
