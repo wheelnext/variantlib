@@ -13,6 +13,7 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
 from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
@@ -364,19 +365,23 @@ def test_load_plugin_invalid_arg() -> None:
             ],
             providers={
                 "test_namespace": ProviderInfo(
-                    plugin_api="tests.mocked_plugins:MockedPluginA"
+                    requires=["variantlib"],
+                    plugin_api="tests.mocked_plugins:MockedPluginA",
                 ),
                 "second_namespace": ProviderInfo(
                     # always true
                     enable_if="python_version >= '3.10'",
+                    requires=["variantlib"],
                     plugin_api="tests.mocked_plugins:MockedPluginB",
                 ),
                 "incompatible_namespace": ProviderInfo(
                     # always false (hopefully)
                     enable_if='platform_machine == "frobnicator"',
+                    requires=["variantlib"],
                     plugin_api="tests.mocked_plugins:MockedPluginC",
                 ),
                 "one_more": ProviderInfo(
+                    requires=["variantlib"],
                     plugin_api="tests.mocked_plugins:NoSuchClass",
                     optional=True,
                 ),
@@ -388,9 +393,11 @@ def test_load_plugin_invalid_arg() -> None:
 {VARIANT_INFO_NAMESPACE_KEY} = ["test_namespace", "second_namespace"]
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.test_namespace]
+{VARIANT_INFO_PROVIDER_REQUIRES_KEY} = ["variantlib"]
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "tests.mocked_plugins:MockedPluginA"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.second_namespace]
+{VARIANT_INFO_PROVIDER_REQUIRES_KEY} = ["variantlib"]
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "tests.mocked_plugins:MockedPluginB"
 """)
         ),
@@ -401,10 +408,12 @@ def test_load_plugin_invalid_arg() -> None:
                 },
                 VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "test_namespace": {
-                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginA"  # noqa: E501
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginA",  # noqa: E501
                     },
                     "second_namespace": {
-                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB"  # noqa: E501
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB",  # noqa: E501
                     },
                 },
                 VARIANTS_JSON_VARIANT_DATA_KEY: {},
@@ -486,10 +495,12 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
         ],
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA"
+                requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginA"
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB", optional=True
+                requires=["variantlib"],
+                plugin_api="tests.mocked_plugins:MockedPluginB",
+                optional=True,
             ),
         },
     )
@@ -534,10 +545,10 @@ def test_filter_plugins(value: list[VariantNamespace]) -> None:
         ],
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA"
+                requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginA"
             ),
             "second_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginB"
+                requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginB"
             ),
         },
     )
@@ -580,9 +591,10 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
         },
         providers={
             "test_namespace": ProviderInfo(
-                plugin_api="tests.mocked_plugins:MockedPluginA"
+                requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginA"
             ),
             "second_namespace": ProviderInfo(
+                requires=["variantlib"],
                 plugin_api="tests.mocked_plugins:MockedPluginB",
                 plugin_use=PluginUse.BUILD,
             ),

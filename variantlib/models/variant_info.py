@@ -50,14 +50,9 @@ class ProviderInfo:
     requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if (
-            self.plugin_use != PluginUse.NONE
-            and self.plugin_api is None
-            and not self.requires
-        ):
+        if self.plugin_use != PluginUse.NONE and not self.requires:
             raise ValidationError(
-                "Either plugin-api or requires need to be specified when "
-                f"plugin-use != '{PluginUse.NONE}'"
+                f"requires need to be specified when plugin-use != '{PluginUse.NONE}'"
             )
 
     @property
