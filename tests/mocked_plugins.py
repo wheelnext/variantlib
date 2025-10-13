@@ -25,7 +25,7 @@ class MockedPluginA(PluginType):
                 "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
             ),
             VariantFeatureConfig(
-                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                "name2", ["val2a", "val2b", "val2c"], multi_value=True
             ),
         ]
 
@@ -34,7 +34,7 @@ class MockedPluginA(PluginType):
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
             VariantFeatureConfig(
-                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                "name2", ["val2a", "val2b", "val2c"], multi_value=True
             ),
         ]
 
