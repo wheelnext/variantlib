@@ -18,8 +18,6 @@ class MockedEntryPoint:
 class MockedPluginA(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    is_build_plugin = True
-
     @staticmethod
     def get_all_configs() -> list[VariantFeatureConfigType]:
         return [
@@ -88,6 +86,30 @@ class MockedPluginC(PluginType):
     @staticmethod
     def get_supported_configs() -> list[VariantFeatureConfigType]:
         return []
+
+
+class MockedAoTPlugin(PluginType):
+    namespace = "aot_plugin"
+
+    is_build_plugin = True
+
+    @staticmethod
+    def get_all_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
+        ]
+
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
+        ]
 
 
 class IndirectPath:
