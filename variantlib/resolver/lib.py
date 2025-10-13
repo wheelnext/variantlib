@@ -183,7 +183,7 @@ def sort_and_filter_supported_variants(
 
     # 2. Automatically populate from the current python environment
     packages = [
-        (dist.metadata["Name"], dist.version) for dist in metadata.distributions()
+        (dist.name, dist.version) for dist in metadata.distributions()
     ]
     for pkg_name, pkg_version in sorted(packages):
         supported_vprops.extend(
