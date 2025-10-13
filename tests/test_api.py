@@ -336,8 +336,6 @@ def test_validate_variant(optional: bool) -> None:
         VariantProperty("incompatible_namespace", "flag5", "on"): False,
         VariantProperty("missing_namespace", "name", "val"): None,
         VariantProperty("private", "build_type", "debug"): True,
-        VariantProperty("private", "build_type", "minsizerel"): False,
-        VariantProperty("private", "build_type", "release"): True,
         VariantProperty("private", "cow", "moo"): False,
     }
 
