@@ -336,8 +336,6 @@ def test_validate_variant(optional: bool) -> None:
         VariantProperty("incompatible_namespace", "flag5", "on"): False,
         VariantProperty("missing_namespace", "name", "val"): None,
         VariantProperty("private", "build_type", "debug"): True,
-        VariantProperty("private", "build_type", "minsizerel"): False,
-        VariantProperty("private", "build_type", "release"): True,
         VariantProperty("private", "cow", "moo"): False,
     }
 
@@ -691,14 +689,14 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
 ) -> None:
     vdesc = VariantDescription(
         [
-            VariantProperty("test_namespace", "name1", "val1a"),
+            VariantProperty("aot_plugin", "name1", "val1a"),
         ]
     )
-    plugin_api = "tests.mocked_plugins:MockedPluginA"
+    plugin_api = "tests.mocked_plugins:MockedAoTPlugin"
     vinfo = VariantInfo(
-        namespace_priorities=["test_namespace"],
+        namespace_priorities=["aot_plugin"],
         providers={
-            "test_namespace": ProviderInfo(
+            "aot_plugin": ProviderInfo(
                 requires=["variantlib"],
                 plugin_api=plugin_api,
                 optional=True,
@@ -710,10 +708,10 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
     expected: VariantsJsonDict = {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
-            VARIANT_INFO_NAMESPACE_KEY: ["test_namespace"],
+            VARIANT_INFO_NAMESPACE_KEY: ["aot_plugin"],
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {
-            "test_namespace": {
+            "aot_plugin": {
                 VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
                 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
                 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
@@ -721,7 +719,7 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             "test": {
-                "test_namespace": {
+                "aot_plugin": {
                     "name1": ["val1a"],
                 }
             },
@@ -729,18 +727,18 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
     }
 
     if plugin_use == PluginUse.NONE:
-        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
+        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"][
             VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
         ] = "none"
     if plugin_use == PluginUse.BUILD:
-        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
+        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"][
             VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
         ] = "build"
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
-            "test_namespace": ["name1", "name2"],
+            "aot_plugin": ["name1", "name2"],
         }
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY] = {
-            "test_namespace": {
+            "aot_plugin": {
                 "name1": ["val1a", "val1b"],
                 "name2": ["val2a", "val2b", "val2c"],
             },
@@ -759,17 +757,17 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
     )
 
 
-def test_make_variant_dist_info_invalid_build_plugin() -> None:
+def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
     vdesc = VariantDescription(
         [
-            VariantProperty("test_namespace", "name1", "val1d"),
+            VariantProperty("aot_plugin", "name1", "val1d"),
         ]
     )
-    plugin_api = "tests.mocked_plugins:MockedPluginA"
+    plugin_api = "tests.mocked_plugins:MockedAoTPlugin"
     vinfo = VariantInfo(
-        namespace_priorities=["test_namespace"],
+        namespace_priorities=["aot_plugin"],
         providers={
-            "test_namespace": ProviderInfo(
+            "aot_plugin": ProviderInfo(
                 requires=["variantlib"],
                 plugin_api=plugin_api,
                 optional=True,
@@ -780,9 +778,38 @@ def test_make_variant_dist_info_invalid_build_plugin() -> None:
 
     with pytest.raises(
         ValidationError,
-        match=r"Property 'test_namespace :: name1 :: val1d' is not installable "
-        r"according to the respective provider plugin; is plugin-use == 'build' valid "
-        "for this plugin?",
+        match=r"Property 'aot_plugin :: name1 :: val1d' is not installable "
+        r"according to the respective provider plugin",
+    ):
+        make_variant_dist_info(
+            vdesc,
+            variant_info=vinfo,
+            expand_build_plugin_properties=True,
+        )
+
+
+def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("aot_plugin", "name1", "val1a"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MultiValueAoTPlugin"
+    vinfo = VariantInfo(
+        namespace_priorities=["aot_plugin"],
+        providers={
+            "aot_plugin": ProviderInfo(
+                requires=["variantlib"],
+                plugin_api=plugin_api,
+                optional=True,
+                plugin_use=PluginUse.BUILD,
+            )
+        },
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Feature 'aot_plugin :: name1' is multi-value",
     ):
         make_variant_dist_info(
             vdesc,

@@ -128,7 +128,7 @@ def test_get_all_configs(
                     "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
                 ),
                 VariantFeatureConfig(
-                    "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                    "name2", ["val2a", "val2b", "val2c"], multi_value=True
                 ),
             ],
         ),
@@ -150,7 +150,7 @@ def test_get_supported_configs(
             configs=[
                 VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
                 VariantFeatureConfig(
-                    "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                    "name2", ["val2a", "val2b", "val2c"], multi_value=True
                 ),
             ],
         ),
@@ -626,7 +626,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "val2b",
                         "val2c",
                     ],
-                    multi_value=False,
+                    multi_value=True,
                 ),
             ],
         ),
@@ -639,7 +639,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "v3",
                         "v4",
                     ],
-                    multi_value=True,
+                    multi_value=False,
                 ),
             ],
         ),
@@ -652,7 +652,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                         "v5",
                         "v6",
                     ],
-                    multi_value=True,
+                    multi_value=False,
                 ),
             ],
         ),

@@ -18,8 +18,6 @@ class MockedEntryPoint:
 class MockedPluginA(PluginType):
     namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
 
-    is_build_plugin = True
-
     @staticmethod
     def get_all_configs() -> list[VariantFeatureConfigType]:
         return [
@@ -27,7 +25,7 @@ class MockedPluginA(PluginType):
                 "name1", ["val1a", "val1b", "val1c", "val1d"], multi_value=False
             ),
             VariantFeatureConfig(
-                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                "name2", ["val2a", "val2b", "val2c"], multi_value=True
             ),
         ]
 
@@ -36,7 +34,7 @@ class MockedPluginA(PluginType):
         return [
             VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
             VariantFeatureConfig(
-                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+                "name2", ["val2a", "val2b", "val2c"], multi_value=True
             ),
         ]
 
@@ -88,6 +86,48 @@ class MockedPluginC(PluginType):
     @staticmethod
     def get_supported_configs() -> list[VariantFeatureConfigType]:
         return []
+
+
+class MockedAoTPlugin(PluginType):
+    namespace = "aot_plugin"
+
+    is_build_plugin = True
+
+    @staticmethod
+    def get_all_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
+        ]
+
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a", "val1b"], multi_value=False),
+            VariantFeatureConfig(
+                "name2", ["val2a", "val2b", "val2c"], multi_value=False
+            ),
+        ]
+
+
+class MultiValueAoTPlugin(PluginType):
+    namespace = "aot_plugin"
+
+    is_build_plugin = True
+
+    @staticmethod
+    def get_all_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a"], multi_value=True),
+        ]
+
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a"], multi_value=True),
+        ]
 
 
 class IndirectPath:

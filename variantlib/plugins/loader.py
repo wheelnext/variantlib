@@ -199,7 +199,7 @@ class BasePluginLoader:
             namespace: ProviderConfig(
                 namespace=namespace,
                 configs=[
-                    VariantFeatureConfig(name=name, values=values, multi_value=True)
+                    VariantFeatureConfig(name=name, values=values, multi_value=False)
                     for name, values in features.items()
                 ],
             )
