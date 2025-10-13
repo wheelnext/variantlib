@@ -152,6 +152,10 @@ def sort_and_filter_supported_variants(
     if namespace_priorities is None:
         namespace_priorities = []
 
+    # Avoiding modification in place
+    namespace_priorities = namespace_priorities.copy()
+    supported_vprops = supported_vprops.copy()
+
     # ======================================================================= #
     #                         ABI DEPENDENCY INJECTION                        #
     # ======================================================================= #
