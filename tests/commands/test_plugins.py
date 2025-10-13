@@ -101,8 +101,8 @@ test_namespace:
     - val1b
     - val1c
     - val1d
-second_namespace:
-incompatible_namespace:
+second_namespace: []
+incompatible_namespace: []
 """)
 
 
@@ -158,5 +158,5 @@ test_namespace:
     values:
     - val1a
     - val1b
-second_namespace:
+second_namespace: []
 """)

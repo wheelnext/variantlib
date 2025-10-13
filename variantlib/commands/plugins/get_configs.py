@@ -45,13 +45,24 @@ def get_configs(args: list[str], plugin_loader: BasePluginLoader) -> None:
         if parsed_args.namespace not in (provider_cfg.namespace, None):
             continue
 
-        sys.stdout.write(f"{provider_cfg.namespace}:\n")
-        for feature in provider_cfg.configs:
-            if parsed_args.feature not in (feature.name, None):
-                continue
+        matched_features = [
+            feature
+            for feature in provider_cfg.configs
+            if parsed_args.feature in (feature.name, None)
+        ]
 
-            sys.stdout.write(f"  - name: {feature.name}\n")
-            sys.stdout.write(f"    multi_value: {str(feature.multi_value).lower()}\n")
-            sys.stdout.write("    values:\n")
-            for value in feature.values:
-                sys.stdout.write(f"    - {value}\n")
+        if matched_features:
+            sys.stdout.write(f"{provider_cfg.namespace}:\n")
+            for feature in provider_cfg.configs:
+                if parsed_args.feature not in (feature.name, None):
+                    continue
+
+                sys.stdout.write(f"  - name: {feature.name}\n")
+                sys.stdout.write(
+                    f"    multi_value: {str(feature.multi_value).lower()}\n"
+                )
+                sys.stdout.write("    values:\n")
+                for value in feature.values:
+                    sys.stdout.write(f"    - {value}\n")
+        else:
+            sys.stdout.write(f"{provider_cfg.namespace}: []\n")
