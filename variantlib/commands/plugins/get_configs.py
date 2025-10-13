@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
 import logging
 import sys
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.models.variant import VariantProperty
 
 if TYPE_CHECKING:
     from variantlib.plugins.loader import BasePluginLoader
@@ -42,14 +43,16 @@ def get_configs(args: list[str], plugin_loader: BasePluginLoader) -> None:
 
     parsed_args = parser.parse_args(args)
 
+    output: dict[str, list[dict[str, str | list[str]]]] = {}
     for provider_cfg in getattr(plugin_loader, parsed_args.method)().values():
         if parsed_args.namespace not in (provider_cfg.namespace, None):
             continue
 
+        feature_list = output[provider_cfg.namespace] = []
         for feature in provider_cfg.configs:
             if parsed_args.feature not in (feature.name, None):
                 continue
 
-            for value in feature.values:
-                vprop = VariantProperty(provider_cfg.namespace, feature.name, value)
-                sys.stdout.write(f"{vprop.to_str()}\n")
+            feature_list.append(dataclasses.asdict(feature))
+
+    json.dump(output, sys.stdout, indent=2)
