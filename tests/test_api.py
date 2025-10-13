@@ -757,7 +757,7 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
     )
 
 
-def test_make_variant_dist_info_invalid_build_plugin() -> None:
+def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("aot_plugin", "name1", "val1d"),
@@ -779,8 +779,37 @@ def test_make_variant_dist_info_invalid_build_plugin() -> None:
     with pytest.raises(
         ValidationError,
         match=r"Property 'aot_plugin :: name1 :: val1d' is not installable "
-        r"according to the respective provider plugin; is plugin-use == 'build' valid "
-        "for this plugin?",
+        r"according to the respective provider plugin",
+    ):
+        make_variant_dist_info(
+            vdesc,
+            variant_info=vinfo,
+            expand_build_plugin_properties=True,
+        )
+
+
+def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("aot_plugin", "name1", "val1a"),
+        ]
+    )
+    plugin_api = "tests.mocked_plugins:MultiValueAoTPlugin"
+    vinfo = VariantInfo(
+        namespace_priorities=["aot_plugin"],
+        providers={
+            "aot_plugin": ProviderInfo(
+                requires=["variantlib"],
+                plugin_api=plugin_api,
+                optional=True,
+                plugin_use=PluginUse.BUILD,
+            )
+        },
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=r"Feature 'aot_plugin :: name1' is multi-value",
     ):
         make_variant_dist_info(
             vdesc,

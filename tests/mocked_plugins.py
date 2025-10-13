@@ -112,6 +112,24 @@ class MockedAoTPlugin(PluginType):
         ]
 
 
+class MultiValueAoTPlugin(PluginType):
+    namespace = "aot_plugin"
+
+    is_build_plugin = True
+
+    @staticmethod
+    def get_all_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a"], multi_value=True),
+        ]
+
+    @staticmethod
+    def get_supported_configs() -> list[VariantFeatureConfigType]:
+        return [
+            VariantFeatureConfig("name1", ["val1a"], multi_value=True),
+        ]
+
+
 class IndirectPath:
     class MoreIndirection:
         object_a = MockedPluginA()
