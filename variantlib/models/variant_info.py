@@ -99,7 +99,7 @@ class VariantInfo:
     def get_provider_requires(
         self,
         namespaces: set[VariantNamespace] | None = None,
-        include_build_plugins: bool = True,
+        include_aot_plugins: bool = True,
     ) -> set[str]:
         """
         Get list of requirements for providers in variant info
@@ -114,7 +114,7 @@ class VariantInfo:
         requirements = set()
         for namespace in namespaces:
             provider = self.providers[namespace]
-            if not provider.install_time and not include_build_plugins:
+            if not provider.install_time and not include_aot_plugins:
                 continue
             requirements.update(provider.requires)
         return requirements

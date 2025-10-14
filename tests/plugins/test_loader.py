@@ -514,7 +514,7 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
 @pytest.mark.parametrize(
     "loader_call",
     [
-        partial(PluginLoader, VariantInfo(), include_build_plugins=True),
+        partial(PluginLoader, VariantInfo(), include_aot_plugins=True),
         partial(ListPluginLoader, []),
     ],
 )
@@ -558,8 +558,8 @@ def test_filter_plugins(value: list[VariantNamespace]) -> None:
         assert set(loader.namespaces) == expected_namespaces
 
 
-@pytest.mark.parametrize("include_build_plugins", [False, True])
-def test_package_defined_properties(include_build_plugins: bool) -> None:
+@pytest.mark.parametrize("include_aot_plugins", [False, True])
+def test_package_defined_properties(include_aot_plugins: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
@@ -656,7 +656,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
         ),
     }
 
-    if include_build_plugins:
+    if include_aot_plugins:
         namespaces.add("second_namespace")
         # Note: technically a plugin returning a different value is not a valid use.
         # However, here it is used to verify that the correct code path is used.
@@ -673,12 +673,10 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
             ],
         )
 
-    with PluginLoader(
-        variant_info, include_build_plugins=include_build_plugins
-    ) as loader:
+    with PluginLoader(variant_info, include_aot_plugins=include_aot_plugins) as loader:
         assert set(loader.namespaces) == namespaces
         assert loader.get_supported_configs() == configs
-        if include_build_plugins:
+        if include_aot_plugins:
             configs["test_namespace"].configs[0].values.extend(["val1c", "val1d"])
             configs["second_namespace"].configs[0].values.extend(["val3b", "val3c"])
 

@@ -278,13 +278,13 @@ class PluginLoader(BasePluginLoader):
         venv_python_executable: Path | None = None,
         enable_optional_plugins: bool | list[VariantNamespace] = False,
         filter_plugins: list[VariantNamespace] | None = None,
-        include_build_plugins: bool = False,
+        include_aot_plugins: bool = False,
     ) -> None:
         self._variant_info = variant_info
         self._enable_optional_plugins = enable_optional_plugins
         self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
-        self._include_build_plugins = include_build_plugins
+        self._include_aot_plugins = include_aot_plugins
         super().__init__(
             venv_python_executable=venv_python_executable,
             package_defined_properties=variant_info.get_package_defined_properties(
@@ -301,7 +301,7 @@ class PluginLoader(BasePluginLoader):
         if not provider_data.requires:
             return True
         # otherwise, query the plugin if build-time querying is enabled
-        return not self._include_build_plugins
+        return not self._include_aot_plugins
 
     def _get_namespaces_for_package_defined_properties(self) -> set[VariantNamespace]:
         return {
@@ -363,8 +363,8 @@ class PluginLoader(BasePluginLoader):
     def get_all_configs(
         self,
     ) -> dict[str, ProviderConfig]:
-        assert self._include_build_plugins, (
-            "To use get_all_configs(), use PluginLoader(include_build_plugins=True)"
+        assert self._include_aot_plugins, (
+            "To use get_all_configs(), use PluginLoader(include_aot_plugins=True)"
         )
 
         return super().get_all_configs()

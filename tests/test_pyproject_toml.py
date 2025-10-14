@@ -434,7 +434,7 @@ def test_get_provider_requires() -> None:
         "ns2_provider; python_version >= '3.11'",
         "old_ns2_provider; python_version < '3.11'",
     }
-    assert pyproj.get_provider_requires(include_build_plugins=False) == {
+    assert pyproj.get_provider_requires(include_aot_plugins=False) == {
         "ns1-provider >= 1.2.3",
     }
     assert pyproj.get_provider_requires({"ns1"}) == {
@@ -444,7 +444,7 @@ def test_get_provider_requires() -> None:
         "ns2_provider; python_version >= '3.11'",
         "old_ns2_provider; python_version < '3.11'",
     }
-    assert pyproj.get_provider_requires({"ns2"}, include_build_plugins=False) == set()
+    assert pyproj.get_provider_requires({"ns2"}, include_aot_plugins=False) == set()
     with pytest.raises(KeyError):
         pyproj.get_provider_requires({"no_ns"})
 

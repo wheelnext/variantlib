@@ -439,7 +439,7 @@ def test_make_variant_dist_info(
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
-                expand_build_plugin_properties=False,
+                expand_aot_plugin_properties=False,
             )
         )
         == expected
@@ -684,7 +684,7 @@ def test_get_variant_label() -> None:
 @pytest.mark.parametrize(
     ("install_time", "requires"), [(False, False), (False, True), (True, True)]
 )
-def test_make_variant_dist_info_expand_build_plugin_properties(
+def test_make_variant_dist_info_expand_aot_plugin_properties(
     install_time: bool,
     requires: bool,
 ) -> None:
@@ -748,7 +748,7 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
                 vdesc,
                 variant_info=vinfo,
                 variant_label="test",
-                expand_build_plugin_properties=True,
+                expand_aot_plugin_properties=True,
             )
         )
         == expected
@@ -782,7 +782,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )
 
 
@@ -812,7 +812,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )
 
 
@@ -842,5 +842,5 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )

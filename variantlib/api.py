@@ -131,7 +131,7 @@ def validate_variant(
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
-        include_build_plugins=True,
+        include_aot_plugins=True,
     ) as plugin_loader:
         configs = {
             namespace: {
@@ -174,7 +174,7 @@ def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_info: VariantInfo | None = None,
     variant_label: str | None = None,
-    expand_build_plugin_properties: bool = True,
+    expand_aot_plugin_properties: bool = True,
     venv_python_executable: str | pathlib.Path | None = None,
 ) -> str:
     """
@@ -189,9 +189,9 @@ def make_variant_dist_info(
     variant_label specifies the variant label to use. If not specified,
     the default of variant hash is used.
 
-    If expand_build_plugin_properties is True, then default-priorities
-    for plugins with plugin-use == "build" will be filled with the current
-    list of supported properties.
+    If expand_aot_plugin_properties is True, then default-priorities
+    for ahead-of-time plugins will be filled with the current list
+    of supported properties.
     """
 
     # If we have been parsed VariantInfo, convert it to DistMetadata.
@@ -202,7 +202,7 @@ def make_variant_dist_info(
     variant_json.variant_desc = vdesc
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
-    if expand_build_plugin_properties:
+    if expand_aot_plugin_properties:
         namespaces = {vprop.namespace for vprop in vdesc.properties}
         build_namespaces = {
             ns
@@ -223,7 +223,7 @@ def make_variant_dist_info(
                 venv_python_executable=venv_python_executable,
                 enable_optional_plugins=True,
                 filter_plugins=list(build_namespaces),
-                include_build_plugins=True,
+                include_aot_plugins=True,
             ) as plugin_loader:
                 configs = plugin_loader.get_supported_configs(
                     require_fixed=True
