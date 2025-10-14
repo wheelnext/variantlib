@@ -23,6 +23,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
 from variantlib.errors import ValidationError
 from variantlib.protocols import VariantFeatureName
 from variantlib.protocols import VariantFeatureValue
@@ -67,6 +68,9 @@ class VariantInfo:
     ] = field(default_factory=dict)
 
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
+    static_properties: dict[
+        VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+    ] = field(default_factory=dict)
 
     def copy_as_kwargs(self) -> dict[str, Any]:
         """Return a "kwargs" dict suitable for instantiating a copy of itself"""
@@ -119,25 +123,8 @@ class VariantInfo:
             requirements.update(provider.requires)
         return requirements
 
-    def get_package_defined_properties(
-        self,
-        namespaces: set[VariantNamespace] | None = None,
-    ) -> dict[VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]]:
-        """
-        Build a tree of properties listed in default-priorities
-
-        If `namespaces` is not None, only properties for given namespaces
-        will be returned. Otherwise, all properties will be returned.
-        """
-
-        return {
-            namespace: {
-                vfeat: self.property_priorities.get(namespace, {}).get(vfeat, [])
-                for vfeat in self.feature_priorities.get(namespace, [])
-            }
-            for namespace in self.namespace_priorities
-            if namespaces is None or namespace in namespaces
-        }
+    def _get_expected_aot_namespaces(self) -> set[VariantNamespace]:
+        raise NotImplementedError
 
     def _process_common(self, validator: KeyTrackingValidator) -> None:
         with validator.get(VARIANT_INFO_DEFAULT_PRIO_KEY, dict[str, Any], {}):
@@ -230,6 +217,42 @@ class VariantInfo:
                         requires=list(provider_requires),
                     )
 
+        with validator.get(
+            VARIANT_INFO_STATIC_PROPERTIES_KEY,
+            dict[
+                VariantNamespace,
+                dict[VariantFeatureName, list[VariantFeatureValue]],
+            ],
+            {},
+        ) as static_properties:
+            validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
+            self.static_properties = {}
+            for namespace in static_properties:
+                with validator.get(
+                    namespace, dict[VariantFeatureName, list[VariantFeatureValue]]
+                ) as feature_dict:
+                    validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
+                    for feature_name in feature_dict:
+                        with validator.get(
+                            feature_name, list[VariantFeatureValue]
+                        ) as feature_values:
+                            validator.list_matches_re(VALIDATION_VALUE_REGEX)
+                            self.static_properties.setdefault(namespace, {})[
+                                feature_name
+                            ] = feature_values
+
+                    if len(feature_dict) > 1:
+                        feature_prios = set(self.feature_priorities.get(namespace, []))
+                        missing_feature_prios = set(feature_dict.keys()) - feature_prios
+                        if missing_feature_prios:
+                            raise ValidationError(
+                                f"{validator.key}: for AoT providers with multiple "
+                                "features, priorities need to be specified via "
+                                f"{VARIANT_INFO_DEFAULT_PRIO_KEY}."
+                                f"{VARIANT_INFO_FEATURE_KEY}; missing: "
+                                f"{missing_feature_prios}"
+                            )
+
         all_providers = set(self.providers.keys())
         all_providers_key = ".".join([*validator.keys, VARIANT_INFO_PROVIDER_DATA_KEY])
         namespace_prios_key = ".".join(
@@ -245,4 +268,20 @@ class VariantInfo:
                 f"{namespace_prios_key} must specify the same namespaces "
                 f"as {all_providers_key} keys; currently: "
                 f"{set(self.namespace_priorities)} vs. {all_providers}"
+            )
+
+        provided_aot_namespaces = set(self.static_properties.keys())
+        aot_namespaces = self._get_expected_aot_namespaces()
+        static_properties_key = ".".join(
+            [
+                *validator.keys,
+                VARIANT_INFO_STATIC_PROPERTIES_KEY,
+            ]
+        )
+
+        if provided_aot_namespaces != aot_namespaces:
+            raise ValidationError(
+                f"{static_properties_key} must specify properties for all AoT "
+                f"providers; currently provided: {provided_aot_namespaces}; "
+                f"expected: {aot_namespaces}"
             )

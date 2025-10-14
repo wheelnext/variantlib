@@ -287,9 +287,7 @@ class PluginLoader(BasePluginLoader):
         self._include_aot_plugins = include_aot_plugins
         super().__init__(
             venv_python_executable=venv_python_executable,
-            package_defined_properties=variant_info.get_package_defined_properties(
-                self._get_namespaces_for_package_defined_properties()
-            ),
+            package_defined_properties=variant_info.static_properties,
         )
 
     def _use_static_properties_for_provider(self, provider_data: ProviderInfo) -> bool:
@@ -302,13 +300,6 @@ class PluginLoader(BasePluginLoader):
             return True
         # otherwise, query the plugin if build-time querying is enabled
         return not self._include_aot_plugins
-
-    def _get_namespaces_for_package_defined_properties(self) -> set[VariantNamespace]:
-        return {
-            namespace
-            for namespace, provider_data in self._variant_info.providers.items()
-            if self._use_static_properties_for_provider(provider_data)
-        }
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
         # if enable_optional_plugins is a bool, it controls all plugins

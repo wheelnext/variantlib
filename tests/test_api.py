@@ -35,6 +35,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
@@ -294,10 +295,6 @@ def test_validate_variant(optional: bool) -> None:
             "incompatible_namespace",
             "private",
         ],
-        feature_priorities={
-            "private": ["build_type"],
-        },
-        property_priorities={"private": {"build_type": ["debug", "release"]}},
         providers={
             "test_namespace": ProviderInfo(
                 requires=["variantlib"],
@@ -321,6 +318,7 @@ def test_validate_variant(optional: bool) -> None:
                 install_time=False,
             ),
         },
+        static_properties={"private": {"build_type": ["debug", "release"]}},
     )
 
     expected = {
@@ -399,11 +397,15 @@ def test_make_variant_dist_info(
                     VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
                     VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
                 },
+                "ns3": {
+                    VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                },
             }
         )
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2"],
+                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
+                VARIANT_INFO_FEATURE_KEY: {"ns3": ["f2", "f1"]},
             },
         )
 
@@ -413,6 +415,7 @@ def test_make_variant_dist_info(
                 VARIANT_INFO_FEATURE_KEY: {
                     "ns1": ["f2"],
                     "ns2": ["f1", "f2"],
+                    "ns3": ["f2", "f1"],
                 },
                 VARIANT_INFO_PROPERTY_KEY: {
                     "ns1": {
@@ -735,7 +738,7 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
             "aot_plugin": ["name1", "name2"],
         }
-        expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY] = {
+        expected[VARIANT_INFO_STATIC_PROPERTIES_KEY] = {
             "aot_plugin": {
                 "name1": ["val1a", "val1b"],
                 "name2": ["val2a", "val2b", "val2c"],

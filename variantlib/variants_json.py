@@ -19,6 +19,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -32,6 +33,8 @@ from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from variantlib.protocols import VariantNamespace
 
 
 if sys.version_info >= (3, 11):
@@ -95,6 +98,8 @@ class VariantsJson(VariantInfo):
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
+        if self.static_properties:
+            data[VARIANT_INFO_STATIC_PROPERTIES_KEY] = self.static_properties
 
         return json.dumps(data, indent=4, sort_keys=True)
 
@@ -148,6 +153,13 @@ class VariantsJson(VariantInfo):
                             f"Inconsistency in providers[{namespace!r}].{attribute}. "
                             f"Expected: {old!r}, found: {new!r}"
                         )
+
+    def _get_expected_aot_namespaces(self) -> set[VariantNamespace]:
+        return {
+            namespace
+            for namespace, provider_info in self.providers.items()
+            if not provider_info.install_time
+        }
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]

@@ -232,23 +232,24 @@ def make_variant_dist_info(
             for config in configs:
                 if config.namespace not in build_namespaces:
                     continue
+                variant_json.static_properties[config.namespace] = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:
                         raise ValidationError(
                             f"Feature '{config.namespace} :: {vfeat.name}' is "
                             "multi-value, which is invalid for ahead-of-time plugins"
                         )
-                    feature_prios = variant_json.feature_priorities.setdefault(
-                        config.namespace, []
+                    variant_json.static_properties[config.namespace][vfeat.name] = (
+                        vfeat.values
                     )
-                    prop_prios = variant_json.property_priorities.setdefault(
-                        config.namespace, {}
-                    ).setdefault(vfeat.name, [])
-                    if vfeat.name not in feature_prios:
-                        feature_prios.append(vfeat.name)
-                    for value in vfeat.values:
-                        if value not in prop_prios:
-                            prop_prios.append(value)
+
+                    # adjust feature priorities only if at least 2 features defined
+                    if len(config.configs) > 1:
+                        feature_prios = variant_json.feature_priorities.setdefault(
+                            config.namespace, []
+                        )
+                        if vfeat.name not in feature_prios:
+                            feature_prios.append(vfeat.name)
 
         # Validate that we did not end up using an unsupported property.
         # This could happen in two cases:
@@ -259,10 +260,8 @@ def make_variant_dist_info(
         for vprop in vdesc.properties:
             if vprop.namespace not in build_namespaces:
                 continue
-            if (
-                vprop.feature not in variant_json.feature_priorities[vprop.namespace]
-                or vprop.value
-                not in variant_json.property_priorities[vprop.namespace][vprop.feature]
+            if vprop.value not in variant_json.static_properties[vprop.namespace].get(
+                vprop.feature, []
             ):
                 raise ValidationError(
                     f"Property {vprop.to_str()!r} is not installable according to the "

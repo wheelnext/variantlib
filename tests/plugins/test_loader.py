@@ -566,25 +566,8 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
             "second_namespace",
             "private",
         ],
-        feature_priorities={
-            "test_namespace": ["foo"],
-            "second_namespace": ["bar"],
-            "private": ["baz"],
-        },
-        property_priorities={
-            "test_namespace": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
-                "baz": ["v5", "v6"],
-            },
-            "second_namespace": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
-                "baz": ["v5", "v6"],
-            },
+        static_properties={
             "private": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
                 "baz": ["v5", "v6"],
             },
         },
@@ -598,7 +581,6 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
                 install_time=False,
             ),
             "private": ProviderInfo(
-                plugin_api="ignored",
                 install_time=False,
             ),
         },
@@ -625,19 +607,6 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
                         "val2c",
                     ],
                     multi_value=True,
-                ),
-            ],
-        ),
-        "second_namespace": ProviderConfig(
-            namespace="second_namespace",
-            configs=[
-                VariantFeatureConfig(
-                    name="bar",
-                    values=[
-                        "v3",
-                        "v4",
-                    ],
-                    multi_value=False,
                 ),
             ],
         ),

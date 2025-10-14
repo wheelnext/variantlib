@@ -20,6 +20,7 @@ VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: Literal["install-time"] = "install-time"
 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: Literal["optional"] = "optional"
 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
 VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
+VARIANT_INFO_STATIC_PROPERTIES_KEY: Literal["static-properties"] = "static-properties"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
@@ -129,6 +130,7 @@ VariantsJsonDict = TypedDict(
         "$schema": str,
         "default-priorities": PriorityJsonDict,
         "providers": dict[str, ProviderPluginJsonDict],
+        "static-properties": dict[str, dict[str, list[str]]],
         "variants": dict[str, VariantInfoJsonDict],
     },
     total=False,
