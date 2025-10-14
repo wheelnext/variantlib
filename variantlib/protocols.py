@@ -77,13 +77,13 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @property
-    def is_build_plugin(self) -> bool:
+    def is_aot_plugin(self) -> bool:
         """
-        Is this plugin valid for `plugin-use = "build"`?
+        Is this plugin valid for use with `install-time = false`?
 
         If this is True, then `get_supported_configs()` must always
         return the same values, irrespective of the platform used.
-        This permits the plugin to be used with `plugin-use = "build"`,
+        This permits the plugin to be used with `install-time = false`,
         where the supported properties are recorded at build time.
 
         If the value of `get_supported_configs()` may change in any way
