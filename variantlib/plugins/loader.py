@@ -22,7 +22,6 @@ from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant_info import PluginUse
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
@@ -293,15 +292,22 @@ class PluginLoader(BasePluginLoader):
             ),
         )
 
+    def _use_static_properties_for_provider(self, provider_data: ProviderInfo) -> bool:
+        """Returns True if we should read properties from metadata"""
+        # for install-time providers, we always query the plugin
+        if provider_data.install_time:
+            return False
+        # when there is no plugin, we always use metadata
+        if not provider_data.requires:
+            return True
+        # otherwise, query the plugin if build-time querying is enabled
+        return not self._include_build_plugins
+
     def _get_namespaces_for_package_defined_properties(self) -> set[VariantNamespace]:
         return {
             namespace
             for namespace, provider_data in self._variant_info.providers.items()
-            if provider_data.plugin_use == PluginUse.NONE
-            or (
-                provider_data.plugin_use == PluginUse.BUILD
-                and not self._include_build_plugins
-            )
+            if self._use_static_properties_for_provider(provider_data)
         }
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
@@ -313,13 +319,8 @@ class PluginLoader(BasePluginLoader):
         assert isinstance(self._enable_optional_plugins, Collection)
         return namespace in self._enable_optional_plugins
 
-    def _provider_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
-        if provider_data.plugin_use == PluginUse.NONE:
-            return False
-        if (
-            provider_data.plugin_use == PluginUse.BUILD
-            and not self._include_build_plugins
-        ):
+    def _plugin_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
+        if self._use_static_properties_for_provider(provider_data):
             return False
 
         if self._filter_plugins is not None and namespace not in self._filter_plugins:
@@ -354,7 +355,7 @@ class PluginLoader(BasePluginLoader):
         plugins = [
             provider_data.object_reference
             for namespace, provider_data in self._variant_info.providers.items()
-            if self._provider_enabled(namespace, provider_data)
+            if self._plugin_enabled(namespace, provider_data)
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)

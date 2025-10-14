@@ -19,7 +19,6 @@ from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
@@ -596,12 +595,11 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
             "second_namespace": ProviderInfo(
                 requires=["variantlib"],
                 plugin_api="tests.mocked_plugins:MockedPluginB",
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             ),
             "private": ProviderInfo(
                 plugin_api="ignored",
-                plugin_use=PluginUse.NONE,
-                requires=["ignored"],
+                install_time=False,
             ),
         },
     )

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
-from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -20,9 +19,9 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.errors import ValidationError
 from variantlib.protocols import VariantFeatureName
@@ -33,32 +32,24 @@ if TYPE_CHECKING:
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
-class PluginUse(str, Enum):
-    __str__ = str.__str__
-
-    NONE = "none"
-    BUILD = "build"
-    ALL = "all"
-
-
 @dataclass
 class ProviderInfo:
     plugin_api: str | None = None
     enable_if: str | None = None
+    install_time: bool = True
     optional: bool = False
-    plugin_use: PluginUse = PluginUse.ALL
     requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.plugin_use != PluginUse.NONE and not self.requires:
+        if self.install_time and not self.requires:
             raise ValidationError(
-                f"requires need to be specified when plugin-use != '{PluginUse.NONE}'"
+                "requires need to be specified for install-time providers"
             )
 
     @property
     def object_reference(self) -> str:
         """Get effective object reference from plugin-api or requires"""
-        assert self.plugin_use != PluginUse.NONE
+        assert self.requires
         if self.plugin_api is not None:
             return self.plugin_api
         # TODO: how far should we normalize it?
@@ -95,11 +86,11 @@ class VariantInfo:
             },
             "providers": {
                 namespace: ProviderInfo(
-                    requires=list(provider_data.requires),
                     enable_if=provider_data.enable_if,
+                    install_time=provider_data.install_time,
                     optional=provider_data.optional,
                     plugin_api=provider_data.plugin_api,
-                    plugin_use=provider_data.plugin_use,
+                    requires=list(provider_data.requires),
                 )
                 for namespace, provider_data in self.providers.items()
             },
@@ -123,9 +114,7 @@ class VariantInfo:
         requirements = set()
         for namespace in namespaces:
             provider = self.providers[namespace]
-            if provider.plugin_use == PluginUse.NONE:
-                continue
-            if provider.plugin_use == PluginUse.BUILD and not include_build_plugins:
+            if not provider.install_time and not include_build_plugins:
                 continue
             requirements.update(provider.requires)
         return requirements
@@ -223,31 +212,22 @@ class VariantInfo:
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
                     with validator.get(
-                        VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY, str, None
-                    ) as provider_plugin_use:
-                        if provider_plugin_use is not None:
-                            validator.matches_enum(PluginUse)
+                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY, bool, True
+                    ) as provider_install_time:
+                        pass
 
-                    if (
-                        provider_plugin_use != PluginUse.NONE
-                        and provider_plugin_api is None
-                        and not provider_requires
-                    ):
+                    if provider_install_time and not provider_requires:
                         raise ValidationError(
-                            f"{validator.key}: either "
-                            f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
+                            f"{validator.key}: "
                             f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
-                            f"specified for {VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY}"
-                            f" != '{PluginUse.NONE}'"
+                            "specified for install-time plugins"
                         )
                     self.providers[namespace] = ProviderInfo(
-                        requires=list(provider_requires),
                         enable_if=provider_enable_if,
+                        install_time=provider_install_time,
                         optional=provider_optional,
                         plugin_api=provider_plugin_api,
-                        plugin_use=provider_plugin_use
-                        if provider_plugin_use is not None
-                        else PluginUse.ALL,
+                        requires=list(provider_requires),
                     )
 
         all_providers = set(self.providers.keys())

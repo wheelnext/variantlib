@@ -19,7 +19,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
@@ -209,7 +208,8 @@ def make_variant_dist_info(
             ns
             for ns in namespaces
             if ns in variant_info.providers
-            and variant_info.providers[ns].plugin_use == PluginUse.BUILD
+            and not variant_info.providers[ns].install_time
+            and variant_info.providers[ns].requires
         }
         if build_namespaces:
             venv_python_executable = (
