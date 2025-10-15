@@ -25,7 +25,7 @@ VARIANT_INFO_STATIC_PROPERTIES_KEY: Literal["static-properties"] = "static-prope
 PYPROJECT_TOML_TOP_KEY = "variant"
 
 VARIANTS_JSON_SCHEMA_KEY: Literal["$schema"] = "$schema"
-VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.0.2.json"
+VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.0.3.json"
 VARIANTS_JSON_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
 VALIDATION_VARIANT_LABEL_REGEX = re.compile(rf"[0-9a-z._]{{1,{VARIANT_LABEL_LENGTH}}}")
