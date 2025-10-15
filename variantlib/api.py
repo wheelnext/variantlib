@@ -19,7 +19,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import PluginLoader
 from variantlib.resolver.lib import filter_variants
@@ -132,7 +131,7 @@ def validate_variant(
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=True,
         filter_plugins=list({vprop.namespace for vprop in variant_desc.properties}),
-        include_build_plugins=True,
+        include_aot_plugins=True,
     ) as plugin_loader:
         configs = {
             namespace: {
@@ -175,7 +174,7 @@ def make_variant_dist_info(
     vdesc: VariantDescription,
     variant_info: VariantInfo | None = None,
     variant_label: str | None = None,
-    expand_build_plugin_properties: bool = True,
+    expand_aot_plugin_properties: bool = True,
     venv_python_executable: str | pathlib.Path | None = None,
 ) -> str:
     """
@@ -190,9 +189,9 @@ def make_variant_dist_info(
     variant_label specifies the variant label to use. If not specified,
     the default of variant hash is used.
 
-    If expand_build_plugin_properties is True, then default-priorities
-    for plugins with plugin-use == "build" will be filled with the current
-    list of supported properties.
+    If expand_aot_plugin_properties is True, then default-priorities
+    for ahead-of-time plugins will be filled with the current list
+    of supported properties.
     """
 
     # If we have been parsed VariantInfo, convert it to DistMetadata.
@@ -203,13 +202,14 @@ def make_variant_dist_info(
     variant_json.variant_desc = vdesc
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
-    if expand_build_plugin_properties:
+    if expand_aot_plugin_properties:
         namespaces = {vprop.namespace for vprop in vdesc.properties}
         build_namespaces = {
             ns
             for ns in namespaces
             if ns in variant_info.providers
-            and variant_info.providers[ns].plugin_use == PluginUse.BUILD
+            and not variant_info.providers[ns].install_time
+            and variant_info.providers[ns].requires
         }
         if build_namespaces:
             venv_python_executable = (
@@ -223,7 +223,7 @@ def make_variant_dist_info(
                 venv_python_executable=venv_python_executable,
                 enable_optional_plugins=True,
                 filter_plugins=list(build_namespaces),
-                include_build_plugins=True,
+                include_aot_plugins=True,
             ) as plugin_loader:
                 configs = plugin_loader.get_supported_configs(
                     require_fixed=True
@@ -232,23 +232,24 @@ def make_variant_dist_info(
             for config in configs:
                 if config.namespace not in build_namespaces:
                     continue
+                variant_json.static_properties[config.namespace] = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:
                         raise ValidationError(
                             f"Feature '{config.namespace} :: {vfeat.name}' is "
                             "multi-value, which is invalid for ahead-of-time plugins"
                         )
-                    feature_prios = variant_json.feature_priorities.setdefault(
-                        config.namespace, []
+                    variant_json.static_properties[config.namespace][vfeat.name] = (
+                        vfeat.values
                     )
-                    prop_prios = variant_json.property_priorities.setdefault(
-                        config.namespace, {}
-                    ).setdefault(vfeat.name, [])
-                    if vfeat.name not in feature_prios:
-                        feature_prios.append(vfeat.name)
-                    for value in vfeat.values:
-                        if value not in prop_prios:
-                            prop_prios.append(value)
+
+                    # adjust feature priorities only if at least 2 features defined
+                    if len(config.configs) > 1:
+                        feature_prios = variant_json.feature_priorities.setdefault(
+                            config.namespace, []
+                        )
+                        if vfeat.name not in feature_prios:
+                            feature_prios.append(vfeat.name)
 
         # Validate that we did not end up using an unsupported property.
         # This could happen in two cases:
@@ -259,10 +260,8 @@ def make_variant_dist_info(
         for vprop in vdesc.properties:
             if vprop.namespace not in build_namespaces:
                 continue
-            if (
-                vprop.feature not in variant_json.feature_priorities[vprop.namespace]
-                or vprop.value
-                not in variant_json.property_priorities[vprop.namespace][vprop.feature]
+            if vprop.value not in variant_json.static_properties[vprop.namespace].get(
+                vprop.feature, []
             ):
                 raise ValidationError(
                     f"Property {vprop.to_str()!r} is not installable according to the "

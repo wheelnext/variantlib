@@ -22,7 +22,6 @@ from variantlib.errors import NoPluginFoundError
 from variantlib.errors import PluginError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant_info import PluginUse
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
@@ -279,30 +278,28 @@ class PluginLoader(BasePluginLoader):
         venv_python_executable: Path | None = None,
         enable_optional_plugins: bool | list[VariantNamespace] = False,
         filter_plugins: list[VariantNamespace] | None = None,
-        include_build_plugins: bool = False,
+        include_aot_plugins: bool = False,
     ) -> None:
         self._variant_info = variant_info
         self._enable_optional_plugins = enable_optional_plugins
         self._filter_plugins = filter_plugins
         self._environment = cast("dict[str, str]", default_environment())
-        self._include_build_plugins = include_build_plugins
+        self._include_aot_plugins = include_aot_plugins
         super().__init__(
             venv_python_executable=venv_python_executable,
-            package_defined_properties=variant_info.get_package_defined_properties(
-                self._get_namespaces_for_package_defined_properties()
-            ),
+            package_defined_properties=variant_info.static_properties,
         )
 
-    def _get_namespaces_for_package_defined_properties(self) -> set[VariantNamespace]:
-        return {
-            namespace
-            for namespace, provider_data in self._variant_info.providers.items()
-            if provider_data.plugin_use == PluginUse.NONE
-            or (
-                provider_data.plugin_use == PluginUse.BUILD
-                and not self._include_build_plugins
-            )
-        }
+    def _use_static_properties_for_provider(self, provider_data: ProviderInfo) -> bool:
+        """Returns True if we should read properties from metadata"""
+        # for install-time providers, we always query the plugin
+        if provider_data.install_time:
+            return False
+        # when there is no plugin, we always use metadata
+        if not provider_data.requires:
+            return True
+        # otherwise, query the plugin if build-time querying is enabled
+        return not self._include_aot_plugins
 
     def _optional_provider_enabled(self, namespace: str) -> bool:
         # if enable_optional_plugins is a bool, it controls all plugins
@@ -313,13 +310,8 @@ class PluginLoader(BasePluginLoader):
         assert isinstance(self._enable_optional_plugins, Collection)
         return namespace in self._enable_optional_plugins
 
-    def _provider_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
-        if provider_data.plugin_use == PluginUse.NONE:
-            return False
-        if (
-            provider_data.plugin_use == PluginUse.BUILD
-            and not self._include_build_plugins
-        ):
+    def _plugin_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
+        if self._use_static_properties_for_provider(provider_data):
             return False
 
         if self._filter_plugins is not None and namespace not in self._filter_plugins:
@@ -354,7 +346,7 @@ class PluginLoader(BasePluginLoader):
         plugins = [
             provider_data.object_reference
             for namespace, provider_data in self._variant_info.providers.items()
-            if self._provider_enabled(namespace, provider_data)
+            if self._plugin_enabled(namespace, provider_data)
         ]
 
         self._load_all_plugins_from_tuple(plugin_apis=plugins)
@@ -362,8 +354,8 @@ class PluginLoader(BasePluginLoader):
     def get_all_configs(
         self,
     ) -> dict[str, ProviderConfig]:
-        assert self._include_build_plugins, (
-            "To use get_all_configs(), use PluginLoader(include_build_plugins=True)"
+        assert self._include_aot_plugins, (
+            "To use get_all_configs(), use PluginLoader(include_aot_plugins=True)"
         )
 
         return super().get_all_configs()

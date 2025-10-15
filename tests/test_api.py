@@ -31,10 +31,11 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
@@ -51,7 +52,6 @@ from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
 from variantlib.models.variant import VariantValidationResult
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -295,10 +295,6 @@ def test_validate_variant(optional: bool) -> None:
             "incompatible_namespace",
             "private",
         ],
-        feature_priorities={
-            "private": ["build_type"],
-        },
-        property_priorities={"private": {"build_type": ["debug", "release"]}},
         providers={
             "test_namespace": ProviderInfo(
                 requires=["variantlib"],
@@ -309,7 +305,7 @@ def test_validate_variant(optional: bool) -> None:
                 requires=["variantlib"],
                 plugin_api="tests.mocked_plugins:MockedPluginB",
                 optional=optional,
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             ),
             "incompatible_namespace": ProviderInfo(
                 requires=["variantlib"],
@@ -318,11 +314,11 @@ def test_validate_variant(optional: bool) -> None:
             ),
             "private": ProviderInfo(
                 plugin_api="donotuseme",
-                requires=["donotuseme"],
                 optional=optional,
-                plugin_use=PluginUse.NONE,
+                install_time=False,
             ),
         },
+        static_properties={"private": {"build_type": ["debug", "release"]}},
     )
 
     expected = {
@@ -399,13 +395,17 @@ def test_make_variant_dist_info(
                     ],
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_provider:Plugin",
                     VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
-                    VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: "build",
+                    VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                },
+                "ns3": {
+                    VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
                 },
             }
         )
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2"],
+                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
+                VARIANT_INFO_FEATURE_KEY: {"ns3": ["f2", "f1"]},
             },
         )
 
@@ -415,6 +415,7 @@ def test_make_variant_dist_info(
                 VARIANT_INFO_FEATURE_KEY: {
                     "ns1": ["f2"],
                     "ns2": ["f1", "f2"],
+                    "ns3": ["f2", "f1"],
                 },
                 VARIANT_INFO_PROPERTY_KEY: {
                     "ns1": {
@@ -441,7 +442,7 @@ def test_make_variant_dist_info(
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
-                expand_build_plugin_properties=False,
+                expand_aot_plugin_properties=False,
             )
         )
         == expected
@@ -683,9 +684,12 @@ def test_get_variant_label() -> None:
         )
 
 
-@pytest.mark.parametrize("plugin_use", PluginUse.__members__.values())
-def test_make_variant_dist_info_expand_build_plugin_properties(
-    plugin_use: PluginUse,
+@pytest.mark.parametrize(
+    ("install_time", "requires"), [(False, False), (False, True), (True, True)]
+)
+def test_make_variant_dist_info_expand_aot_plugin_properties(
+    install_time: bool,
+    requires: bool,
 ) -> None:
     vdesc = VariantDescription(
         [
@@ -697,10 +701,10 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
         namespace_priorities=["aot_plugin"],
         providers={
             "aot_plugin": ProviderInfo(
-                requires=["variantlib"],
-                plugin_api=plugin_api,
+                install_time=install_time,
                 optional=True,
-                plugin_use=plugin_use,
+                plugin_api=plugin_api,
+                requires=["variantlib"] if requires else [],
             )
         },
     )
@@ -712,7 +716,6 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "aot_plugin": {
-                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
                 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
                 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
             },
@@ -726,18 +729,16 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
         },
     }
 
-    if plugin_use == PluginUse.NONE:
-        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"][
-            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
-        ] = "none"
-    if plugin_use == PluginUse.BUILD:
-        expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"][
-            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
-        ] = "build"
+    provider_data = expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"]
+    if requires:
+        provider_data[VARIANT_INFO_PROVIDER_REQUIRES_KEY] = ["variantlib"]
+    if not install_time:
+        provider_data[VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY] = False
+    if requires and not install_time:
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
             "aot_plugin": ["name1", "name2"],
         }
-        expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_PROPERTY_KEY] = {
+        expected[VARIANT_INFO_STATIC_PROPERTIES_KEY] = {
             "aot_plugin": {
                 "name1": ["val1a", "val1b"],
                 "name2": ["val2a", "val2b", "val2c"],
@@ -750,7 +751,7 @@ def test_make_variant_dist_info_expand_build_plugin_properties(
                 vdesc,
                 variant_info=vinfo,
                 variant_label="test",
-                expand_build_plugin_properties=True,
+                expand_aot_plugin_properties=True,
             )
         )
         == expected
@@ -771,7 +772,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
                 requires=["variantlib"],
                 plugin_api=plugin_api,
                 optional=True,
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             )
         },
     )
@@ -784,7 +785,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )
 
 
@@ -802,7 +803,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
                 requires=["variantlib"],
                 plugin_api=plugin_api,
                 optional=True,
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             )
         },
     )
@@ -814,7 +815,7 @@ def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )
 
 
@@ -831,7 +832,7 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
             "second_namespace": ProviderInfo(
                 requires=["variantlib"],
                 plugin_api=plugin_api,
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             )
         },
     )
@@ -844,5 +845,5 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
         make_variant_dist_info(
             vdesc,
             variant_info=vinfo,
-            expand_build_plugin_properties=True,
+            expand_aot_plugin_properties=True,
         )

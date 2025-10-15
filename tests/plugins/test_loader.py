@@ -19,7 +19,6 @@ from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
@@ -515,7 +514,7 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
 @pytest.mark.parametrize(
     "loader_call",
     [
-        partial(PluginLoader, VariantInfo(), include_build_plugins=True),
+        partial(PluginLoader, VariantInfo(), include_aot_plugins=True),
         partial(ListPluginLoader, []),
     ],
 )
@@ -559,33 +558,16 @@ def test_filter_plugins(value: list[VariantNamespace]) -> None:
         assert set(loader.namespaces) == expected_namespaces
 
 
-@pytest.mark.parametrize("include_build_plugins", [False, True])
-def test_package_defined_properties(include_build_plugins: bool) -> None:
+@pytest.mark.parametrize("include_aot_plugins", [False, True])
+def test_package_defined_properties(include_aot_plugins: bool) -> None:
     variant_info = VariantInfo(
         namespace_priorities=[
             "test_namespace",
             "second_namespace",
             "private",
         ],
-        feature_priorities={
-            "test_namespace": ["foo"],
-            "second_namespace": ["bar"],
-            "private": ["baz"],
-        },
-        property_priorities={
-            "test_namespace": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
-                "baz": ["v5", "v6"],
-            },
-            "second_namespace": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
-                "baz": ["v5", "v6"],
-            },
+        static_properties={
             "private": {
-                "foo": ["v1", "v2"],
-                "bar": ["v3", "v4"],
                 "baz": ["v5", "v6"],
             },
         },
@@ -596,12 +578,10 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
             "second_namespace": ProviderInfo(
                 requires=["variantlib"],
                 plugin_api="tests.mocked_plugins:MockedPluginB",
-                plugin_use=PluginUse.BUILD,
+                install_time=False,
             ),
             "private": ProviderInfo(
-                plugin_api="ignored",
-                plugin_use=PluginUse.NONE,
-                requires=["ignored"],
+                install_time=False,
             ),
         },
     )
@@ -630,19 +610,6 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
                 ),
             ],
         ),
-        "second_namespace": ProviderConfig(
-            namespace="second_namespace",
-            configs=[
-                VariantFeatureConfig(
-                    name="bar",
-                    values=[
-                        "v3",
-                        "v4",
-                    ],
-                    multi_value=False,
-                ),
-            ],
-        ),
         "private": ProviderConfig(
             namespace="private",
             configs=[
@@ -658,7 +625,7 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
         ),
     }
 
-    if include_build_plugins:
+    if include_aot_plugins:
         namespaces.add("second_namespace")
         # Note: technically a plugin returning a different value is not a valid use.
         # However, here it is used to verify that the correct code path is used.
@@ -675,12 +642,10 @@ def test_package_defined_properties(include_build_plugins: bool) -> None:
             ],
         )
 
-    with PluginLoader(
-        variant_info, include_build_plugins=include_build_plugins
-    ) as loader:
+    with PluginLoader(variant_info, include_aot_plugins=include_aot_plugins) as loader:
         assert set(loader.namespaces) == namespaces
         assert loader.get_supported_configs() == configs
-        if include_build_plugins:
+        if include_aot_plugins:
             configs["test_namespace"].configs[0].values.extend(["val1c", "val1d"])
             configs["second_namespace"].configs[0].values.extend(["val3b", "val3c"])
 

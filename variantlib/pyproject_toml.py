@@ -13,6 +13,8 @@ from variantlib.validators.keytracking import KeyTrackingValidator
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from variantlib.protocols import VariantNamespace
+
 if sys.version_info >= (3, 11):
     from typing import Self
 
@@ -38,6 +40,13 @@ class VariantPyProjectToml(VariantInfo):
     def from_path(cls, path: Path) -> Self:
         with path.open("rb") as f:
             return cls(tomllib.load(f))
+
+    def _get_expected_aot_namespaces(self) -> set[VariantNamespace]:
+        return {
+            namespace
+            for namespace, provider_info in self.providers.items()
+            if not provider_info.install_time and not provider_info.requires
+        }
 
     def _process(self, variant_table: dict[str, VariantInfoJsonDict]) -> None:
         validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
@@ -12,12 +11,12 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
 from variantlib.errors import ValidationError
-from variantlib.models.variant_info import PluginUse
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
@@ -37,9 +36,10 @@ name = "frobnicate"
 version = "1.2.3"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_DEFAULT_PRIO_KEY}]
-{VARIANT_INFO_NAMESPACE_KEY} = ["ns1", "ns2"]
+{VARIANT_INFO_NAMESPACE_KEY} = ["ns1", "ns2", "ns3"]
 {VARIANT_INFO_FEATURE_KEY}.ns1 = ["f2"]
 {VARIANT_INFO_FEATURE_KEY}.ns2 = ["f1", "f2"]
+{VARIANT_INFO_FEATURE_KEY}.ns3 = ["f2", "f1"]
 {VARIANT_INFO_PROPERTY_KEY}.ns1.f2 = ["p1"]
 {VARIANT_INFO_PROPERTY_KEY}.ns2.f1 = ["p2"]
 
@@ -49,13 +49,20 @@ version = "1.2.3"
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns1_provider.plugin:NS1Plugin"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns2]
-{VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY} = "build"
+{VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
 {VARIANT_INFO_PROVIDER_REQUIRES_KEY} = [
     "ns2_provider; python_version >= '3.11'",
     "old_ns2_provider; python_version < '3.11'",
 ]
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns2_provider:Plugin"
 {VARIANT_INFO_PROVIDER_OPTIONAL_KEY} = true
+
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3]
+{VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
+
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_STATIC_PROPERTIES_KEY}.ns3]
+f1 = ["v1", "v2"]
+f2 = ["v3", "v4"]
 """
 
 PYPROJECT_TOML = tomllib.loads(TOML_DATA)
@@ -63,17 +70,21 @@ PYPROJECT_TOML = tomllib.loads(TOML_DATA)
 PYPROJECT_TOML_MINIMAL = tomllib.loads(
     # remove truly optional keys
     "\n".join(
-        x for x in TOML_DATA.splitlines() if not x.startswith(("feature", "property"))
+        x
+        for x in TOML_DATA.splitlines()
+        if not x.startswith((VARIANT_INFO_FEATURE_KEY, VARIANT_INFO_PROPERTY_KEY))
+        or x.startswith(f"{VARIANT_INFO_FEATURE_KEY}.ns3")
     )
 )
 
 
 def test_pyproject_toml() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML)
-    assert pyproj.namespace_priorities == ["ns1", "ns2"]
+    assert pyproj.namespace_priorities == ["ns1", "ns2", "ns3"]
     assert pyproj.feature_priorities == {
         "ns1": ["f2"],
         "ns2": ["f1", "f2"],
+        "ns3": ["f2", "f1"],
     }
     assert pyproj.property_priorities == {
         "ns1": {"f2": ["p1"]},
@@ -92,15 +103,19 @@ def test_pyproject_toml() -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
-            plugin_use=PluginUse.BUILD,
+            install_time=False,
+        ),
+        "ns3": ProviderInfo(
+            install_time=False,
         ),
     }
+    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
 
 def test_pyproject_toml_minimal() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML_MINIMAL)
-    assert pyproj.namespace_priorities == ["ns1", "ns2"]
-    assert pyproj.feature_priorities == {}
+    assert pyproj.namespace_priorities == ["ns1", "ns2", "ns3"]
+    assert pyproj.feature_priorities == {"ns3": ["f2", "f1"]}
     assert pyproj.property_priorities == {}
     assert pyproj.providers == {
         "ns1": ProviderInfo(
@@ -115,9 +130,13 @@ def test_pyproject_toml_minimal() -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
-            plugin_use=PluginUse.BUILD,
+            install_time=False,
+        ),
+        "ns3": ProviderInfo(
+            install_time=False,
         ),
     }
+    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
 
 def test_invalid_top_type() -> None:
@@ -283,37 +302,12 @@ def test_invalid_provider_plugin_api() -> None:
         )
 
 
-def test_invalid_provider_plugin_use() -> None:
+def test_missing_provider_requires() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY}: Expected one of ",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
     ):
-        VariantPyProjectToml(
-            {
-                PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_INFO_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: "foo"}
-                    }
-                }
-            }
-        )
-
-
-@pytest.mark.parametrize("plugin_use", PluginUse.__members__.values())
-def test_missing_provider_plugin_api(plugin_use: PluginUse) -> None:
-    expected = (
-        pytest.raises(
-            ValidationError,
-            match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
-            rf"either {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} or "
-            rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
-        )
-        if plugin_use != PluginUse.NONE
-        else nullcontext()
-    )
-
-    with expected:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
@@ -323,12 +317,31 @@ def test_missing_provider_plugin_api(plugin_use: PluginUse) -> None:
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
-                            VARIANT_INFO_PROVIDER_PLUGIN_USE_KEY: str(plugin_use),
+                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: True,
                         }
                     },
                 }
             }
         )
+
+
+def test_missing_provider_requires_aot() -> None:
+    VariantPyProjectToml(
+        {
+            PYPROJECT_TOML_TOP_KEY: {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                    VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                },
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "ns": {
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
+                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                    }
+                },
+                VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"test": ["val"]}},
+            }
+        }
+    )
 
 
 def test_missing_namespace_priority() -> None:
@@ -415,10 +428,11 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     pyproj.providers["ns1"].enable_if = None
     pyproj.providers["ns2"].requires.append("frobnicate")
 
-    assert converted.namespace_priorities == ["ns1", "ns2"]
+    assert converted.namespace_priorities == ["ns1", "ns2", "ns3"]
     assert converted.feature_priorities == {
         "ns1": ["f2"],
         "ns2": ["f1", "f2"],
+        "ns3": ["f2", "f1"],
     }
     assert converted.property_priorities == {
         "ns1": {"f2": ["p1"]},
@@ -437,9 +451,13 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
-            plugin_use=PluginUse.BUILD,
+            install_time=False,
+        ),
+        "ns3": ProviderInfo(
+            install_time=False,
         ),
     }
+    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
     # Non-common fields should be reset to defaults
     if isinstance(converted, VariantsJson):
@@ -453,7 +471,7 @@ def test_get_provider_requires() -> None:
         "ns2_provider; python_version >= '3.11'",
         "old_ns2_provider; python_version < '3.11'",
     }
-    assert pyproj.get_provider_requires(include_build_plugins=False) == {
+    assert pyproj.get_provider_requires(include_aot_plugins=False) == {
         "ns1-provider >= 1.2.3",
     }
     assert pyproj.get_provider_requires({"ns1"}) == {
@@ -463,7 +481,7 @@ def test_get_provider_requires() -> None:
         "ns2_provider; python_version >= '3.11'",
         "old_ns2_provider; python_version < '3.11'",
     }
-    assert pyproj.get_provider_requires({"ns2"}, include_build_plugins=False) == set()
+    assert pyproj.get_provider_requires({"ns2"}, include_aot_plugins=False) == set()
     with pytest.raises(KeyError):
         pyproj.get_provider_requires({"no_ns"})
 
@@ -487,29 +505,88 @@ def test_no_plugin_api() -> None:
     assert pyproject_toml.providers["ns"].object_reference == "my_plugin"
 
 
-def test_get_package_defined_properties() -> None:
-    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
-    assert pyproj.get_package_defined_properties() == {
-        "ns1": {
-            "f2": ["p1"],
-        },
-        "ns2": {
-            "f1": ["p2"],
-            "f2": [],
-        },
-    }
-    assert pyproj.get_package_defined_properties({"ns1", "ns2", "ns3"}) == {
-        "ns1": {
-            "f2": ["p1"],
-        },
-        "ns2": {
-            "f1": ["p2"],
-            "f2": [],
-        },
-    }
-    assert pyproj.get_package_defined_properties({"ns1"}) == {
-        "ns1": {
-            "f2": ["p1"],
-        },
-    }
-    assert pyproj.get_package_defined_properties({"ns3"}) == {}
+def test_missing_static_properties() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY} "
+        r"must specify properties for all AoT providers; currently provided: set\(\); "
+        r"expected: {'ns'}",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False}
+                    },
+                }
+            }
+        )
+
+
+@pytest.mark.parametrize("install_time", [False, True])
+def test_extraneous_static_properties(install_time: bool) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY} "
+        r"must specify properties for all AoT providers; currently provided: {'ns'}; "
+        r"expected: set\(\)",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: install_time,
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
+                        }
+                    },
+                    VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"f": ["v"]}},
+                }
+            }
+        )
+
+
+def test_static_properties_one_feature() -> None:
+    VariantPyProjectToml(
+        {
+            PYPROJECT_TOML_TOP_KEY: {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "ns": {
+                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                    }
+                },
+                VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"f": ["v"]}},
+            }
+        }
+    )
+
+
+def test_static_properties_missing_priorities() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY}\.ns: "
+        r"for AoT providers with multiple features, priorities need to be specified "
+        rf"via {VARIANT_INFO_DEFAULT_PRIO_KEY}\.{VARIANT_INFO_FEATURE_KEY}; missing: "
+        r"{'f2'}",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                        VARIANT_INFO_FEATURE_KEY: {"ns": ["f1"]},
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                        }
+                    },
+                    VARIANT_INFO_STATIC_PROPERTIES_KEY: {
+                        "ns": {"f1": ["v"], "f2": ["v"]}
+                    },
+                }
+            }
+        )
