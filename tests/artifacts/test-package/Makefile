@@ -30,14 +30,17 @@ build: clean ## builds source and wheel package
 	flit build --format wheel --null-variant
 
 	flit build --format wheel \
-		-p "installable_plugin :: feat1 :: val1c"
+		-p "installable_plugin :: feat1 :: val1c" \
+		--variant-label=60567bd9
 
 	flit build --format wheel \
-		-p "installable_plugin :: feat2 :: val2b"
+		-p "installable_plugin :: feat2 :: val2b" \
+		--variant-label=fbe82642
 
 	flit build --format wheel \
 		-p "installable_plugin :: feat1 :: val1c" \
-		-p "installable_plugin :: feat2 :: val2b"
+		-p "installable_plugin :: feat2 :: val2b" \
+		--variant-label=5d8be4b9
 
 	flit build --format wheel \
 		-p "installable_plugin :: feat1 :: val1c" \
