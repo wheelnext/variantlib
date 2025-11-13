@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import importlib.metadata
 import logging
 import os
-from importlib import metadata
 from typing import TYPE_CHECKING
 
 from packaging.utils import canonicalize_name
@@ -128,7 +128,7 @@ def inject_abi_dependency(
     """Inject supported vairants for the abi_dependency namespace"""
 
     # 1. Automatically populate from the current python environment
-    packages = {dist.name: dist.version for dist in metadata.distributions()}
+    packages = {dist.name: dist.version for dist in importlib.metadata.distributions()}
 
     # 2. Manually fed from environment variable
     #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
