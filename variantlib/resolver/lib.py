@@ -121,6 +121,53 @@ def filter_variants(
     yield from result
 
 
+def inject_abi_dependency(
+    supported_vprops: list[VariantProperty],
+    namespace_priorities: list[VariantNamespace],
+) -> None:
+    """Inject supported vairants for the abi_dependency namespace"""
+
+    # 1. Manually fed from environment variable
+    #    Note: come first for "implicit higher priority"
+    #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
+    if variant_abi_deps_env := os.environ.get("VARIANT_ABI_DEPENDENCY"):
+        for pkg_spec in variant_abi_deps_env.split(","):
+            try:
+                pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
+            except ValueError:
+                logger.exception(
+                    "`VARIANT_ABI_DEPENDENCY` received an invalid value "
+                    "`%(pkg_spec)s`. It will be ignored.\n"
+                    "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
+                    {"pkg_spec": pkg_spec},
+                )
+                continue
+
+            supported_vprops.extend(
+                VariantProperty(
+                    namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
+                    feature=_normalize_package_name(pkg_name),
+                    value=_ver,
+                )
+                for _ver in _generate_version_matches(pkg_version)
+            )
+
+    # 2. Automatically populate from the current python environment
+    packages = [(dist.name, dist.version) for dist in metadata.distributions()]
+    for pkg_name, pkg_version in sorted(packages):
+        supported_vprops.extend(
+            VariantProperty(
+                namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
+                feature=_normalize_package_name(pkg_name),
+                value=_ver,
+            )
+            for _ver in _generate_version_matches(pkg_version)
+        )
+
+    # 3. Adding `VARIANT_ABI_DEPENDENCY_NAMESPACE` at the back of`namespace_priorities`
+    namespace_priorities.append(VARIANT_ABI_DEPENDENCY_NAMESPACE)
+
+
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty],
@@ -160,47 +207,7 @@ def sort_and_filter_supported_variants(
     #                         ABI DEPENDENCY INJECTION                        #
     # ======================================================================= #
 
-    # 1. Manually fed from environment variable
-    #    Note: come first for "implicit higher priority"
-    #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
-    if variant_abi_deps_env := os.environ.get("VARIANT_ABI_DEPENDENCY"):
-        for pkg_spec in variant_abi_deps_env.split(","):
-            try:
-                pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
-            except ValueError:
-                logger.exception(
-                    "`VARIANT_ABI_DEPENDENCY` received an invalid value "
-                    "`%(pkg_spec)s`. It will be ignored.\n"
-                    "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
-                    {"pkg_spec": pkg_spec},
-                )
-                continue
-
-            supported_vprops.extend(
-                VariantProperty(
-                    namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
-                    feature=_normalize_package_name(pkg_name),
-                    value=_ver,
-                )
-                for _ver in _generate_version_matches(pkg_version)
-            )
-
-    # 2. Automatically populate from the current python environment
-    packages = [
-        (dist.name, dist.version) for dist in metadata.distributions()
-    ]
-    for pkg_name, pkg_version in sorted(packages):
-        supported_vprops.extend(
-            VariantProperty(
-                namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
-                feature=_normalize_package_name(pkg_name),
-                value=_ver,
-            )
-            for _ver in _generate_version_matches(pkg_version)
-        )
-
-    # 3. Adding `VARIANT_ABI_DEPENDENCY_NAMESPACE` at the back of`namespace_priorities`
-    namespace_priorities.append(VARIANT_ABI_DEPENDENCY_NAMESPACE)
+    inject_abi_dependency(supported_vprops, namespace_priorities)
 
     # ======================================================================= #
     #                               NULL VARIANT                              #
