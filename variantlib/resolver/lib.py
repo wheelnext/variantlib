@@ -127,15 +127,17 @@ def inject_abi_dependency(
 ) -> None:
     """Inject supported vairants for the abi_dependency namespace"""
 
-    # 1. Manually fed from environment variable
-    #    Note: come first for "implicit higher priority"
+    # 1. Automatically populate from the current python environment
+    packages = {dist.name: dist.version for dist in metadata.distributions()}
+
+    # 2. Manually fed from environment variable
     #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
     if variant_abi_deps_env := os.environ.get("VARIANT_ABI_DEPENDENCY"):
         for pkg_spec in variant_abi_deps_env.split(","):
             try:
                 pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
             except ValueError:
-                logger.exception(
+                logger.warning(
                     "`VARIANT_ABI_DEPENDENCY` received an invalid value "
                     "`%(pkg_spec)s`. It will be ignored.\n"
                     "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
@@ -143,18 +145,20 @@ def inject_abi_dependency(
                 )
                 continue
 
-            supported_vprops.extend(
-                VariantProperty(
-                    namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
-                    feature=_normalize_package_name(pkg_name),
-                    value=_ver,
+            if (old_version := packages.get(pkg_name)) is not None:
+                logger.warning(
+                    "`VARIANT_ABI_DEPENDENCY` overrides package version: "
+                    "`%(pkg_name)s` from `%(old_ver)s` to `%(new_ver)s`",
+                    {
+                        "pkg_name": pkg_name,
+                        "old_ver": old_version,
+                        "new_ver": pkg_version,
+                    },
                 )
-                for _ver in _generate_version_matches(pkg_version)
-            )
 
-    # 2. Automatically populate from the current python environment
-    packages = [(dist.name, dist.version) for dist in metadata.distributions()]
-    for pkg_name, pkg_version in sorted(packages):
+            packages[pkg_name] = pkg_version
+
+    for pkg_name, pkg_version in sorted(packages.items()):
         supported_vprops.extend(
             VariantProperty(
                 namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,

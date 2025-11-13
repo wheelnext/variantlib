@@ -86,14 +86,17 @@ def test_inject_abi_dependency_envvar(
     inject_abi_dependency(supported_vprops, namespace_priorities)
 
     expected = {
-        VariantProperty("abi_dependency", "a", "1"),
-        VariantProperty("abi_dependency", "a", "1.2"),
-        VariantProperty("abi_dependency", "a", "1.2.3"),
         VariantProperty("abi_dependency", "b", "4"),
         VariantProperty("abi_dependency", "b", "4.7"),
         VariantProperty("abi_dependency", "b", "4.7.9"),
     }
-    if "a" in env_value:
+    if "a" not in env_value:
+        expected |= {
+            VariantProperty("abi_dependency", "a", "1"),
+            VariantProperty("abi_dependency", "a", "1.2"),
+            VariantProperty("abi_dependency", "a", "1.2.3"),
+        }
+    else:
         expected |= {
             VariantProperty("abi_dependency", "a", "1"),
             VariantProperty("abi_dependency", "a", "1.2"),
