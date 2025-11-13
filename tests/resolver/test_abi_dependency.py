@@ -32,8 +32,8 @@ def test_inject_abi_dependency(
     mocker.patch("importlib.metadata.distributions").return_value = [
         MockedDistribution("a", "4"),
         MockedDistribution("b", "4.3b1"),
-        MockedDistribution("c", "7.2.3.post4"),
-        MockedDistribution("d", "1.2.3.4"),
+        MockedDistribution("c.ns", "7.2.3.post4"),
+        MockedDistribution("d-foo", "1.2.3.4"),
     ]
     inject_abi_dependency(supported_vprops, namespace_priorities)
 
@@ -46,12 +46,12 @@ def test_inject_abi_dependency(
         VariantProperty("abi_dependency", "b", "4"),
         VariantProperty("abi_dependency", "b", "4.3"),
         VariantProperty("abi_dependency", "b", "4.3.0"),
-        VariantProperty("abi_dependency", "c", "7"),
-        VariantProperty("abi_dependency", "c", "7.2"),
-        VariantProperty("abi_dependency", "c", "7.2.3"),
-        VariantProperty("abi_dependency", "d", "1"),
-        VariantProperty("abi_dependency", "d", "1.2"),
-        VariantProperty("abi_dependency", "d", "1.2.3"),
+        VariantProperty("abi_dependency", "c_ns", "7"),
+        VariantProperty("abi_dependency", "c_ns", "7.2"),
+        VariantProperty("abi_dependency", "c_ns", "7.2.3"),
+        VariantProperty("abi_dependency", "d_foo", "1"),
+        VariantProperty("abi_dependency", "d_foo", "1.2"),
+        VariantProperty("abi_dependency", "d_foo", "1.2.3"),
     ]
 
 
@@ -59,13 +59,14 @@ def test_inject_abi_dependency(
     "env_value",
     [
         "",
-        "c==7.8.9b1",
-        "d==4.9.4,c==7.8.9",
-        "a==1.2.79",
-        "a==1.2.79,d==4.9.4",
+        "c_ns==7.8.9b1",
+        "c.ns==7.8.9b1",
+        "d==4.9.4,c.ns==7.8.9",
+        "a_foo==1.2.79",
+        "a-foo==1.2.79,d==4.9.4",
         # invalid components should be ignored (with a warning)
         "no-version",
-        "a==1.2.79,no-version",
+        "a.foo==1.2.79,no-version",
         "z>=1.2.3",
     ],
 )
@@ -80,7 +81,7 @@ def test_inject_abi_dependency_envvar(
     supported_vprops: list[VariantProperty] = []
 
     mocker.patch("importlib.metadata.distributions").return_value = [
-        MockedDistribution("a", "1.2.3"),
+        MockedDistribution("a-foo", "1.2.3"),
         MockedDistribution("b", "4.7.9"),
     ]
     inject_abi_dependency(supported_vprops, namespace_priorities)
@@ -92,21 +93,21 @@ def test_inject_abi_dependency_envvar(
     }
     if "a" not in env_value:
         expected |= {
-            VariantProperty("abi_dependency", "a", "1"),
-            VariantProperty("abi_dependency", "a", "1.2"),
-            VariantProperty("abi_dependency", "a", "1.2.3"),
+            VariantProperty("abi_dependency", "a_foo", "1"),
+            VariantProperty("abi_dependency", "a_foo", "1.2"),
+            VariantProperty("abi_dependency", "a_foo", "1.2.3"),
         }
     else:
         expected |= {
-            VariantProperty("abi_dependency", "a", "1"),
-            VariantProperty("abi_dependency", "a", "1.2"),
-            VariantProperty("abi_dependency", "a", "1.2.79"),
+            VariantProperty("abi_dependency", "a_foo", "1"),
+            VariantProperty("abi_dependency", "a_foo", "1.2"),
+            VariantProperty("abi_dependency", "a_foo", "1.2.79"),
         }
     if "c" in env_value:
         expected |= {
-            VariantProperty("abi_dependency", "c", "7"),
-            VariantProperty("abi_dependency", "c", "7.8"),
-            VariantProperty("abi_dependency", "c", "7.8.9"),
+            VariantProperty("abi_dependency", "c_ns", "7"),
+            VariantProperty("abi_dependency", "c_ns", "7.8"),
+            VariantProperty("abi_dependency", "c_ns", "7.8.9"),
         }
     if "d" in env_value:
         expected |= {

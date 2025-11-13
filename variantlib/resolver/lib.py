@@ -128,7 +128,10 @@ def inject_abi_dependency(
     """Inject supported vairants for the abi_dependency namespace"""
 
     # 1. Automatically populate from the current python environment
-    packages = {dist.name: dist.version for dist in importlib.metadata.distributions()}
+    packages = {
+        _normalize_package_name(dist.name): dist.version
+        for dist in importlib.metadata.distributions()
+    }
 
     # 2. Manually fed from environment variable
     #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
@@ -145,6 +148,7 @@ def inject_abi_dependency(
                 )
                 continue
 
+            pkg_name = _normalize_package_name(pkg_name)
             if (old_version := packages.get(pkg_name)) is not None:
                 logger.warning(
                     "`VARIANT_ABI_DEPENDENCY` overrides package version: "
@@ -162,7 +166,7 @@ def inject_abi_dependency(
         supported_vprops.extend(
             VariantProperty(
                 namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
-                feature=_normalize_package_name(pkg_name),
+                feature=pkg_name,
                 value=_ver,
             )
             for _ver in _generate_version_matches(pkg_version)
