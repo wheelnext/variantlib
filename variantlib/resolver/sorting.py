@@ -138,13 +138,8 @@ def sort_variant_properties(
     found_namespaces = {vprop.namespace for vprop in vprops}
 
     if not namespace_priorities:
-        if len(found_namespaces) > 1:
-            raise ConfigurationError(error_message)
-
-        # if there is only one namespace, use it as the default
-        namespace_priorities = list(found_namespaces)
-
-    elif len(found_namespaces.difference(namespace_priorities)) > 0:
+        raise ConfigurationError(error_message)
+    if len(found_namespaces.difference(namespace_priorities)) > 0:
         raise ConfigurationError(error_message)
 
     # 1. Reorder properties according to namespace priorities.
