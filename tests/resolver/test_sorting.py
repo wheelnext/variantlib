@@ -4,7 +4,6 @@ import sys
 from typing import Any
 
 import pytest
-from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -207,7 +206,7 @@ def test_sort_variant_properties_validation_error(
 
 
 def test_sort_variant_properties_configuration_error() -> None:
-    with pytest.raises(ConfigurationError):
+    with pytest.raises(ValidationError):
         sort_variant_properties(
             vprops=[VariantProperty("a", "b", "c"), VariantProperty("x", "y", "z")],
             namespace_priorities=[],

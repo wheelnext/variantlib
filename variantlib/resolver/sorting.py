@@ -7,7 +7,6 @@ from collections import defaultdict
 from itertools import chain
 from itertools import groupby
 
-from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
@@ -130,17 +129,10 @@ def sort_variant_properties(
             dict[VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]],
         )
 
-    error_message = (
-        "The variant environment needs to be (re)configured, please execute "
-        "`variantlib config setup` and re-run your command."
-    )
-
     found_namespaces = {vprop.namespace for vprop in vprops}
 
-    if not namespace_priorities:
-        raise ConfigurationError(error_message)
-    if len(found_namespaces.difference(namespace_priorities)) > 0:
-        raise ConfigurationError(error_message)
+    if missing := found_namespaces.difference(namespace_priorities):
+        raise ValidationError(f"Missing namespace_priorities for namespaces {missing}")
 
     # 1. Reorder properties according to namespace priorities.
     sorted_by_namespace = sorted(
