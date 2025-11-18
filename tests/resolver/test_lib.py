@@ -609,6 +609,7 @@ def test_sort_and_filter_supported_variants_validation_errors(
         sort_and_filter_supported_variants(
             vdescs=vdescs,
             supported_vprops=vprops,  # type: ignore[arg-type]
+            namespace_priorities=["a"],
             feature_priorities=feature_priorities,
         )
 
@@ -621,4 +622,5 @@ def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
         sort_and_filter_supported_variants(
             vdescs=vdescs,
             supported_vprops=vprops,
+            namespace_priorities=[],
         )

@@ -111,7 +111,6 @@ def test_get_namespace_priorities() -> None:
 def test_negative_get_namespace_priorities() -> None:
     vprop = VariantProperty(namespace="omnicorp", feature="no_exist", value="value")
 
-    assert get_namespace_priorities(vprop, None) == sys.maxsize
     assert get_namespace_priorities(vprop, []) == sys.maxsize
     assert get_namespace_priorities(vprop, ["other_corp"]) == sys.maxsize
 
@@ -119,13 +118,13 @@ def test_negative_get_namespace_priorities() -> None:
 @pytest.mark.parametrize(
     ("vprop", "namespace_priorities"),
     [
-        ("not a `VariantProperty`", None),
+        ("not a `VariantProperty`", []),
         (VariantProperty("a", "b", "c"), "not a list or None"),
         (VariantProperty("a", "b", "c"), [{"not a str": True}]),
     ],
 )
 def test_get_namespace_priorities_validation_error(
-    vprop: VariantProperty, namespace_priorities: list[str] | None
+    vprop: VariantProperty, namespace_priorities: list[str]
 ) -> None:
     with pytest.raises(ValidationError):
         get_namespace_priorities(vprop=vprop, namespace_priorities=namespace_priorities)
@@ -211,7 +210,7 @@ def test_sort_variant_properties_configuration_error() -> None:
     with pytest.raises(ConfigurationError):
         sort_variant_properties(
             vprops=[VariantProperty("a", "b", "c"), VariantProperty("x", "y", "z")],
-            namespace_priorities=None,
+            namespace_priorities=[],
             feature_priorities=None,
             property_priorities=None,
         )

@@ -79,7 +79,7 @@ def get_feature_priorities(
 
 def get_namespace_priorities(
     vprop: VariantProperty,
-    namespace_priorities: list[VariantNamespace] | None,
+    namespace_priorities: list[VariantNamespace],
 ) -> int:
     """
     Get the namespace priority of a `VariantProperty` object.
@@ -90,8 +90,6 @@ def get_namespace_priorities(
     """
     validate_type(vprop, VariantProperty)
 
-    if namespace_priorities is None:
-        return sys.maxsize
     validate_type(namespace_priorities, list[str])
 
     # if not present push at the end
@@ -103,7 +101,7 @@ def get_namespace_priorities(
 
 def sort_variant_properties(
     vprops: list[VariantProperty],
-    namespace_priorities: list[VariantNamespace] | None,
+    namespace_priorities: list[VariantNamespace],
     feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
     property_priorities: dict[
         VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
@@ -120,9 +118,7 @@ def sort_variant_properties(
     :return: Sorted list of `VariantProperty` objects.
     """
     validate_type(vprops, list[VariantProperty])
-
-    if namespace_priorities is not None:
-        validate_type(namespace_priorities, list[VariantNamespace])
+    validate_type(namespace_priorities, list[VariantNamespace])
 
     if feature_priorities is not None:
         validate_type(
@@ -141,7 +137,7 @@ def sort_variant_properties(
 
     found_namespaces = {vprop.namespace for vprop in vprops}
 
-    if namespace_priorities is None or not namespace_priorities:
+    if not namespace_priorities:
         if len(found_namespaces) > 1:
             raise ConfigurationError(error_message)
 
