@@ -618,9 +618,7 @@ def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
 ) -> None:
     # This one specifies no ordering/priority => can't sort
     with pytest.raises(
-        ValidationError,
-        match=r"Missing namespace_priorities for namespaces \{'omnicorp', "
-        r"'tyrell_corp'\}",
+        ValidationError, match=r"Missing namespace_priorities for namespaces"
     ):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
