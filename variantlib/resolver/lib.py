@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import importlib.metadata
+import logging
+import os
 from typing import TYPE_CHECKING
 
+from packaging.utils import canonicalize_name
+from packaging.version import Version
+
+from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -19,6 +26,20 @@ if TYPE_CHECKING:
     from variantlib.protocols import VariantFeatureName
     from variantlib.protocols import VariantFeatureValue
     from variantlib.protocols import VariantNamespace
+
+logger = logging.getLogger(__name__)
+
+
+def _normalize_package_name(name: str) -> str:
+    # VALIDATION_FEATURE_NAME_REGEX does not accepts "-"
+    return canonicalize_name(name).replace("-", "_")
+
+
+def _generate_version_matches(version: str) -> Generator[str]:
+    vspec = Version(version)
+    yield f"{vspec.major}"
+    yield f"{vspec.major}.{vspec.minor}"
+    yield f"{vspec.major}.{vspec.minor}.{vspec.micro}"
 
 
 def filter_variants(
@@ -100,6 +121,61 @@ def filter_variants(
     yield from result
 
 
+def inject_abi_dependency(
+    supported_vprops: list[VariantProperty],
+    namespace_priorities: list[VariantNamespace],
+) -> None:
+    """Inject supported vairants for the abi_dependency namespace"""
+
+    # 1. Automatically populate from the current python environment
+    packages = {
+        _normalize_package_name(dist.name): dist.version
+        for dist in importlib.metadata.distributions()
+    }
+
+    # 2. Manually fed from environment variable
+    #    Env Var Format: `VARIANT_ABI_DEPENDENCY=packageA==1.2.3,...,packageZ==7.8.9`
+    if variant_abi_deps_env := os.environ.get("VARIANT_ABI_DEPENDENCY"):
+        for pkg_spec in variant_abi_deps_env.split(","):
+            try:
+                pkg_name, pkg_version = pkg_spec.split("==", maxsplit=1)
+            except ValueError:
+                logger.warning(
+                    "`VARIANT_ABI_DEPENDENCY` received an invalid value "
+                    "`%(pkg_spec)s`. It will be ignored.\n"
+                    "Expected format: `packageA==1.2.3,...,packageZ==7.8.9`.",
+                    {"pkg_spec": pkg_spec},
+                )
+                continue
+
+            pkg_name = _normalize_package_name(pkg_name)
+            if (old_version := packages.get(pkg_name)) is not None:
+                logger.warning(
+                    "`VARIANT_ABI_DEPENDENCY` overrides package version: "
+                    "`%(pkg_name)s` from `%(old_ver)s` to `%(new_ver)s`",
+                    {
+                        "pkg_name": pkg_name,
+                        "old_ver": old_version,
+                        "new_ver": pkg_version,
+                    },
+                )
+
+            packages[pkg_name] = pkg_version
+
+    for pkg_name, pkg_version in sorted(packages.items()):
+        supported_vprops.extend(
+            VariantProperty(
+                namespace=VARIANT_ABI_DEPENDENCY_NAMESPACE,
+                feature=pkg_name,
+                value=_ver,
+            )
+            for _ver in _generate_version_matches(pkg_version)
+        )
+
+    # 3. Adding `VARIANT_ABI_DEPENDENCY_NAMESPACE` at the back of`namespace_priorities`
+    namespace_priorities.append(VARIANT_ABI_DEPENDENCY_NAMESPACE)
+
+
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty],
@@ -124,8 +200,28 @@ def sort_and_filter_supported_variants(
     :param property_priorities: Ordered list of `VariantProperty` objects.
     :return: Sorted and filtered list of `VariantDescription` objects.
     """
-    validate_type(vdescs, list[VariantDescription])
 
+    validate_type(vdescs, list[VariantDescription])
+    validate_type(supported_vprops, list[VariantProperty])
+
+    if namespace_priorities is None:
+        namespace_priorities = []
+
+    # Avoiding modification in place
+    namespace_priorities = namespace_priorities.copy()
+    supported_vprops = supported_vprops.copy()
+
+    # ======================================================================= #
+    #                         ABI DEPENDENCY INJECTION                        #
+    # ======================================================================= #
+
+    inject_abi_dependency(supported_vprops, namespace_priorities)
+
+    # ======================================================================= #
+    #                               NULL VARIANT                              #
+    # ======================================================================= #
+
+    # Adding the `null-variant` to the list - always "compatible"
     if (null_variant := VariantDescription()) not in vdescs:
         """Add a null variant description to the list."""
         # This is needed to ensure that we always consider the null variant
@@ -139,7 +235,9 @@ def sort_and_filter_supported_variants(
         """No supported properties provided, return no variants."""
         return []
 
-    validate_type(supported_vprops, list[VariantProperty])
+    # ======================================================================= #
+    #                                FILTERING                                #
+    # ======================================================================= #
 
     # Step 1: we remove any duplicate, or unsupported `VariantDescription` on
     #         this platform.
@@ -152,6 +250,10 @@ def sort_and_filter_supported_variants(
             forbidden_properties=forbidden_properties,
         )
     )
+
+    # ======================================================================= #
+    #                                 SORTING                                 #
+    # ======================================================================= #
 
     # Step 2: we sort the supported `VariantProperty`s based on their respective
     #         priority.
