@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from deepdiff import DeepDiff
 from deepdiff.operator import BaseOperator
-from variantlib.errors import ConfigurationError
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
@@ -609,6 +608,7 @@ def test_sort_and_filter_supported_variants_validation_errors(
         sort_and_filter_supported_variants(
             vdescs=vdescs,
             supported_vprops=vprops,  # type: ignore[arg-type]
+            namespace_priorities=["a"],
             feature_priorities=feature_priorities,
         )
 
@@ -617,8 +617,11 @@ def test_sort_and_filter_supported_variants_validation_errors_with_no_priority(
     vdescs: list[VariantDescription], vprops: list[VariantProperty]
 ) -> None:
     # This one specifies no ordering/priority => can't sort
-    with pytest.raises(ConfigurationError, match="The variant environment needs"):
+    with pytest.raises(
+        ValidationError, match=r"Missing namespace_priorities for namespaces"
+    ):
         sort_and_filter_supported_variants(
             vdescs=vdescs,
             supported_vprops=vprops,
+            namespace_priorities=[],
         )

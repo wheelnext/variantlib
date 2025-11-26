@@ -179,7 +179,7 @@ def inject_abi_dependency(
 def sort_and_filter_supported_variants(
     vdescs: list[VariantDescription],
     supported_vprops: list[VariantProperty],
-    namespace_priorities: list[VariantNamespace] | None = None,
+    namespace_priorities: list[VariantNamespace],
     feature_priorities: dict[VariantNamespace, list[VariantFeatureName]] | None = None,
     property_priorities: dict[
         VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]
