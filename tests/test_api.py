@@ -408,6 +408,12 @@ def test_make_variant_dist_info(
                 VARIANT_INFO_FEATURE_KEY: {"ns3": ["f2", "f1"]},
             },
         )
+        expected[VARIANT_INFO_STATIC_PROPERTIES_KEY] = {
+            "ns3": {
+                "f1": ["v1", "v2"],
+                "f2": ["v3", "v4"],
+            },
+        }
 
     if pyproject_toml is PYPROJECT_TOML:
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(

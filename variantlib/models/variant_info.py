@@ -98,6 +98,12 @@ class VariantInfo:
                 )
                 for namespace, provider_data in self.providers.items()
             },
+            "static_properties": {
+                namespace: {
+                    feature: list(values) for feature, values in feature_dict.items()
+                }
+                for namespace, feature_dict in self.static_properties.items()
+            },
         }
 
     def get_provider_requires(
