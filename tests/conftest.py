@@ -6,6 +6,7 @@ import pytest
 from hypothesis import Verbosity
 from hypothesis import settings
 from pytest_mock import MockerFixture
+from variantlib.plugins.loader import VARIANT_PROVIDER_CACHE_TABLE
 from variantlib.plugins.loader import BasePluginLoader
 from variantlib.plugins.loader import ListPluginLoader
 
@@ -73,3 +74,12 @@ def test_plugin_package_req(test_plugin_package_path: Path) -> str:
     return (
         f"test-plugin-package @ file://{test_plugin_package_path.absolute().as_posix()}"
     )
+
+
+@pytest.fixture(autouse=True)
+def clear_cache_between_tests() -> Generator[None]:
+    """Fixture to clear the Django cache after each test function runs."""
+    yield
+
+    # Clear cache after the yield runs as teardown
+    VARIANT_PROVIDER_CACHE_TABLE.clear()

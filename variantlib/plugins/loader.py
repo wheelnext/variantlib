@@ -8,6 +8,9 @@ import subprocess
 import sys
 from abc import abstractmethod
 from collections.abc import Collection
+from contextlib import suppress
+from importlib.metadata import Distribution
+from importlib.metadata import entry_points
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
@@ -26,6 +29,7 @@ from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
     from types import TracebackType
+    from typing import Any
     from typing import Literal
 
     from variantlib.models.variant_info import ProviderInfo
@@ -34,15 +38,15 @@ if TYPE_CHECKING:
     from variantlib.protocols import VariantFeatureValue
     from variantlib.protocols import VariantNamespace
 
-from importlib.metadata import Distribution
-from importlib.metadata import entry_points
-
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+
+VARIANT_PROVIDER_CACHE_TABLE: dict[int, dict[str, Any]] = {}
 
 
 class BasePluginLoader:
@@ -88,6 +92,26 @@ class BasePluginLoader:
         commands: dict[str, Any],
         args: Collection[str] = (),
     ) -> dict[str, Any]:
+        _plugin_apis: tuple[str] = tuple(plugin_apis)  # type: ignore[assignment]
+        _commands = json.dumps(commands).encode("utf8")
+        _args: tuple[str] = tuple(args)  # type: ignore[assignment]
+
+        cache_key = hash((_plugin_apis, _commands, _args))
+
+        with suppress(KeyError):
+            return VARIANT_PROVIDER_CACHE_TABLE[cache_key]
+
+        result = self._run_call_subprocess(
+            plugin_apis=_plugin_apis,
+            commands=_commands,
+            args=_args,
+        )
+        VARIANT_PROVIDER_CACHE_TABLE[cache_key] = result
+        return result
+
+    def _run_call_subprocess(
+        self, plugin_apis: tuple[str], commands: bytes, args: tuple[str]
+    ) -> dict[str, Any]:
         with TemporaryDirectory(prefix="variantlib") as temp_dir:
             # Copy `variantlib/plugins/loader.py` into the temp_dir
             script = Path(temp_dir) / "loader.py"
@@ -113,20 +137,22 @@ class BasePluginLoader:
                 ).read_bytes()
             )
 
-            args = [*args]
+            cmd_args = list(args)
             for plugin_api in plugin_apis:
-                args += ["--plugin-api", plugin_api]
+                cmd_args += ["--plugin-api", plugin_api]
 
             process = subprocess.run(  # noqa: S603
-                [self._python_executable, script, *args],
-                input=json.dumps(commands).encode("utf8"),
+                [self._python_executable, script, *cmd_args],
+                input=commands,
                 capture_output=True,
                 check=False,
             )
+
             if process.returncode != 0:
                 raise PluginError(
                     f"Plugin invocation failed:\n{process.stderr.decode('utf8')}"
                 )
+
             return json.loads(process.stdout)  # type: ignore[no-any-return]
 
     @abstractmethod
