@@ -109,10 +109,6 @@ def test_make_variant(
         ([], "error: one of the arguments -p/--property --null-variant is required"),
         (["--property=x::y"], "argument -p/--property: invalid from_str value"),
         (
-            ["--property=x::y::z", "--variant-label=12345678901234567"],
-            "error: invalid variant label",
-        ),
-        (
             ["--property=x::y::z", "--variant-label=null"],
             "error: invalid variant label",
         ),

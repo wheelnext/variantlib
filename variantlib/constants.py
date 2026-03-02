@@ -4,7 +4,6 @@ import re
 from typing import Literal
 from typing import TypedDict
 
-VARIANT_LABEL_LENGTH = 16
 NULL_VARIANT_LABEL = "null"
 CONFIG_FILENAME = "variants.toml"
 VARIANT_DIST_INFO_FILENAME = "variant.json"
@@ -28,7 +27,7 @@ VARIANTS_JSON_SCHEMA_KEY: Literal["$schema"] = "$schema"
 VARIANTS_JSON_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.0.3.json"
 VARIANTS_JSON_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
-VALIDATION_VARIANT_LABEL_REGEX = re.compile(rf"[0-9a-z._]{{1,{VARIANT_LABEL_LENGTH}}}")
+VALIDATION_VARIANT_LABEL_REGEX = re.compile(r"[0-9a-z._]+")
 
 VALIDATION_NAMESPACE_REGEX = re.compile(r"[a-z0-9_]+")
 VALIDATION_FEATURE_NAME_REGEX = re.compile(r"[a-z0-9_]+")
