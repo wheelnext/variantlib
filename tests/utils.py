@@ -51,8 +51,8 @@ def get_combinations(
             yield [VariantProperty(namespace, feature, value)]
 
     for start in range(len(all_properties)):
-        for properties in yield_all_values(all_properties[start:]):
-            yield VariantDescription(properties)
+        for j, properties in enumerate(yield_all_values(all_properties[start:])):
+            yield VariantDescription(properties, label=f"{start}_{j}")
 
     # Finish by the null variant
     yield VariantDescription()
