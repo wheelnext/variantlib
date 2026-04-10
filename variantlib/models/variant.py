@@ -69,16 +69,6 @@ class VariantFeature(BaseModel):
         # Variant-Property: <namespace> :: <feature> :: <val>
         return f"{self.namespace} :: {self.feature}"
 
-    def serialize(self) -> dict[str, str]:
-        return asdict(self)
-
-    @classmethod
-    def deserialize(cls, data: dict[str, str]) -> Self:
-        for field_name in cls.__dataclass_fields__:
-            if field_name not in data:
-                raise ValidationError(f"Extra field not known: `{field_name}`")
-        return cls(**data)
-
     @classmethod
     def from_str(cls, input_str: str) -> Self:
         # Try matching the input string with the regex pattern
@@ -212,15 +202,6 @@ class VariantDescription(BaseModel):
         # value safely in email or other non-binary environments.
         # Source: https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest
         return hash_object.hexdigest()[:VARIANT_HASH_LENGTH]
-
-    @classmethod
-    def deserialize(cls, properties: list[dict[str, str]]) -> Self:
-        return cls(
-            properties=[VariantProperty.deserialize(vdata) for vdata in properties]
-        )
-
-    def serialize(self) -> list[dict[str, str]]:
-        return [vprop.serialize() for vprop in self.properties]
 
     def to_dict(self) -> VariantInfoJsonDict:
         data = asdict(self)

@@ -177,29 +177,6 @@ def test_from_str_invalid_format() -> None:
         VariantProperty.from_str(input_str)
 
 
-def test_variantprop_serialization() -> None:
-    vprop = VariantProperty(namespace="provider", feature="feature", value="value")
-    assert vprop.serialize() == {
-        "namespace": "provider",
-        "feature": "feature",
-        "value": "value",
-    }
-
-
-def test_variantprop_deserialization() -> None:
-    data = {
-        "namespace": "provider",
-        "feature": "feature",
-        "value": "value",
-    }
-
-    vprop = VariantProperty.deserialize(data)
-
-    assert vprop.namespace == data["namespace"]
-    assert vprop.feature == data["feature"]
-    assert vprop.value == data["value"]
-
-
 def test_variantprop_sorting() -> None:
     data = [
         VariantProperty("z", "a", "a"),
@@ -346,37 +323,6 @@ def test_variantdescription_hexdigest_adjacent_strings() -> None:
             ]
         ).hexdigest
     )
-
-
-def test_variantdescription_serialization() -> None:
-    vprop = VariantProperty(namespace="provider", feature="feature", value="value")
-    vdesc = VariantDescription(properties=[vprop])
-
-    assert vdesc.serialize() == [
-        {
-            "namespace": "provider",
-            "feature": "feature",
-            "value": "value",
-        }
-    ]
-
-
-def test_variantdescription_deserialization() -> None:
-    data = [
-        {
-            "namespace": "provider",
-            "feature": "feature",
-            "value": "value",
-        }
-    ]
-
-    vdesc = VariantDescription.deserialize(data)
-
-    assert len(vdesc.properties) == 1
-    assert vdesc.properties[0].namespace == "provider"
-    assert vdesc.properties[0].feature == "feature"
-    assert vdesc.properties[0].value == "value"
-    assert vdesc.hexdigest == "c44d3adf"
 
 
 # -----------------------------------------------
