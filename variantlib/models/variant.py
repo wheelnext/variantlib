@@ -9,11 +9,13 @@ from dataclasses import dataclass
 from dataclasses import field
 from functools import cached_property
 
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
@@ -160,6 +162,19 @@ class VariantDescription(BaseModel):
         default_factory=list,
     )
 
+    label: str = field(
+        metadata={
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_type(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_VARIANT_LABEL_REGEX),  # pyright: ignore[reportArgumentType]
+                ],
+                value=val,
+            ),
+        },
+        default=NULL_VARIANT_LABEL,
+    )
+
     def __post_init__(self) -> None:
         # We sort the data so that they always get displayed/hashed
         # in a consistent manner.
@@ -171,6 +186,19 @@ class VariantDescription(BaseModel):
 
         # Execute the validator
         super().__post_init__()
+
+        # TODO: enable once we're done porting
+        if False:
+            if self.is_null_variant():
+                if self.label != NULL_VARIANT_LABEL:
+                    raise ValidationError(
+                        f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
+                    )
+            elif self.label == NULL_VARIANT_LABEL:
+                raise ValidationError(
+                    f"{NULL_VARIANT_LABEL!r} label can be used only for the null "
+                    "variant"
+                )
 
     def is_null_variant(self) -> bool:
         """
