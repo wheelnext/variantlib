@@ -195,7 +195,7 @@ def sort_variants_descriptions(
     property_lookup_table = dict(property_lookup_table)
     lookup_table_size = len(property_lookup_table)
 
-    def _get_rank_tuple(vdesc: VariantDescription) -> tuple[int, ...]:
+    def _get_rank_tuple(vdesc: VariantDescription) -> tuple[tuple[int, ...], str]:
         """
         Get the rank tuple of a `VariantDescription` object.
 
@@ -232,6 +232,7 @@ def sort_variants_descriptions(
             if any(ranking_array[idx] == sys.maxsize for idx in vdesc_feature_indexes):
                 raise ValidationError("Filtering should be applied first.")
 
-        return tuple(ranking_array)
+        # As a fallback, sort on variant label.
+        return (tuple(ranking_array), vdesc.label)
 
     return sorted(vdescs, key=_get_rank_tuple)
