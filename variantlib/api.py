@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from variantlib.configuration import VariantConfiguration
 from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
-from variantlib.constants import VARIANT_LABEL_LENGTH
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
@@ -35,7 +34,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "VARIANT_LABEL_LENGTH",
     "ProviderConfig",
     "VariantDescription",
     "VariantFeatureConfig",
@@ -375,6 +373,6 @@ def get_variant_label(
     elif not VALIDATION_VARIANT_LABEL_REGEX.fullmatch(custom_label):
         raise ValidationError(
             f"Invalid variant label: {custom_label!r} "
-            f"(must be up to {VARIANT_LABEL_LENGTH} alphanumeric characters)"
+            f"(must consist only of alphanumeric characters, underscores and dots)"
         )
     return custom_label
