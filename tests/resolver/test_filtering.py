@@ -32,9 +32,9 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
     vprop1, vprop2 = vprops
 
     return [
-        VariantDescription([vprop1]),
-        VariantDescription([vprop2]),
-        VariantDescription([vprop1, vprop2]),
+        VariantDescription([vprop1], label="a"),
+        VariantDescription([vprop2], label="b"),
+        VariantDescription([vprop1, vprop2], label="c"),
     ]
 
 
@@ -139,11 +139,11 @@ def test_filter_variants_by_namespaces(vdescs: list[VariantDescription]) -> None
     ("vdescs", "forbidden_namespaces"),
     [
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             "not a list",
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             [VariantProperty("not", "a", "str")],
         ),
         ("not a list", ["omnicorp"]),
@@ -245,11 +245,11 @@ def test_filter_variants_by_features(
     ("vdescs", "forbidden_features"),
     [
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             "not a list",
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             ["not a `VariantFeature`"],
         ),
         ("not a list", VariantFeature("a", "b")),
@@ -453,22 +453,22 @@ def test_filter_variants_by_property(
             [VariantProperty("a", "b", "c")],
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             "not a list",
             [VariantProperty("a", "b", "c")],
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             ["not a `VariantFeature`"],
             [VariantProperty("a", "b", "c")],
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             [VariantProperty("a", "b", "c")],
             "not a list",
         ),
         (
-            [VariantDescription([VariantProperty("a", "b", "c")])],
+            [VariantDescription([VariantProperty("a", "b", "c")], label="test")],
             [VariantProperty("a", "b", "c")],
             ["not a `VariantFeature`"],
         ),

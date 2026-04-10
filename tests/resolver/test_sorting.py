@@ -239,13 +239,16 @@ def test_sort_variants_descriptions() -> None:
             VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
             VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
             VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
-        ]
+        ],
+        label="a",
     )
     vdesc2 = VariantDescription(
-        [VariantProperty(namespace="other_corp", feature="feat_a", value="value")]
+        [VariantProperty(namespace="other_corp", feature="feat_a", value="value")],
+        label="b",
     )
     vdesc3 = VariantDescription(
-        [VariantProperty(namespace="omnicorp", feature="feat_a", value="value")]
+        [VariantProperty(namespace="omnicorp", feature="feat_a", value="value")],
+        label="c",
     )
 
     assert sort_variants_descriptions(
@@ -317,7 +320,8 @@ def test_sort_variants_descriptions() -> None:
                 VariantProperty(
                     namespace="omnicorp", feature="feat", value="other_value"
                 )
-            ]
+            ],
+            label="a",
         ),
         VariantDescription(
             properties=[
@@ -326,6 +330,7 @@ def test_sort_variants_descriptions() -> None:
                     namespace="omnicorp", feature="other_feat", value="other_value"
                 ),
             ],
+            label="b",
         ),
     ],
 )
@@ -347,13 +352,16 @@ def test_sort_variants_descriptions_ranking_validation_error(
     [
         ("not a list", [VariantProperty("a", "b", "c")]),
         (["not a VariantDescription"], [VariantProperty("a", "b", "c")]),
-        (VariantDescription([VariantProperty("a", "b", "c")]), "not a list or None"),
         (
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
+            "not a list or None",
+        ),
+        (
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
             VariantProperty("not", "a", "list"),
         ),
         (
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
             [{"not a VariantProperty": True}],
         ),
     ],
