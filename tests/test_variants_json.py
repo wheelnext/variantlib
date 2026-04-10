@@ -46,6 +46,7 @@ def test_validate_variants_json() -> None:
     assert variants_json.variants == {
         NULL_VARIANT_LABEL: VariantDescription(),
         "03e04d5e": VariantDescription(
+            label="03e04d5e",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -60,6 +61,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "36028aca": VariantDescription(
+            label="36028aca",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -89,6 +91,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "3f7188c1": VariantDescription(
+            label="3f7188c1",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -113,6 +116,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "7db6d39f": VariantDescription(
+            label="7db6d39f",
             properties=[
                 VariantProperty(
                     namespace="fictional_tech",
@@ -132,6 +136,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "808c7f9d": VariantDescription(
+            label="808c7f9d",
             properties=[
                 VariantProperty(
                     namespace="fictional_tech",
@@ -151,6 +156,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "80fa16ff": VariantDescription(
+            label="80fa16ff",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -175,6 +181,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "3351fc6a": VariantDescription(
+            label="3351fc6a",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -182,9 +189,10 @@ def test_validate_variants_json() -> None:
                     value=str(value),
                 )
                 for value in range(4, 6)
-            ]
+            ],
         ),
         "181830db": VariantDescription(
+            label="181830db",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -192,9 +200,10 @@ def test_validate_variants_json() -> None:
                     value=str(value),
                 )
                 for value in range(4, 8)
-            ]
+            ],
         ),
         "72c47fce": VariantDescription(
+            label="72c47fce",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -206,7 +215,7 @@ def test_validate_variants_json() -> None:
                     feature="compute_capability",
                     value="8",
                 ),
-            ]
+            ],
         ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]

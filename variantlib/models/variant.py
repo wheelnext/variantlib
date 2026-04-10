@@ -247,7 +247,7 @@ class VariantDescription(BaseModel):
         return dict(result)
 
     @classmethod
-    def from_dict(cls, data: VariantInfoJsonDict) -> Self:
+    def from_dict(cls, data: VariantInfoJsonDict, label: str) -> Self:
         vprops = [
             VariantProperty(namespace=namespace, feature=key, value=vprop_val)
             for namespace, vdata in data.items()
@@ -255,7 +255,7 @@ class VariantDescription(BaseModel):
             for vprop_val in vprop_values
         ]
 
-        return cls(vprops)
+        return cls(properties=vprops, label=label)
 
 
 @dataclass(frozen=True)
