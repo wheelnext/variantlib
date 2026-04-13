@@ -352,14 +352,13 @@ def get_variant_label(
     Get the label corresponding to `variant_desc`. If `custom_label`
     is provided, validate it and use it. If `custom_label` is invalid,
     raises a `ValidationError`.
+
+    This function is deprecated: use VariantDescription.label instead.
     """
 
     if custom_label is None:
-        return (
-            NULL_VARIANT_LABEL
-            if variant_desc.is_null_variant()
-            else variant_desc.hexdigest
-        )
+        assert variant_desc.label is not None
+        return variant_desc.label
 
     if variant_desc.is_null_variant():
         if custom_label != NULL_VARIANT_LABEL:
