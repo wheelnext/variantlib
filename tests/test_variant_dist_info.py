@@ -85,17 +85,17 @@ def test_new_variant_dist_info() -> None:
         namespace_priorities=["ns"], providers={"ns": ProviderInfo(requires=["ns-pkg"])}
     )
     variant_dist_info = VariantDistInfo(variant_info)
-    vdesc = VariantDescription([VariantProperty("ns", "f", "v")])
+    vdesc = VariantDescription([VariantProperty("ns", "f", "v")], label="a")
     variant_dist_info.variant_desc = vdesc
     assert variant_dist_info.namespace_priorities == variant_info.namespace_priorities
     assert variant_dist_info.providers == variant_info.providers
-    assert variant_dist_info.variant_label == vdesc.hexdigest
+    assert variant_dist_info.variant_label == "a"
     assert variant_dist_info.variant_desc == vdesc
 
     # changing vdesc should update the label
-    vdesc2 = VariantDescription([VariantProperty("ns2", "f2", "v2")])
+    vdesc2 = VariantDescription([VariantProperty("ns2", "f2", "v2")], label="b")
     variant_dist_info.variant_desc = vdesc2
-    assert variant_dist_info.variant_label == vdesc2.hexdigest
+    assert variant_dist_info.variant_label == "b"
     assert variant_dist_info.variant_desc == vdesc2
 
     # set a custom label
@@ -105,5 +105,5 @@ def test_new_variant_dist_info() -> None:
 
     # changing vdesc should reset the label
     variant_dist_info.variant_desc = vdesc2
-    assert variant_dist_info.variant_label == vdesc2.hexdigest
+    assert variant_dist_info.variant_label == "b"
     assert variant_dist_info.variant_desc == vdesc2

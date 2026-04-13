@@ -56,4 +56,4 @@ class VariantDistInfo(VariantsJson):
 
     @variant_desc.setter
     def variant_desc(self, new_desc: VariantDescription) -> None:
-        self.variants = {new_desc.hexdigest: new_desc}
+        self.variants = {new_desc.label: new_desc}
