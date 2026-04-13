@@ -58,6 +58,8 @@ def get_variants_by_priority(
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
 
+    assert all(vdesc.label == label for label, vdesc in variants_json.variants.items())
+
     venv_python_executable = (
         venv_python_executable
         if venv_python_executable is None
@@ -77,14 +79,9 @@ def get_variants_by_priority(
         )
 
     config = VariantConfiguration.get_config()
-    label_map = {
-        vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
-    }
-    # handle the implicit null variant
-    label_map.setdefault(VariantDescription([]).hexdigest, NULL_VARIANT_LABEL)
 
     return [
-        label_map[vdesc.hexdigest]
+        vdesc.label
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
