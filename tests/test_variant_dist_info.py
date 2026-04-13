@@ -101,7 +101,9 @@ def test_new_variant_dist_info() -> None:
     # set a custom label
     variant_dist_info.variant_label = "fancy2"
     assert variant_dist_info.variant_label == "fancy2"
-    assert variant_dist_info.variant_desc == vdesc2
+    assert variant_dist_info.variant_desc == VariantDescription(
+        vdesc2.properties, label="fancy2"
+    )
 
     # changing vdesc should reset the label
     variant_dist_info.variant_desc = vdesc2
