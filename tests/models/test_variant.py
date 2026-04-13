@@ -427,7 +427,6 @@ def test_random_hexdigest(vdesc: VariantDescription) -> None:
     assert len(vdesc.hexdigest) == VARIANT_HASH_LENGTH
 
 
-@pytest.mark.xfail(reason="Validation is disabled for porting")
 def test_null_variant_label():
     with pytest.raises(
         ValidationError,

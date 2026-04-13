@@ -169,7 +169,7 @@ def _make_variant(
 
     if not is_null_variant:
         # Transform properties into a VariantDescription
-        vdesc = VariantDescription(properties=properties)
+        vdesc = VariantDescription(properties=properties, label="na")
 
         if validate_properties:
             env_factory: DefaultIsolatedEnv | nullcontext[None]

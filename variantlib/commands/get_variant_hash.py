@@ -6,6 +6,7 @@ import sys
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
+from variantlib.constants import NULL_VARIANT_LABEL
 
 
 def get_variant_hash(args: list[str]) -> None:
@@ -35,6 +36,8 @@ def get_variant_hash(args: list[str]) -> None:
 
 def _print_variant_hash(properties: list[VariantProperty]) -> None:
     # Transform properties into a VariantDescription
-    vdesc = VariantDescription(properties=properties)
+    vdesc = VariantDescription(
+        properties=properties, label="na" if properties else NULL_VARIANT_LABEL
+    )
 
     sys.stdout.write(f"{vdesc.hexdigest}\n")

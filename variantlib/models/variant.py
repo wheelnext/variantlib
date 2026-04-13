@@ -187,18 +187,15 @@ class VariantDescription(BaseModel):
         # Execute the validator
         super().__post_init__()
 
-        # TODO: enable once we're done porting
-        if False:
-            if self.is_null_variant():
-                if self.label != NULL_VARIANT_LABEL:
-                    raise ValidationError(
-                        f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
-                    )
-            elif self.label == NULL_VARIANT_LABEL:
+        if self.is_null_variant():
+            if self.label != NULL_VARIANT_LABEL:
                 raise ValidationError(
-                    f"{NULL_VARIANT_LABEL!r} label can be used only for the null "
-                    "variant"
+                    f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
                 )
+        elif self.label == NULL_VARIANT_LABEL:
+            raise ValidationError(
+                f"{NULL_VARIANT_LABEL!r} label can be used only for the null variant"
+            )
 
     def is_null_variant(self) -> bool:
         """

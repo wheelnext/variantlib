@@ -317,16 +317,18 @@ def test_to_str() -> None:
         [
             VariantProperty("ns1", "f1", "v1"),
             VariantProperty("ns2", "f2", "v1"),
-        ]
+        ],
+        label="a",
     )
     vdesc2 = VariantDescription(
         [
             VariantProperty("ns2", "f2", "v2"),
-        ]
+        ],
+        label="b",
     )
     variants_json.variants = {
-        vdesc1.hexdigest: vdesc1,
-        vdesc2.hexdigest: vdesc2,
+        "a": vdesc1,
+        "b": vdesc2,
     }
     assert json.loads(variants_json.to_str()) == {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
@@ -347,8 +349,8 @@ def test_to_str() -> None:
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "b3b0305c": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
-            "9177ff3f": {"ns2": {"f2": ["v2"]}},
+            "a": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
+            "b": {"ns2": {"f2": ["v2"]}},
         },
     }
 
@@ -501,12 +503,13 @@ def test_merge_variants() -> None:
 def test_null_variant_label():
     with pytest.raises(
         ValidationError,
-        match=rf"{NULL_VARIANT_LABEL!r} label can only be used for the null variant",
+        match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         VariantsJson(
             {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}}}
         )
     with pytest.raises(
-        ValidationError, match=rf"Null variant must use {NULL_VARIANT_LABEL!r} label"
+        ValidationError,
+        match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
         VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}}})
