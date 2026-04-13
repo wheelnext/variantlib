@@ -374,6 +374,11 @@ def get_variant_label(
         assert variant_desc.label is not None
         return variant_desc.label
 
+    warnings.warn(
+        "get_variant_label() is deprecated, use VariantDescription.label instead",
+        stacklevel=2,
+    )
+
     if variant_desc.is_null_variant():
         if custom_label != NULL_VARIANT_LABEL:
             raise ValidationError(
