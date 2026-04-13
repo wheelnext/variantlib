@@ -337,7 +337,6 @@ def get_variant_environment_dict(
 ) -> dict[str, set[str] | str]:
     """Get the dict for packaging Marker.evaluate()"""
 
-    assert variant_desc.label is not None
     ret: dict[str, set[str] | str] = {
         "variant_namespaces": {vprop.namespace for vprop in variant_desc.properties},
         "variant_features": {
@@ -371,7 +370,6 @@ def get_variant_label(
     """
 
     if custom_label is None:
-        assert variant_desc.label is not None
         return variant_desc.label
 
     warnings.warn(

@@ -162,7 +162,7 @@ class VariantDescription(BaseModel):
         default_factory=list,
     )
 
-    label: str | None = field(
+    label: str = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -172,7 +172,7 @@ class VariantDescription(BaseModel):
                 value=val,
             ),
         },
-        default=None,
+        default="",
     )
 
     def __post_init__(self) -> None:
@@ -185,7 +185,7 @@ class VariantDescription(BaseModel):
             object.__setattr__(self, "properties", sorted(self.properties))
 
         # default the label to "null" or hexdigest
-        if self.label is None:
+        if not self.label:
             with contextlib.suppress(AttributeError):
                 object.__setattr__(
                     self,

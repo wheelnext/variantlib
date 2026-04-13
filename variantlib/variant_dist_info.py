@@ -56,5 +56,4 @@ class VariantDistInfo(VariantsJson):
 
     @variant_desc.setter
     def variant_desc(self, new_desc: VariantDescription) -> None:
-        assert new_desc.label is not None
         self.variants = {new_desc.label: new_desc}
