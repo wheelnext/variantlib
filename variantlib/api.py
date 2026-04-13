@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+import warnings
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
@@ -185,7 +186,7 @@ def make_variant_dist_info(
     instead.
 
     variant_label specifies the variant label to use. If not specified,
-    the default of variant hash is used.
+    the default of variant hash is used. Deprecated: set vdesc.label instead.
 
     If expand_aot_plugin_properties is True, then default-priorities
     for ahead-of-time plugins will be filled with the current list
@@ -198,6 +199,12 @@ def make_variant_dist_info(
         variant_info = VariantInfo()
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
+    if variant_label is not None:
+        warnings.warn(
+            "Passing variant_label is deprecated, provide VariantDescription() "
+            "with label instead",
+            stacklevel=2,
+        )
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
     if expand_aot_plugin_properties:
@@ -330,14 +337,21 @@ def get_variant_environment_dict(
 ) -> dict[str, set[str] | str]:
     """Get the dict for packaging Marker.evaluate()"""
 
+    assert variant_desc.label is not None
     ret: dict[str, set[str] | str] = {
         "variant_namespaces": {vprop.namespace for vprop in variant_desc.properties},
         "variant_features": {
             vprop.feature_object.to_str() for vprop in variant_desc.properties
         },
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
+        "variant_label": variant_desc.label,
     }
     if variant_label is not None:
+        warnings.warn(
+            "Passing variant_label is deprecated, provide VariantDescription() "
+            "with label instead",
+            stacklevel=2,
+        )
         ret["variant_label"] = variant_label
     return ret
 
