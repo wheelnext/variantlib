@@ -162,7 +162,7 @@ class VariantDescription(BaseModel):
         default_factory=list,
     )
 
-    label: str = field(
+    label: str | None = field(
         metadata={
             "validator": lambda val: validate_and(
                 [
@@ -172,7 +172,7 @@ class VariantDescription(BaseModel):
                 value=val,
             ),
         },
-        default=NULL_VARIANT_LABEL,
+        default=None,
     )
 
     def __post_init__(self) -> None:
@@ -184,10 +184,15 @@ class VariantDescription(BaseModel):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(self, "properties", sorted(self.properties))
 
-        # Execute the validator
-        super().__post_init__()
-
-        if self.is_null_variant():
+        # default the label to "null" or hexdigest
+        if self.label is None:
+            with contextlib.suppress(AttributeError):
+                object.__setattr__(
+                    self,
+                    "label",
+                    NULL_VARIANT_LABEL if self.is_null_variant() else self.hexdigest,
+                )
+        elif self.is_null_variant():
             if self.label != NULL_VARIANT_LABEL:
                 raise ValidationError(
                     f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
@@ -196,6 +201,9 @@ class VariantDescription(BaseModel):
             raise ValidationError(
                 f"{NULL_VARIANT_LABEL!r} label can be used only for the null variant"
             )
+
+        # Execute the validator
+        super().__post_init__()
 
     def is_null_variant(self) -> bool:
         """
