@@ -90,6 +90,8 @@ class VariantsJson(VariantInfo):
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
+        assert all(label == vdesc.label for label, vdesc in self.variants.items())
+
         data: dict[str, Any] = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
             VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
