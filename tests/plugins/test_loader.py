@@ -566,11 +566,6 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
             "second_namespace",
             "private",
         ],
-        static_properties={
-            "private": {
-                "baz": ["v5", "v6"],
-            },
-        },
         providers={
             "test_namespace": ProviderInfo(
                 requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginA"
@@ -582,6 +577,9 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
             ),
             "private": ProviderInfo(
                 install_time=False,
+                static_properties={
+                    "baz": ["v5", "v6"],
+                },
             ),
         },
     )

@@ -313,7 +313,10 @@ class PluginLoader(BasePluginLoader):
         self._include_aot_plugins = include_aot_plugins
         super().__init__(
             venv_python_executable=venv_python_executable,
-            package_defined_properties=variant_info.static_properties,
+            package_defined_properties={
+                namespace: provider_info.static_properties
+                for namespace, provider_info in variant_info.providers.items()
+            },
         )
 
     def _use_static_properties_for_provider(self, provider_data: ProviderInfo) -> bool:

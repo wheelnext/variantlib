@@ -34,7 +34,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -314,9 +314,9 @@ def test_validate_variant(optional: bool) -> None:
                 plugin_api="donotuseme",
                 optional=optional,
                 install_time=False,
+                static_properties={"build_type": ["debug", "release"]},
             ),
         },
-        static_properties={"private": {"build_type": ["debug", "release"]}},
     )
 
     expected = {
@@ -397,6 +397,10 @@ def test_make_variant_dist_info(
                 },
                 "ns3": {
                     VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                        "f1": ["v1", "v2"],
+                        "f2": ["v3", "v4"],
+                    },
                 },
             }
         )
@@ -406,12 +410,6 @@ def test_make_variant_dist_info(
                 VARIANT_INFO_FEATURE_KEY: {"ns3": ["f2", "f1"]},
             },
         )
-        expected[VARIANT_INFO_STATIC_PROPERTIES_KEY] = {
-            "ns3": {
-                "f1": ["v1", "v2"],
-                "f2": ["v3", "v4"],
-            },
-        }
 
     if pyproject_toml is PYPROJECT_TOML:
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
@@ -706,11 +704,9 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
             "aot_plugin": ["name1", "name2"],
         }
-        expected[VARIANT_INFO_STATIC_PROPERTIES_KEY] = {
-            "aot_plugin": {
-                "name1": ["val1a", "val1b"],
-                "name2": ["val2a", "val2b", "val2c"],
-            },
+        provider_data[VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY] = {
+            "name1": ["val1a", "val1b"],
+            "name2": ["val2a", "val2b", "val2c"],
         }
 
     assert (

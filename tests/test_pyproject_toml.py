@@ -15,7 +15,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
@@ -60,7 +60,7 @@ version = "1.2.3"
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3]
 {VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
 
-[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_STATIC_PROPERTIES_KEY}.ns3]
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3.{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}]
 f1 = ["v1", "v2"]
 f2 = ["v3", "v4"]
 """
@@ -107,9 +107,9 @@ def test_pyproject_toml() -> None:
         ),
         "ns3": ProviderInfo(
             install_time=False,
+            static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
         ),
     }
-    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
 
 def test_pyproject_toml_minimal() -> None:
@@ -134,9 +134,9 @@ def test_pyproject_toml_minimal() -> None:
         ),
         "ns3": ProviderInfo(
             install_time=False,
+            static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
         ),
     }
-    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
 
 def test_invalid_top_type() -> None:
@@ -336,9 +336,9 @@ def test_missing_provider_requires_aot() -> None:
                     "ns": {
                         VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
                         VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"test": ["val"]},
                     }
                 },
-                VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"test": ["val"]}},
             }
         }
     )
@@ -455,9 +455,9 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
         ),
         "ns3": ProviderInfo(
             install_time=False,
+            static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
         ),
     }
-    assert pyproj.static_properties == {"ns3": {"f1": ["v1", "v2"], "f2": ["v3", "v4"]}}
 
     # Non-common fields should be reset to defaults
     if isinstance(converted, VariantsJson):
@@ -508,9 +508,9 @@ def test_no_plugin_api() -> None:
 def test_missing_static_properties() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY} "
-        r"must specify properties for all AoT providers; currently provided: set\(\); "
-        r"expected: {'ns'}",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
+        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified for AoT providers",
     ):
         VariantPyProjectToml(
             {
@@ -524,30 +524,6 @@ def test_missing_static_properties() -> None:
         )
 
 
-@pytest.mark.parametrize("install_time", [False, True])
-def test_extraneous_static_properties(install_time: bool) -> None:
-    with pytest.raises(
-        ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY} "
-        r"must specify properties for all AoT providers; currently provided: {'ns'}; "
-        r"expected: set\(\)",
-    ):
-        VariantPyProjectToml(
-            {
-                PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
-                    VARIANT_INFO_PROVIDER_DATA_KEY: {
-                        "ns": {
-                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: install_time,
-                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
-                        }
-                    },
-                    VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"f": ["v"]}},
-                }
-            }
-        )
-
-
 def test_static_properties_one_feature() -> None:
     VariantPyProjectToml(
         {
@@ -556,9 +532,9 @@ def test_static_properties_one_feature() -> None:
                 VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "ns": {
                         VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"f": ["v"]},
                     }
                 },
-                VARIANT_INFO_STATIC_PROPERTIES_KEY: {"ns": {"f": ["v"]}},
             }
         }
     )
@@ -567,7 +543,8 @@ def test_static_properties_one_feature() -> None:
 def test_static_properties_missing_priorities() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_STATIC_PROPERTIES_KEY}\.ns: "
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: "
         r"for AoT providers with multiple features, priorities need to be specified "
         rf"via {VARIANT_INFO_DEFAULT_PRIO_KEY}\.{VARIANT_INFO_FEATURE_KEY}; missing: "
         r"{'f2'}",
@@ -582,10 +559,11 @@ def test_static_properties_missing_priorities() -> None:
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                                "f1": ["v"],
+                                "f2": ["v"],
+                            },
                         }
-                    },
-                    VARIANT_INFO_STATIC_PROPERTIES_KEY: {
-                        "ns": {"f1": ["v"], "f2": ["v"]}
                     },
                 }
             }

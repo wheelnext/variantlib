@@ -19,7 +19,7 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_STATIC_PROPERTIES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
 from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
@@ -33,8 +33,6 @@ from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from variantlib.protocols import VariantNamespace
 
 
 if sys.version_info >= (3, 11):
@@ -61,7 +59,7 @@ class VariantsJson(VariantInfo):
     @staticmethod
     def _provider_info_to_json(
         provider_info: ProviderInfo,
-    ) -> Generator[tuple[str, str | list[str] | bool]]:
+    ) -> Generator[tuple[str, str | list[str] | dict[str, list[str]] | bool]]:
         if provider_info.requires:
             yield (VARIANT_INFO_PROVIDER_REQUIRES_KEY, provider_info.requires)
         if provider_info.enable_if is not None:
@@ -72,6 +70,11 @@ class VariantsJson(VariantInfo):
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
         if not provider_info.install_time:
             yield (VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY, provider_info.install_time)
+        if provider_info.static_properties:
+            yield (
+                VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+                provider_info.static_properties,
+            )
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
         yield (VARIANT_INFO_NAMESPACE_KEY, self.namespace_priorities)
@@ -80,7 +83,9 @@ class VariantsJson(VariantInfo):
         if self.property_priorities:
             yield (VARIANT_INFO_PROPERTY_KEY, self.property_priorities)
 
-    def providers_dict(self) -> dict[str, dict[str, str | list[str] | bool]]:
+    def providers_dict(
+        self,
+    ) -> dict[str, dict[str, str | list[str] | dict[str, list[str]] | bool]]:
         """Get a dictionary of providers in a format suitable for JSON serialization"""
         return {
             namespace: dict(self._provider_info_to_json(provider_info))
@@ -100,8 +105,6 @@ class VariantsJson(VariantInfo):
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
-        if self.static_properties:
-            data[VARIANT_INFO_STATIC_PROPERTIES_KEY] = self.static_properties
 
         return json.dumps(data, indent=4, sort_keys=True)
 
@@ -156,12 +159,9 @@ class VariantsJson(VariantInfo):
                             f"Expected: {old!r}, found: {new!r}"
                         )
 
-    def _get_expected_aot_namespaces(self) -> set[VariantNamespace]:
-        return {
-            namespace
-            for namespace, provider_info in self.providers.items()
-            if not provider_info.install_time
-        }
+    @property
+    def _aot_providers_need_static_properties(self) -> bool:
+        return True
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]
