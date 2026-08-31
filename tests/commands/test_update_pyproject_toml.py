@@ -7,9 +7,7 @@ import tomlkit
 from variantlib.commands.main import main
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -32,8 +30,6 @@ def test_update_pyproject_toml(
                     "test_namespace",
                     "foo",
                 ],
-                VARIANT_INFO_FEATURE_KEY: ["foo::bar"],
-                VARIANT_INFO_PROPERTY_KEY: ["foo::bar::baz"],
             },
             VARIANT_INFO_PROVIDER_DATA_KEY: {
                 "test_namespace": {

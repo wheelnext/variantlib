@@ -40,8 +40,6 @@ def test_variant_dist_info(json_type: type, expected_label: str | None) -> None:
     )
     variant_dist_info = VariantDistInfo(vjson_str, expected_label=expected_label)
     assert variant_dist_info.namespace_priorities == ["ns"]
-    assert variant_dist_info.feature_priorities == {}
-    assert variant_dist_info.property_priorities == {}
     assert variant_dist_info.providers == {"ns": ProviderInfo(requires=["ns-pkg"])}
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")], label="test")
     assert variant_dist_info.variants == {"test": vdesc}
@@ -54,8 +52,6 @@ def test_variant_dist_info_custom_label(expected_label: str | None) -> None:
     vjson_str = json.dumps(VARIANT_JSON).replace("test", "fancy1")
     variant_dist_info = VariantDistInfo(vjson_str, expected_label=expected_label)
     assert variant_dist_info.namespace_priorities == ["ns"]
-    assert variant_dist_info.feature_priorities == {}
-    assert variant_dist_info.property_priorities == {}
     assert variant_dist_info.providers == {"ns": ProviderInfo(requires=["ns-pkg"])}
     vdesc = VariantDescription([VariantProperty("ns", "f", "v")], label="fancy1")
     assert variant_dist_info.variants == {"fancy1": vdesc}

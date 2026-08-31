@@ -8,9 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -219,13 +217,6 @@ def test_validate_variants_json() -> None:
         ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]
-    assert variants_json.feature_priorities == {
-        "fictional_hw": ["humor", "compute_accuracy"],
-        "fictional_tech": ["quantum"],
-    }
-    assert variants_json.property_priorities == {
-        "fictional_tech": {"technology": ["auto_chef"]}
-    }
     assert variants_json.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
@@ -260,20 +251,11 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
 
     # Mangle variants_json to ensure everything was copied
     variants_json.namespace_priorities.append("ns")
-    variants_json.feature_priorities["ns"] = ["foo"]
-    variants_json.property_priorities["fictional_tech"]["foo"] = ["bar"]
     variants_json.providers["ns"] = ProviderInfo(requires=["bar"], plugin_api="foo:bar")
     variants_json.providers["fictional_hw"].enable_if = None
     variants_json.providers["fictional_tech"].requires.append("frobnicate")
 
     assert converted.namespace_priorities == ["fictional_hw", "fictional_tech"]
-    assert converted.feature_priorities == {
-        "fictional_hw": ["humor", "compute_accuracy"],
-        "fictional_tech": ["quantum"],
-    }
-    assert converted.property_priorities == {
-        "fictional_tech": {"technology": ["auto_chef"]}
-    }
     assert converted.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
@@ -295,14 +277,6 @@ def test_to_str() -> None:
     variants_json = VariantsJson(
         VariantInfo(
             namespace_priorities=["ns2", "ns1"],
-            feature_priorities={
-                "ns1": ["f1"],
-                "ns2": ["f2"],
-            },
-            property_priorities={
-                "ns2": {"f2": ["v2"]},
-                "ns1": {"f1": ["v1"]},
-            },
             providers={
                 "ns1": ProviderInfo(
                     requires=["ns1-pkg >= 1.0.0", "ns1-dep"],
@@ -334,8 +308,6 @@ def test_to_str() -> None:
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: ["ns2", "ns1"],
-            VARIANT_INFO_FEATURE_KEY: {"ns1": ["f1"], "ns2": ["f2"]},
-            VARIANT_INFO_PROPERTY_KEY: {"ns2": {"f2": ["v2"]}, "ns1": {"f1": ["v1"]}},
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "ns1": {
@@ -367,8 +339,6 @@ def test_roundtrip() -> None:
 def test_merge_variants() -> None:
     priority_data: PriorityJsonDict = {
         VARIANT_INFO_NAMESPACE_KEY: ["a", "b"],
-        VARIANT_INFO_FEATURE_KEY: {"a": ["a"], "b": ["b"]},
-        VARIANT_INFO_PROPERTY_KEY: {"a": {"a": ["a"]}, "b": {"b": ["b"]}},
     }
 
     provider_data: dict[str, ProviderPluginJsonDict] = {
@@ -466,17 +436,12 @@ def test_merge_variants() -> None:
     assert v1 == merged
 
     # Test for mismatches in default priorities.
-    overrides = {
-        VARIANT_INFO_NAMESPACE_KEY: ["b", "a"],
-        VARIANT_INFO_FEATURE_KEY: {"b": ["b"]},
-        VARIANT_INFO_PROPERTY_KEY: {"b": {"b": ["b"]}},
-    }
-
-    for key in json_a[VARIANT_INFO_DEFAULT_PRIO_KEY]:
-        _json_data = copy.deepcopy(json_b)
-        _json_data[VARIANT_INFO_DEFAULT_PRIO_KEY][key] = overrides[key]  # type: ignore[literal-required]
-        with pytest.raises(ValidationError, match=rf"Inconsistency in '{key}"):
-            v1.merge(VariantsJson(_json_data))
+    _json_data = copy.deepcopy(json_b)
+    _json_data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_NAMESPACE_KEY] = ["b", "a"]
+    with pytest.raises(
+        ValidationError, match=rf"Inconsistency in '{VARIANT_INFO_NAMESPACE_KEY}"
+    ):
+        v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
     _json_data = copy.deepcopy(json_b)

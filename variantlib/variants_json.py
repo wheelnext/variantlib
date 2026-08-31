@@ -10,9 +10,7 @@ from typing import Any
 from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
@@ -84,10 +82,6 @@ class VariantsJson(VariantInfo):
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
         yield (VARIANT_INFO_NAMESPACE_KEY, self.namespace_priorities)
-        if self.feature_priorities:
-            yield (VARIANT_INFO_FEATURE_KEY, self.feature_priorities)
-        if self.property_priorities:
-            yield (VARIANT_INFO_PROPERTY_KEY, self.property_priorities)
 
     def providers_dict(
         self,
@@ -127,11 +121,7 @@ class VariantsJson(VariantInfo):
         self.variants.update(variant_dist_info.variants)
 
         # Verify consistency of default priorities
-        for attribute in (
-            "namespace_priorities",
-            "feature_priorities",
-            "property_priorities",
-        ):
+        for attribute in ("namespace_priorities",):
             new_value = getattr(variant_dist_info, attribute)
             old_value = getattr(self, attribute)
             if old_value != new_value:

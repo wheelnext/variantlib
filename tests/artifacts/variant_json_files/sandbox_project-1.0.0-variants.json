@@ -4,9 +4,7 @@
         "namespace": [
             "fictional_tech",
             "fictional_hw"
-        ],
-        "feature": {},
-        "property": {}
+        ]
     },
     "providers": {
         "fictional_hw": {

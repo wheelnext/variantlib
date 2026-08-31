@@ -10,9 +10,7 @@ VARIANT_DIST_INFO_FILENAME = "variant.json"
 
 # Common variant info keys (used in pyproject.toml and variants.json)
 VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
-VARIANT_INFO_FEATURE_KEY: Literal["feature"] = "feature"
 VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
-VARIANT_INFO_PROPERTY_KEY: Literal["property"] = "property"
 VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
 VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
 VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: Literal["install-time"] = "install-time"
@@ -109,8 +107,6 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
 
 class PriorityJsonDict(TypedDict, total=False):
     namespace: list[str]
-    feature: dict[str, list[str]]
-    property: dict[str, dict[str, list[str]]]
 
 
 ProviderPluginJsonDict = TypedDict(

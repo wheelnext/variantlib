@@ -91,7 +91,6 @@ def get_variants_by_priority(
             ),
             feature_priorities=aggregate_feature_priorities(
                 config.feature_priorities,
-                variants_json.feature_priorities,
                 {
                     namespace: provider.feature_order
                     for namespace, provider in variants_json.providers.items()
@@ -99,7 +98,6 @@ def get_variants_by_priority(
             ),
             property_priorities=aggregate_property_priorities(
                 config.property_priorities,
-                variants_json.property_priorities,
             ),
         )
     ]

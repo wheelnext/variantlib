@@ -4,23 +4,7 @@
         "namespace": [
             "fictional_hw",
             "fictional_tech"
-        ],
-        "feature": {
-            "fictional_hw": [
-                "humor",
-                "compute_accuracy"
-            ],
-            "fictional_tech": [
-                "quantum"
-            ]
-        },
-        "property": {
-            "fictional_tech": {
-                "technology": [
-                    "auto_chef"
-                ]
-            }
-        }
+        ]
     },
     "providers": {
         "fictional_hw": {

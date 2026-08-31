@@ -25,9 +25,7 @@ from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_FEATURE_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
@@ -57,7 +55,6 @@ from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 from tests.test_pyproject_toml import PYPROJECT_TOML
-from tests.test_pyproject_toml import PYPROJECT_TOML_MINIMAL
 from tests.utils import get_combinations
 
 if TYPE_CHECKING:
@@ -354,9 +351,7 @@ def test_validate_variant(optional: bool) -> None:
     assert not res.is_valid()
 
 
-@pytest.mark.parametrize(
-    "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
-)
+@pytest.mark.parametrize("pyproject_toml", [None, PYPROJECT_TOML])
 @pytest.mark.parametrize("label", ["foo", "xy1.2"])
 def test_make_variant_dist_info(
     pyproject_toml: VariantsJsonDict | None,
@@ -410,24 +405,6 @@ def test_make_variant_dist_info(
             {
                 VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
             },
-        )
-
-    if pyproject_toml is PYPROJECT_TOML:
-        expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
-            {
-                VARIANT_INFO_FEATURE_KEY: {
-                    "ns1": ["f2"],
-                    "ns2": ["f1", "f2"],
-                },
-                VARIANT_INFO_PROPERTY_KEY: {
-                    "ns1": {
-                        "f2": ["p1"],
-                    },
-                    "ns2": {
-                        "f1": ["p2"],
-                    },
-                },
-            }
         )
 
     assert (
