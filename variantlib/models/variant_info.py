@@ -19,6 +19,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -43,6 +44,7 @@ class ProviderInfo:
     static_properties: dict[VariantFeatureName, list[VariantFeatureValue]] = field(
         default_factory=dict
     )
+    feature_order: list[VariantFeatureName] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         # TODO: readd validation for requires/static-properties
@@ -97,6 +99,7 @@ class VariantInfo:
                         feature: list(values)
                         for feature, values in provider_data.static_properties.items()
                     },
+                    feature_order=list(provider_data.feature_order),
                 )
                 for namespace, provider_data in self.providers.items()
             },
@@ -205,6 +208,12 @@ class VariantInfo:
                         VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY, bool, True
                     ) as provider_install_time:
                         pass
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+                        list[VariantFeatureName],
+                        [],
+                    ) as provider_feature_order:
+                        validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
                     provider_static_properties = {}
                     with validator.get(
                         VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
@@ -222,9 +231,7 @@ class VariantInfo:
                                 )
 
                         if len(feature_dict) > 1:
-                            feature_prios = set(
-                                self.feature_priorities.get(namespace, [])
-                            )
+                            feature_prios = set(provider_feature_order)
                             missing_feature_prios = (
                                 set(feature_dict.keys()) - feature_prios
                             )
@@ -232,11 +239,11 @@ class VariantInfo:
                                 raise ValidationError(
                                     f"{validator.key}: for AoT providers with multiple "
                                     "features, priorities need to be specified via "
-                                    f"{VARIANT_INFO_DEFAULT_PRIO_KEY}."
-                                    f"{VARIANT_INFO_FEATURE_KEY}; missing: "
-                                    f"{missing_feature_prios}"
+                                    f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; "
+                                    f"missing: {missing_feature_prios}"
                                 )
 
+                    # TODO: check for exclusive elements properly
                     if provider_install_time:
                         if not provider_requires:
                             raise ValidationError(
@@ -266,6 +273,7 @@ class VariantInfo:
                         plugin_api=provider_plugin_api,
                         requires=list(provider_requires),
                         static_properties=provider_static_properties,
+                        feature_order=provider_feature_order,
                     )
 
         all_providers = set(self.providers.keys())

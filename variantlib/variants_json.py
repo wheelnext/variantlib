@@ -15,6 +15,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -74,6 +75,11 @@ class VariantsJson(VariantInfo):
             yield (
                 VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
                 provider_info.static_properties,
+            )
+        if provider_info.feature_order:
+            yield (
+                VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+                provider_info.feature_order,
             )
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:

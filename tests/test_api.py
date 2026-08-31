@@ -30,6 +30,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -401,13 +402,13 @@ def test_make_variant_dist_info(
                         "f1": ["v1", "v2"],
                         "f2": ["v3", "v4"],
                     },
+                    VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f2", "f1"],
                 },
             }
         )
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
                 VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
-                VARIANT_INFO_FEATURE_KEY: {"ns3": ["f2", "f1"]},
             },
         )
 
@@ -417,7 +418,6 @@ def test_make_variant_dist_info(
                 VARIANT_INFO_FEATURE_KEY: {
                     "ns1": ["f2"],
                     "ns2": ["f1", "f2"],
-                    "ns3": ["f2", "f1"],
                 },
                 VARIANT_INFO_PROPERTY_KEY: {
                     "ns1": {
@@ -701,13 +701,11 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
     if not install_time:
         provider_data[VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY] = False
     if requires and not install_time:
-        expected[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_FEATURE_KEY] = {
-            "aot_plugin": ["name1", "name2"],
-        }
         provider_data[VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY] = {
             "name1": ["val1a", "val1b"],
             "name2": ["val2a", "val2b", "val2c"],
         }
+        provider_data[VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY] = ["name1", "name2"]
 
     assert (
         json.loads(

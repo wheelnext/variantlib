@@ -92,6 +92,10 @@ def get_variants_by_priority(
             feature_priorities=aggregate_feature_priorities(
                 config.feature_priorities,
                 variants_json.feature_priorities,
+                {
+                    namespace: provider.feature_order
+                    for namespace, provider in variants_json.providers.items()
+                },
             ),
             property_priorities=aggregate_property_priorities(
                 config.property_priorities,
@@ -245,13 +249,11 @@ def make_variant_dist_info(
                         vfeat.name
                     ] = vfeat.values
 
-                    # adjust feature priorities only if at least 2 features defined
-                    if len(config.configs) > 1:
-                        feature_prios = variant_json.feature_priorities.setdefault(
-                            config.namespace, []
-                        )
-                        if vfeat.name not in feature_prios:
-                            feature_prios.append(vfeat.name)
+                # set feature-order only if at least 2 features defined
+                if len(config.configs) > 1:
+                    variant_json.providers[config.namespace].feature_order = [
+                        vfeat.name for vfeat in config.configs
+                    ]
 
         # Validate that we did not end up using an unsupported property.
         # This could happen in two cases:

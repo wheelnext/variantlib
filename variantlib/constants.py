@@ -22,6 +22,7 @@ VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
 VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: Literal["static-properties"] = (
     "static-properties"
 )
+VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: Literal["feature-order"] = "feature-order"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
@@ -121,6 +122,7 @@ ProviderPluginJsonDict = TypedDict(
         "plugin-api": str,
         "requires": list[str],
         "static-properties": dict[str, list[str]],
+        "feature-order": list[str],
     },
     total=False,
 )

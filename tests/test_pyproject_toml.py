@@ -11,6 +11,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROPERTY_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -39,7 +40,6 @@ version = "1.2.3"
 {VARIANT_INFO_NAMESPACE_KEY} = ["ns1", "ns2", "ns3"]
 {VARIANT_INFO_FEATURE_KEY}.ns1 = ["f2"]
 {VARIANT_INFO_FEATURE_KEY}.ns2 = ["f1", "f2"]
-{VARIANT_INFO_FEATURE_KEY}.ns3 = ["f2", "f1"]
 {VARIANT_INFO_PROPERTY_KEY}.ns1.f2 = ["p1"]
 {VARIANT_INFO_PROPERTY_KEY}.ns2.f1 = ["p2"]
 
@@ -59,6 +59,7 @@ version = "1.2.3"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3]
 {VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
+{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} = ["f2", "f1"]
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3.{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}]
 f1 = ["v1", "v2"]
@@ -72,8 +73,9 @@ PYPROJECT_TOML_MINIMAL = tomllib.loads(
     "\n".join(
         x
         for x in TOML_DATA.splitlines()
-        if not x.startswith((VARIANT_INFO_FEATURE_KEY, VARIANT_INFO_PROPERTY_KEY))
-        or x.startswith(f"{VARIANT_INFO_FEATURE_KEY}.ns3")
+        if not x.startswith(
+            (f"{VARIANT_INFO_FEATURE_KEY}.", f"{VARIANT_INFO_PROPERTY_KEY}.")
+        )
     )
 )
 
@@ -84,7 +86,6 @@ def test_pyproject_toml() -> None:
     assert pyproj.feature_priorities == {
         "ns1": ["f2"],
         "ns2": ["f1", "f2"],
-        "ns3": ["f2", "f1"],
     }
     assert pyproj.property_priorities == {
         "ns1": {"f2": ["p1"]},
@@ -108,6 +109,7 @@ def test_pyproject_toml() -> None:
         "ns3": ProviderInfo(
             install_time=False,
             static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
+            feature_order=["f2", "f1"],
         ),
     }
 
@@ -115,7 +117,7 @@ def test_pyproject_toml() -> None:
 def test_pyproject_toml_minimal() -> None:
     pyproj = VariantPyProjectToml(PYPROJECT_TOML_MINIMAL)
     assert pyproj.namespace_priorities == ["ns1", "ns2", "ns3"]
-    assert pyproj.feature_priorities == {"ns3": ["f2", "f1"]}
+    assert pyproj.feature_priorities == {}
     assert pyproj.property_priorities == {}
     assert pyproj.providers == {
         "ns1": ProviderInfo(
@@ -135,6 +137,7 @@ def test_pyproject_toml_minimal() -> None:
         "ns3": ProviderInfo(
             install_time=False,
             static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
+            feature_order=["f2", "f1"],
         ),
     }
 
@@ -432,7 +435,6 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     assert converted.feature_priorities == {
         "ns1": ["f2"],
         "ns2": ["f1", "f2"],
-        "ns3": ["f2", "f1"],
     }
     assert converted.property_priorities == {
         "ns1": {"f2": ["p1"]},
@@ -456,6 +458,7 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
         "ns3": ProviderInfo(
             install_time=False,
             static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
+            feature_order=["f2", "f1"],
         ),
     }
 
@@ -546,7 +549,7 @@ def test_static_properties_missing_priorities() -> None:
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
         rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: "
         r"for AoT providers with multiple features, priorities need to be specified "
-        rf"via {VARIANT_INFO_DEFAULT_PRIO_KEY}\.{VARIANT_INFO_FEATURE_KEY}; missing: "
+        rf"via {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; missing: "
         r"{'f2'}",
     ):
         VariantPyProjectToml(
@@ -554,7 +557,6 @@ def test_static_properties_missing_priorities() -> None:
                 PYPROJECT_TOML_TOP_KEY: {
                     VARIANT_INFO_DEFAULT_PRIO_KEY: {
                         VARIANT_INFO_NAMESPACE_KEY: ["ns"],
-                        VARIANT_INFO_FEATURE_KEY: {"ns": ["f1"]},
                     },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
@@ -563,6 +565,7 @@ def test_static_properties_missing_priorities() -> None:
                                 "f1": ["v"],
                                 "f2": ["v"],
                             },
+                            VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f1"],
                         }
                     },
                 }
