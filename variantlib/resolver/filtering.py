@@ -20,33 +20,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def remove_duplicates(
-    vdescs: Iterable[VariantDescription],
-) -> Generator[VariantDescription]:
-    # Input validation
-    validate_type(vdescs, Iterable)
-
-    seen = set()
-
-    def _should_include(vdesc: VariantDescription) -> bool:
-        """
-        Check if any of the namespaces in the variant description are not allowed.
-        """
-        validate_type(vdesc, VariantDescription)
-
-        if vdesc.hexdigest in seen:
-            logger.info(
-                "Variant `%(vhash)s` has been removed because it is a duplicate",
-                {"vhash": vdesc.hexdigest},
-            )
-            return False
-
-        seen.add(vdesc.hexdigest)
-        return True
-
-    yield from filter(_should_include, vdescs)
-
-
 def filter_variants_by_namespaces(
     vdescs: Iterable[VariantDescription],
     forbidden_namespaces: list[str],

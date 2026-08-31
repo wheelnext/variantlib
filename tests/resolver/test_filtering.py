@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import copy
-import random
 from collections import deque
 
 import pytest
@@ -12,7 +10,6 @@ from variantlib.models.variant import VariantProperty
 from variantlib.resolver.filtering import filter_variants_by_features
 from variantlib.resolver.filtering import filter_variants_by_namespaces
 from variantlib.resolver.filtering import filter_variants_by_property
-from variantlib.resolver.filtering import remove_duplicates
 
 
 @pytest.fixture(scope="session")
@@ -36,35 +33,6 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
         VariantDescription([vprop2], label="b"),
         VariantDescription([vprop1, vprop2], label="c"),
     ]
-
-
-# =========================== `remove_duplicates` =========================== #
-
-
-def test_remove_duplicates(vdescs: list[VariantDescription]) -> None:
-    assert len(vdescs) == 3
-
-    # using `copy.deepcopy` to ensure that all objects are actually unique
-    input_vdescs = [copy.deepcopy(random.choice(vdescs)) for _ in range(100)]
-    filtered_vdescs = list(remove_duplicates(input_vdescs))
-
-    assert len(filtered_vdescs) == 3
-
-    for vdesc in vdescs:
-        assert vdesc in filtered_vdescs
-
-
-def test_remove_duplicates_empty() -> None:
-    assert list(remove_duplicates([])) == []
-
-
-@pytest.mark.parametrize(
-    "vdescs",
-    ["not a list", ["not a VariantDescription"]],
-)
-def test_remove_duplicates_validation_error(vdescs: list[VariantDescription]) -> None:
-    with pytest.raises(ValidationError):
-        deque(remove_duplicates(vdescs=vdescs), maxlen=0)
 
 
 # ===================== `filter_variants_by_namespaces` ===================== #
