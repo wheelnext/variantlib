@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import string
 from collections.abc import Generator
 from typing import TYPE_CHECKING
@@ -336,7 +335,7 @@ def test_validate_variant(optional: bool) -> None:
 
     # Verify whether the variant properties are valid
     res = validate_variant(
-        VariantDescription(list(expected.keys())),
+        VariantDescription(list(expected.keys()), label="test"),
         variant_info=variant_info,
     )
 
@@ -357,10 +356,10 @@ def test_validate_variant(optional: bool) -> None:
 @pytest.mark.parametrize(
     "pyproject_toml", [None, PYPROJECT_TOML, PYPROJECT_TOML_MINIMAL]
 )
-@pytest.mark.parametrize("label", [None, "foo", "xy1.2"])
+@pytest.mark.parametrize("label", ["foo", "xy1.2"])
 def test_make_variant_dist_info(
     pyproject_toml: VariantsJsonDict | None,
-    label: str | None,
+    label: str,
 ) -> None:
     expected: VariantsJsonDict = {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
@@ -441,7 +440,8 @@ def test_make_variant_dist_info(
                         VariantProperty("ns1", "f1", "p1"),
                         VariantProperty("ns1", "f2", "p2"),
                         VariantProperty("ns2", "f1", "p1"),
-                    ]
+                    ],
+                    label=label,
                 ),
                 variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
                 if pyproject_toml is not None
@@ -478,7 +478,8 @@ def common_variant_info() -> VariantInfo:
                 [
                     VariantProperty("test_namespace", "name2", "val2c"),
                     VariantProperty("second_namespace", "name3", "val3a"),
-                ]
+                ],
+                label="test",
             ),
             True,
         ),
@@ -486,7 +487,8 @@ def common_variant_info() -> VariantInfo:
             VariantDescription(
                 [
                     VariantProperty("test_namespace", "name1", "val1c"),
-                ]
+                ],
+                label="test",
             ),
             False,
         ),
@@ -526,27 +528,30 @@ def test_check_variant_supported_generic() -> None:
             [
                 VariantProperty("test_namespace", "name2", "val2c"),
                 VariantProperty("second_namespace", "name3", "val3a"),
-            ]
+            ],
+            label="test",
         ),
         variant_info=variant_info,
     )
 
     # test an usupported variant
     assert not check_variant_supported(
-        vdesc=VariantDescription([VariantProperty("test_namespace", "name1", "val1c")]),
+        vdesc=VariantDescription(
+            [VariantProperty("test_namespace", "name1", "val1c")], label="test"
+        ),
         variant_info=variant_info,
     )
 
 
-@pytest.mark.parametrize("label", [None, "foo"])
-def test_get_variant_environment_dict(label: str | None) -> None:
+def test_get_variant_environment_dict() -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("ns1", "feat1", "val1"),
             VariantProperty("ns1", "feat2", "val2"),
             VariantProperty("ns2", "feat1", "val1"),
             VariantProperty("ns3", "feat2", "val2"),
-        ]
+        ],
+        label="foo",
     )
     expected: dict[str, set[str] | str] = {
         "variant_features": {
@@ -566,10 +571,9 @@ def test_get_variant_environment_dict(label: str | None) -> None:
             "ns2 :: feat1 :: val1",
             "ns3 :: feat2 :: val2",
         },
+        "variant_label": "foo",
     }
-    if label is not None:
-        expected["variant_label"] = label
-    assert get_variant_environment_dict(vdesc, label) == expected
+    assert get_variant_environment_dict(vdesc, "foo") == expected
 
 
 def test_make_variant_dist_info_invalid_label():
@@ -583,18 +587,17 @@ def test_make_variant_dist_info_invalid_label():
         match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         make_variant_dist_info(
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription(
+                [VariantProperty("a", "b", "c")], label=NULL_VARIANT_LABEL
+            ),
             variant_label=NULL_VARIANT_LABEL,
         )
     with pytest.raises(
         ValidationError,
-        match=re.escape(
-            "Invalid variant label: 'foo/bar' "
-            "(must consist only of alphanumeric characters, underscores and dots)"
-        ),
+        match=("Value `foo/bar` must match regex"),
     ):
         make_variant_dist_info(
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="foo/bar"),
             variant_label="foo/bar",
         )
 
@@ -607,34 +610,16 @@ def test_get_variant_label() -> None:
     )
 
     assert (
-        get_variant_label(VariantDescription([VariantProperty("a", "b", "c")]))
-        == "01a9783a"
-    )
-    assert (
         get_variant_label(
-            VariantDescription(
-                [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")]
-            )
+            VariantDescription([VariantProperty("a", "b", "c")], label="foo"), "foo"
         )
-        == "eb9a66a7"
-    )
-    assert (
-        get_variant_label(
-            VariantDescription(
-                [VariantProperty("d", "e", "f"), VariantProperty("a", "b", "c")]
-            )
-        )
-        == "eb9a66a7"
-    )
-
-    assert (
-        get_variant_label(VariantDescription([VariantProperty("a", "b", "c")]), "foo")
         == "foo"
     )
     assert (
         get_variant_label(
             VariantDescription(
-                [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")]
+                [VariantProperty("a", "b", "c"), VariantProperty("d", "e", "f")],
+                label="foo",
             ),
             "foo",
         )
@@ -645,24 +630,23 @@ def test_get_variant_label() -> None:
         ValidationError,
         match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
-        get_variant_label(VariantDescription([]), "foo")
+        get_variant_label(VariantDescription([], label="foo"), "foo")
     with pytest.raises(
         ValidationError,
         match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         get_variant_label(
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription(
+                [VariantProperty("a", "b", "c")], label=NULL_VARIANT_LABEL
+            ),
             NULL_VARIANT_LABEL,
         )
     with pytest.raises(
         ValidationError,
-        match=re.escape(
-            "Invalid variant label: 'foo/bar' "
-            "(must consist only of alphanumeric characters, underscores and dots)"
-        ),
+        match=("Value `foo/bar` must match regex"),
     ):
         get_variant_label(
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="foo/bar"),
             "foo/bar",
         )
 
@@ -677,7 +661,8 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
     vdesc = VariantDescription(
         [
             VariantProperty("aot_plugin", "name1", "val1a"),
-        ]
+        ],
+        label="test",
     )
     plugin_api = "tests.mocked_plugins:MockedAoTPlugin"
     vinfo = VariantInfo(
@@ -745,7 +730,8 @@ def test_make_variant_dist_info_invalid_aot_plugin_property() -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("aot_plugin", "name1", "val1d"),
-        ]
+        ],
+        label="test",
     )
     plugin_api = "tests.mocked_plugins:MockedAoTPlugin"
     vinfo = VariantInfo(
@@ -776,7 +762,8 @@ def test_make_variant_dist_info_invalid_aot_plugin_multi_value() -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("aot_plugin", "name1", "val1a"),
-        ]
+        ],
+        label="test",
     )
     plugin_api = "tests.mocked_plugins:MultiValueAoTPlugin"
     vinfo = VariantInfo(
@@ -806,7 +793,8 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
     vdesc = VariantDescription(
         [
             VariantProperty("second_namespace", "name3", "val3a"),
-        ]
+        ],
+        label="test",
     )
     plugin_api = "tests.mocked_plugins:MockedPluginB"
     vinfo = VariantInfo(

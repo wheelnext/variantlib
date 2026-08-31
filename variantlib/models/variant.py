@@ -9,11 +9,13 @@ from dataclasses import dataclass
 from dataclasses import field
 from functools import cached_property
 
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_FEATURE_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROPERTY_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
@@ -68,16 +70,6 @@ class VariantFeature(BaseModel):
     def to_str(self) -> str:
         # Variant-Property: <namespace> :: <feature> :: <val>
         return f"{self.namespace} :: {self.feature}"
-
-    def serialize(self) -> dict[str, str]:
-        return asdict(self)
-
-    @classmethod
-    def deserialize(cls, data: dict[str, str]) -> Self:
-        for field_name in cls.__dataclass_fields__:
-            if field_name not in data:
-                raise ValidationError(f"Extra field not known: `{field_name}`")
-        return cls(**data)
 
     @classmethod
     def from_str(cls, input_str: str) -> Self:
@@ -170,6 +162,19 @@ class VariantDescription(BaseModel):
         default_factory=list,
     )
 
+    label: str = field(
+        metadata={
+            "validator": lambda val: validate_and(
+                [
+                    lambda v: validate_type(v, str),
+                    lambda v: validate_matches_re(v, VALIDATION_VARIANT_LABEL_REGEX),  # pyright: ignore[reportArgumentType]
+                ],
+                value=val,
+            ),
+        },
+        default="",
+    )
+
     def __post_init__(self) -> None:
         # We sort the data so that they always get displayed/hashed
         # in a consistent manner.
@@ -178,6 +183,24 @@ class VariantDescription(BaseModel):
         with contextlib.suppress(AttributeError):
             # Only "legal way" to modify a frozen dataclass attribute post init.
             object.__setattr__(self, "properties", sorted(self.properties))
+
+        # default the label to "null" or hexdigest
+        if not self.label:
+            with contextlib.suppress(AttributeError):
+                object.__setattr__(
+                    self,
+                    "label",
+                    NULL_VARIANT_LABEL if self.is_null_variant() else self.hexdigest,
+                )
+        elif self.is_null_variant():
+            if self.label != NULL_VARIANT_LABEL:
+                raise ValidationError(
+                    f"Null variant must always use {NULL_VARIANT_LABEL!r} label"
+                )
+        elif self.label == NULL_VARIANT_LABEL:
+            raise ValidationError(
+                f"{NULL_VARIANT_LABEL!r} label can be used only for the null variant"
+            )
 
         # Execute the validator
         super().__post_init__()
@@ -213,15 +236,6 @@ class VariantDescription(BaseModel):
         # Source: https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest
         return hash_object.hexdigest()[:VARIANT_HASH_LENGTH]
 
-    @classmethod
-    def deserialize(cls, properties: list[dict[str, str]]) -> Self:
-        return cls(
-            properties=[VariantProperty.deserialize(vdata) for vdata in properties]
-        )
-
-    def serialize(self) -> list[dict[str, str]]:
-        return [vprop.serialize() for vprop in self.properties]
-
     def to_dict(self) -> VariantInfoJsonDict:
         data = asdict(self)
 
@@ -238,7 +252,7 @@ class VariantDescription(BaseModel):
         return dict(result)
 
     @classmethod
-    def from_dict(cls, data: VariantInfoJsonDict) -> Self:
+    def from_dict(cls, data: VariantInfoJsonDict, label: str) -> Self:
         vprops = [
             VariantProperty(namespace=namespace, feature=key, value=vprop_val)
             for namespace, vdata in data.items()
@@ -246,7 +260,7 @@ class VariantDescription(BaseModel):
             for vprop_val in vprop_values
         ]
 
-        return cls(vprops)
+        return cls(properties=vprops, label=label)
 
 
 @dataclass(frozen=True)

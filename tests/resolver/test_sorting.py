@@ -239,13 +239,16 @@ def test_sort_variants_descriptions() -> None:
             VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
             VariantProperty(namespace="omnicorp", feature="feat_c", value="value"),
             VariantProperty(namespace="other_corp", feature="feat_c", value="value"),
-        ]
+        ],
+        label="a",
     )
     vdesc2 = VariantDescription(
-        [VariantProperty(namespace="other_corp", feature="feat_a", value="value")]
+        [VariantProperty(namespace="other_corp", feature="feat_a", value="value")],
+        label="b",
     )
     vdesc3 = VariantDescription(
-        [VariantProperty(namespace="omnicorp", feature="feat_a", value="value")]
+        [VariantProperty(namespace="omnicorp", feature="feat_a", value="value")],
+        label="c",
     )
 
     assert sort_variants_descriptions(
@@ -317,7 +320,8 @@ def test_sort_variants_descriptions() -> None:
                 VariantProperty(
                     namespace="omnicorp", feature="feat", value="other_value"
                 )
-            ]
+            ],
+            label="a",
         ),
         VariantDescription(
             properties=[
@@ -326,6 +330,7 @@ def test_sort_variants_descriptions() -> None:
                     namespace="omnicorp", feature="other_feat", value="other_value"
                 ),
             ],
+            label="b",
         ),
     ],
 )
@@ -347,13 +352,16 @@ def test_sort_variants_descriptions_ranking_validation_error(
     [
         ("not a list", [VariantProperty("a", "b", "c")]),
         (["not a VariantDescription"], [VariantProperty("a", "b", "c")]),
-        (VariantDescription([VariantProperty("a", "b", "c")]), "not a list or None"),
         (
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
+            "not a list or None",
+        ),
+        (
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
             VariantProperty("not", "a", "list"),
         ),
         (
-            VariantDescription([VariantProperty("a", "b", "c")]),
+            VariantDescription([VariantProperty("a", "b", "c")], label="test"),
             [{"not a VariantProperty": True}],
         ),
     ],
@@ -366,3 +374,67 @@ def test_sort_variants_descriptions_validation_error(
             vdescs=vdescs,
             property_priorities=property_priorities,
         )
+
+
+def test_sort_variants_descriptions_by_label() -> None:
+    vprops_proprioty_list = [
+        VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+    ]
+
+    vdesc1a = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        ],
+        label="a",
+    )
+    vdesc1b = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        ],
+        label="b",
+    )
+    vdesc1c = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_a", value="value"),
+        ],
+        label="c",
+    )
+
+    vdesc2a = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        ],
+        label="a",
+    )
+    vdesc2b = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        ],
+        label="b",
+    )
+    vdesc2c = VariantDescription(
+        [
+            VariantProperty(namespace="omnicorp", feature="feat_b", value="value1"),
+        ],
+        label="c",
+    )
+
+    assert sort_variants_descriptions(
+        vdescs=[vdesc1a, vdesc1b, vdesc1c], property_priorities=vprops_proprioty_list
+    ) == [vdesc1a, vdesc1b, vdesc1c]
+    assert sort_variants_descriptions(
+        vdescs=[vdesc1b, vdesc1c, vdesc1a], property_priorities=vprops_proprioty_list
+    ) == [vdesc1a, vdesc1b, vdesc1c]
+    assert sort_variants_descriptions(
+        vdescs=[vdesc1c, vdesc1b, vdesc1a], property_priorities=vprops_proprioty_list
+    ) == [vdesc1a, vdesc1b, vdesc1c]
+
+    assert sort_variants_descriptions(
+        vdescs=[vdesc1a, vdesc1b, vdesc1c, vdesc2a, vdesc2b],
+        property_priorities=vprops_proprioty_list,
+    ) == [vdesc1a, vdesc1b, vdesc1c, vdesc2a, vdesc2b]
+    assert sort_variants_descriptions(
+        vdescs=[vdesc2a, vdesc2c, vdesc1a, vdesc1b],
+        property_priorities=vprops_proprioty_list,
+    ) == [vdesc1a, vdesc1b, vdesc2a, vdesc2c]

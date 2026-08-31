@@ -6,9 +6,11 @@ import string
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VARIANT_HASH_LENGTH
 from variantlib.models.variant import VariantDescription
@@ -177,29 +179,6 @@ def test_from_str_invalid_format() -> None:
         VariantProperty.from_str(input_str)
 
 
-def test_variantprop_serialization() -> None:
-    vprop = VariantProperty(namespace="provider", feature="feature", value="value")
-    assert vprop.serialize() == {
-        "namespace": "provider",
-        "feature": "feature",
-        "value": "value",
-    }
-
-
-def test_variantprop_deserialization() -> None:
-    data = {
-        "namespace": "provider",
-        "feature": "feature",
-        "value": "value",
-    }
-
-    vprop = VariantProperty.deserialize(data)
-
-    assert vprop.namespace == data["namespace"]
-    assert vprop.feature == data["feature"]
-    assert vprop.value == data["value"]
-
-
 def test_variantprop_sorting() -> None:
     data = [
         VariantProperty("z", "a", "a"),
@@ -237,6 +216,7 @@ def test_null_variant() -> None:
     vdesc = VariantDescription()
     assert vdesc.properties == []
     assert vdesc.hexdigest == hashlib.sha256(b"").hexdigest()[:VARIANT_HASH_LENGTH]
+    assert vdesc.label == NULL_VARIANT_LABEL
 
 
 def test_variantdescription_initialization() -> None:
@@ -247,7 +227,8 @@ def test_variantdescription_initialization() -> None:
     vprop2 = VariantProperty(
         namespace="tyrell_corporation", feature="client_id", value="secret_pass"
     )
-    vdesc = VariantDescription([vprop1, vprop2])
+    vdesc = VariantDescription([vprop1, vprop2], label="test")
+    assert vdesc.label == "test"
 
     # Check that the _data property is a list
     assert isinstance(vdesc.properties, list)
@@ -280,14 +261,13 @@ def test_variantdescription_duplicate_data() -> None:
 
 
 def test_variantdescription_partial_duplicate_data() -> None:
-    # Test that duplicate VariantProperty instances are removed
     vprop1 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="secret_value"
     )
     vprop2 = VariantProperty(
         namespace="omnicorp", feature="custom_feat", value="another_value"
     )
-    VariantDescription([vprop1, vprop2])
+    VariantDescription([vprop1, vprop2], label="test")
 
 
 def test_variantdescription_sorted_data() -> None:
@@ -301,7 +281,7 @@ def test_variantdescription_sorted_data() -> None:
     vprop3 = VariantProperty(
         namespace="omnicorp", feature="secret_pass", value="client_value"
     )
-    vdesc = VariantDescription([vprop1, vprop2, vprop3])
+    vdesc = VariantDescription([vprop1, vprop2, vprop3], label="test")
 
     # Check that data is sorted by namespace, feature, and value
     sorted_vprops = sorted(
@@ -319,7 +299,7 @@ def test_variantdescription_hexdigest() -> None:
         namespace="tyrell_corporation", feature="client_id", value="secret_pass"
     )
     vprops = [vprop1, vprop2]
-    vdesc = VariantDescription(vprops)
+    vdesc = VariantDescription(vprops, label="test")
 
     # Compute the expected hash using shake_128 (mock the hash output for testing)
     hash_object = hashlib.sha256(
@@ -337,46 +317,17 @@ def test_variantdescription_hexdigest_adjacent_strings() -> None:
             [
                 VariantProperty("a", "b", "cx"),
                 VariantProperty("d", "e", "f"),
-            ]
+            ],
+            label="test",
         ).hexdigest
         != VariantDescription(
             [
                 VariantProperty("a", "b", "c"),
                 VariantProperty("xd", "e", "f"),
-            ]
+            ],
+            label="another",
         ).hexdigest
     )
-
-
-def test_variantdescription_serialization() -> None:
-    vprop = VariantProperty(namespace="provider", feature="feature", value="value")
-    vdesc = VariantDescription(properties=[vprop])
-
-    assert vdesc.serialize() == [
-        {
-            "namespace": "provider",
-            "feature": "feature",
-            "value": "value",
-        }
-    ]
-
-
-def test_variantdescription_deserialization() -> None:
-    data = [
-        {
-            "namespace": "provider",
-            "feature": "feature",
-            "value": "value",
-        }
-    ]
-
-    vdesc = VariantDescription.deserialize(data)
-
-    assert len(vdesc.properties) == 1
-    assert vdesc.properties[0].namespace == "provider"
-    assert vdesc.properties[0].feature == "feature"
-    assert vdesc.properties[0].value == "value"
-    assert vdesc.hexdigest == "c44d3adf"
 
 
 # -----------------------------------------------
@@ -444,7 +395,7 @@ def test_fuzzy_variantprop(namespace: str, feature: str, value: str) -> None:
 )
 def test_fuzzy_variantdescription(vprop: list[VariantProperty]) -> None:
     # Fuzzy test for random combinations of VariantDescription
-    vdesc = VariantDescription(vprop)
+    vdesc = VariantDescription(vprop, label="test")
     assert isinstance(vdesc.properties, list)
     assert len(vdesc.properties) >= 1
 
@@ -468,8 +419,22 @@ def test_fuzzy_variantdescription(vprop: list[VariantProperty]) -> None:
                 value=st.from_regex(VALIDATION_NAMESPACE_REGEX, fullmatch=True),
             ),
         ),
+        label=st.from_regex(VALIDATION_VARIANT_LABEL_REGEX, fullmatch=True),
     )
 )
 def test_random_hexdigest(vdesc: VariantDescription) -> None:
     assert isinstance(vdesc.hexdigest, str)
     assert len(vdesc.hexdigest) == VARIANT_HASH_LENGTH
+
+
+def test_null_variant_label():
+    with pytest.raises(
+        ValidationError,
+        match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
+    ):
+        VariantDescription([VariantProperty("a", "b", "c")], label=NULL_VARIANT_LABEL)
+    with pytest.raises(
+        ValidationError,
+        match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
+    ):
+        VariantDescription(label="zuul")

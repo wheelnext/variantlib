@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
+from variantlib.models.variant import VariantDescription
 from variantlib.models.variant_info import VariantInfo
 from variantlib.variants_json import VariantsJson
-
-if TYPE_CHECKING:
-    from variantlib.models.variant import VariantDescription
 
 
 @dataclass(init=False)
@@ -47,6 +44,9 @@ class VariantDistInfo(VariantsJson):
 
     @variant_label.setter
     def variant_label(self, new_label: str) -> None:
+        self.variant_desc = VariantDescription(
+            self.variant_desc.properties, label=new_label
+        )
         self.variants = {new_label: self.variant_desc}
 
     @property
@@ -56,4 +56,4 @@ class VariantDistInfo(VariantsJson):
 
     @variant_desc.setter
     def variant_desc(self, new_desc: VariantDescription) -> None:
-        self.variants = {new_desc.hexdigest: new_desc}
+        self.variants = {new_desc.label: new_desc}

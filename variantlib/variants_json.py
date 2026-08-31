@@ -90,6 +90,8 @@ class VariantsJson(VariantInfo):
     def to_str(self) -> str:
         """Serialize variants.json as a JSON string"""
 
+        assert all(label == vdesc.label for label, vdesc in self.variants.items())
+
         data: dict[str, Any] = {
             VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
             VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
@@ -179,7 +181,9 @@ class VariantsJson(VariantInfo):
                     VariantInfoJsonDict,
                     ignore_subkeys=True,
                 ) as packed_vdesc:
-                    vdesc = VariantDescription.from_dict(packed_vdesc)
+                    vdesc = VariantDescription.from_dict(
+                        packed_vdesc, label=variant_label
+                    )
                     if vdesc.is_null_variant() and variant_label != NULL_VARIANT_LABEL:
                         raise ValidationError(
                             f"Null variant must use {NULL_VARIANT_LABEL!r} label"

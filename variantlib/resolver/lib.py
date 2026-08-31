@@ -15,7 +15,6 @@ from variantlib.models.variant import VariantProperty
 from variantlib.resolver.filtering import filter_variants_by_features
 from variantlib.resolver.filtering import filter_variants_by_namespaces
 from variantlib.resolver.filtering import filter_variants_by_property
-from variantlib.resolver.filtering import remove_duplicates
 from variantlib.resolver.sorting import sort_variant_properties
 from variantlib.resolver.sorting import sort_variants_descriptions
 from variantlib.validators.base import validate_type
@@ -80,16 +79,9 @@ def filter_variants(
     if forbidden_properties is not None:
         validate_type(forbidden_properties, list[VariantProperty])
 
-    # Step 1
-    # Remove duplicates - There should never be any duplicates on the index
-    #     - filename collision (same filename & same hash)
-    #     - hash collision inside `variants.json`
-    #     => Added for safety and to avoid any potential bugs
-    #     (Note: In all fairness, even if it was to happen, it would most
-    #            likely not be a problem given that we just pick the best match)
-    result = remove_duplicates(vdescs)
+    result = iter(vdescs)
 
-    # Step 2 [Optional]
+    # Step 1 [Optional]
     # Remove any `VariantDescription` which declares any `VariantProperty` with
     # a variant namespace explicitly forbidden by the user.
     if forbidden_namespaces is not None:
@@ -98,7 +90,7 @@ def filter_variants(
             forbidden_namespaces=forbidden_namespaces,
         )
 
-    # Step 3 [Optional]
+    # Step 2 [Optional]
     # Remove any `VariantDescription` which declares any `VariantProperty` with
     # `namespace :: feature` (aka. `VariantFeature`) explicitly forbidden by the user.
     if forbidden_features is not None:
@@ -107,7 +99,7 @@ def filter_variants(
             forbidden_features=forbidden_features,
         )
 
-    # Step 4 [Optional]
+    # Step 3 [Optional]
     # Remove any `VariantDescription` which declare any `VariantProperty`
     # `namespace :: feature :: value` unsupported on this platform or  explicitly
     #  forbidden by the user.

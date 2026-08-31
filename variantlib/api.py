@@ -5,6 +5,7 @@ from __future__ import annotations
 import itertools
 import logging
 import pathlib
+import warnings
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
@@ -57,6 +58,8 @@ def get_variants_by_priority(
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
 
+    assert all(vdesc.label == label for label, vdesc in variants_json.variants.items())
+
     venv_python_executable = (
         venv_python_executable
         if venv_python_executable is None
@@ -76,14 +79,9 @@ def get_variants_by_priority(
         )
 
     config = VariantConfiguration.get_config()
-    label_map = {
-        vdesc.hexdigest: label for label, vdesc in variants_json.variants.items()
-    }
-    # handle the implicit null variant
-    label_map.setdefault(VariantDescription([]).hexdigest, NULL_VARIANT_LABEL)
 
     return [
-        label_map[vdesc.hexdigest]
+        vdesc.label
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
@@ -185,7 +183,7 @@ def make_variant_dist_info(
     instead.
 
     variant_label specifies the variant label to use. If not specified,
-    the default of variant hash is used.
+    the default of variant hash is used. Deprecated: set vdesc.label instead.
 
     If expand_aot_plugin_properties is True, then default-priorities
     for ahead-of-time plugins will be filled with the current list
@@ -198,6 +196,12 @@ def make_variant_dist_info(
         variant_info = VariantInfo()
     variant_json = VariantDistInfo(variant_info)
     variant_json.variant_desc = vdesc
+    if variant_label is not None:
+        warnings.warn(
+            "Passing variant_label is deprecated, provide VariantDescription() "
+            "with label instead",
+            stacklevel=2,
+        )
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
     if expand_aot_plugin_properties:
@@ -336,8 +340,14 @@ def get_variant_environment_dict(
             vprop.feature_object.to_str() for vprop in variant_desc.properties
         },
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
+        "variant_label": variant_desc.label,
     }
     if variant_label is not None:
+        warnings.warn(
+            "Passing variant_label is deprecated, provide VariantDescription() "
+            "with label instead",
+            stacklevel=2,
+        )
         ret["variant_label"] = variant_label
     return ret
 
@@ -352,14 +362,17 @@ def get_variant_label(
     Get the label corresponding to `variant_desc`. If `custom_label`
     is provided, validate it and use it. If `custom_label` is invalid,
     raises a `ValidationError`.
+
+    This function is deprecated: use VariantDescription.label instead.
     """
 
     if custom_label is None:
-        return (
-            NULL_VARIANT_LABEL
-            if variant_desc.is_null_variant()
-            else variant_desc.hexdigest
-        )
+        return variant_desc.label
+
+    warnings.warn(
+        "get_variant_label() is deprecated, use VariantDescription.label instead",
+        stacklevel=2,
+    )
 
     if variant_desc.is_null_variant():
         if custom_label != NULL_VARIANT_LABEL:

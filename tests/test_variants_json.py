@@ -46,6 +46,7 @@ def test_validate_variants_json() -> None:
     assert variants_json.variants == {
         NULL_VARIANT_LABEL: VariantDescription(),
         "03e04d5e": VariantDescription(
+            label="03e04d5e",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -60,6 +61,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "36028aca": VariantDescription(
+            label="36028aca",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -89,6 +91,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "3f7188c1": VariantDescription(
+            label="3f7188c1",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -113,6 +116,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "7db6d39f": VariantDescription(
+            label="7db6d39f",
             properties=[
                 VariantProperty(
                     namespace="fictional_tech",
@@ -132,6 +136,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "808c7f9d": VariantDescription(
+            label="808c7f9d",
             properties=[
                 VariantProperty(
                     namespace="fictional_tech",
@@ -151,6 +156,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "80fa16ff": VariantDescription(
+            label="80fa16ff",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -175,6 +181,7 @@ def test_validate_variants_json() -> None:
             ],
         ),
         "3351fc6a": VariantDescription(
+            label="3351fc6a",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -182,9 +189,10 @@ def test_validate_variants_json() -> None:
                     value=str(value),
                 )
                 for value in range(4, 6)
-            ]
+            ],
         ),
         "181830db": VariantDescription(
+            label="181830db",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -192,9 +200,10 @@ def test_validate_variants_json() -> None:
                     value=str(value),
                 )
                 for value in range(4, 8)
-            ]
+            ],
         ),
         "72c47fce": VariantDescription(
+            label="72c47fce",
             properties=[
                 VariantProperty(
                     namespace="fictional_hw",
@@ -206,7 +215,7 @@ def test_validate_variants_json() -> None:
                     feature="compute_capability",
                     value="8",
                 ),
-            ]
+            ],
         ),
     }
     assert variants_json.namespace_priorities == ["fictional_hw", "fictional_tech"]
@@ -308,16 +317,18 @@ def test_to_str() -> None:
         [
             VariantProperty("ns1", "f1", "v1"),
             VariantProperty("ns2", "f2", "v1"),
-        ]
+        ],
+        label="a",
     )
     vdesc2 = VariantDescription(
         [
             VariantProperty("ns2", "f2", "v2"),
-        ]
+        ],
+        label="b",
     )
     variants_json.variants = {
-        vdesc1.hexdigest: vdesc1,
-        vdesc2.hexdigest: vdesc2,
+        "a": vdesc1,
+        "b": vdesc2,
     }
     assert json.loads(variants_json.to_str()) == {
         VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
@@ -338,8 +349,8 @@ def test_to_str() -> None:
             },
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "b3b0305c": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
-            "9177ff3f": {"ns2": {"f2": ["v2"]}},
+            "a": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
+            "b": {"ns2": {"f2": ["v2"]}},
         },
     }
 
@@ -492,12 +503,13 @@ def test_merge_variants() -> None:
 def test_null_variant_label():
     with pytest.raises(
         ValidationError,
-        match=rf"{NULL_VARIANT_LABEL!r} label can only be used for the null variant",
+        match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         VariantsJson(
             {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}}}
         )
     with pytest.raises(
-        ValidationError, match=rf"Null variant must use {NULL_VARIANT_LABEL!r} label"
+        ValidationError,
+        match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
         VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}}})
