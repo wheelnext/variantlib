@@ -369,8 +369,12 @@ def test_merge_variants() -> None:
         },
     }
     json_b: VariantsJsonDict = {
-        VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
-        VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: ["a"],
+        },
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
+            "a": provider_data["a"],
+        },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             "48b561bc": {
                 "a": {
@@ -437,21 +441,23 @@ def test_merge_variants() -> None:
     assert v1 == merged
 
     # Test for mismatches in default priorities.
-    _json_data = copy.deepcopy(json_b)
+    _json_data = copy.deepcopy(json_a)
     _json_data[VARIANT_INFO_DEFAULT_PRIO_KEY][VARIANT_INFO_NAMESPACE_KEY] = ["b", "a"]
     with pytest.raises(
-        ValidationError, match=rf"Inconsistency in '{VARIANT_INFO_NAMESPACE_KEY}"
+        ValidationError,
+        match=rf"Inconsistency in {VARIANT_INFO_DEFAULT_PRIO_KEY}\."
+        rf"{VARIANT_INFO_NAMESPACE_KEY}",
     ):
         v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
-    _json_data = copy.deepcopy(json_b)
+    _json_data = copy.deepcopy(json_a)
     del _json_data[VARIANT_INFO_PROVIDER_DATA_KEY]["b"][
         VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
     ]
     with pytest.raises(
         ValidationError,
-        match="Inconsistency in providers when merging variants",
+        match=r"Inconsistency in providers\.b",
     ):
         v1.merge(VariantsJson(_json_data))
 
@@ -461,7 +467,7 @@ def test_merge_variants() -> None:
     ] = "test:Test"
     with pytest.raises(
         ValidationError,
-        match="Inconsistency in providers when merging variants",
+        match=r"Inconsistency in providers\.a",
     ):
         v1.merge(VariantsJson(_json_data))
 

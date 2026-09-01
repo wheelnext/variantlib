@@ -111,52 +111,39 @@ class VariantsJson(VariantInfo):
 
         return json.dumps(data, indent=4, sort_keys=True)
 
-    @property
-    def provider_hash(self) -> int:
-        encoded_dict = json.dumps(self.providers_dict(), sort_keys=True).encode("utf-8")
-
-        return hash(encoded_dict)
-
     def merge(self, variant_dist_info: Self) -> None:
         """Merge info from another wheel (VariantsJson instance)"""
 
         # Merge the variant properties
         self.variants.update(variant_dist_info.variants)
 
-        # Verify consistency of default priorities
-        for attribute in ("namespace_priorities",):
-            new_value = getattr(variant_dist_info, attribute)
-            old_value = getattr(self, attribute)
-            if old_value != new_value:
-                raise ValidationError(
-                    f"Inconsistency in {attribute!r} when merging variants. "
-                    f"Expected: {old_value!r}, found {new_value!r}"
-                )
-
-        if self.provider_hash != variant_dist_info.provider_hash:
+        # Merge namespace priorities
+        # Both lists should start with the same values, the longer one
+        # is the result
+        namespace_priorities = sorted(
+            (self.namespace_priorities, variant_dist_info.namespace_priorities), key=len
+        )
+        if (
+            namespace_priorities[0]
+            != namespace_priorities[1][: len(namespace_priorities[0])]
+        ):
             raise ValidationError(
-                f"Inconsistency in providers when merging variants:\n"
-                f"Before:\n{self.providers}.\n\nAfter:\n{variant_dist_info.providers}."
+                f"Inconsistency in {VARIANT_INFO_DEFAULT_PRIO_KEY}."
+                f"{VARIANT_INFO_NAMESPACE_KEY} when merging variants. "
+                f"Unable to merge: {namespace_priorities!r}"
             )
+        variant_dist_info.namespace_priorities = namespace_priorities[1]
 
         for namespace, provider_info in variant_dist_info.providers.items():
             if (old_provider_info := self.providers.get(namespace)) is None:
                 # If provider not yet specified, just copy it
                 self.providers[namespace] = provider_info
-
-            else:
-                # Otherwise, merge requirements and verify consistency
-                for req_str in provider_info.requires:
-                    if req_str not in old_provider_info.requires:
-                        old_provider_info.requires.append(req_str)
-                for attribute in ("enable_if", "optional", "plugin_api"):
-                    new = getattr(provider_info, attribute)
-                    old = getattr(old_provider_info, attribute)
-                    if new != old:
-                        raise ValidationError(
-                            f"Inconsistency in providers[{namespace!r}].{attribute}. "
-                            f"Expected: {old!r}, found: {new!r}"
-                        )
+            # Otherwise, verify consistency
+            elif provider_info != old_provider_info:
+                raise ValidationError(
+                    f"Inconsistency in providers.{namespace}. "
+                    f"Expected: {old_provider_info!r}, found: {provider_info!r}"
+                )
 
     @property
     def _build_requires_allowed(self) -> bool:
