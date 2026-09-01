@@ -79,11 +79,11 @@ class PluginType(Protocol):
     @property
     def is_aot_plugin(self) -> bool:
         """
-        Is this plugin valid for use with `install-time = false`?
+        Is this plugin valid for use with `build-requires`?
 
         If this is True, then `get_supported_configs()` must always
         return the same values, irrespective of the platform used.
-        This permits the plugin to be used with `install-time = false`,
+        This permits the plugin to be used via `build-requires`,
         where the supported properties are recorded at build time.
 
         If the value of `get_supported_configs()` may change in any way

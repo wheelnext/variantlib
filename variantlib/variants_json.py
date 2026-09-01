@@ -11,10 +11,10 @@ from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
@@ -67,8 +67,6 @@ class VariantsJson(VariantInfo):
             yield (VARIANT_INFO_PROVIDER_OPTIONAL_KEY, provider_info.optional)
         if provider_info.plugin_api is not None:
             yield (VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, provider_info.plugin_api)
-        if not provider_info.install_time:
-            yield (VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY, provider_info.install_time)
         if provider_info.static_properties:
             yield (
                 VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
@@ -78,6 +76,11 @@ class VariantsJson(VariantInfo):
             yield (
                 VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
                 provider_info.feature_order,
+            )
+        if provider_info.build_requires:
+            yield (
+                VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
+                provider_info.build_requires,
             )
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
@@ -156,8 +159,8 @@ class VariantsJson(VariantInfo):
                         )
 
     @property
-    def _aot_providers_need_static_properties(self) -> bool:
-        return True
+    def _build_requires_allowed(self) -> bool:
+        return False
 
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]

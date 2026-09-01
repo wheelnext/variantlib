@@ -41,8 +41,8 @@ class VariantPyProjectToml(VariantInfo):
             return cls(tomllib.load(f))
 
     @property
-    def _aot_providers_need_static_properties(self) -> bool:
-        return False
+    def _build_requires_allowed(self) -> bool:
+        return True
 
     def _process(self, variant_table: dict[str, VariantInfoJsonDict]) -> None:
         validator = KeyTrackingValidator(PYPROJECT_TOML_TOP_KEY, variant_table)

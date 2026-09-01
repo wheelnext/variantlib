@@ -571,12 +571,10 @@ def test_package_defined_properties(include_aot_plugins: bool) -> None:
                 requires=["variantlib"], plugin_api="tests.mocked_plugins:MockedPluginA"
             ),
             "second_namespace": ProviderInfo(
-                requires=["variantlib"],
+                build_requires=["variantlib"],
                 plugin_api="tests.mocked_plugins:MockedPluginB",
-                install_time=False,
             ),
             "private": ProviderInfo(
-                install_time=False,
                 static_properties={
                     "baz": ["v5", "v6"],
                 },

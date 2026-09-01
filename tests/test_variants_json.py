@@ -9,6 +9,7 @@ import pytest
 from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -478,3 +479,21 @@ def test_null_variant_label():
         match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
         VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}}})
+
+
+def test_build_requires():
+    with pytest.raises(
+        ValidationError,
+        match=rf"{VARIANT_INFO_PROVIDER_DATA_KEY}.x: "
+        rf"{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} is not allowed in this file",
+    ):
+        VariantsJson(
+            {
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "x": {
+                        VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: ["example"],
+                    }
+                },
+                VARIANTS_JSON_VARIANT_DATA_KEY: {"test": {"x": {"y": ["z"]}}},
+            }
+        )

@@ -7,10 +7,10 @@ import pytest
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
@@ -43,8 +43,7 @@ version = "1.2.3"
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns1_provider.plugin:NS1Plugin"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns2]
-{VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
-{VARIANT_INFO_PROVIDER_REQUIRES_KEY} = [
+{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} = [
     "ns2_provider; python_version >= '3.11'",
     "old_ns2_provider; python_version < '3.11'",
 ]
@@ -52,7 +51,6 @@ version = "1.2.3"
 {VARIANT_INFO_PROVIDER_OPTIONAL_KEY} = true
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3]
-{VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY} = false
 {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} = ["f2", "f1"]
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns3.{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}]
@@ -73,16 +71,14 @@ def test_pyproject_toml() -> None:
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(
-            requires=[
+            build_requires=[
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
-            install_time=False,
         ),
         "ns3": ProviderInfo(
-            install_time=False,
             static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
             feature_order=["f2", "f1"],
         ),
@@ -240,11 +236,13 @@ def test_invalid_provider_plugin_api() -> None:
         )
 
 
-def test_missing_provider_requires() -> None:
+def test_missing_required_key() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
-        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified",
+        rf"exactly one of {VARIANT_INFO_PROVIDER_REQUIRES_KEY}, "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
+        rf"{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} must be specified",
     ):
         VariantPyProjectToml(
             {
@@ -255,31 +253,11 @@ def test_missing_provider_requires() -> None:
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
-                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: True,
                         }
                     },
                 }
             }
         )
-
-
-def test_missing_provider_requires_aot() -> None:
-    VariantPyProjectToml(
-        {
-            PYPROJECT_TOML_TOP_KEY: {
-                VARIANT_INFO_DEFAULT_PRIO_KEY: {
-                    VARIANT_INFO_NAMESPACE_KEY: ["ns"],
-                },
-                VARIANT_INFO_PROVIDER_DATA_KEY: {
-                    "ns": {
-                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
-                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
-                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"test": ["val"]},
-                    }
-                },
-            }
-        }
-    )
 
 
 def test_missing_namespace_priority() -> None:
@@ -372,16 +350,14 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(
-            requires=[
+            build_requires=[
                 "ns2_provider; python_version >= '3.11'",
                 "old_ns2_provider; python_version < '3.11'",
             ],
             optional=True,
             plugin_api="ns2_provider:Plugin",
-            install_time=False,
         ),
         "ns3": ProviderInfo(
-            install_time=False,
             static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
             feature_order=["f2", "f1"],
         ),
@@ -433,25 +409,6 @@ def test_no_plugin_api() -> None:
     assert pyproject_toml.providers["ns"].object_reference == "my_plugin"
 
 
-def test_missing_static_properties() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
-        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
-        rf"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be specified for AoT providers",
-    ):
-        VariantPyProjectToml(
-            {
-                PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
-                    VARIANT_INFO_PROVIDER_DATA_KEY: {
-                        "ns": {VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False}
-                    },
-                }
-            }
-        )
-
-
 def test_static_properties_one_feature() -> None:
     VariantPyProjectToml(
         {
@@ -459,7 +416,6 @@ def test_static_properties_one_feature() -> None:
                 VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
                 VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "ns": {
-                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
                         VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"f": ["v"]},
                     }
                 },
@@ -472,9 +428,8 @@ def test_static_properties_missing_priorities() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: "
-        r"for AoT providers with multiple features, priorities need to be specified "
-        rf"via {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; missing: "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: multiple features require "
+        rf"specifying ordering via {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; missing: "
         r"{'f2'}",
     ):
         VariantPyProjectToml(
@@ -485,12 +440,117 @@ def test_static_properties_missing_priorities() -> None:
                     },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
-                            VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: False,
                             VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
                                 "f1": ["v"],
                                 "f2": ["v"],
                             },
                             VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f1"],
+                        }
+                    },
+                }
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "requires_key",
+    [VARIANT_INFO_PROVIDER_REQUIRES_KEY, VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY],
+)
+def test_static_properties_and_requires(requires_key: str) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"exactly one of {VARIANT_INFO_PROVIDER_REQUIRES_KEY}, "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
+        rf"{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} must be specified",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            requires_key: ["example"],
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"f": ["v"]},
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_double_requires() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"exactly one of {VARIANT_INFO_PROVIDER_REQUIRES_KEY}, "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
+        rf"{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} must be specified",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: ["example"],
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["example"],
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_static_properties_and_plugin_api() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} is not valid with "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "example",
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"f": ["v"]},
+                        }
+                    },
+                }
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "requires_key",
+    [VARIANT_INFO_PROVIDER_REQUIRES_KEY, VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY],
+)
+def test_requires_and_feature_order(requires_key: str) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} is valid only with "
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            requires_key: ["example"],
+                            VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f1", "f2"],
                         }
                     },
                 }

@@ -212,8 +212,7 @@ def make_variant_dist_info(
             ns
             for ns in namespaces
             if ns in variant_info.providers
-            and not variant_info.providers[ns].install_time
-            and variant_info.providers[ns].requires
+            and variant_info.providers[ns].build_requires
         }
         if build_namespaces:
             venv_python_executable = (
@@ -236,6 +235,8 @@ def make_variant_dist_info(
             for config in configs:
                 if config.namespace not in build_namespaces:
                     continue
+                assert variant_json.providers[config.namespace].build_requires
+                variant_json.providers[config.namespace].build_requires = []
                 variant_json.providers[config.namespace].static_properties = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:

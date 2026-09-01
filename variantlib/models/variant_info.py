@@ -15,10 +15,10 @@ from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
@@ -36,26 +36,37 @@ if TYPE_CHECKING:
 class ProviderInfo:
     plugin_api: str | None = None
     enable_if: str | None = None
-    install_time: bool = True
     optional: bool = False
     requires: list[str] = field(default_factory=list)
     static_properties: dict[VariantFeatureName, list[VariantFeatureValue]] = field(
         default_factory=dict
     )
     feature_order: list[VariantFeatureName] = field(default_factory=list)
+    build_requires: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        # TODO: readd validation for requires/static-properties
-        pass
+        if (
+            bool(self.build_requires),
+            bool(self.requires),
+            bool(self.static_properties),
+        ).count(True) != 1:
+            raise ValidationError(
+                "Exactly one of build_requires, requires and static_properties "
+                "must be provided"
+            )
+        if self.static_properties and self.plugin_api:
+            raise ValidationError("plugin_api is invalid with static_properties")
+        if not self.static_properties and self.feature_order:
+            raise ValidationError("feature_order requires static_properties")
 
     @property
     def object_reference(self) -> str:
         """Get effective object reference from plugin-api or requires"""
-        assert self.requires
+        requires = self.requires or self.build_requires
+        assert requires
         if self.plugin_api is not None:
             return self.plugin_api
-        # TODO: how far should we normalize it?
-        return Requirement(self.requires[0]).name.replace("-", "_")
+        return Requirement(requires[0]).name.replace("-", "_")
 
 
 @dataclass
@@ -72,7 +83,6 @@ class VariantInfo:
             "providers": {
                 namespace: ProviderInfo(
                     enable_if=provider_data.enable_if,
-                    install_time=provider_data.install_time,
                     optional=provider_data.optional,
                     plugin_api=provider_data.plugin_api,
                     requires=list(provider_data.requires),
@@ -81,6 +91,7 @@ class VariantInfo:
                         for feature, values in provider_data.static_properties.items()
                     },
                     feature_order=list(provider_data.feature_order),
+                    build_requires=list(provider_data.build_requires),
                 )
                 for namespace, provider_data in self.providers.items()
             },
@@ -104,13 +115,15 @@ class VariantInfo:
         requirements = set()
         for namespace in namespaces:
             provider = self.providers[namespace]
-            if not provider.install_time and not include_aot_plugins:
-                continue
+            # requires and build_requires are mutually exclusive,
+            # one of them will always be empty
             requirements.update(provider.requires)
+            if include_aot_plugins:
+                requirements.update(provider.build_requires)
         return requirements
 
     @property
-    def _aot_providers_need_static_properties(self) -> bool:
+    def _build_requires_allowed(self) -> bool:
         raise NotImplementedError
 
     def _process_common(self, validator: KeyTrackingValidator) -> None:
@@ -150,15 +163,15 @@ class VariantInfo:
                         if provider_enable_if is not None:
                             validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
                     with validator.get(
-                        VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY, bool, True
-                    ) as provider_install_time:
-                        pass
-                    with validator.get(
                         VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
                         list[VariantFeatureName],
                         [],
                     ) as provider_feature_order:
                         validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY, list[str], []
+                    ) as provider_build_requires:
+                        validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
                     provider_static_properties = {}
                     with validator.get(
                         VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
@@ -182,43 +195,51 @@ class VariantInfo:
                             )
                             if missing_feature_prios:
                                 raise ValidationError(
-                                    f"{validator.key}: for AoT providers with multiple "
-                                    "features, priorities need to be specified via "
+                                    f"{validator.key}: multiple features require "
+                                    "specifying ordering via "
                                     f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; "
                                     f"missing: {missing_feature_prios}"
                                 )
 
-                    # TODO: check for exclusive elements properly
-                    if provider_install_time:
-                        if not provider_requires:
-                            raise ValidationError(
-                                f"{validator.key}: "
-                                f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
-                                "specified for install-time providers"
-                            )
-                    elif not provider_static_properties:
-                        if self._aot_providers_need_static_properties:
-                            raise ValidationError(
-                                f"{validator.key}: "
-                                f"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} "
-                                "must be specified for AoT providers"
-                            )
-                        if not provider_requires:
-                            raise ValidationError(
-                                f"{validator.key}: "
-                                f"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} or "
-                                f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY} must be "
-                                "specified for AoT providers"
-                            )
+                    if provider_build_requires and not self._build_requires_allowed:
+                        raise ValidationError(
+                            f"{validator.key}: "
+                            f"{VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} is not "
+                            f"allowed in this file"
+                        )
+                    if (
+                        bool(provider_build_requires),
+                        bool(provider_requires),
+                        bool(provider_static_properties),
+                    ).count(True) != 1:
+                        raise ValidationError(
+                            f"{validator.key}: exactly one of "
+                            f"{VARIANT_INFO_PROVIDER_REQUIRES_KEY}, "
+                            f"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY} "
+                            f"or {VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} "
+                            "must be specified"
+                        )
+                    if provider_static_properties and provider_plugin_api:
+                        raise ValidationError(
+                            f"{validator.key}: "
+                            f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} is not valid "
+                            f"with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
+                        )
+                    if not provider_static_properties and provider_feature_order:
+                        raise ValidationError(
+                            f"{validator.key}: "
+                            f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} is valid "
+                            f"only with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
+                        )
 
                     self.providers[namespace] = ProviderInfo(
                         enable_if=provider_enable_if,
-                        install_time=provider_install_time,
                         optional=provider_optional,
                         plugin_api=provider_plugin_api,
                         requires=list(provider_requires),
                         static_properties=provider_static_properties,
                         feature_order=provider_feature_order,
+                        build_requires=provider_build_requires,
                     )
 
         all_providers = set(self.providers.keys())

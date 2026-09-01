@@ -12,8 +12,8 @@ VARIANT_DIST_INFO_FILENAME = "variant.json"
 VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
 VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
 VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
+VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: Literal["build-requires"] = "build-requires"
 VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
-VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: Literal["install-time"] = "install-time"
 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: Literal["optional"] = "optional"
 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
 VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
@@ -112,8 +112,8 @@ class PriorityJsonDict(TypedDict, total=False):
 ProviderPluginJsonDict = TypedDict(
     "ProviderPluginJsonDict",
     {
+        "build-requires": list[str],
         "enable-if": str,
-        "install-time": bool,
         "optional": bool,
         "plugin-api": str,
         "requires": list[str],
