@@ -115,6 +115,15 @@ class VariantsJson(VariantInfo):
         """Merge info from another wheel (VariantsJson instance)"""
 
         # Merge the variant properties
+        for label, properties in variant_dist_info.variants.items():
+            if (old_properties := self.variants.get(label)) is None:
+                self.variants[label] = properties
+            elif old_properties != properties:
+                raise ValidationError(
+                    f"Inconsistency in {VARIANTS_JSON_VARIANT_DATA_KEY}.{label}. "
+                    f"Expected: { {x.to_str() for x in old_properties.properties}!r} , "
+                    f"found: { {x.to_str() for x in properties.properties}!r}"
+                )
         self.variants.update(variant_dist_info.variants)
 
         # Merge namespace priorities
@@ -132,7 +141,7 @@ class VariantsJson(VariantInfo):
                 f"{VARIANT_INFO_NAMESPACE_KEY} when merging variants. "
                 f"Unable to merge: {namespace_priorities!r}"
             )
-        variant_dist_info.namespace_priorities = namespace_priorities[1]
+        self.namespace_priorities = namespace_priorities[1]
 
         for namespace, provider_info in variant_dist_info.providers.items():
             if (old_provider_info := self.providers.get(namespace)) is None:
@@ -141,7 +150,7 @@ class VariantsJson(VariantInfo):
             # Otherwise, verify consistency
             elif provider_info != old_provider_info:
                 raise ValidationError(
-                    f"Inconsistency in providers.{namespace}. "
+                    f"Inconsistency in {VARIANT_INFO_PROVIDER_DATA_KEY}.{namespace}. "
                     f"Expected: {old_provider_info!r}, found: {provider_info!r}"
                 )
 

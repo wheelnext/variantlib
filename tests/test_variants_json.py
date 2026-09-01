@@ -358,7 +358,7 @@ def test_merge_variants() -> None:
         VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
         VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "54357fe4": {
+            "foo": {
                 "a": {
                     "a": ["a"],
                 },
@@ -376,12 +376,9 @@ def test_merge_variants() -> None:
             "a": provider_data["a"],
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            "48b561bc": {
+            "bar": {
                 "a": {
                     "a": ["c"],
-                },
-                "b": {
-                    "b": ["b"],
                 },
             }
         },
@@ -391,15 +388,12 @@ def test_merge_variants() -> None:
             VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
             VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
             VARIANTS_JSON_VARIANT_DATA_KEY: {
-                "48b561bc": {
+                "bar": {
                     "a": {
                         "a": ["c"],
                     },
-                    "b": {
-                        "b": ["b"],
-                    },
                 },
-                "54357fe4": {
+                "foo": {
                     "a": {
                         "a": ["a"],
                     },
@@ -467,7 +461,19 @@ def test_merge_variants() -> None:
     ] = "test:Test"
     with pytest.raises(
         ValidationError,
-        match=r"Inconsistency in providers\.a",
+        match=rf"Inconsistency in {VARIANT_INFO_PROVIDER_DATA_KEY}\.a",
+    ):
+        v1.merge(VariantsJson(_json_data))
+
+    _json_data = copy.deepcopy(json_a)
+    _json_data[VARIANTS_JSON_VARIANT_DATA_KEY]["foo"] = {
+        "a": {
+            "a": ["a"],
+        },
+    }
+    with pytest.raises(
+        ValidationError,
+        match=rf"Inconsistency in {VARIANTS_JSON_VARIANT_DATA_KEY}\.foo",
     ):
         v1.merge(VariantsJson(_json_data))
 
