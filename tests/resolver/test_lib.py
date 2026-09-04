@@ -95,11 +95,16 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
     vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
 
     # fmt: off
-    # Important: vprop4 and vprop5 are mutually exclusive
     return [
+        VariantDescription(
+            [vprop1, vprop2, vprop3, vprop4, vprop5, vprop6], label="ba"
+        ),
+
         # variants with 5 properties
         VariantDescription([vprop1, vprop2, vprop3, vprop4, vprop6], label="a"),
+        VariantDescription([vprop1, vprop2, vprop4, vprop5, vprop6], label="bc"),
         VariantDescription([vprop1, vprop2, vprop3, vprop5, vprop6], label="b"),
+        VariantDescription([vprop1, vprop3, vprop4, vprop5, vprop6], label="bc"),
 
         # variants with 4 properties
         VariantDescription([vprop1, vprop2, vprop3, vprop4], label="c"),  # - vprop6
@@ -107,9 +112,11 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
 
         VariantDescription([vprop1, vprop2, vprop3, vprop6], label="c"),  # - vprop4/5
 
+        VariantDescription([vprop1, vprop2, vprop4, vprop5], label="bd"),
         VariantDescription([vprop1, vprop2, vprop4, vprop6], label="d"),  # - vprop3
         VariantDescription([vprop1, vprop2, vprop5, vprop6], label="e"),  # - vprop3
 
+        VariantDescription([vprop1, vprop3, vprop4, vprop5], label="be"),
         VariantDescription([vprop1, vprop3, vprop4, vprop6], label="f"),  # - vprop2
         VariantDescription([vprop1, vprop3, vprop5, vprop6], label="g"),  # - vprop2
 
@@ -127,6 +134,7 @@ def vdescs(vprops: list[VariantProperty]) -> list[VariantDescription]:
         VariantDescription([vprop1, vprop3, vprop5], label="o"),
         VariantDescription([vprop1, vprop3, vprop6], label="p"),
 
+        VariantDescription([vprop1, vprop4, vprop5], label="bf"),
         VariantDescription([vprop1, vprop4, vprop6], label="q"),
         VariantDescription([vprop1, vprop5, vprop6], label="r"),
 
@@ -453,8 +461,9 @@ def test_filter_variants_remove_properties(
 # =================== `sort_and_filter_supported_variants` ================== #
 
 
+@pytest.mark.parametrize("filter_values", [False, True])
 def test_sort_and_filter_supported_variants(
-    vdescs: list[VariantDescription], vprops: list[VariantProperty]
+    vdescs: list[VariantDescription], vprops: list[VariantProperty], filter_values: bool
 ) -> None:
     assert len(vprops) == 6
 
@@ -497,6 +506,8 @@ def test_sort_and_filter_supported_variants(
         # 1. Everything with vprop6
         # 1.1. + vprop3
         # 1.1.1. + vprop5
+        # 1.1.1.1. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, vprop5, vprop6], label="bc"),
         VariantDescription([vprop1, vprop3, vprop5, vprop6], label="g"),
         VariantDescription([vprop3, vprop5, vprop6], label="y"),
         # 1.1.2. + vprop4
@@ -519,6 +530,8 @@ def test_sort_and_filter_supported_variants(
 
         # 2. Everything with vprop3
         # 2.1. + vprop5
+        # 2.1.1. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, vprop5], label="be"),
         VariantDescription([vprop1, vprop3, vprop5], label="o"),
         VariantDescription([vprop3, vprop5], label="aj"),
         # 2.2. + vprop4
@@ -531,6 +544,7 @@ def test_sort_and_filter_supported_variants(
 
         # 3. vprop5
         VariantDescription([vprop1, vprop5], label="ac"),
+        VariantDescription([vprop1, vprop4, vprop5], label="bf"),
         VariantDescription([vprop5], label="ar"),
 
         # 4. vprop4
@@ -555,6 +569,112 @@ def test_sort_and_filter_supported_variants(
             property_priorities=prio_vprops,
             feature_priorities=prio_vfeats,
             namespace_priorities=prio_namespaces,
+            filter_values=filter_values,
+        )
+        == expected_vdescs
+    )
+
+
+@pytest.mark.parametrize("filter_values", [False, True])
+def test_sort_and_filter_supported_variants_no_vprop5(
+    vdescs: list[VariantDescription], vprops: list[VariantProperty], filter_values: bool
+) -> None:
+    assert len(vprops) == 6
+
+    vprop1, vprop2, vprop3, vprop4, vprop5, vprop6 = vprops
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ SORTING PARAMETERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+    prio_vprops = {"tyrell_corp": {"feat_b": ["efghij"]}}
+
+    prio_vfeats = {"tyrell_corp": ["feat_c"]}
+
+    prio_namespaces = ["NotExistingNamespace", "tyrell_corp", "omnicorp"]
+
+    # Sanity check variant ordering:
+    # 1. vprop6. tyrell_corp :: feat_c
+    # 2. vprop3. tyrell_corp :: feat_a
+    # 3. vprop5. tyrell_corp :: feat_b :: efghij
+    # 4. vprop4. tyrell_corp :: feat_b :: abcde
+    # 5. vprop1. omnicorp :: feat_a
+    # 6. vprop2. omnicorp :: feat_b
+
+    assert sort_variant_properties(
+        vprops=vprops,
+        namespace_priorities=prio_namespaces,
+        feature_priorities=prio_vfeats,
+        property_priorities=prio_vprops,
+    ) == [vprop6, vprop3, vprop5, vprop4, vprop1, vprop2]
+
+    # Default Ordering: properties are assumed pre-sorted in features/properties
+    #                   vprop1 > vprop2 > vprop3 > vprop4 > vprop5 > vprop6
+    #                   Note: Namespace is already accounted for in 3)
+
+    # Last Preferential Order: More features are preferred over less features
+
+    # ----------------------------------------------------------------------------- #
+
+    m_vprop5 = [] if filter_values else [vprop5]
+
+    # fmt: off
+    expected_vdescs = [
+        # Effective vdesc order:
+        # 1. Everything with vprop6
+        # 1.1. + vprop3
+        # 1.1.1. + vprop5
+        # 1.1.1.1. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, *m_vprop5, vprop6], label="bc"),
+        # 1.1.2. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, vprop6], label="f"),
+        VariantDescription([vprop3, vprop4, vprop6], label="x"),
+        # 1.1.3. + vprop1
+        VariantDescription([vprop1, vprop3, vprop6], label="p"),
+        # 1.1.4. vprop6 + vprop3
+        VariantDescription([vprop3, vprop6], label="ak"),
+        # 1.3. + vprop4
+        VariantDescription([vprop1, vprop4, vprop6], label="q"),
+        VariantDescription([vprop4, vprop6], label="al"),
+        # 1.4. + vprop1
+        VariantDescription([vprop1, vprop6], label="ad"),
+        # 1. sole vprop6
+        VariantDescription([vprop6], label="as"),
+
+        # 2. Everything with vprop3
+        # 2.1. + vprop5
+        # 2.1.1. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4, *m_vprop5], label="be"),
+        # 2.2. + vprop4
+        VariantDescription([vprop1, vprop3, vprop4], label="n"),
+        VariantDescription([vprop3, vprop4], label="ai"),
+        # 2.3. + vprop1
+        VariantDescription([vprop1, vprop3], label="aa"),
+        # 2. sole vprop3
+        VariantDescription([vprop3], label="ap"),
+
+        # 3. vprop1 + vprop4
+        VariantDescription([vprop1, vprop4], label="ab"),
+        VariantDescription([vprop1, vprop4, *m_vprop5], label="bf"),
+        VariantDescription([vprop4], label="aq"),
+
+        # 4. sole vprop1
+        VariantDescription([vprop1], label="an"),
+
+        # Null-Variant is never removed and last - Implicitly added
+        VariantDescription(),
+    ]
+    # fmt: on
+
+    # Shuffling the list & creating duplicates
+    inputs_vdescs = shuffle_vdescs(vdescs=vdescs)
+
+    assert (
+        sort_and_filter_supported_variants(
+            vdescs=inputs_vdescs,
+            supported_vprops=[vprop1, vprop3, vprop4, vprop6],
+            property_priorities=prio_vprops,
+            feature_priorities=prio_vfeats,
+            namespace_priorities=prio_namespaces,
+            filter_values=filter_values,
         )
         == expected_vdescs
     )
