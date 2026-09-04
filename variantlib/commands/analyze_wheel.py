@@ -8,7 +8,6 @@ import zipfile
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.api import get_variant_label
 from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
 from variantlib.constants import VARIANT_DIST_INFO_FILENAME
 from variantlib.variant_dist_info import VariantDistInfo
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def pretty_print(vdesc: VariantDescription) -> str:
-    result_str = f"{'#' * 30} Variant: `{get_variant_label(vdesc)}` {'#' * 29}"
+    result_str = f"{'#' * 30} Variant: `{vdesc.label}` {'#' * 29}"
     for vprop in vdesc.properties:
         result_str += f"\n{vprop.to_str()}"
     result_str += f"\n{'#' * 80}\n"

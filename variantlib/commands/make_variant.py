@@ -16,7 +16,6 @@ from build.env import DefaultIsolatedEnv
 from variantlib import __package_name__
 from variantlib.api import VariantDescription
 from variantlib.api import VariantProperty
-from variantlib.api import get_variant_label
 from variantlib.api import make_variant_dist_info
 from variantlib.api import validate_variant
 from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
@@ -169,7 +168,7 @@ def _make_variant(
 
     if not is_null_variant:
         # Transform properties into a VariantDescription
-        vdesc = VariantDescription(properties=properties)
+        vdesc = VariantDescription(properties=properties, label=variant_label or "")
 
         if validate_properties:
             env_factory: DefaultIsolatedEnv | nullcontext[None]
@@ -230,11 +229,9 @@ def _make_variant(
         # Create a null variant
         vdesc = VariantDescription()
 
-    variant_label = get_variant_label(vdesc, variant_label)
-
     # Determine output wheel filename
     output_filepath = (
-        output_directory / f"{wheel_info.group('base_wheel_name')}-{variant_label}.whl"
+        output_directory / f"{wheel_info.group('base_wheel_name')}-{vdesc.label}.whl"
     )
 
     with (
@@ -256,7 +253,7 @@ def _make_variant(
                     # required, but a nice convention).
                     dist_info_path = f"{components[0]}/{VARIANT_DIST_INFO_FILENAME}"
                     dist_info_data = make_variant_dist_info(
-                        vdesc, variant_info=variant_info, variant_label=variant_label
+                        vdesc, variant_info=variant_info
                     )
                     output_zip.writestr(dist_info_path, dist_info_data)
 

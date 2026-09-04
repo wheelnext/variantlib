@@ -99,7 +99,7 @@ def main() -> int:
         if non_fixed_plugins:
             raise TypeError(
                 f"Providers for namespaces {non_fixed_plugins} are not AoT plugins, "
-                f"they cannot be used with install-time = false"
+                f"they cannot be used with build-requires"
             )
 
     retval: dict[str, Any] = {}

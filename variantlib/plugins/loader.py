@@ -313,16 +313,19 @@ class PluginLoader(BasePluginLoader):
         self._include_aot_plugins = include_aot_plugins
         super().__init__(
             venv_python_executable=venv_python_executable,
-            package_defined_properties=variant_info.static_properties,
+            package_defined_properties={
+                namespace: provider_info.static_properties
+                for namespace, provider_info in variant_info.providers.items()
+            },
         )
 
     def _use_static_properties_for_provider(self, provider_data: ProviderInfo) -> bool:
         """Returns True if we should read properties from metadata"""
         # for install-time providers, we always query the plugin
-        if provider_data.install_time:
+        if provider_data.requires:
             return False
         # when there is no plugin, we always use metadata
-        if not provider_data.requires:
+        if not provider_data.build_requires:
             return True
         # otherwise, query the plugin if build-time querying is enabled
         return not self._include_aot_plugins

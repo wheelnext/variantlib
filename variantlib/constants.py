@@ -10,16 +10,17 @@ VARIANT_DIST_INFO_FILENAME = "variant.json"
 
 # Common variant info keys (used in pyproject.toml and variants.json)
 VARIANT_INFO_DEFAULT_PRIO_KEY: Literal["default-priorities"] = "default-priorities"
-VARIANT_INFO_FEATURE_KEY: Literal["feature"] = "feature"
 VARIANT_INFO_NAMESPACE_KEY: Literal["namespace"] = "namespace"
-VARIANT_INFO_PROPERTY_KEY: Literal["property"] = "property"
 VARIANT_INFO_PROVIDER_DATA_KEY: Literal["providers"] = "providers"
+VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: Literal["build-requires"] = "build-requires"
 VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: Literal["enable-if"] = "enable-if"
-VARIANT_INFO_PROVIDER_INSTALL_TIME_KEY: Literal["install-time"] = "install-time"
 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: Literal["optional"] = "optional"
 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: Literal["plugin-api"] = "plugin-api"
 VARIANT_INFO_PROVIDER_REQUIRES_KEY: Literal["requires"] = "requires"
-VARIANT_INFO_STATIC_PROPERTIES_KEY: Literal["static-properties"] = "static-properties"
+VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: Literal["static-properties"] = (
+    "static-properties"
+)
+VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: Literal["feature-order"] = "feature-order"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
 
@@ -106,18 +107,18 @@ VALIDATION_WHEEL_NAME_REGEX = re.compile(
 
 class PriorityJsonDict(TypedDict, total=False):
     namespace: list[str]
-    feature: dict[str, list[str]]
-    property: dict[str, dict[str, list[str]]]
 
 
 ProviderPluginJsonDict = TypedDict(
     "ProviderPluginJsonDict",
     {
+        "build-requires": list[str],
         "enable-if": str,
-        "install-time": bool,
         "optional": bool,
         "plugin-api": str,
         "requires": list[str],
+        "static-properties": dict[str, list[str]],
+        "feature-order": list[str],
     },
     total=False,
 )
@@ -131,7 +132,6 @@ VariantsJsonDict = TypedDict(
         "$schema": str,
         "default-priorities": PriorityJsonDict,
         "providers": dict[str, ProviderPluginJsonDict],
-        "static-properties": dict[str, dict[str, list[str]]],
         "variants": dict[str, VariantInfoJsonDict],
     },
     total=False,

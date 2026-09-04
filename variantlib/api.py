@@ -91,11 +91,13 @@ def get_variants_by_priority(
             ),
             feature_priorities=aggregate_feature_priorities(
                 config.feature_priorities,
-                variants_json.feature_priorities,
+                {
+                    namespace: provider.feature_order
+                    for namespace, provider in variants_json.providers.items()
+                },
             ),
             property_priorities=aggregate_property_priorities(
                 config.property_priorities,
-                variants_json.property_priorities,
             ),
         )
     ]
@@ -210,8 +212,7 @@ def make_variant_dist_info(
             ns
             for ns in namespaces
             if ns in variant_info.providers
-            and not variant_info.providers[ns].install_time
-            and variant_info.providers[ns].requires
+            and variant_info.providers[ns].build_requires
         }
         if build_namespaces:
             venv_python_executable = (
@@ -234,24 +235,24 @@ def make_variant_dist_info(
             for config in configs:
                 if config.namespace not in build_namespaces:
                     continue
-                variant_json.static_properties[config.namespace] = {}
+                assert variant_json.providers[config.namespace].build_requires
+                variant_json.providers[config.namespace].build_requires = []
+                variant_json.providers[config.namespace].static_properties = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:
                         raise ValidationError(
                             f"Feature '{config.namespace} :: {vfeat.name}' is "
                             "multi-value, which is invalid for ahead-of-time plugins"
                         )
-                    variant_json.static_properties[config.namespace][vfeat.name] = (
-                        vfeat.values
-                    )
+                    variant_json.providers[config.namespace].static_properties[
+                        vfeat.name
+                    ] = vfeat.values
 
-                    # adjust feature priorities only if at least 2 features defined
-                    if len(config.configs) > 1:
-                        feature_prios = variant_json.feature_priorities.setdefault(
-                            config.namespace, []
-                        )
-                        if vfeat.name not in feature_prios:
-                            feature_prios.append(vfeat.name)
+                # set feature-order only if at least 2 features defined
+                if len(config.configs) > 1:
+                    variant_json.providers[config.namespace].feature_order = [
+                        vfeat.name for vfeat in config.configs
+                    ]
 
         # Validate that we did not end up using an unsupported property.
         # This could happen in two cases:
@@ -262,9 +263,9 @@ def make_variant_dist_info(
         for vprop in vdesc.properties:
             if vprop.namespace not in build_namespaces:
                 continue
-            if vprop.value not in variant_json.static_properties[vprop.namespace].get(
-                vprop.feature, []
-            ):
+            if vprop.value not in variant_json.providers[
+                vprop.namespace
+            ].static_properties.get(vprop.feature, []):
                 raise ValidationError(
                     f"Property {vprop.to_str()!r} is not installable according to the "
                     "respective provider plugin, which is invalid for ahead-of-time "
