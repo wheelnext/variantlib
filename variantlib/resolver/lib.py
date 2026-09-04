@@ -12,6 +12,7 @@ from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.resolver.filtering import filter_unsupported_feature_values
 from variantlib.resolver.filtering import filter_variants_by_features
 from variantlib.resolver.filtering import filter_variants_by_namespaces
 from variantlib.resolver.filtering import filter_variants_by_property
@@ -47,6 +48,7 @@ def filter_variants(
     forbidden_namespaces: list[str] | None = None,
     forbidden_features: list[VariantFeature] | None = None,
     forbidden_properties: list[VariantProperty] | None = None,
+    filter_values: bool = False,
 ) -> Generator[VariantDescription]:
     """
     Filters out a `list` of `VariantDescription` with the following filters:
@@ -57,12 +59,14 @@ def filter_variants(
     - Forbidden `variant namespaces` removed - if `forbidden_namespaces` is not None
     - Forbidden `variant features` removed - if `forbidden_features` is not None
     - Forbidden `variant properties` removed - if `forbidden_properties` is not None
+    - Unsupported values filtered out if `filter_values` is True.
 
     :param vdescs: list of `VariantDescription` to filter.
     :param allowed_properties: List of allowed `VariantProperty`.
     :param forbidden_namespaces: List of forbidden variant namespaces as `str`.
     :param forbidden_features: List of forbidden `VariantFeature`.
     :param forbidden_properties: List of forbidden `VariantProperty`.
+    :param filter_values: Should values be filtered?
     :return: Filtered list of `VariantDescription`.
     """
 
@@ -105,6 +109,15 @@ def filter_variants(
     #  forbidden by the user.
     if allowed_properties is not None:
         result = filter_variants_by_property(
+            vdescs=result,
+            allowed_properties=allowed_properties,
+            forbidden_properties=forbidden_properties,
+        )
+
+    # Step 4 [Optional]
+    # Remove unsupported feature values
+    if filter_values:
+        result = filter_unsupported_feature_values(
             vdescs=result,
             allowed_properties=allowed_properties,
             forbidden_properties=forbidden_properties,
@@ -180,6 +193,7 @@ def sort_and_filter_supported_variants(
     forbidden_namespaces: list[VariantNamespace] | None = None,
     forbidden_features: list[VariantFeature] | None = None,
     forbidden_properties: list[VariantProperty] | None = None,
+    filter_values: bool = False,
 ) -> list[VariantDescription]:
     """
     Sort and filter a list of `VariantDescription` objects based on their
@@ -190,6 +204,7 @@ def sort_and_filter_supported_variants(
     :param namespace_priorities: Ordered list of `str` objects.
     :param feature_priorities: Ordered list of `VariantFeature` objects.
     :param property_priorities: Ordered list of `VariantProperty` objects.
+    :param filter_values: Should values be filtered?
     :return: Sorted and filtered list of `VariantDescription` objects.
     """
 
@@ -240,6 +255,7 @@ def sort_and_filter_supported_variants(
             forbidden_namespaces=forbidden_namespaces,
             forbidden_features=forbidden_features,
             forbidden_properties=forbidden_properties,
+            filter_values=filter_values,
         )
     )
 
