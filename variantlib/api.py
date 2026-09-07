@@ -53,7 +53,7 @@ def get_variants_by_priority(
     variants_json: VariantsJsonDict | VariantsJson,
     venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
-) -> list[str]:
+) -> dict[str, VariantDescription]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
@@ -80,8 +80,8 @@ def get_variants_by_priority(
 
     config = VariantConfiguration.get_config()
 
-    return [
-        vdesc.label
+    return {
+        vdesc.label: vdesc
         for vdesc in sort_and_filter_supported_variants(
             list(variants_json.variants.values()),
             supported_vprops,
@@ -99,8 +99,9 @@ def get_variants_by_priority(
             property_priorities=aggregate_property_priorities(
                 config.property_priorities,
             ),
+            filter_values=True,
         )
-    ]
+    }
 
 
 def validate_variant(
