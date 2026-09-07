@@ -282,10 +282,11 @@ def check_variant_supported(
     variant_info: VariantInfo,
     venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
-) -> bool:
-    """Check if variant description is supported
+) -> VariantDescription | None:
+    """Check if variant is supported and return filtered description
 
-    Returns True if the variant description is supported.
+    Returns a VariantDescription filtered down to supported values if it
+    is supported. Otherwise, returns None.
 
     If `vdesc` is provided, it is tested. Otherwise, `variant_info` must be
     a `DistMetadata` and variant description is inferred from it.
@@ -320,14 +321,14 @@ def check_variant_supported(
 
     VariantConfiguration.get_config()
 
-    return bool(
-        list(
-            filter_variants(
-                vdescs=[vdesc],
-                allowed_properties=supported_vprops,
-            )
+    filtered = list(
+        filter_variants(
+            vdescs=[vdesc],
+            allowed_properties=supported_vprops,
+            filter_values=True,
         )
     )
+    return filtered[0] if filtered else None
 
 
 def get_variant_environment_dict(

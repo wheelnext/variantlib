@@ -462,7 +462,10 @@ def test_check_variant_supported_dist(
 ) -> None:
     variant_json = VariantsJson(common_variant_info)
     variant_json.variants[vdesc.hexdigest] = vdesc
-    assert check_variant_supported(variant_info=variant_json) is expected
+    if expected:
+        assert check_variant_supported(variant_info=variant_json) == vdesc
+    else:
+        assert check_variant_supported(variant_info=variant_json) is None
 
 
 def test_check_variant_supported_generic() -> None:
