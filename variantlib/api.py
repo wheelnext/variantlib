@@ -330,7 +330,6 @@ def check_variant_supported(
 
 def get_variant_environment_dict(
     variant_desc: VariantDescription,
-    variant_label: str | None = None,
 ) -> dict[str, set[str] | str]:
     """Get the dict for packaging Marker.evaluate()"""
 
@@ -342,13 +341,6 @@ def get_variant_environment_dict(
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
         "variant_label": variant_desc.label,
     }
-    if variant_label is not None:
-        warnings.warn(
-            "Passing variant_label is deprecated, provide VariantDescription() "
-            "with label instead",
-            stacklevel=2,
-        )
-        ret["variant_label"] = variant_label
     return ret
 
 

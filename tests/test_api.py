@@ -535,7 +535,7 @@ def test_get_variant_environment_dict() -> None:
         },
         "variant_label": "foo",
     }
-    assert get_variant_environment_dict(vdesc, "foo") == expected
+    assert get_variant_environment_dict(vdesc) == expected
 
 
 def test_make_variant_dist_info_invalid_label():
