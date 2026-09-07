@@ -53,7 +53,7 @@ def get_variants_by_priority(
     variants_json: VariantsJsonDict | VariantsJson,
     venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
-) -> dict[str, VariantDescription]:
+) -> list[VariantDescription]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
@@ -80,28 +80,25 @@ def get_variants_by_priority(
 
     config = VariantConfiguration.get_config()
 
-    return {
-        vdesc.label: vdesc
-        for vdesc in sort_and_filter_supported_variants(
-            list(variants_json.variants.values()),
-            supported_vprops,
-            namespace_priorities=aggregate_namespace_priorities(
-                config.namespace_priorities,
-                variants_json.namespace_priorities,
-            ),
-            feature_priorities=aggregate_feature_priorities(
-                config.feature_priorities,
-                {
-                    namespace: provider.feature_order
-                    for namespace, provider in variants_json.providers.items()
-                },
-            ),
-            property_priorities=aggregate_property_priorities(
-                config.property_priorities,
-            ),
-            filter_values=True,
-        )
-    }
+    return sort_and_filter_supported_variants(
+        list(variants_json.variants.values()),
+        supported_vprops,
+        namespace_priorities=aggregate_namespace_priorities(
+            config.namespace_priorities,
+            variants_json.namespace_priorities,
+        ),
+        feature_priorities=aggregate_feature_priorities(
+            config.feature_priorities,
+            {
+                namespace: provider.feature_order
+                for namespace, provider in variants_json.providers.items()
+            },
+        ),
+        property_priorities=aggregate_property_priorities(
+            config.property_priorities,
+        ),
+        filter_values=True,
+    )
 
 
 def validate_variant(

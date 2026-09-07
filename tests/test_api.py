@@ -127,9 +127,7 @@ def test_get_variants_by_priority_roundtrip(
 
     # variants_json = VariantsJson(typed_variants_json)
 
-    assert get_variants_by_priority(variants_json=typed_variants_json) == {
-        vdesc.label: vdesc for vdesc in combinations
-    }
+    assert get_variants_by_priority(variants_json=typed_variants_json) == combinations
 
 
 @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -214,9 +212,7 @@ def test_get_variants_by_priority_roundtrip_fuzz(
         "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
-    assert get_variants_by_priority(variants_json=typed_variants_json) == {
-        vdesc.label: vdesc for vdesc in combinations
-    }
+    assert get_variants_by_priority(variants_json=typed_variants_json) == combinations
 
 
 @pytest.mark.parametrize(
