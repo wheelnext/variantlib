@@ -7,6 +7,7 @@ from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
+from variantlib.resolver.filtering import filter_unsupported_feature_values
 from variantlib.resolver.filtering import filter_variants_by_features
 from variantlib.resolver.filtering import filter_variants_by_namespaces
 from variantlib.resolver.filtering import filter_variants_by_property
@@ -456,3 +457,60 @@ def test_filter_variants_by_property_validation_error(
             ),
             maxlen=0,
         )
+
+
+# ====================== `filter_unsupported_feature_values` ====================== #
+
+
+def test_filter_unsupported_feature_values() -> None:
+    vprop11 = VariantProperty("ns1", "f1", "v1")
+    vprop12 = VariantProperty("ns1", "f1", "v2")
+    vprop21 = VariantProperty("ns1", "f2", "v1")
+    vprop22 = VariantProperty("ns1", "f2", "v2")
+    vdescs = [
+        VariantDescription(label="t1", properties=[vprop11, vprop12, vprop21]),
+        VariantDescription(label="t2", properties=[vprop11, vprop21, vprop22]),
+        VariantDescription(label="t3", properties=[vprop11, vprop21]),
+    ]
+
+    assert list(
+        filter_unsupported_feature_values(vdescs, allowed_properties=[vprop11, vprop21])
+    ) == [
+        VariantDescription(label="t1", properties=[vprop11, vprop21]),
+        VariantDescription(label="t2", properties=[vprop11, vprop21]),
+        VariantDescription(label="t3", properties=[vprop11, vprop21]),
+    ]
+
+    assert list(
+        filter_unsupported_feature_values(
+            vdescs, allowed_properties=[vprop11, vprop12, vprop21, vprop22]
+        )
+    ) == [
+        VariantDescription(label="t1", properties=[vprop11, vprop12, vprop21]),
+        VariantDescription(label="t2", properties=[vprop11, vprop21, vprop22]),
+        VariantDescription(label="t3", properties=[vprop11, vprop21]),
+    ]
+
+    assert list(
+        filter_unsupported_feature_values(
+            vdescs, allowed_properties=[vprop11, vprop21, vprop22]
+        )
+    ) == [
+        VariantDescription(label="t1", properties=[vprop11, vprop21]),
+        VariantDescription(label="t2", properties=[vprop11, vprop21, vprop22]),
+        VariantDescription(label="t3", properties=[vprop11, vprop21]),
+    ]
+
+    with pytest.raises(
+        ValidationError, match=r"None of `ns1 :: f2` values are allowed"
+    ):
+        list(
+            filter_unsupported_feature_values(
+                vdescs, allowed_properties=[vprop11, vprop22]
+            )
+        )
+
+    with pytest.raises(
+        ValidationError, match=r"None of `ns1 :: f1` values are allowed"
+    ):
+        list(filter_unsupported_feature_values(vdescs, allowed_properties=[vprop22]))

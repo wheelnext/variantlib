@@ -81,12 +81,10 @@ def configs(
 
 
 @pytest.mark.parametrize("construct", [False, True])
-@pytest.mark.parametrize("custom_labels", [False, True])
 @pytest.mark.parametrize("explicit_null", [False, True])
 def test_get_variants_by_priority_roundtrip(
     configs: list[ProviderConfig],
     construct: bool,
-    custom_labels: bool,
     explicit_null: bool,
 ) -> None:
     """Test that we can round-trip all combinations via variants.json and get the same
@@ -116,9 +114,7 @@ def test_get_variants_by_priority_roundtrip(
             for namespace, plugin_api in plugin_apis.items()
         },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
-            f"foo{vdesc.hexdigest[:4]}"
-            if custom_labels and not vdesc.is_null_variant()
-            else get_variant_label(vdesc): vdesc.to_dict()
+            vdesc.label: vdesc.to_dict()
             for vdesc in combinations
             if explicit_null or not vdesc.is_null_variant()
         },
@@ -131,12 +127,7 @@ def test_get_variants_by_priority_roundtrip(
 
     # variants_json = VariantsJson(typed_variants_json)
 
-    assert get_variants_by_priority(variants_json=typed_variants_json) == [
-        f"foo{vdesc.hexdigest[:4]}"
-        if custom_labels and not vdesc.is_null_variant()
-        else get_variant_label(vdesc)
-        for vdesc in combinations
-    ]
+    assert get_variants_by_priority(variants_json=typed_variants_json) == combinations
 
 
 @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -221,9 +212,7 @@ def test_get_variants_by_priority_roundtrip_fuzz(
         "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
     ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
-    assert get_variants_by_priority(variants_json=typed_variants_json) == [
-        get_variant_label(vdesc) for vdesc in combinations
-    ]
+    assert get_variants_by_priority(variants_json=typed_variants_json) == combinations
 
 
 @pytest.mark.parametrize(
@@ -469,7 +458,10 @@ def test_check_variant_supported_dist(
 ) -> None:
     variant_json = VariantsJson(common_variant_info)
     variant_json.variants[vdesc.hexdigest] = vdesc
-    assert check_variant_supported(variant_info=variant_json) is expected
+    if expected:
+        assert check_variant_supported(variant_info=variant_json) == vdesc
+    else:
+        assert check_variant_supported(variant_info=variant_json) is None
 
 
 def test_check_variant_supported_generic() -> None:
@@ -543,7 +535,7 @@ def test_get_variant_environment_dict() -> None:
         },
         "variant_label": "foo",
     }
-    assert get_variant_environment_dict(vdesc, "foo") == expected
+    assert get_variant_environment_dict(vdesc) == expected
 
 
 def test_make_variant_dist_info_invalid_label():

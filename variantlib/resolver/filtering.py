@@ -5,6 +5,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantFeature
 from variantlib.models.variant import VariantProperty
@@ -221,3 +222,82 @@ def filter_variants_by_property(
         return True
 
     yield from filter(_should_include, vdescs)
+
+
+def filter_unsupported_feature_values(
+    vdescs: Iterable[VariantDescription],
+    allowed_properties: list[VariantProperty],
+    forbidden_properties: list[VariantProperty] | None = None,
+) -> Generator[VariantDescription]:
+    """
+    Filters out unsupported from `VariantDescription`s.
+
+    ** Implementation Note:**
+    - All of the provided `VariantDescription`s must be compatible (filter via
+      `filter_variants_by_property()` first.
+    - Installer will provide the list of allowed properties from variant provider
+      plugins.
+    - User can [optionally] provide a list of forbidden properties to be excluded.
+      Forbidden properties take precedence of "allowed properties" and will be excluded.
+
+    :param vdescs: list of `VariantDescription` to filter.
+    :param allowed_properties: List of allowed `VariantProperty`.
+    :param forbidden_properties: List of forbidden `VariantProperty`.
+    :return: Filtered list of `VariantDescription`.
+    """
+
+    if forbidden_properties is None:
+        forbidden_properties = []
+
+    # Input validation
+    validate_type(vdescs, Iterable)
+    validate_type(allowed_properties, list[VariantProperty])
+    validate_type(forbidden_properties, list[VariantProperty])
+
+    # for performance reasons we convert the list to a set to avoid O(n) lookups
+    forbidden_properties_hexs = {vprop.property_hash for vprop in forbidden_properties}
+
+    # We filter out any properties that are in the forbidden list.
+    allowed_properties = list(
+        filter(
+            lambda vprop: vprop.property_hash not in forbidden_properties_hexs,
+            allowed_properties,
+        )
+    )
+
+    # We group allowed properties by their namespace and feature:
+    #   => only one match per group is required.
+    # Note: This step is required for the OR match within one VariantFeature
+    allowed_props_dict: dict[
+        tuple[VariantNamespace, VariantFeatureValue], set[VariantFeatureValue]
+    ] = defaultdict(set)
+    for vprop in allowed_properties:
+        allowed_props_dict[(vprop.namespace, vprop.feature)].add(vprop.value)
+
+    def _filter_vdesc(vdesc: VariantDescription) -> VariantDescription:
+        validate_type(vdesc, VariantDescription)
+
+        vdesc_prop_dict: dict[
+            tuple[VariantNamespace, VariantFeatureValue], set[VariantFeatureValue]
+        ] = defaultdict(set)
+        for vprop in vdesc.properties:
+            vdesc_prop_dict[(vprop.namespace, vprop.feature)].add(vprop.value)
+
+        for ns, vfeat_name in list(vdesc_prop_dict):
+            allowed_props = allowed_props_dict.get((ns, vfeat_name), set())
+            vdesc_prop_dict[(ns, vfeat_name)] &= allowed_props
+            if not vdesc_prop_dict[(ns, vfeat_name)]:
+                raise ValidationError(
+                    f"None of `{ns} :: {vfeat_name}` values are allowed in {vdesc!r}"
+                )
+
+        return VariantDescription(
+            label=vdesc.label,
+            properties=[
+                VariantProperty(ns, vfeat_name, vfeat_value)
+                for (ns, vfeat_name), values in vdesc_prop_dict.items()
+                for vfeat_value in values
+            ],
+        )
+
+    yield from map(_filter_vdesc, vdescs)

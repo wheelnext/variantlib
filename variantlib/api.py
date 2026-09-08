@@ -53,7 +53,7 @@ def get_variants_by_priority(
     variants_json: VariantsJsonDict | VariantsJson,
     venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
-) -> list[str]:
+) -> list[VariantDescription]:
     supported_vprops = []
     if not isinstance(variants_json, VariantsJson):
         variants_json = VariantsJson(variants_json)
@@ -80,27 +80,25 @@ def get_variants_by_priority(
 
     config = VariantConfiguration.get_config()
 
-    return [
-        vdesc.label
-        for vdesc in sort_and_filter_supported_variants(
-            list(variants_json.variants.values()),
-            supported_vprops,
-            namespace_priorities=aggregate_namespace_priorities(
-                config.namespace_priorities,
-                variants_json.namespace_priorities,
-            ),
-            feature_priorities=aggregate_feature_priorities(
-                config.feature_priorities,
-                {
-                    namespace: provider.feature_order
-                    for namespace, provider in variants_json.providers.items()
-                },
-            ),
-            property_priorities=aggregate_property_priorities(
-                config.property_priorities,
-            ),
-        )
-    ]
+    return sort_and_filter_supported_variants(
+        list(variants_json.variants.values()),
+        supported_vprops,
+        namespace_priorities=aggregate_namespace_priorities(
+            config.namespace_priorities,
+            variants_json.namespace_priorities,
+        ),
+        feature_priorities=aggregate_feature_priorities(
+            config.feature_priorities,
+            {
+                namespace: provider.feature_order
+                for namespace, provider in variants_json.providers.items()
+            },
+        ),
+        property_priorities=aggregate_property_priorities(
+            config.property_priorities,
+        ),
+        filter_values=True,
+    )
 
 
 def validate_variant(
@@ -281,10 +279,11 @@ def check_variant_supported(
     variant_info: VariantInfo,
     venv_python_executable: str | pathlib.Path | None = None,
     enable_optional_plugins: bool | list[VariantNamespace] = False,
-) -> bool:
-    """Check if variant description is supported
+) -> VariantDescription | None:
+    """Check if variant is supported and return filtered description
 
-    Returns True if the variant description is supported.
+    Returns a VariantDescription filtered down to supported values if it
+    is supported. Otherwise, returns None.
 
     If `vdesc` is provided, it is tested. Otherwise, `variant_info` must be
     a `DistMetadata` and variant description is inferred from it.
@@ -319,19 +318,18 @@ def check_variant_supported(
 
     VariantConfiguration.get_config()
 
-    return bool(
-        list(
-            filter_variants(
-                vdescs=[vdesc],
-                allowed_properties=supported_vprops,
-            )
+    filtered = list(
+        filter_variants(
+            vdescs=[vdesc],
+            allowed_properties=supported_vprops,
+            filter_values=True,
         )
     )
+    return filtered[0] if filtered else None
 
 
 def get_variant_environment_dict(
     variant_desc: VariantDescription,
-    variant_label: str | None = None,
 ) -> dict[str, set[str] | str]:
     """Get the dict for packaging Marker.evaluate()"""
 
@@ -343,13 +341,6 @@ def get_variant_environment_dict(
         "variant_properties": {vprop.to_str() for vprop in variant_desc.properties},
         "variant_label": variant_desc.label,
     }
-    if variant_label is not None:
-        warnings.warn(
-            "Passing variant_label is deprecated, provide VariantDescription() "
-            "with label instead",
-            stacklevel=2,
-        )
-        ret["variant_label"] = variant_label
     return ret
 
 
