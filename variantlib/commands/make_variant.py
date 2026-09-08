@@ -209,6 +209,14 @@ def _make_variant(
                     if venv is not None
                     else None,
                 )
+                if vdesc_valid.multi_value_violations:
+                    invalid_str = ", ".join(
+                        x.to_str() for x in vdesc_valid.multi_value_violations
+                    )
+                    raise ValidationError(
+                        "The following variant features specify multiple values "
+                        f"while only one is allowed: {invalid_str}"
+                    )
                 if vdesc_valid.invalid_properties:
                     invalid_str = ", ".join(
                         x.to_str() for x in vdesc_valid.invalid_properties
@@ -225,6 +233,7 @@ def _make_variant(
                         "The following variant properties use namespaces that are not "
                         f"provided by any installed plugin: {unknown_str}"
                     )
+                assert vdesc_valid.is_valid()
     else:
         # Create a null variant
         vdesc = VariantDescription()
