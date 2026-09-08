@@ -53,7 +53,7 @@ def make_variant(args: list[str]) -> None:
     parser.add_argument(
         "--no-isolation",
         action="store_true",
-        help="Use providers already installed in callignPython environment",
+        help="Use providers already installed in calling Python environment",
     )
 
     parser.add_argument(
