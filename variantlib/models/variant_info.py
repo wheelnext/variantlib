@@ -133,6 +133,8 @@ class VariantInfo:
                 VARIANT_INFO_NAMESPACE_KEY, list[VariantNamespace], []
             ) as namespace_priorities,
         ):
+            if not namespace_priorities:
+                raise ValidationError(f"{validator.key}: no namespace specified")
             validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
             self.namespace_priorities = list(namespace_priorities)
 

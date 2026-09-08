@@ -42,7 +42,6 @@ from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
 from variantlib.models import provider as pconfig
 from variantlib.models import variant as vconfig
-from variantlib.models.configuration import VariantConfiguration as VConfigurationModel
 from variantlib.models.provider import ProviderConfig
 from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant import VariantDescription
@@ -185,9 +184,6 @@ def test_get_variants_by_priority_roundtrip_fuzz(
     mocker: MockerFixture, configs: list[ProviderConfig]
 ) -> None:
     namespace_priorities = list({provider_cfg.namespace for provider_cfg in configs})
-    mocker.patch(
-        "variantlib.configuration.VariantConfiguration.get_config"
-    ).return_value = VConfigurationModel(namespace_priorities=namespace_priorities)
 
     def get_or_skip_combinations() -> Generator[VariantDescription]:
         for i, x in enumerate(get_combinations(configs, namespace_priorities)):
@@ -198,19 +194,30 @@ def test_get_variants_by_priority_roundtrip_fuzz(
     combinations: list[VariantDescription] = [*list(get_or_skip_combinations())]
 
     variants_json = {
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: namespace_priorities,
+        },
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
+            provider_cfg.namespace: {
+                VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                    feature_cfg.name: feature_cfg.values
+                    for feature_cfg in provider_cfg.configs
+                },
+                VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: [
+                    feature_cfg.name for feature_cfg in provider_cfg.configs
+                ],
+            }
+            for provider_cfg in configs
+        },
         VARIANTS_JSON_VARIANT_DATA_KEY: {
             get_variant_label(vdesc): vdesc.to_dict() for vdesc in combinations
-        }
+        },
     }
 
     if (typed_variants_json := trycast(VariantsJsonDict, variants_json)) is None:
         raise ValueError(
             f"Did not conform the `VariantsJsonDict` format: {variants_json}"
         )
-
-    mocker.patch(
-        "variantlib.plugins.loader.BasePluginLoader.get_supported_configs"
-    ).return_value = {provider_cfg.namespace: provider_cfg for provider_cfg in configs}
 
     assert get_variants_by_priority(variants_json=typed_variants_json) == combinations
 

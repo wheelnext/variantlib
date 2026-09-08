@@ -103,7 +103,14 @@ def test_invalid_table_type(table: str) -> None:
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{table}: expected dict\[str, "
         r"typing\.Any\], got <class 'list'>",
     ):
-        VariantPyProjectToml({PYPROJECT_TOML_TOP_KEY: {table: [123]}})
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["x"]},
+                    table: [123],
+                }
+            }
+        )
 
 
 @pytest.mark.parametrize(
@@ -157,7 +164,10 @@ def test_invalid_provider_namespace() -> None:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_INFO_PROVIDER_DATA_KEY: {"invalid namespace": {}}
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {"invalid namespace": {}},
                 }
             }
         )
@@ -170,7 +180,14 @@ def test_invalid_provider_table_type() -> None:
         r"ns: expected dict\[str, typing.Any\], got <class 'list'>",
     ):
         VariantPyProjectToml(
-            {PYPROJECT_TOML_TOP_KEY: {VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": [123]}}}
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": [123]},
+                }
+            }
         )
 
 
@@ -190,7 +207,10 @@ def test_invalid_provider_data_type(key: str, expected: str) -> None:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
-                    VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": {key: 123}}
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {"ns": {key: 123}},
                 }
             }
         )
@@ -205,6 +225,9 @@ def test_invalid_provider_requires() -> None:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_REQUIRES_KEY: [
@@ -212,7 +235,7 @@ def test_invalid_provider_requires() -> None:
                                 "",
                             ]
                         }
-                    }
+                    },
                 }
             }
         )
@@ -228,9 +251,12 @@ def test_invalid_provider_plugin_api() -> None:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "foo:bar:baz"}
-                    }
+                    },
                 }
             }
         )
@@ -266,17 +292,24 @@ def test_missing_namespace_priority() -> None:
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
         rf"{VARIANT_INFO_NAMESPACE_KEY} must specify the same namespaces as "
         rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY} "
-        r"keys; currently: set\(\) vs\. \{'ns'\}",
+        r"keys; currently: \{'foo'\} vs\.",
     ):
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["foo"],
+                    },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
-                        "ns": {
+                        "foo": {
                             VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["frobnicate"],
                             VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "foo:Plugin",
-                        }
-                    }
+                        },
+                        "bar": {
+                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["frobnicate"],
+                            VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "foo:Plugin",
+                        },
+                    },
                 }
             }
         )
@@ -306,7 +339,14 @@ def test_extra_default_priority_key() -> None:
         r"unexpected subkeys: \{'foo'\}",
     ):
         VariantPyProjectToml(
-            {PYPROJECT_TOML_TOP_KEY: {VARIANT_INFO_DEFAULT_PRIO_KEY: {"foo": {}}}}
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                        "foo": {},
+                    }
+                }
+            }
         )
 
 
@@ -319,13 +359,14 @@ def test_extra_provider_data_key() -> None:
         VariantPyProjectToml(
             {
                 PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["ns"]},
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
                             VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "frobnicate:Plugin",
                             VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["foo"],
                             "foo": {},
                         }
-                    }
+                    },
                 }
             }
         )
@@ -556,3 +597,12 @@ def test_requires_and_feature_order(requires_key: str) -> None:
                 }
             }
         )
+
+
+def test_no_namespaces() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
+        rf"{VARIANT_INFO_NAMESPACE_KEY}: no namespace specified",
+    ):
+        VariantPyProjectToml({PYPROJECT_TOML_TOP_KEY: {}})

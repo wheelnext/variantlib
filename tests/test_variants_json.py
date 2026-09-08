@@ -231,10 +231,6 @@ def test_validate_variants_json() -> None:
     }
 
 
-def test_validate_variants_json_empty() -> None:
-    assert VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {}}).variants == {}
-
-
 @pytest.mark.parametrize("cls", [VariantPyProjectToml, VariantsJson])
 def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     json_file = Path(
@@ -484,13 +480,33 @@ def test_null_variant_label():
         match=rf"{NULL_VARIANT_LABEL!r} label can be used only for the null variant",
     ):
         VariantsJson(
-            {VARIANTS_JSON_VARIANT_DATA_KEY: {NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}}}
+            {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["x"]},
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "x": {
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["dummy-dep"],
+                    }
+                },
+                VARIANTS_JSON_VARIANT_DATA_KEY: {
+                    NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}
+                },
+            }
         )
     with pytest.raises(
         ValidationError,
         match=rf"Null variant must always use {NULL_VARIANT_LABEL!r} label",
     ):
-        VariantsJson({VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}}})
+        VariantsJson(
+            {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["x"]},
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "x": {
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["dummy-dep"],
+                    }
+                },
+                VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}},
+            }
+        )
 
 
 def test_build_requires():
@@ -501,6 +517,7 @@ def test_build_requires():
     ):
         VariantsJson(
             {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["x"]},
                 VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "x": {
                         VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: ["example"],
