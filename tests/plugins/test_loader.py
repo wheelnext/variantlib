@@ -22,8 +22,8 @@ from variantlib.models.provider import VariantFeatureConfig
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import BasePluginLoader
+from variantlib.plugins.loader import DictPluginLoader
 from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.loader import ListPluginLoader
 from variantlib.plugins.loader import PluginLoader
 from variantlib.protocols import PluginType
 from variantlib.protocols import VariantFeatureConfigType
@@ -46,8 +46,6 @@ RANDOM_STUFF = 123
 
 
 class ClashingPlugin(PluginType):
-    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
-
     @classmethod
     def get_all_configs(cls) -> list[VariantFeatureConfigType]:
         return [
@@ -62,8 +60,6 @@ class ClashingPlugin(PluginType):
 
 
 class ExceptionPluginBase(PluginType):
-    namespace = "exception_test"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
-
     returned_value: list[VariantFeatureConfigType]
 
     @classmethod
@@ -156,25 +152,6 @@ def test_get_supported_configs(
     }
 
 
-def test_namespace_clash() -> None:
-    with (
-        pytest.raises(
-            RuntimeError,
-            match=(
-                r"Two plugins found using the same namespace test_namespace. "
-                r"Refusing to proceed."
-            ),
-        ),
-        ListPluginLoader(
-            [
-                "tests.mocked_plugins:MockedPluginA",
-                "tests.plugins.test_loader:ClashingPlugin",
-            ]
-        ),
-    ):
-        pass
-
-
 class IncorrectListTypePlugin(ExceptionPluginBase):
     returned_value = (
         VariantFeatureConfig("k1", ["v1"], multi_value=False),
@@ -185,14 +162,14 @@ class IncorrectListTypePlugin(ExceptionPluginBase):
 @pytest.mark.parametrize("method", GET_CONFIG_METHODS)
 def test_get_supported_configs_incorrect_list_type(method: str) -> None:
     with (
-        ListPluginLoader(
-            ["tests.plugins.test_loader:IncorrectListTypePlugin"]
+        DictPluginLoader(
+            {"test": "tests.plugins.test_loader:IncorrectListTypePlugin"}
         ) as loader,
         pytest.raises(
             PluginError,
             match=r".*"
             + re.escape(
-                f"Provider exception_test, {method}() method returned "
+                f"IncorrectListTypePlugin, {method}() method returned "
                 "incorrect type. Expected "
                 "list[_variantlib_protocols.VariantFeatureConfigType], "
                 "got <class 'tuple'>"
@@ -208,8 +185,8 @@ class IncorrectListLengthPlugin(ExceptionPluginBase):
 
 def test_get_configs_empty_list() -> None:
     with (
-        ListPluginLoader(
-            ["tests.plugins.test_loader:IncorrectListLengthPlugin"]
+        DictPluginLoader(
+            {"exception_test": "tests.plugins.test_loader:IncorrectListLengthPlugin"}
         ) as loader,
         pytest.raises(
             PluginError,
@@ -229,14 +206,14 @@ class IncorrectListMemberTypePlugin(ExceptionPluginBase):
 @pytest.mark.parametrize("method", GET_CONFIG_METHODS)
 def test_get_configs_incorrect_list_member_type(method: str) -> None:
     with (
-        ListPluginLoader(
-            ["tests.plugins.test_loader:IncorrectListMemberTypePlugin"]
+        DictPluginLoader(
+            {"test": "tests.plugins.test_loader:IncorrectListMemberTypePlugin"}
         ) as loader,
         pytest.raises(
             PluginError,
             match=r".*"
             + re.escape(
-                f"Provider exception_test, {method}() method returned "
+                f"IncorrectListMemberTypePlugin, {method}() method returned "
                 "incorrect type. Expected "
                 "list[_variantlib_protocols.VariantFeatureConfigType], "
                 "got list[typing.Union[_variantlib_protocols.VariantFeatureConfigType, "
@@ -256,7 +233,7 @@ def test_namespace_missing_module() -> None:
                 r"No module named 'tests.no_such_module'"
             ),
         ),
-        ListPluginLoader(["tests.no_such_module:foo"]),
+        DictPluginLoader({"test": "tests.no_such_module:foo"}),
     ):
         pass
 
@@ -271,14 +248,12 @@ def test_namespace_incorrect_name() -> None:
                 "'no_such_name'"
             ),
         ),
-        ListPluginLoader([("tests.plugins.test_loader:no_such_name")]),
+        DictPluginLoader({"test": "tests.plugins.test_loader:no_such_name"}),
     ):
         pass
 
 
 class IncompletePlugin:
-    namespace = "incomplete_plugin"
-
     @classmethod
     def get_supported_configs(cls) -> list[VariantFeatureConfigType]:
         return []
@@ -290,9 +265,9 @@ def test_namespace_incorrect_type() -> None:
             PluginError,
             match=r"'tests.plugins.test_loader:RANDOM_STUFF' does not meet "
             r"the PluginType prototype: 123 \(missing attributes: "
-            r"get_all_configs, get_supported_configs, namespace\)",
+            r"get_all_configs, get_supported_configs\)",
         ),
-        ListPluginLoader(["tests.plugins.test_loader:RANDOM_STUFF"]),
+        DictPluginLoader({"test": "tests.plugins.test_loader:RANDOM_STUFF"}),
     ):
         pass
 
@@ -310,7 +285,7 @@ def test_namespace_instantiation_returns_incorrect_type(
                 "(missing attributes: get_all_configs)"
             ),
         ),
-        ListPluginLoader([f"tests.plugins.test_loader:{cls}"]),
+        DictPluginLoader({"test": f"tests.plugins.test_loader:{cls}"}),
     ):
         pass
 
@@ -326,20 +301,19 @@ def test_namespaces(
 
 
 def test_non_callable_plugin() -> None:
-    with ListPluginLoader(
-        [
-            "tests.mocked_plugins:IndirectPath.MoreIndirection.object_a",
-            "tests.mocked_plugins:OBJECT_B",
-        ]
-    ) as loader:
+    plugins = {
+        "test_namespace": "tests.mocked_plugins:IndirectPath.MoreIndirection.object_a",
+        "second_namespace": "tests.mocked_plugins:OBJECT_B",
+    }
+    with DictPluginLoader(plugins) as loader:
         assert loader.namespaces == ["test_namespace", "second_namespace"]
 
 
 def test_plugin_module() -> None:
-    with ListPluginLoader(
-        [
-            "tests.mocked_plugin_as_module",
-        ]
+    with DictPluginLoader(
+        {
+            "module_namespace": "tests.mocked_plugin_as_module",
+        }
     ) as loader:
         assert loader.namespaces == ["module_namespace"]
 
@@ -347,7 +321,7 @@ def test_plugin_module() -> None:
 def test_load_plugin_invalid_arg() -> None:
     with (
         pytest.raises(ValidationError),
-        ListPluginLoader(["tests.mocked_plugins:foo:bar"]),
+        DictPluginLoader({"test": "tests.mocked_plugins:foo:bar"}),
     ):
         pass
 
@@ -507,7 +481,7 @@ def test_optional_plugins(value: bool | list[VariantNamespace], expected: bool) 
     "loader_call",
     [
         partial(PluginLoader, VariantInfo(), include_aot_plugins=True),
-        partial(ListPluginLoader, []),
+        partial(DictPluginLoader, {}),
     ],
 )
 def test_empty_plugin_list(loader_call: Callable[[], BasePluginLoader]) -> None:

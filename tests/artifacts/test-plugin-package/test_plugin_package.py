@@ -10,9 +10,6 @@ class FeatConfig:
     multi_value: bool = False
 
 
-namespace = "installable_plugin"
-
-
 def get_all_configs(
 ) -> list[FeatConfig]:
     return [

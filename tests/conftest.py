@@ -8,7 +8,7 @@ from hypothesis import settings
 from pytest_mock import MockerFixture
 from variantlib.plugins.loader import VARIANT_PROVIDER_CACHE_TABLE
 from variantlib.plugins.loader import BasePluginLoader
-from variantlib.plugins.loader import ListPluginLoader
+from variantlib.plugins.loader import DictPluginLoader
 
 from tests.mocked_plugins import MockedEntryPoint
 
@@ -24,16 +24,16 @@ settings.load_profile(
 )
 
 
-MOCKED_PLUGIN_APIS = [
-    "tests.mocked_plugins:MockedPluginA",
-    "tests.mocked_plugins:MockedPluginB",
-    "tests.mocked_plugins:MockedPluginC",
-]
+MOCKED_PLUGIN_APIS = {
+    "test_namespace": "tests.mocked_plugins:MockedPluginA",
+    "second_namespace": "tests.mocked_plugins:MockedPluginB",
+    "incompatible_namespace": "tests.mocked_plugins:MockedPluginC",
+}
 
 
 @pytest.fixture(scope="session")
 def mocked_plugin_loader() -> Generator[BasePluginLoader]:
-    with ListPluginLoader(MOCKED_PLUGIN_APIS) as loader:
+    with DictPluginLoader(MOCKED_PLUGIN_APIS) as loader:
         yield loader
 
 
@@ -42,9 +42,11 @@ def mocked_entry_points(
     mocker: MockerFixture,
 ) -> None:
     mocker.patch("variantlib.plugins.loader.entry_points")().select.return_value = [
-        MockedEntryPoint("test", "tests.mocked_plugins:MockedPluginA"),
-        MockedEntryPoint("second", "tests.mocked_plugins:MockedPluginB"),
-        MockedEntryPoint("third", "tests.mocked_plugins:MockedPluginC"),
+        MockedEntryPoint("test_namespace", "tests.mocked_plugins:MockedPluginA"),
+        MockedEntryPoint("second_namespace", "tests.mocked_plugins:MockedPluginB"),
+        MockedEntryPoint(
+            "incompatible_namespace", "tests.mocked_plugins:MockedPluginC"
+        ),
     ]
 
 

@@ -71,12 +71,6 @@ class PluginType(Protocol):
     # be actually implemented as attributes.
 
     @property
-    @abstractmethod
-    def namespace(self) -> VariantNamespace:
-        """Plugin namespace"""
-        raise NotImplementedError
-
-    @property
     def all_properties_compatible(self) -> bool:
         """
         Is this plugin valid for use with `build-requires`?

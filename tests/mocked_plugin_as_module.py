@@ -14,7 +14,6 @@ class VariantFeatureConfig:
     multi_value: bool = False
 
 
-namespace = "module_namespace"
 all_properties_compatible = False
 
 

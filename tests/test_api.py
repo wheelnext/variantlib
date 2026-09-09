@@ -765,9 +765,9 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
 
     with pytest.raises(
         PluginError,
-        match=r"Providers for namespaces {'second_namespace'} do not declare "
-        r"having all their valid properties compatible, they cannot be used "
-        r"with build-requires",
+        match=r"Plugins identified by API "
+        r"\{\'tests.mocked_plugins:MockedPluginB\'} do not declare having all "
+        "their valid properties compatible, they cannot be used with build-requires",
     ):
         make_variant_dist_info(
             vdesc,

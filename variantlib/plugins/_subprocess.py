@@ -58,14 +58,13 @@ def load_plugins(plugin_apis: list[str]) -> Generator[PluginType]:
 
 
 def process_configs(
-    configs: list[VariantFeatureConfigType], plugin_instance: PluginType, method: str
+    configs: list[VariantFeatureConfigType], plugin_api: str, method: str
 ) -> list[dict[str, bool | str | list[str]]]:
     try:
         validate_type(configs, list[VariantFeatureConfigType])
     except ValidationError as err:
         raise TypeError(
-            f"Provider {plugin_instance.namespace}, {method}() "
-            f"method returned incorrect type. {err}"
+            f"Provider {plugin_api}, {method}() method returned incorrect type. {err}"
         ) from None
     return [
         {"name": vfeat.name, "values": vfeat.values, "multi_value": vfeat.multi_value}
@@ -92,30 +91,28 @@ def main() -> int:
 
     if args.require_fixed:
         non_fixed_plugins = {
-            plugin.namespace
-            for plugin in plugins.values()
+            plugin_api
+            for plugin_api, plugin in plugins.items()
             if not getattr(plugin, "all_properties_compatible", False)
         }
         if non_fixed_plugins:
             raise TypeError(
-                f"Providers for namespaces {non_fixed_plugins} do not declare "
+                f"Plugins identified by API {non_fixed_plugins} do not declare "
                 "having all their valid properties compatible, they cannot be "
                 "used with build-requires"
             )
 
     retval: dict[str, Any] = {}
     for command, command_args in commands.items():
-        if command == "namespaces":
+        if command == "load":
             assert not command_args
-            retval[command] = {
-                plugin_api: plugin.namespace for plugin_api, plugin in plugins.items()
-            }
+            retval[command] = {}  # pyright: ignore[reportArgumentType]
         elif command == "get_all_configs":
             assert not command_args
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
                     plugin.get_all_configs(),
-                    plugin,
+                    plugin_api,
                     command,
                 )
                 for plugin_api, plugin in plugins.items()
@@ -125,7 +122,7 @@ def main() -> int:
             retval[command] = {  # pyright: ignore[reportArgumentType]
                 plugin_api: process_configs(
                     plugin.get_supported_configs(),
-                    plugin,
+                    plugin_api,
                     command,
                 )
                 for plugin_api, plugin in plugins.items()

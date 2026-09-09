@@ -157,7 +157,9 @@ class BasePluginLoader:
     @abstractmethod
     def _load_all_plugins(self) -> None: ...
 
-    def _load_all_plugins_from_tuple(self, plugin_apis: list[str]) -> None:
+    def _load_all_plugins_from_map(
+        self, plugin_apis: dict[VariantNamespace, str]
+    ) -> None:
         if self._namespace_map is not None:
             raise RuntimeError(
                 "Impossible to load plugins - `self._namespace_map` is not None"
@@ -168,7 +170,7 @@ class BasePluginLoader:
             return
 
         normalized_plugin_apis = []
-        for plugin_api in plugin_apis:
+        for namespace, plugin_api in plugin_apis.items():
             plugin_api_match = validate_matches_re(
                 plugin_api, VALIDATION_PROVIDER_PLUGIN_API_REGEX
             )
@@ -178,31 +180,17 @@ class BasePluginLoader:
             normalized_plugin_apis.append(f"{import_name}:{attr_path}")
 
             logger.info(
-                "Loading plugin via %(plugin_api)s",
-                {
-                    "plugin_api": plugin_api,
-                },
-            )
-
-        namespaces = self._call_subprocess(normalized_plugin_apis, {"namespaces": {}})[
-            "namespaces"
-        ]
-
-        for plugin_api, namespace in namespaces.items():
-            if namespace in self._namespace_map.values():
-                raise RuntimeError(
-                    "Two plugins found using the same namespace "
-                    f"{namespace}. Refusing to proceed."
-                )
-
-            self._namespace_map[plugin_api] = namespace
-            logger.info(
-                "Namespace %(namespace)s provided by plugin %(plugin_api)s",
+                "Loading plugin for namespace %(namespace)s via %(plugin_api)s",
                 {
                     "namespace": namespace,
                     "plugin_api": plugin_api,
                 },
             )
+
+        self._call_subprocess(normalized_plugin_apis, {"load": {}})
+
+        for namespace, plugin_api in plugin_apis.items():
+            self._namespace_map[plugin_api] = namespace
 
     def _check_plugins_loaded(self) -> None:
         if self._namespace_map is None:
@@ -361,13 +349,13 @@ class PluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
-        plugins = [
-            provider_data.object_reference
+        plugins = {
+            namespace: provider_data.object_reference
             for namespace, provider_data in self._variant_info.providers.items()
             if self._plugin_enabled(namespace, provider_data)
-        ]
+        }
 
-        self._load_all_plugins_from_tuple(plugin_apis=plugins)
+        self._load_all_plugins_from_map(plugin_apis=plugins)
 
     def get_all_configs(
         self,
@@ -395,7 +383,7 @@ class EntryPointPluginLoader(BasePluginLoader):
             )
 
         self._plugin_provider_packages = {}
-        plugin_apis = []
+        plugin_apis: dict[VariantNamespace, str] = {}
         eps = entry_points().select(group="variant_plugins")
         for ep in eps:
             logger.info(
@@ -409,11 +397,16 @@ class EntryPointPluginLoader(BasePluginLoader):
                 },
             )
 
-            plugin_apis.append(ep.value)
+            if ep.name in plugin_apis:
+                raise PluginError(
+                    f"Two plugins use the same entry point name {ep.name!r}: "
+                    f"{plugin_apis[ep.name]!r} and {ep.value!r}"
+                )
+            plugin_apis[ep.name] = ep.value
             if ep.dist is not None:
                 self._plugin_provider_packages[ep.value] = ep.dist
 
-        self._load_all_plugins_from_tuple(plugin_apis=plugin_apis)
+        self._load_all_plugins_from_map(plugin_apis=plugin_apis)
 
     @property
     def plugin_provider_packages(self) -> dict[str, Distribution]:
@@ -424,17 +417,17 @@ class EntryPointPluginLoader(BasePluginLoader):
         return self._plugin_provider_packages
 
 
-class ListPluginLoader(BasePluginLoader):
-    """Load plugins from an explicit plugin-api list"""
+class DictPluginLoader(BasePluginLoader):
+    """Load plugins from an explicit plugin-api map"""
 
-    _plugin_apis: list[str]
+    _plugin_apis: dict[VariantNamespace, str]
 
     def __init__(
         self,
-        plugin_apis: list[str],
+        plugin_apis: dict[VariantNamespace, str],
         venv_python_executable: Path | None = None,
     ) -> None:
-        self._plugin_apis = list(plugin_apis)
+        self._plugin_apis = plugin_apis
         super().__init__(venv_python_executable=venv_python_executable)
 
     def _load_all_plugins(self) -> None:
@@ -443,4 +436,4 @@ class ListPluginLoader(BasePluginLoader):
                 "Impossible to load plugins - `self._namespace_map` is not None"
             )
 
-        self._load_all_plugins_from_tuple(plugin_apis=self._plugin_apis)
+        self._load_all_plugins_from_map(plugin_apis=self._plugin_apis)

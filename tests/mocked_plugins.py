@@ -16,8 +16,6 @@ class MockedEntryPoint:
 
 
 class MockedPluginA(PluginType):
-    namespace = "test_namespace"  # pyright: ignore[reportAssignmentType,reportIncompatibleMethodOverride]
-
     @staticmethod
     def get_all_configs() -> list[VariantFeatureConfigType]:
         return [
@@ -47,8 +45,6 @@ MyVariantFeatureConfig = namedtuple(
 # NB: this plugin deliberately does not inherit from PluginType
 # to test that we don't rely on that inheritance
 class MockedPluginB:
-    namespace = "second_namespace"
-
     @classmethod
     def get_all_configs(cls) -> list[MyVariantFeatureConfig]:
         return [
@@ -74,8 +70,6 @@ class MyFlag:
 
 
 class MockedPluginC(PluginType):
-    namespace = "incompatible_namespace"
-
     @classmethod
     def get_all_configs(cls) -> list[VariantFeatureConfigType]:
         return [
@@ -89,8 +83,6 @@ class MockedPluginC(PluginType):
 
 
 class MockedAoTPlugin(PluginType):
-    namespace = "aot_plugin"
-
     all_properties_compatible = True
 
     @staticmethod
@@ -113,8 +105,6 @@ class MockedAoTPlugin(PluginType):
 
 
 class MultiValueAoTPlugin(PluginType):
-    namespace = "aot_plugin"
-
     all_properties_compatible = True
 
     @staticmethod

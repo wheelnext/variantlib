@@ -50,14 +50,9 @@ def test_plugin_type(cls: type) -> None:
     assert isinstance(cls, PluginType)
 
 
-@pytest.mark.parametrize(
-    "missing", ["namespace", "get_all_configs", "get_supported_configs"]
-)
+@pytest.mark.parametrize("missing", ["get_all_configs", "get_supported_configs"])
 def test_plugin_type_abstract(missing: str) -> None:
     class PartialPluginTypeSubclass(PluginType):
-        if missing != "namespace":
-            namespace = "ns"
-
         if missing != "get_all_configs":
 
             @staticmethod
