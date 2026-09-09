@@ -15,7 +15,7 @@ class VariantFeatureConfig:
 
 
 namespace = "module_namespace"
-is_aot_plugin = False
+all_properties_compatible = False
 
 
 def get_all_configs() -> list[VariantFeatureConfigType]:

@@ -765,7 +765,9 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
 
     with pytest.raises(
         PluginError,
-        match=r"Providers for namespaces {'second_namespace'} are not AoT plugins",
+        match=r"Providers for namespaces {'second_namespace'} do not declare "
+        r"having all their valid properties compatible, they cannot be used "
+        r"with build-requires",
     ):
         make_variant_dist_info(
             vdesc,

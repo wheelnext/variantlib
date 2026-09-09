@@ -91,7 +91,7 @@ class MockedPluginC(PluginType):
 class MockedAoTPlugin(PluginType):
     namespace = "aot_plugin"
 
-    is_aot_plugin = True
+    all_properties_compatible = True
 
     @staticmethod
     def get_all_configs() -> list[VariantFeatureConfigType]:
@@ -115,7 +115,7 @@ class MockedAoTPlugin(PluginType):
 class MultiValueAoTPlugin(PluginType):
     namespace = "aot_plugin"
 
-    is_aot_plugin = True
+    all_properties_compatible = True
 
     @staticmethod
     def get_all_configs() -> list[VariantFeatureConfigType]:

@@ -77,7 +77,7 @@ class PluginType(Protocol):
         raise NotImplementedError
 
     @property
-    def is_aot_plugin(self) -> bool:
+    def all_properties_compatible(self) -> bool:
         """
         Is this plugin valid for use with `build-requires`?
 

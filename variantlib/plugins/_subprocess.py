@@ -94,12 +94,13 @@ def main() -> int:
         non_fixed_plugins = {
             plugin.namespace
             for plugin in plugins.values()
-            if not getattr(plugin, "is_aot_plugin", False)
+            if not getattr(plugin, "all_properties_compatible", False)
         }
         if non_fixed_plugins:
             raise TypeError(
-                f"Providers for namespaces {non_fixed_plugins} are not AoT plugins, "
-                f"they cannot be used with build-requires"
+                f"Providers for namespaces {non_fixed_plugins} do not declare "
+                "having all their valid properties compatible, they cannot be "
+                "used with build-requires"
             )
 
     retval: dict[str, Any] = {}
