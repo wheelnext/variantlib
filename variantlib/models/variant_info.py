@@ -9,7 +9,6 @@ from packaging.requirements import Requirement
 
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PROVIDER_ENABLE_IF_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
@@ -17,7 +16,6 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -35,7 +33,6 @@ if TYPE_CHECKING:
 @dataclass
 class ProviderInfo:
     plugin_api: str | None = None
-    enable_if: str | None = None
     optional: bool = False
     requires: list[str] = field(default_factory=list)
     static_properties: dict[VariantFeatureName, list[VariantFeatureValue]] = field(
@@ -82,7 +79,6 @@ class VariantInfo:
             "namespace_priorities": list(self.namespace_priorities),
             "providers": {
                 namespace: ProviderInfo(
-                    enable_if=provider_data.enable_if,
                     optional=provider_data.optional,
                     plugin_api=provider_data.plugin_api,
                     requires=list(provider_data.requires),
@@ -160,11 +156,6 @@ class VariantInfo:
                         if provider_plugin_api is not None:
                             validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
                     with validator.get(
-                        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, str, None
-                    ) as provider_enable_if:
-                        if provider_enable_if is not None:
-                            validator.matches_re(VALIDATION_PROVIDER_ENABLE_IF_REGEX)
-                    with validator.get(
                         VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
                         list[VariantFeatureName],
                         [],
@@ -235,7 +226,6 @@ class VariantInfo:
                         )
 
                     self.providers[namespace] = ProviderInfo(
-                        enable_if=provider_enable_if,
                         optional=provider_optional,
                         plugin_api=provider_plugin_api,
                         requires=list(provider_requires),

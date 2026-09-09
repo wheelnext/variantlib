@@ -9,7 +9,6 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -39,7 +38,6 @@ version = "1.2.3"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns1]
 {VARIANT_INFO_PROVIDER_REQUIRES_KEY} = ["ns1-provider >= 1.2.3"]
-{VARIANT_INFO_PROVIDER_ENABLE_IF_KEY} = "python_version >= '3.12'"
 {VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} = "ns1_provider.plugin:NS1Plugin"
 
 [{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_PROVIDER_DATA_KEY}.ns2]
@@ -67,7 +65,6 @@ def test_pyproject_toml() -> None:
     assert pyproj.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
-            enable_if="python_version >= '3.12'",
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(
@@ -380,14 +377,12 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     # Mangle the original to ensure everything was copied
     pyproj.namespace_priorities.append("ns4")
     pyproj.providers["ns4"] = ProviderInfo(requires=["foo"], plugin_api="foo:bar")
-    pyproj.providers["ns1"].enable_if = None
     pyproj.providers["ns2"].requires.append("frobnicate")
 
     assert converted.namespace_priorities == ["ns1", "ns2", "ns3"]
     assert converted.providers == {
         "ns1": ProviderInfo(
             requires=["ns1-provider >= 1.2.3"],
-            enable_if="python_version >= '3.12'",
             plugin_api="ns1_provider.plugin:NS1Plugin",
         ),
         "ns2": ProviderInfo(

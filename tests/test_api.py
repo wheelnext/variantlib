@@ -28,7 +28,6 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -372,7 +371,6 @@ def test_make_variant_dist_info(
             {
                 "ns1": {
                     VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns1-provider >= 1.2.3"],
-                    VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version >= '3.12'",
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",  # noqa: E501
                 },
                 "ns2": {

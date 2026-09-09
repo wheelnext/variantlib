@@ -13,7 +13,6 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
@@ -61,8 +60,6 @@ class VariantsJson(VariantInfo):
     ) -> Generator[tuple[str, str | list[str] | dict[str, list[str]] | bool]]:
         if provider_info.requires:
             yield (VARIANT_INFO_PROVIDER_REQUIRES_KEY, provider_info.requires)
-        if provider_info.enable_if is not None:
-            yield (VARIANT_INFO_PROVIDER_ENABLE_IF_KEY, provider_info.enable_if)
         if provider_info.optional:
             yield (VARIANT_INFO_PROVIDER_OPTIONAL_KEY, provider_info.optional)
         if provider_info.plugin_api is not None:

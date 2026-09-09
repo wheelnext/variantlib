@@ -11,7 +11,6 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
@@ -221,7 +220,6 @@ def test_validate_variants_json() -> None:
     assert variants_json.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
-            enable_if="python_version >= '3.12'",
             plugin_api="provider_fictional_hw.plugin:FictionalHWPlugin",
         ),
         "fictional_tech": ProviderInfo(
@@ -249,14 +247,12 @@ def test_conversion(cls: type[VariantPyProjectToml | VariantsJson]) -> None:
     # Mangle variants_json to ensure everything was copied
     variants_json.namespace_priorities.append("ns")
     variants_json.providers["ns"] = ProviderInfo(requires=["bar"], plugin_api="foo:bar")
-    variants_json.providers["fictional_hw"].enable_if = None
     variants_json.providers["fictional_tech"].requires.append("frobnicate")
 
     assert converted.namespace_priorities == ["fictional_hw", "fictional_tech"]
     assert converted.providers == {
         "fictional_hw": ProviderInfo(
             requires=["provider-fictional-hw == 1.0.0"],
-            enable_if="python_version >= '3.12'",
             plugin_api="provider_fictional_hw.plugin:FictionalHWPlugin",
         ),
         "fictional_tech": ProviderInfo(
@@ -277,7 +273,6 @@ def test_to_str() -> None:
             providers={
                 "ns1": ProviderInfo(
                     requires=["ns1-pkg >= 1.0.0", "ns1-dep"],
-                    enable_if="python_version >= '3.12'",
                     plugin_api="ns1_pkg:Plugin",
                 ),
                 "ns2": ProviderInfo(requires=["ns2_pkg"], plugin_api="ns2_pkg:Plugin"),
@@ -309,7 +304,6 @@ def test_to_str() -> None:
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "ns1": {
                 VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns1-pkg >= 1.0.0", "ns1-dep"],
-                VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version >= '3.12'",
                 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_pkg:Plugin",
             },
             "ns2": {
@@ -345,7 +339,6 @@ def test_merge_variants() -> None:
         },
         "b": {
             VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["b"],
-            VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version > '3.12'",
             VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "b:B",
         },
     }
@@ -441,16 +434,6 @@ def test_merge_variants() -> None:
         v1.merge(VariantsJson(_json_data))
 
     # Test for mismatches in provider information.
-    _json_data = copy.deepcopy(json_a)
-    del _json_data[VARIANT_INFO_PROVIDER_DATA_KEY]["b"][
-        VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
-    ]
-    with pytest.raises(
-        ValidationError,
-        match=r"Inconsistency in providers\.b",
-    ):
-        v1.merge(VariantsJson(_json_data))
-
     _json_data = copy.deepcopy(json_b)
     _json_data[VARIANT_INFO_PROVIDER_DATA_KEY]["a"][
         VARIANT_INFO_PROVIDER_PLUGIN_API_KEY

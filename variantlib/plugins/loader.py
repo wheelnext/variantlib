@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
 
-from packaging.markers import Marker
 from packaging.markers import default_environment
 
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
@@ -353,16 +352,6 @@ class PluginLoader(BasePluginLoader):
                 {"ns": namespace},
             )
             return False
-
-        if (marker := provider_data.enable_if) is not None:
-            if not Marker(marker).evaluate(self._environment):
-                logger.debug(
-                    "The variant provider plugin corresponding "
-                    "to namespace `%(ns)s` has been skipped - Not compatible with "
-                    "the environmment. Details: %(data)s.",
-                    {"ns": namespace, "data": provider_data},
-                )
-                return False
 
         return True
 

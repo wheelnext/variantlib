@@ -9,7 +9,6 @@ from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_ENABLE_IF_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 
@@ -34,7 +33,6 @@ def test_update_pyproject_toml(
             VARIANT_INFO_PROVIDER_DATA_KEY: {
                 "test_namespace": {
                     VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["frobnicate", "barnicate"],
-                    VARIANT_INFO_PROVIDER_ENABLE_IF_KEY: "python_version >= '3.11'",
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "wrong_value",
                 },
                 "foo": {
@@ -77,9 +75,6 @@ def test_update_pyproject_toml(
             "test_namespace",
         ]
     )
-    del toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY][
-        "test_namespace"
-    ][VARIANT_INFO_PROVIDER_ENABLE_IF_KEY]
     toml_data[PYPROJECT_TOML_TOP_KEY][VARIANT_INFO_PROVIDER_DATA_KEY]["test_namespace"][
         VARIANT_INFO_PROVIDER_REQUIRES_KEY
     ].clear()

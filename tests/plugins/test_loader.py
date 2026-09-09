@@ -368,16 +368,8 @@ def test_load_plugin_invalid_arg() -> None:
                     plugin_api="tests.mocked_plugins:MockedPluginA",
                 ),
                 "second_namespace": ProviderInfo(
-                    # always true
-                    enable_if="python_version >= '3.10'",
                     requires=["variantlib"],
                     plugin_api="tests.mocked_plugins:MockedPluginB",
-                ),
-                "incompatible_namespace": ProviderInfo(
-                    # always false (hopefully)
-                    enable_if='platform_machine == "frobnicator"',
-                    requires=["variantlib"],
-                    plugin_api="tests.mocked_plugins:MockedPluginC",
                 ),
                 "one_more": ProviderInfo(
                     requires=["variantlib"],

@@ -11,7 +11,6 @@
             "requires": [
                 "provider-fictional-hw == 1.0.0"
             ],
-            "enable-if": "python_version >= '3.12'",
             "plugin-api": "provider_fictional_hw.plugin:FictionalHWPlugin"
         },
         "fictional_tech": {
