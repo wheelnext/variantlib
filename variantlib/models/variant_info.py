@@ -7,11 +7,13 @@ from typing import Any
 
 from packaging.requirements import Requirement
 
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
 from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
 from variantlib.constants import VALIDATION_VALUE_REGEX
+from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
@@ -21,7 +23,10 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
+from variantlib.constants import VariantInfoJsonDict
 from variantlib.errors import ValidationError
+from variantlib.models.variant import VariantDescription
 from variantlib.protocols import VariantFeatureName
 from variantlib.protocols import VariantFeatureValue
 from variantlib.protocols import VariantNamespace
@@ -69,8 +74,8 @@ class ProviderInfo:
 @dataclass
 class VariantInfo:
     namespace_priorities: list[VariantNamespace] = field(default_factory=list)
-
     providers: dict[VariantNamespace, ProviderInfo] = field(default_factory=dict)
+    variants: dict[str, VariantDescription] = field(default_factory=dict)
 
     def copy_as_kwargs(self) -> dict[str, Any]:
         """Return a "kwargs" dict suitable for instantiating a copy of itself"""
@@ -250,3 +255,33 @@ class VariantInfo:
                 f"as {all_providers_key} keys; currently: "
                 f"{set(self.namespace_priorities)} vs. {all_providers}"
             )
+
+        with validator.get(
+            VARIANT_INFO_VARIANT_DATA_KEY, dict[str, VariantInfoJsonDict], {}
+        ) as variants:
+            validator.list_matches_re(VALIDATION_VARIANT_LABEL_REGEX)
+            variant_labels = list(variants.keys())
+            self.variants = {}
+
+            for variant_label in variant_labels:
+                with validator.get(
+                    variant_label,
+                    VariantInfoJsonDict,
+                    ignore_subkeys=True,
+                ) as packed_vdesc:
+                    vdesc = VariantDescription.from_dict(
+                        packed_vdesc, label=variant_label
+                    )
+                    if vdesc.is_null_variant() and variant_label != NULL_VARIANT_LABEL:
+                        raise ValidationError(
+                            f"Null variant must use {NULL_VARIANT_LABEL!r} label"
+                        )
+                    if (
+                        not vdesc.is_null_variant()
+                        and variant_label == NULL_VARIANT_LABEL
+                    ):
+                        raise ValidationError(
+                            f"{NULL_VARIANT_LABEL!r} label can only be used for "
+                            "the null variant"
+                        )
+                    self.variants[variant_label] = vdesc

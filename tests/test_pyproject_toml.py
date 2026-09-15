@@ -14,7 +14,10 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
+from variantlib.models.variant import VariantDescription
+from variantlib.models.variant import VariantProperty
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
@@ -28,7 +31,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-TOML_DATA = f"""
+TOML_DATA_MINIMAL = f"""
 [project]
 name = "frobnicate"
 version = "1.2.3"
@@ -56,6 +59,19 @@ f1 = ["v1", "v2"]
 f2 = ["v3", "v4"]
 """
 
+TOML_DATA = (
+    TOML_DATA_MINIMAL
+    + f"""
+
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_VARIANT_DATA_KEY}.var1]
+ns1 = {{f1 = ["v1"]}}
+ns2 = {{f2 = ["v2"]}}
+
+[{PYPROJECT_TOML_TOP_KEY}.{VARIANT_INFO_VARIANT_DATA_KEY}.var2]
+ns1 = {{f1 = ["v1", "v2"]}}
+"""
+)
+
 PYPROJECT_TOML = tomllib.loads(TOML_DATA)
 
 
@@ -80,6 +96,46 @@ def test_pyproject_toml() -> None:
             feature_order=["f2", "f1"],
         ),
     }
+    assert pyproj.variants == {
+        "var1": VariantDescription(
+            properties=[
+                VariantProperty(namespace="ns1", feature="f1", value="v1"),
+                VariantProperty(namespace="ns2", feature="f2", value="v2"),
+            ],
+            label="var1",
+        ),
+        "var2": VariantDescription(
+            properties=[
+                VariantProperty(namespace="ns1", feature="f1", value="v1"),
+                VariantProperty(namespace="ns1", feature="f1", value="v2"),
+            ],
+            label="var2",
+        ),
+    }
+
+
+def test_pyproject_toml_minimal() -> None:
+    pyproj = VariantPyProjectToml(tomllib.loads(TOML_DATA_MINIMAL))
+    assert pyproj.namespace_priorities == ["ns1", "ns2", "ns3"]
+    assert pyproj.providers == {
+        "ns1": ProviderInfo(
+            requires=["ns1-provider >= 1.2.3"],
+            plugin_api="ns1_provider.plugin:NS1Plugin",
+        ),
+        "ns2": ProviderInfo(
+            build_requires=[
+                "ns2_provider; python_version >= '3.11'",
+                "old_ns2_provider; python_version < '3.11'",
+            ],
+            optional=True,
+            plugin_api="ns2_provider:Plugin",
+        ),
+        "ns3": ProviderInfo(
+            static_properties={"f1": ["v1", "v2"], "f2": ["v3", "v4"]},
+            feature_order=["f2", "f1"],
+        ),
+    }
+    assert pyproj.variants == {}
 
 
 def test_invalid_top_type() -> None:

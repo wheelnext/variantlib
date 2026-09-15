@@ -3,12 +3,9 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import dataclass
-from dataclasses import field
 from typing import TYPE_CHECKING
 from typing import Any
 
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
@@ -21,10 +18,8 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
 from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
 from variantlib.constants import VARIANT_INFO_SCHEMA_URL
 from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
-from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
@@ -41,8 +36,6 @@ else:
 
 @dataclass(init=False)
 class VariantsJson(VariantInfo):
-    variants: dict[str, VariantDescription] = field(default_factory=dict)
-
     def __init__(self, variants_json: VariantsJsonDict | VariantInfo) -> None:
         """Init from pre-read ``variants.json`` data or another class"""
 
@@ -158,34 +151,3 @@ class VariantsJson(VariantInfo):
     def _process(self, variant_table: VariantsJsonDict) -> None:
         validator = KeyTrackingValidator(None, variant_table)  # type: ignore[arg-type]
         self._process_common(validator)
-
-        with validator.get(
-            VARIANT_INFO_VARIANT_DATA_KEY,
-            dict[str, VariantInfoJsonDict],
-        ) as variants:
-            validator.list_matches_re(VALIDATION_VARIANT_LABEL_REGEX)
-            variant_labels = list(variants.keys())
-            self.variants = {}
-
-            for variant_label in variant_labels:
-                with validator.get(
-                    variant_label,
-                    VariantInfoJsonDict,
-                    ignore_subkeys=True,
-                ) as packed_vdesc:
-                    vdesc = VariantDescription.from_dict(
-                        packed_vdesc, label=variant_label
-                    )
-                    if vdesc.is_null_variant() and variant_label != NULL_VARIANT_LABEL:
-                        raise ValidationError(
-                            f"Null variant must use {NULL_VARIANT_LABEL!r} label"
-                        )
-                    if (
-                        not vdesc.is_null_variant()
-                        and variant_label == NULL_VARIANT_LABEL
-                    ):
-                        raise ValidationError(
-                            f"{NULL_VARIANT_LABEL!r} label can only be used for "
-                            "the null variant"
-                        )
-                    self.variants[variant_label] = vdesc
