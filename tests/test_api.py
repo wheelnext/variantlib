@@ -33,9 +33,9 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_URL
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
@@ -100,7 +100,7 @@ def test_get_variants_by_priority_roundtrip(
     ]
 
     variants_json = {
-        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: namespace_priorities,
         },
@@ -111,7 +111,7 @@ def test_get_variants_by_priority_roundtrip(
             }
             for namespace, plugin_api in plugin_apis.items()
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             vdesc.label: vdesc.to_dict()
             for vdesc in combinations
             if explicit_null or not vdesc.is_null_variant()
@@ -208,7 +208,7 @@ def test_get_variants_by_priority_roundtrip_fuzz(
             }
             for provider_cfg in configs
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             get_variant_label(vdesc): vdesc.to_dict() for vdesc in combinations
         },
     }
@@ -350,12 +350,12 @@ def test_make_variant_dist_info(
     label: str,
 ) -> None:
     expected: VariantsJsonDict = {
-        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: [],
         },
         VARIANT_INFO_PROVIDER_DATA_KEY: {},
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             label if label else "67fcaf38": {
                 "ns1": {
                     "f1": ["p1"],
@@ -642,7 +642,7 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
     )
 
     expected: VariantsJsonDict = {
-        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: ["aot_plugin"],
         },
@@ -652,7 +652,7 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
                 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
             },
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             "test": {
                 "aot_plugin": {
                     "name1": ["val1a"],

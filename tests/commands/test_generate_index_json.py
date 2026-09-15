@@ -12,9 +12,9 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_URL
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 
 if TYPE_CHECKING:
     import pytest
@@ -34,7 +34,7 @@ def test_generate_index_json(
 
     main(["generate-index-json", "-d", str(tmp_path)])
     assert json.loads((tmp_path / "test_package-0-variants.json").read_text()) == {
-        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: [
                 "installable_plugin",
@@ -50,7 +50,7 @@ def test_generate_index_json(
                 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
             },
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             NULL_VARIANT_LABEL: {},
             "5d8be4b9": {
                 "installable_plugin": {

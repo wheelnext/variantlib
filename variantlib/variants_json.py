@@ -18,9 +18,9 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_URL
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.constants import VariantInfoJsonDict
 from variantlib.constants import VariantsJsonDict
 from variantlib.errors import ValidationError
@@ -98,10 +98,10 @@ class VariantsJson(VariantInfo):
         assert all(label == vdesc.label for label, vdesc in self.variants.items())
 
         data: dict[str, Any] = {
-            VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+            VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
             VARIANT_INFO_DEFAULT_PRIO_KEY: dict(self._priorities_to_json()),
             VARIANT_INFO_PROVIDER_DATA_KEY: self.providers_dict(),
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
+            VARIANT_INFO_VARIANT_DATA_KEY: {
                 vhash: vdesc.to_dict() for vhash, vdesc in self.variants.items()
             },
         }
@@ -117,7 +117,7 @@ class VariantsJson(VariantInfo):
                 self.variants[label] = properties
             elif old_properties != properties:
                 raise ValidationError(
-                    f"Inconsistency in {VARIANTS_JSON_VARIANT_DATA_KEY}.{label}. "
+                    f"Inconsistency in {VARIANT_INFO_VARIANT_DATA_KEY}.{label}. "
                     f"Expected: { {x.to_str() for x in old_properties.properties}!r} , "
                     f"found: { {x.to_str() for x in properties.properties}!r}"
                 )
@@ -160,7 +160,7 @@ class VariantsJson(VariantInfo):
         self._process_common(validator)
 
         with validator.get(
-            VARIANTS_JSON_VARIANT_DATA_KEY,
+            VARIANT_INFO_VARIANT_DATA_KEY,
             dict[str, VariantInfoJsonDict],
         ) as variants:
             validator.list_matches_re(VALIDATION_VARIANT_LABEL_REGEX)

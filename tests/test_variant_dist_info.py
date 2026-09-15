@@ -10,7 +10,7 @@ from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
@@ -26,7 +26,7 @@ VARIANT_JSON = {
     VARIANT_INFO_PROVIDER_DATA_KEY: {
         "ns": {VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns-pkg"]}
     },
-    VARIANTS_JSON_VARIANT_DATA_KEY: {"test": {"ns": {"f": ["v"]}}},
+    VARIANT_INFO_VARIANT_DATA_KEY: {"test": {"ns": {"f": ["v"]}}},
 }
 
 

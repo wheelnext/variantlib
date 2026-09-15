@@ -13,9 +13,9 @@ from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_KEY
-from variantlib.constants import VARIANTS_JSON_SCHEMA_URL
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
+from variantlib.constants import VARIANT_INFO_SCHEMA_URL
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
 from variantlib.models.variant import VariantProperty
@@ -297,7 +297,7 @@ def test_to_str() -> None:
         "b": vdesc2,
     }
     assert json.loads(variants_json.to_str()) == {
-        VARIANTS_JSON_SCHEMA_KEY: VARIANTS_JSON_SCHEMA_URL,
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
         VARIANT_INFO_DEFAULT_PRIO_KEY: {
             VARIANT_INFO_NAMESPACE_KEY: ["ns2", "ns1"],
         },
@@ -311,7 +311,7 @@ def test_to_str() -> None:
                 VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns2_pkg:Plugin",
             },
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             "a": {"ns1": {"f1": ["v1"]}, "ns2": {"f2": ["v1"]}},
             "b": {"ns2": {"f2": ["v2"]}},
         },
@@ -346,7 +346,7 @@ def test_merge_variants() -> None:
     json_a: VariantsJsonDict = {
         VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
         VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             "foo": {
                 "a": {
                     "a": ["a"],
@@ -364,7 +364,7 @@ def test_merge_variants() -> None:
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "a": provider_data["a"],
         },
-        VARIANTS_JSON_VARIANT_DATA_KEY: {
+        VARIANT_INFO_VARIANT_DATA_KEY: {
             "bar": {
                 "a": {
                     "a": ["c"],
@@ -376,7 +376,7 @@ def test_merge_variants() -> None:
         {
             VARIANT_INFO_DEFAULT_PRIO_KEY: priority_data,
             VARIANT_INFO_PROVIDER_DATA_KEY: provider_data,
-            VARIANTS_JSON_VARIANT_DATA_KEY: {
+            VARIANT_INFO_VARIANT_DATA_KEY: {
                 "bar": {
                     "a": {
                         "a": ["c"],
@@ -445,14 +445,14 @@ def test_merge_variants() -> None:
         v1.merge(VariantsJson(_json_data))
 
     _json_data = copy.deepcopy(json_a)
-    _json_data[VARIANTS_JSON_VARIANT_DATA_KEY]["foo"] = {
+    _json_data[VARIANT_INFO_VARIANT_DATA_KEY]["foo"] = {
         "a": {
             "a": ["a"],
         },
     }
     with pytest.raises(
         ValidationError,
-        match=rf"Inconsistency in {VARIANTS_JSON_VARIANT_DATA_KEY}\.foo",
+        match=rf"Inconsistency in {VARIANT_INFO_VARIANT_DATA_KEY}\.foo",
     ):
         v1.merge(VariantsJson(_json_data))
 
@@ -470,7 +470,7 @@ def test_null_variant_label():
                         VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["dummy-dep"],
                     }
                 },
-                VARIANTS_JSON_VARIANT_DATA_KEY: {
+                VARIANT_INFO_VARIANT_DATA_KEY: {
                     NULL_VARIANT_LABEL: {"x": {"y": ["z"]}}
                 },
             }
@@ -487,7 +487,7 @@ def test_null_variant_label():
                         VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["dummy-dep"],
                     }
                 },
-                VARIANTS_JSON_VARIANT_DATA_KEY: {"zuul": {}},
+                VARIANT_INFO_VARIANT_DATA_KEY: {"zuul": {}},
             }
         )
 
@@ -506,6 +506,6 @@ def test_build_requires():
                         VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: ["example"],
                     }
                 },
-                VARIANTS_JSON_VARIANT_DATA_KEY: {"test": {"x": {"y": ["z"]}}},
+                VARIANT_INFO_VARIANT_DATA_KEY: {"test": {"x": {"y": ["z"]}}},
             }
         )

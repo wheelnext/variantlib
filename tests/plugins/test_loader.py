@@ -14,7 +14,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANTS_JSON_VARIANT_DATA_KEY
+from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
 from variantlib.errors import PluginError
 from variantlib.errors import ValidationError
 from variantlib.models.provider import ProviderConfig
@@ -381,7 +381,7 @@ def test_load_plugin_invalid_arg() -> None:
                         VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB",  # noqa: E501
                     },
                 },
-                VARIANTS_JSON_VARIANT_DATA_KEY: {},
+                VARIANT_INFO_VARIANT_DATA_KEY: {},
             }
         ),
     ],
