@@ -4,6 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import pytest
+from variantlib.constants import NULL_VARIANT_LABEL
 from variantlib.constants import PYPROJECT_TOML_TOP_KEY
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
@@ -657,3 +658,26 @@ def test_no_namespaces() -> None:
         rf"{VARIANT_INFO_NAMESPACE_KEY}: no namespace specified",
     ):
         VariantPyProjectToml({PYPROJECT_TOML_TOP_KEY: {}})
+
+
+def test_get_variant_desc() -> None:
+    pyproj = VariantPyProjectToml(PYPROJECT_TOML)
+
+    assert pyproj.get_variant_desc(NULL_VARIANT_LABEL) == VariantDescription(
+        [], NULL_VARIANT_LABEL
+    )
+    assert pyproj.get_variant_desc("var1") == VariantDescription(
+        [
+            VariantProperty(namespace="ns1", feature="f1", value="v1"),
+            VariantProperty(namespace="ns2", feature="f2", value="v2"),
+        ],
+        "var1",
+    )
+    assert pyproj.get_variant_desc("var2") == VariantDescription(
+        [
+            VariantProperty(namespace="ns1", feature="f1", value="v1"),
+            VariantProperty(namespace="ns1", feature="f1", value="v2"),
+        ],
+        "var2",
+    )
+    assert pyproj.get_variant_desc("novar") is None

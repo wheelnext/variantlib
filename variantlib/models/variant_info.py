@@ -123,6 +123,18 @@ class VariantInfo:
                 requirements.update(provider.build_requires)
         return requirements
 
+    def get_variant_desc(self, label: str) -> VariantDescription | None:
+        """
+        Get variant description for given label, or None if not defined
+
+        Return the variant description for specified label,
+        special-casing the null variant, or None if no such label.
+        """
+
+        if label == NULL_VARIANT_LABEL:
+            return VariantDescription([], label)
+        return self.variants.get(label)
+
     @property
     def _build_requires_allowed(self) -> bool:
         raise NotImplementedError
