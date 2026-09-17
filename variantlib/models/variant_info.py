@@ -35,6 +35,10 @@ if TYPE_CHECKING:
     from variantlib.validators.keytracking import KeyTrackingValidator
 
 
+def plugin_api_from_requires(requires: list[str]) -> str:
+    return Requirement(requires[0]).name.replace("-", "_")
+
+
 @dataclass
 class ProviderInfo:
     plugin_api: str | None = None
@@ -68,7 +72,7 @@ class ProviderInfo:
         assert requires
         if self.plugin_api is not None:
             return self.plugin_api
-        return Requirement(requires[0]).name.replace("-", "_")
+        return plugin_api_from_requires(requires)
 
 
 @dataclass

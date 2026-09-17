@@ -13,6 +13,7 @@ from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.models.variant_info import plugin_api_from_requires
 from variantlib.plugins.loader import EntryPointPluginLoader
 
 
@@ -85,6 +86,8 @@ def update_pyproject_toml(args: list[str]) -> None:
             default_requires = []
             if (dist := loader.plugin_provider_packages.get(plugin_api)) is not None:
                 default_requires.append(f"{dist.name} >={dist.version}")
+                if plugin_api_from_requires(default_requires) == plugin_api:
+                    del namespace_table[VARIANT_INFO_PROVIDER_PLUGIN_API_KEY]
             namespace_table.setdefault(
                 VARIANT_INFO_PROVIDER_REQUIRES_KEY, default_requires
             )
