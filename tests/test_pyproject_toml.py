@@ -520,10 +520,10 @@ def test_static_properties_one_feature() -> None:
 def test_static_properties_missing_priorities() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: multiple features require "
-        rf"specifying ordering via {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; missing: "
-        r"{'f2'}",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must specify order for all keys "
+        rf"used in {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; {{f1}} specified "
+        r"while {f1, f2} expected",
     ):
         VariantPyProjectToml(
             {
@@ -755,3 +755,50 @@ def test_empty_feature_order() -> None:
                 }
             }
         )
+
+
+def test_invalid_feature_order() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must specify order for all keys "
+        rf"used in {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; {{bar, foo}} "
+        r"specified while {foo} expected",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                                "foo": ["bar"],
+                            },
+                            VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["foo", "bar"],
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_redundant_feature_order() -> None:
+    VariantPyProjectToml(
+        {
+            PYPROJECT_TOML_TOP_KEY: {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                    VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                },
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "ns": {
+                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                            "foo": ["bar"],
+                        },
+                        VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["foo"],
+                    }
+                },
+            }
+        }
+    )

@@ -209,19 +209,6 @@ class VariantInfo:
                                         feature_values
                                     )
 
-                            if len(feature_dict) > 1:
-                                feature_prios = set(provider_feature_order)
-                                missing_feature_prios = (
-                                    set(feature_dict.keys()) - feature_prios
-                                )
-                                if missing_feature_prios:
-                                    raise ValidationError(
-                                        f"{validator.key}: multiple features require "
-                                        "specifying ordering via "
-                                        f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; "
-                                        f"missing: {missing_feature_prios}"
-                                    )
-
                     with validator.get(
                         VARIANT_INFO_PROVIDER_OPTIONAL_KEY, bool, False
                     ) as provider_optional:
@@ -251,18 +238,32 @@ class VariantInfo:
                             f"or {VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} "
                             "must be specified"
                         )
-                    if provider_static_properties and provider_plugin_api:
+                    if feature_dict is not None and provider_plugin_api is not None:
                         raise ValidationError(
                             f"{validator.key}: "
                             f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} is not valid "
                             f"with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
                         )
-                    if not provider_static_properties and provider_feature_order:
+                    if feature_dict is None and feature_order_list is not None:
                         raise ValidationError(
                             f"{validator.key}: "
                             f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} is valid "
                             f"only with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
                         )
+
+                    if len(provider_static_properties) > 1 or provider_feature_order:
+                        features_used = set(provider_static_properties)
+                        features_with_order = set(provider_feature_order)
+                        if features_used != features_with_order:
+                            raise ValidationError(
+                                f"{validator.key}: "
+                                f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must "
+                                "specify order for all keys used in "
+                                f"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; "
+                                f"{{{', '.join(sorted(features_with_order))}}} "
+                                "specified while "
+                                f"{{{', '.join(sorted(features_used))}}} expected"
+                            )
 
                     self.providers[namespace] = ProviderInfo(
                         optional=provider_optional,
