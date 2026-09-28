@@ -56,9 +56,7 @@ def test_duplicate_vfeat_config() -> None:
 
 def test_empty_values_list_in_vfeat_config() -> None:
     """Test VariantFeatureConfig creation with empty values."""
-    with pytest.raises(
-        ValidationError, match="List must have at least 1 elements, got 0"
-    ):
+    with pytest.raises(ValidationError, match="List must not be empty"):
         _ = VariantFeatureConfig(name="attr_name_a", values=[], multi_value=True)
 
 
@@ -185,9 +183,7 @@ def test_provider_config_invalid_name_type_in_configs() -> None:
 
 def test_empty_provider_config() -> None:
     """Test creation of ProviderConfig with an empty list of VariantFeatureConfigs."""
-    with pytest.raises(
-        ValidationError, match="List must have at least 1 elements, got 0"
-    ):
+    with pytest.raises(ValidationError, match="List must not be empty"):
         _ = ProviderConfig(namespace="provider_name", configs=[])
 
 
