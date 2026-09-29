@@ -27,6 +27,7 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
@@ -388,11 +389,14 @@ def test_make_variant_dist_info(
                     },
                     VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f2", "f1"],
                 },
+                "ns4": {
+                    VARIANT_INFO_PROVIDER_BUILTIN_KEY: "example",
+                },
             }
         )
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
+                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3", "ns4"],
             },
         )
 

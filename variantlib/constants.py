@@ -20,6 +20,7 @@ VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: Literal["static-properties"] = (
     "static-properties"
 )
 VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: Literal["feature-order"] = "feature-order"
+VARIANT_INFO_PROVIDER_BUILTIN_KEY: Literal["builtin"] = "builtin"
 VARIANT_INFO_SCHEMA_KEY: Literal["$schema"] = "$schema"
 VARIANT_INFO_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.0.3.json"
 VARIANT_INFO_VARIANT_DATA_KEY: Literal["variants"] = "variants"
@@ -111,10 +112,11 @@ ProviderPluginJsonDict = TypedDict(
     {
         "build-requires": list[str],
         "optional": bool,
-        "plugin-api": str,
+        "plugin-api": str | None,
         "requires": list[str],
         "static-properties": dict[str, list[str]],
         "feature-order": list[str],
+        "builtin": str | None,
     },
     total=False,
 )

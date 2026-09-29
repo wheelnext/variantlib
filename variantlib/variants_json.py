@@ -9,6 +9,7 @@ from typing import Any
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
@@ -71,6 +72,11 @@ class VariantsJson(VariantInfo):
             yield (
                 VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
                 provider_info.build_requires,
+            )
+        if provider_info.builtin:
+            yield (
+                VARIANT_INFO_PROVIDER_BUILTIN_KEY,
+                provider_info.builtin,
             )
 
     def _priorities_to_json(self) -> Generator[tuple[str, Any]]:
