@@ -47,10 +47,15 @@ def validate_list_matches_re(
         )
 
 
-def validate_list_min_len(values: list[Any], min_length: int) -> None:
+def validate_list_min_len(
+    values: list[Any], min_length: int, message_prefix: str | None = None
+) -> None:
     if len(values) < min_length:
+        prefix = f"{message_prefix}: " if message_prefix is not None else ""
+        if min_length == 1:
+            raise ValidationError(f"{prefix}List must not be empty")
         raise ValidationError(
-            f"List must have at least {min_length} elements, got {len(values)}"
+            f"{prefix}List must have at least {min_length} elements, got {len(values)}"
         )
 
 

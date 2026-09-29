@@ -150,9 +150,7 @@ class VariantInfo:
                 VARIANT_INFO_NAMESPACE_KEY, list[VariantNamespace], []
             ) as namespace_priorities,
         ):
-            if not namespace_priorities:
-                raise ValidationError(f"{validator.key}: no namespace specified")
-            validator.list_matches_re(VALIDATION_NAMESPACE_REGEX)
+            validator.list_matches_re(VALIDATION_NAMESPACE_REGEX, 1)
             self.namespace_priorities = list(namespace_priorities)
 
         with validator.get(
@@ -163,57 +161,64 @@ class VariantInfo:
             self.providers = {}
             for namespace in namespaces:
                 with validator.get(namespace, dict[str, Any], {}):
+                    provider_requires = []
+                    provider_build_requires = []
+                    provider_feature_order = []
+                    provider_static_properties = {}
+
                     with validator.get(
-                        VARIANT_INFO_PROVIDER_REQUIRES_KEY, list[str], []
-                    ) as provider_requires:
-                        validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY, list[str], None
+                    ) as requires_list:
+                        if requires_list is not None:
+                            validator.list_matches_re(
+                                VALIDATION_PROVIDER_REQUIRES_REGEX, 1
+                            )
+                            provider_requires.extend(requires_list)
+
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY, list[str], None
+                    ) as requires_list:
+                        if requires_list is not None:
+                            validator.list_matches_re(
+                                VALIDATION_PROVIDER_REQUIRES_REGEX, 1
+                            )
+                            provider_build_requires.extend(requires_list)
+
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+                        list[VariantFeatureName],
+                        None,
+                    ) as feature_order_list:
+                        if feature_order_list is not None:
+                            validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX, 1)
+                            provider_feature_order.extend(feature_order_list)
+
+                    with validator.get(
+                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+                        dict[VariantFeatureName, list[VariantFeatureValue]],
+                        None,
+                    ) as feature_dict:
+                        if feature_dict is not None:
+                            validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX, 1)
+                            for feature_name in feature_dict:
+                                with validator.get(
+                                    feature_name, list[VariantFeatureValue]
+                                ) as feature_values:
+                                    validator.list_matches_re(VALIDATION_VALUE_REGEX, 1)
+                                    provider_static_properties[feature_name] = (
+                                        feature_values
+                                    )
+
                     with validator.get(
                         VARIANT_INFO_PROVIDER_OPTIONAL_KEY, bool, False
                     ) as provider_optional:
                         pass
+
                     with validator.get(
                         VARIANT_INFO_PROVIDER_PLUGIN_API_KEY, str, None
                     ) as provider_plugin_api:
                         if provider_plugin_api is not None:
                             validator.matches_re(VALIDATION_PROVIDER_PLUGIN_API_REGEX)
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
-                        list[VariantFeatureName],
-                        [],
-                    ) as provider_feature_order:
-                        validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY, list[str], []
-                    ) as provider_build_requires:
-                        validator.list_matches_re(VALIDATION_PROVIDER_REQUIRES_REGEX)
-                    provider_static_properties = {}
-                    with validator.get(
-                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
-                        dict[VariantFeatureName, list[VariantFeatureValue]],
-                        {},
-                    ) as feature_dict:
-                        validator.list_matches_re(VALIDATION_FEATURE_NAME_REGEX)
-                        for feature_name in feature_dict:
-                            with validator.get(
-                                feature_name, list[VariantFeatureValue]
-                            ) as feature_values:
-                                validator.list_matches_re(VALIDATION_VALUE_REGEX)
-                                provider_static_properties[feature_name] = (
-                                    feature_values
-                                )
-
-                        if len(feature_dict) > 1:
-                            feature_prios = set(provider_feature_order)
-                            missing_feature_prios = (
-                                set(feature_dict.keys()) - feature_prios
-                            )
-                            if missing_feature_prios:
-                                raise ValidationError(
-                                    f"{validator.key}: multiple features require "
-                                    "specifying ordering via "
-                                    f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; "
-                                    f"missing: {missing_feature_prios}"
-                                )
 
                     if provider_build_requires and not self._build_requires_allowed:
                         raise ValidationError(
@@ -233,23 +238,37 @@ class VariantInfo:
                             f"or {VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY} "
                             "must be specified"
                         )
-                    if provider_static_properties and provider_plugin_api:
+                    if feature_dict is not None and provider_plugin_api is not None:
                         raise ValidationError(
                             f"{validator.key}: "
                             f"{VARIANT_INFO_PROVIDER_PLUGIN_API_KEY} is not valid "
                             f"with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
                         )
-                    if not provider_static_properties and provider_feature_order:
+                    if feature_dict is None and feature_order_list is not None:
                         raise ValidationError(
                             f"{validator.key}: "
                             f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} is valid "
                             f"only with {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}"
                         )
 
+                    if len(provider_static_properties) > 1 or provider_feature_order:
+                        features_used = set(provider_static_properties)
+                        features_with_order = set(provider_feature_order)
+                        if features_used != features_with_order:
+                            raise ValidationError(
+                                f"{validator.key}: "
+                                f"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must "
+                                "specify order for all keys used in "
+                                f"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; "
+                                f"{{{', '.join(sorted(features_with_order))}}} "
+                                "specified while "
+                                f"{{{', '.join(sorted(features_used))}}} expected"
+                            )
+
                     self.providers[namespace] = ProviderInfo(
                         optional=provider_optional,
                         plugin_api=provider_plugin_api,
-                        requires=list(provider_requires),
+                        requires=provider_requires,
                         static_properties=provider_static_properties,
                         feature_order=provider_feature_order,
                         build_requires=provider_build_requires,

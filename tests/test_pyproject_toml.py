@@ -332,7 +332,7 @@ def test_missing_required_key() -> None:
                     },
                     VARIANT_INFO_PROVIDER_DATA_KEY: {
                         "ns": {
-                            VARIANT_INFO_PROVIDER_REQUIRES_KEY: [],
+                            VARIANT_INFO_PROVIDER_OPTIONAL_KEY: False,
                         }
                     },
                 }
@@ -520,10 +520,10 @@ def test_static_properties_one_feature() -> None:
 def test_static_properties_missing_priorities() -> None:
     with pytest.raises(
         ValidationError,
-        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns\."
-        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: multiple features require "
-        rf"specifying ordering via {VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}; missing: "
-        r"{'f2'}",
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must specify order for all keys "
+        rf"used in {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; {{f1}} specified "
+        r"while {f1, f2} expected",
     ):
         VariantPyProjectToml(
             {
@@ -655,7 +655,7 @@ def test_no_namespaces() -> None:
     with pytest.raises(
         ValidationError,
         match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_DEFAULT_PRIO_KEY}\."
-        rf"{VARIANT_INFO_NAMESPACE_KEY}: no namespace specified",
+        rf"{VARIANT_INFO_NAMESPACE_KEY}: List must not be empty",
     ):
         VariantPyProjectToml({PYPROJECT_TOML_TOP_KEY: {}})
 
@@ -681,3 +681,124 @@ def test_get_variant_desc() -> None:
         "var2",
     )
     assert pyproj.get_variant_desc("novar") is None
+
+
+@pytest.mark.parametrize(
+    "requires_key",
+    [VARIANT_INFO_PROVIDER_REQUIRES_KEY, VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY],
+)
+def test_empty_requires(requires_key: str) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns."
+        rf"{requires_key}: List must not be empty",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            requires_key: [],
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_empty_static_properties() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns."
+        rf"{VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}: "
+        r"List must not be empty",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {},
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_empty_feature_order() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns."
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY}: List must not be empty",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                                "foo": ["bar"]
+                            },
+                            VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: [],
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_invalid_feature_order() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{PYPROJECT_TOML_TOP_KEY}\.{VARIANT_INFO_PROVIDER_DATA_KEY}\.ns: "
+        rf"{VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY} must specify order for all keys "
+        rf"used in {VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY}; {{bar, foo}} "
+        r"specified while {foo} expected",
+    ):
+        VariantPyProjectToml(
+            {
+                PYPROJECT_TOML_TOP_KEY: {
+                    VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                        VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                    },
+                    VARIANT_INFO_PROVIDER_DATA_KEY: {
+                        "ns": {
+                            VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                                "foo": ["bar"],
+                            },
+                            VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["foo", "bar"],
+                        }
+                    },
+                }
+            }
+        )
+
+
+def test_redundant_feature_order() -> None:
+    VariantPyProjectToml(
+        {
+            PYPROJECT_TOML_TOP_KEY: {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                    VARIANT_INFO_NAMESPACE_KEY: ["ns"],
+                },
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "ns": {
+                        VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                            "foo": ["bar"],
+                        },
+                        VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["foo"],
+                    }
+                },
+            }
+        }
+    )

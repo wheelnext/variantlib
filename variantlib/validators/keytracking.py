@@ -7,6 +7,7 @@ from typing import Any
 from variantlib.errors import ValidationError
 from variantlib.validators.base import _validate_type
 from variantlib.validators.base import validate_list_matches_re
+from variantlib.validators.base import validate_list_min_len
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
@@ -39,8 +40,11 @@ class KeyTrackingValidator:
     def matches_re(self, pattern: str | re.Pattern[str]) -> re.Match[str]:
         return validate_matches_re(self._data[-1], pattern, self.key)
 
-    def list_matches_re(self, pattern: str | re.Pattern[str]) -> None:
-        return validate_list_matches_re(self._data[-1], pattern, self.key)
+    def list_matches_re(
+        self, pattern: str | re.Pattern[str], min_length: int = 0
+    ) -> None:
+        validate_list_matches_re(self._data[-1], pattern, self.key)
+        validate_list_min_len(self._data[-1], min_length, self.key)
 
     def matches_enum(self, enum: type[Enum]) -> None:
         allowed = {str(x) for x in enum.__members__.values()}
