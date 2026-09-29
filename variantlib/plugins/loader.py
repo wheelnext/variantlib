@@ -327,10 +327,13 @@ class PluginLoader(BasePluginLoader):
         return namespace in self._enable_optional_plugins
 
     def _plugin_enabled(self, namespace: str, provider_data: ProviderInfo) -> bool:
-        if self._use_static_properties_for_provider(provider_data):
+        if self._filter_plugins is not None and namespace not in self._filter_plugins:
             return False
 
-        if self._filter_plugins is not None and namespace not in self._filter_plugins:
+        if provider_data.builtin is not None:
+            raise RuntimeError("Builtin providers are not supported at the time")
+
+        if self._use_static_properties_for_provider(provider_data):
             return False
 
         if provider_data.optional and not self._optional_provider_enabled(namespace):
