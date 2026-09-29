@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import string
 from collections.abc import Generator
@@ -347,7 +348,7 @@ def test_validate_variant(optional: bool) -> None:
 @pytest.mark.parametrize("pyproject_toml", [None, PYPROJECT_TOML])
 @pytest.mark.parametrize("label", ["foo", "xy1.2"])
 def test_make_variant_dist_info(
-    pyproject_toml: VariantsJsonDict | None,
+    pyproject_toml: dict[str, VariantsJsonDict] | None,
     label: str,
 ) -> None:
     expected: VariantsJsonDict = {
@@ -368,6 +369,15 @@ def test_make_variant_dist_info(
     }
 
     if pyproject_toml is not None:
+        # we can't have build-requires in JSON, change it to requires
+        pyproject_toml = copy.deepcopy(pyproject_toml)
+        ns2_prov = pyproject_toml[PYPROJECT_TOML_TOP_KEY][
+            VARIANT_INFO_PROVIDER_DATA_KEY
+        ]["ns2"]
+        ns2_prov[VARIANT_INFO_PROVIDER_REQUIRES_KEY] = ns2_prov.pop(
+            VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
+        )
+
         expected[VARIANT_INFO_PROVIDER_DATA_KEY].update(
             {
                 "ns1": {
@@ -375,7 +385,7 @@ def test_make_variant_dist_info(
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",  # noqa: E501
                 },
                 "ns2": {
-                    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: [
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: [
                         "ns2_provider; python_version >= '3.11'",
                         "old_ns2_provider; python_version < '3.11'",
                     ],
