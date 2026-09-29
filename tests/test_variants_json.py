@@ -509,3 +509,22 @@ def test_build_requires():
                 VARIANT_INFO_VARIANT_DATA_KEY: {"test": {"x": {"y": ["z"]}}},
             }
         )
+
+
+def test_missing_provider_for_variant() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"{VARIANT_INFO_PROVIDER_DATA_KEY} must list providers for all "
+        rf"variants listed in {VARIANT_INFO_VARIANT_DATA_KEY}",
+    ):
+        VariantsJson(
+            {
+                VARIANT_INFO_DEFAULT_PRIO_KEY: {VARIANT_INFO_NAMESPACE_KEY: ["x"]},
+                VARIANT_INFO_PROVIDER_DATA_KEY: {
+                    "x": {
+                        VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["example"],
+                    }
+                },
+                VARIANT_INFO_VARIANT_DATA_KEY: {"test": {"z": {"y": ["x"]}}},
+            }
+        )

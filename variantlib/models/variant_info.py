@@ -339,3 +339,18 @@ class VariantInfo:
                             "the null variant"
                         )
                     self.variants[variant_label] = vdesc
+
+        used_namespaces = {
+            vprop.namespace
+            for vdesc in self.variants.values()
+            for vprop in vdesc.properties
+        }
+        missing_providers = used_namespaces - set(self.namespace_priorities)
+        if missing_providers:
+            variant_data_key = ".".join(
+                [*validator.keys, VARIANT_INFO_VARIANT_DATA_KEY]
+            )
+            raise ValidationError(
+                f"{all_providers_key} must list providers for all variants "
+                f"listed in {variant_data_key}; missing: {missing_providers}"
+            )
