@@ -422,7 +422,7 @@ def test_make_variant_dist_info(
                     ],
                     label=label,
                 ),
-                variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
+                variant_info=VariantPyProjectToml(pyproject_toml)
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
