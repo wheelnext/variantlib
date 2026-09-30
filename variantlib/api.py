@@ -40,6 +40,7 @@ __all__ = [
     "VariantFeatureConfig",
     "VariantProperty",
     "VariantValidationResult",
+    "check_variant_supported",
     "get_variant_environment_dict",
     "get_variant_label",
     "get_variants_by_priority",
