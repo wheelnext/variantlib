@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import copy
 import json
 import string
 from collections.abc import Generator
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
@@ -27,6 +29,7 @@ from variantlib.constants import VALIDATION_VALUE_REGEX
 from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
 from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
+from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
 from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
@@ -346,7 +349,7 @@ def test_validate_variant(optional: bool) -> None:
 @pytest.mark.parametrize("pyproject_toml", [None, PYPROJECT_TOML])
 @pytest.mark.parametrize("label", ["foo", "xy1.2"])
 def test_make_variant_dist_info(
-    pyproject_toml: VariantsJsonDict | None,
+    pyproject_toml: dict[str, VariantsJsonDict] | None,
     label: str,
 ) -> None:
     expected: VariantsJsonDict = {
@@ -367,6 +370,15 @@ def test_make_variant_dist_info(
     }
 
     if pyproject_toml is not None:
+        # we can't have build-requires in JSON, change it to requires
+        pyproject_toml = copy.deepcopy(pyproject_toml)
+        ns2_prov = pyproject_toml[PYPROJECT_TOML_TOP_KEY][
+            VARIANT_INFO_PROVIDER_DATA_KEY
+        ]["ns2"]
+        ns2_prov[VARIANT_INFO_PROVIDER_REQUIRES_KEY] = ns2_prov.pop(
+            VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
+        )
+
         expected[VARIANT_INFO_PROVIDER_DATA_KEY].update(
             {
                 "ns1": {
@@ -374,7 +386,7 @@ def test_make_variant_dist_info(
                     VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",  # noqa: E501
                 },
                 "ns2": {
-                    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY: [
+                    VARIANT_INFO_PROVIDER_REQUIRES_KEY: [
                         "ns2_provider; python_version >= '3.11'",
                         "old_ns2_provider; python_version < '3.11'",
                     ],
@@ -388,11 +400,14 @@ def test_make_variant_dist_info(
                     },
                     VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["f2", "f1"],
                 },
+                "ns4": {
+                    VARIANT_INFO_PROVIDER_BUILTIN_KEY: "example",
+                },
             }
         )
         expected[VARIANT_INFO_DEFAULT_PRIO_KEY].update(
             {
-                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3"],
+                VARIANT_INFO_NAMESPACE_KEY: ["ns1", "ns2", "ns3", "ns4"],
             },
         )
 
@@ -407,7 +422,7 @@ def test_make_variant_dist_info(
                     ],
                     label=label,
                 ),
-                variant_info=VariantPyProjectToml(pyproject_toml)  # type: ignore[arg-type]
+                variant_info=VariantPyProjectToml(pyproject_toml)
                 if pyproject_toml is not None
                 else None,
                 variant_label=label,
@@ -774,3 +789,73 @@ def test_make_variant_dist_info_really_invalid_build_plugin() -> None:
             variant_info=vinfo,
             expand_aot_plugin_properties=True,
         )
+
+
+@pytest.mark.parametrize("provider", ["builtin", "static"])
+@pytest.mark.parametrize(
+    "function",
+    [
+        "get_variants_by_priority",
+        "validate_variant",
+        "check_variant_supported",
+    ],
+)
+def test_builtin_provider(provider: str, function: str) -> None:
+    variants_json = VariantsJson(
+        {
+            VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
+            VARIANT_INFO_DEFAULT_PRIO_KEY: {
+                VARIANT_INFO_NAMESPACE_KEY: ["builtin", "static"],
+            },
+            VARIANT_INFO_PROVIDER_DATA_KEY: {
+                "builtin": {
+                    VARIANT_INFO_PROVIDER_BUILTIN_KEY: "test",
+                },
+                "static": {
+                    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                        "feature": ["value"],
+                    },
+                },
+            },
+            VARIANT_INFO_VARIANT_DATA_KEY: {
+                "test": {
+                    provider: {
+                        "feature": ["value"],
+                    },
+                }
+            },
+        }
+    )
+
+    expected = (
+        pytest.raises(RuntimeError, match=r"Builtin providers are not supported")
+        if provider == "builtin"
+        else nullcontext()
+    )
+    with expected:
+        if function == "get_variants_by_priority":
+            assert get_variants_by_priority(variants_json=variants_json) == [
+                VariantDescription(
+                    label="test",
+                    properties=[VariantProperty("static", "feature", "value")],
+                ),
+                VariantDescription(),
+            ]
+        elif function == "validate_variant":
+            assert validate_variant(
+                variants_json.variants["test"], variants_json
+            ) == VariantValidationResult(
+                {
+                    VariantProperty(
+                        namespace="static", feature="feature", value="value"
+                    ): True
+                },
+                frozenset(),
+            )
+        elif function == "check_variant_supported":
+            assert (
+                check_variant_supported(
+                    vdesc=variants_json.variants["test"], variant_info=variants_json
+                )
+                == variants_json.variants["test"]
+            )

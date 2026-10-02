@@ -71,6 +71,13 @@ def get_variants_by_priority(
         variant_info=variants_json,
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=enable_optional_plugins,
+        filter_plugins=list(
+            {
+                vprop.namespace
+                for vdesc in variants_json.variants.values()
+                for vprop in vdesc.properties
+            }
+        ),
     ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(
@@ -309,6 +316,7 @@ def check_variant_supported(
         variant_info=variant_info,
         venv_python_executable=venv_python_executable,
         enable_optional_plugins=enable_optional_plugins,
+        filter_plugins=list({vprop.namespace for vprop in vdesc.properties}),
     ) as plugin_loader:
         supported_vprops = list(
             itertools.chain.from_iterable(
