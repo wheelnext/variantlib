@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from importlib.metadata import EntryPoint
-from importlib.metadata import entry_points
+from importlib.metadata import EntryPoint, entry_points
 
 
 def get_registered_commands(group: str) -> dict[str, EntryPoint]:

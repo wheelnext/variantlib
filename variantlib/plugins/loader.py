@@ -9,33 +9,28 @@ import sys
 from abc import abstractmethod
 from collections.abc import Collection
 from contextlib import suppress
-from importlib.metadata import Distribution
-from importlib.metadata import entry_points
+from importlib.metadata import Distribution, entry_points
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
 from packaging.markers import default_environment
 
 from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
-from variantlib.errors import NoPluginFoundError
-from variantlib.errors import PluginError
-from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import VariantFeatureConfig
+from variantlib.errors import NoPluginFoundError, PluginError
+from variantlib.models.provider import ProviderConfig, VariantFeatureConfig
 from variantlib.validators.base import validate_matches_re
 
 if TYPE_CHECKING:
     from types import TracebackType
-    from typing import Any
-    from typing import Literal
+    from typing import Any, Literal
 
-    from variantlib.models.variant_info import ProviderInfo
-    from variantlib.models.variant_info import VariantInfo
-    from variantlib.protocols import VariantFeatureName
-    from variantlib.protocols import VariantFeatureValue
-    from variantlib.protocols import VariantNamespace
+    from variantlib.models.variant_info import ProviderInfo, VariantInfo
+    from variantlib.protocols import (
+        VariantFeatureName,
+        VariantFeatureValue,
+        VariantNamespace,
+    )
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -140,7 +135,7 @@ class BasePluginLoader:
             for plugin_api in plugin_apis:
                 cmd_args += ["--plugin-api", plugin_api]
 
-            process = subprocess.run(  # noqa: S603
+            process = subprocess.run(
                 [self._python_executable, script, *cmd_args],
                 input=commands,
                 capture_output=True,

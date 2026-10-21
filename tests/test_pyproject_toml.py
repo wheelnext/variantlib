@@ -5,22 +5,24 @@ import sys
 from typing import TYPE_CHECKING
 
 import pytest
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
+
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    PYPROJECT_TOML_TOP_KEY,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_BUILTIN_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+    VARIANT_INFO_PROVIDER_OPTIONAL_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import VariantDescription, VariantProperty
 from variantlib.models.variant_info import ProviderInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson

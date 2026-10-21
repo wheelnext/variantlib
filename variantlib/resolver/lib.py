@@ -9,23 +9,31 @@ from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.resolver.filtering import filter_unsupported_feature_values
-from variantlib.resolver.filtering import filter_variants_by_features
-from variantlib.resolver.filtering import filter_variants_by_namespaces
-from variantlib.resolver.filtering import filter_variants_by_property
-from variantlib.resolver.sorting import sort_variant_properties
-from variantlib.resolver.sorting import sort_variants_descriptions
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+)
+from variantlib.resolver.filtering import (
+    filter_unsupported_feature_values,
+    filter_variants_by_features,
+    filter_variants_by_namespaces,
+    filter_variants_by_property,
+)
+from variantlib.resolver.sorting import (
+    sort_variant_properties,
+    sort_variants_descriptions,
+)
 from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from variantlib.protocols import VariantFeatureName
-    from variantlib.protocols import VariantFeatureValue
-    from variantlib.protocols import VariantNamespace
+    from variantlib.protocols import (
+        VariantFeatureName,
+        VariantFeatureValue,
+        VariantNamespace,
+    )
 
 logger = logging.getLogger(__name__)
 

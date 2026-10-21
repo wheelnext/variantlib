@@ -5,9 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
-from variantlib.api import ProviderConfig
-from variantlib.api import VariantDescription
-from variantlib.api import VariantProperty
+from variantlib.api import ProviderConfig, VariantDescription, VariantProperty
 from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:

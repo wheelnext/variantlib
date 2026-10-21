@@ -4,8 +4,7 @@ import argparse
 import sys
 
 from variantlib import __package_name__
-from variantlib.api import VariantDescription
-from variantlib.api import VariantProperty
+from variantlib.api import VariantDescription, VariantProperty
 
 
 def get_variant_hash(args: list[str]) -> None:

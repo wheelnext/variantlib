@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # =============================================================================== #
 # IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
 #
@@ -31,8 +29,7 @@ the protocol classes.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Protocol
-from typing import runtime_checkable
+from typing import Protocol, runtime_checkable
 
 # Type aliases for readability
 VariantNamespace = str

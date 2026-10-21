@@ -3,14 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from variantlib.api import VariantDescription
-from variantlib.api import VariantProperty
-from variantlib.models.provider import ProviderConfig
-from variantlib.utils import aggregate_feature_priorities
-from variantlib.utils import aggregate_namespace_priorities
-from variantlib.utils import aggregate_property_priorities
 
 from tests.utils import get_combinations
+from variantlib.api import VariantDescription, VariantProperty
+from variantlib.models.provider import ProviderConfig
+from variantlib.utils import (
+    aggregate_feature_priorities,
+    aggregate_namespace_priorities,
+    aggregate_property_priorities,
+)
 
 if TYPE_CHECKING:
     from variantlib.models.provider import ProviderConfig

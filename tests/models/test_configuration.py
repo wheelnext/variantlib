@@ -5,16 +5,21 @@ from typing import TYPE_CHECKING
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
+
+from variantlib.constants import (
+    VALIDATION_FEATURE_NAME_REGEX,
+    VALIDATION_NAMESPACE_REGEX,
+)
 from variantlib.models.configuration import VariantConfiguration
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from variantlib.protocols import VariantFeatureName
-    from variantlib.protocols import VariantFeatureValue
-    from variantlib.protocols import VariantNamespace
+    from variantlib.protocols import (
+        VariantFeatureName,
+        VariantFeatureValue,
+        VariantNamespace,
+    )
 
 
 def test_default_configuration() -> None:

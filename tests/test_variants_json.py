@@ -6,28 +6,31 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_URL
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
+
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_SCHEMA_KEY,
+    VARIANT_INFO_SCHEMA_URL,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
-from variantlib.models.variant_info import ProviderInfo
-from variantlib.models.variant_info import VariantInfo
+from variantlib.models.variant import VariantDescription, VariantProperty
+from variantlib.models.variant_info import ProviderInfo, VariantInfo
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
-    from variantlib.constants import PriorityJsonDict
-    from variantlib.constants import ProviderPluginJsonDict
-    from variantlib.constants import VariantsJsonDict
+    from variantlib.constants import (
+        PriorityJsonDict,
+        ProviderPluginJsonDict,
+        VariantsJsonDict,
+    )
 
 
 def test_validate_variants_json() -> None:

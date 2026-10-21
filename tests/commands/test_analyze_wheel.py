@@ -33,8 +33,10 @@ def test_analyze_wheel_null_variant(
         [
             "analyze-wheel",
             "-i",
-            "tests/artifacts/test-package/dist/test_package-0-py3-none-any-"
-            f"{NULL_VARIANT_LABEL}.whl",
+            (
+                "tests/artifacts/test-package/dist/test_package-0-py3-none-any-"
+                f"{NULL_VARIANT_LABEL}.whl"
+            ),
         ]
     )
     assert (

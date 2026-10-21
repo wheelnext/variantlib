@@ -8,31 +8,32 @@ from typing import TYPE_CHECKING
 
 import pytest
 from build.env import DefaultIsolatedEnv
-from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
-from variantlib.errors import PluginError
-from variantlib.errors import ValidationError
-from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant_info import ProviderInfo
-from variantlib.models.variant_info import VariantInfo
-from variantlib.plugins.loader import BasePluginLoader
-from variantlib.plugins.loader import DictPluginLoader
-from variantlib.plugins.loader import EntryPointPluginLoader
-from variantlib.plugins.loader import PluginLoader
-from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
-from variantlib.protocols import VariantNamespace
+
+from variantlib.constants import (
+    PYPROJECT_TOML_TOP_KEY,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+)
+from variantlib.errors import PluginError, ValidationError
+from variantlib.models.provider import ProviderConfig, VariantFeatureConfig
+from variantlib.models.variant_info import ProviderInfo, VariantInfo
+from variantlib.plugins.loader import (
+    BasePluginLoader,
+    DictPluginLoader,
+    EntryPointPluginLoader,
+    PluginLoader,
+)
+from variantlib.protocols import PluginType, VariantFeatureConfigType, VariantNamespace
 from variantlib.pyproject_toml import VariantPyProjectToml
 from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import ClassVar
 
 
 if sys.version_info >= (3, 11):
@@ -60,7 +61,7 @@ class ClashingPlugin(PluginType):
 
 
 class ExceptionPluginBase(PluginType):
-    returned_value: list[VariantFeatureConfigType]
+    returned_value: ClassVar[list[VariantFeatureConfigType]]
 
     @classmethod
     def get_all_configs(cls) -> list[VariantFeatureConfigType]:
@@ -180,7 +181,7 @@ def test_get_supported_configs_incorrect_list_type(method: str) -> None:
 
 
 class IncorrectListLengthPlugin(ExceptionPluginBase):
-    returned_value = []
+    returned_value: ClassVar[list[VariantFeatureConfigType]] = []
 
 
 def test_get_configs_empty_list() -> None:
@@ -200,7 +201,10 @@ def test_get_configs_empty_list() -> None:
 
 
 class IncorrectListMemberTypePlugin(ExceptionPluginBase):
-    returned_value = [{"k1": ["v1"], "k2": ["v2"]}, 1]  # type: ignore[list-item]
+    returned_value: ClassVar[list[VariantFeatureConfigType]] = [
+        {"k1": ["v1"], "k2": ["v2"]},  # type: ignore[list-item]
+        1,  # type: ignore[list-item]
+    ]
 
 
 @pytest.mark.parametrize("method", GET_CONFIG_METHODS)
@@ -216,9 +220,12 @@ def test_get_configs_incorrect_list_member_type(method: str) -> None:
                 f"IncorrectListMemberTypePlugin, {method}() method returned "
                 "incorrect type. Expected "
                 "list[_variantlib_protocols.VariantFeatureConfigType], "
-                "got list[typing.Union[_variantlib_protocols.VariantFeatureConfigType, "
+                "got list["
             )
-            + r"(dict, int|int, dict)",
+            + r"(?:typing\.Union\[_variantlib_protocols\.VariantFeatureConfigType, "
+            + r"(?:dict, int|int, dict)\]"
+            + r"|_variantlib_protocols\.VariantFeatureConfigType \| "
+            + r"(?:dict \| int|int \| dict))\]",
         ),
     ):
         getattr(loader, method)()
@@ -374,11 +381,11 @@ def test_load_plugin_invalid_arg() -> None:
                 VARIANT_INFO_PROVIDER_DATA_KEY: {
                     "test_namespace": {
                         VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
-                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginA",  # noqa: E501
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginA",
                     },
                     "second_namespace": {
                         VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
-                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB",  # noqa: E501
+                        VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedPluginB",
                     },
                 },
                 VARIANT_INFO_VARIANT_DATA_KEY: {},

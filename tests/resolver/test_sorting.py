@@ -4,15 +4,20 @@ import sys
 from typing import Any
 
 import pytest
+
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.resolver.sorting import get_feature_priorities
-from variantlib.resolver.sorting import get_namespace_priorities
-from variantlib.resolver.sorting import get_property_priorities
-from variantlib.resolver.sorting import sort_variant_properties
-from variantlib.resolver.sorting import sort_variants_descriptions
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+)
+from variantlib.resolver.sorting import (
+    get_feature_priorities,
+    get_namespace_priorities,
+    get_property_priorities,
+    sort_variant_properties,
+    sort_variants_descriptions,
+)
 
 # ========================= get_property_priorities =========================== #
 

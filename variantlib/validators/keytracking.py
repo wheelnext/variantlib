@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from variantlib.errors import ValidationError
-from variantlib.validators.base import _validate_type
-from variantlib.validators.base import validate_list_matches_re
-from variantlib.validators.base import validate_list_min_len
-from variantlib.validators.base import validate_matches_re
+from variantlib.validators.base import (
+    _validate_type,
+    validate_list_matches_re,
+    validate_list_min_len,
+    validate_matches_re,
+)
 
 if TYPE_CHECKING:
     import re

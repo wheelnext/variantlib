@@ -6,16 +6,13 @@ import json
 import sys
 from dataclasses import dataclass
 from functools import reduce
-from typing import TYPE_CHECKING
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # The following imports are replaced with temporary paths by the plugin
 # loader. We are using the original imports here to facilitate static
 # checkers and easier debugging.
-from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
-from variantlib.validators.base import ValidationError
-from variantlib.validators.base import validate_type
+from variantlib.protocols import PluginType, VariantFeatureConfigType
+from variantlib.validators.base import ValidationError, validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator

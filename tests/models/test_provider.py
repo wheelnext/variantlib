@@ -3,9 +3,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+
 from variantlib.errors import ValidationError
-from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import VariantFeatureConfig
+from variantlib.models.provider import ProviderConfig, VariantFeatureConfig
 from variantlib.models.variant import VariantProperty
 
 # ======================== VariantFeatureConfig ======================== #

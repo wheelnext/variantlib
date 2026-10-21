@@ -3,12 +3,9 @@ from __future__ import annotations
 import logging
 import sys
 from enum import IntEnum
-from functools import cache
-from functools import wraps
+from functools import cache, wraps
 from pathlib import Path
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import platformdirs
 
@@ -21,9 +18,11 @@ from variantlib.utils import classproperty
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from variantlib.protocols import VariantFeatureName
-    from variantlib.protocols import VariantFeatureValue
-    from variantlib.protocols import VariantNamespace
+    from variantlib.protocols import (
+        VariantFeatureName,
+        VariantFeatureValue,
+        VariantNamespace,
+    )
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -123,17 +122,17 @@ class VariantConfiguration:
 
     @classproperty
     @check_initialized
-    def namespace_priorities(cls) -> list[VariantNamespace]:  # noqa: N805
+    def namespace_priorities(cls) -> list[VariantNamespace]:
         return cls._config.namespace_priorities  # type: ignore[union-attr]
 
     @classproperty
     @check_initialized
-    def feature_priorities(cls) -> dict[VariantNamespace, list[VariantFeatureName]]:  # noqa: N805
+    def feature_priorities(cls) -> dict[VariantNamespace, list[VariantFeatureName]]:
         return cls._config.feature_priorities  # type: ignore[union-attr]
 
     @classproperty
     @check_initialized
     def property_priorities(
-        cls,  # noqa: N805
+        cls,
     ) -> dict[VariantNamespace, dict[VariantFeatureName, list[VariantFeatureValue]]]:
         return cls._config.property_priorities  # type: ignore[union-attr]

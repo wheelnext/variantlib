@@ -3,14 +3,19 @@ from __future__ import annotations
 from collections import deque
 
 import pytest
+
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.resolver.filtering import filter_unsupported_feature_values
-from variantlib.resolver.filtering import filter_variants_by_features
-from variantlib.resolver.filtering import filter_variants_by_namespaces
-from variantlib.resolver.filtering import filter_variants_by_property
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+)
+from variantlib.resolver.filtering import (
+    filter_unsupported_feature_values,
+    filter_variants_by_features,
+    filter_variants_by_namespaces,
+    filter_variants_by_property,
+)
 
 
 @pytest.fixture(scope="session")

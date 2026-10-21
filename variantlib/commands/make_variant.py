@@ -14,13 +14,17 @@ from subprocess import CalledProcessError
 from build.env import DefaultIsolatedEnv
 
 from variantlib import __package_name__
-from variantlib.api import VariantDescription
-from variantlib.api import VariantProperty
-from variantlib.api import make_variant_dist_info
-from variantlib.api import validate_variant
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
-from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.constants import VARIANT_DIST_INFO_FILENAME
+from variantlib.api import (
+    VariantDescription,
+    VariantProperty,
+    make_variant_dist_info,
+    validate_variant,
+)
+from variantlib.constants import (
+    VALIDATION_VARIANT_LABEL_REGEX,
+    VALIDATION_WHEEL_NAME_REGEX,
+    VARIANT_DIST_INFO_FILENAME,
+)
 from variantlib.errors import ValidationError
 from variantlib.pyproject_toml import VariantPyProjectToml
 

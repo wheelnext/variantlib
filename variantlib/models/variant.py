@@ -4,27 +4,31 @@ import contextlib
 import hashlib
 import sys
 from collections import defaultdict
-from dataclasses import asdict
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import asdict, dataclass, field
 from functools import cached_property
 
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_FEATURE_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PROPERTY_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
-from variantlib.constants import VariantInfoJsonDict
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VALIDATION_FEATURE_NAME_REGEX,
+    VALIDATION_FEATURE_REGEX,
+    VALIDATION_NAMESPACE_REGEX,
+    VALIDATION_PROPERTY_REGEX,
+    VALIDATION_VALUE_REGEX,
+    VALIDATION_VARIANT_LABEL_REGEX,
+    VariantInfoJsonDict,
+)
 from variantlib.errors import ValidationError
 from variantlib.models.base import BaseModel
-from variantlib.protocols import VariantFeatureName
-from variantlib.protocols import VariantFeatureValue
-from variantlib.protocols import VariantNamespace
-from variantlib.validators.base import validate_list_all_unique
-from variantlib.validators.base import validate_matches_re
-from variantlib.validators.base import validate_type
+from variantlib.protocols import (
+    VariantFeatureName,
+    VariantFeatureValue,
+    VariantNamespace,
+)
+from variantlib.validators.base import (
+    validate_list_all_unique,
+    validate_matches_re,
+    validate_type,
+)
 from variantlib.validators.combining import validate_and
 
 if sys.version_info >= (3, 11):

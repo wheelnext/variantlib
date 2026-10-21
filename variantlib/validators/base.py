@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # =============================================================================== #
 # IMPORTANT: this file is used in variantlib/plugins/_subprocess.py
 #
@@ -12,11 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from types import GenericAlias
-from typing import Any
-from typing import Protocol
-from typing import Union
-from typing import get_args
-from typing import get_origin
+from typing import Any, Protocol, Union, cast, get_args, get_origin
 
 
 class ValidationError(ValueError):
@@ -103,8 +97,9 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
             else:
                 incorrect_value_types = set()
             if incorrect_key_types or incorrect_value_types:
-                key_ored = Union.__getitem__((key_type, *incorrect_key_types))
-                value_ored = Union.__getitem__((value_type, *incorrect_value_types))
+                # Use subscription for Python 3.14's Union; its members are dynamic.
+                key_ored = cast(Any, Union)[(key_type, *incorrect_key_types)]
+                value_ored = cast(Any, Union)[(value_type, *incorrect_value_types)]
                 return list_type[key_ored, value_ored]  # type: ignore[no-any-return,index]
 
         else:
@@ -114,7 +109,7 @@ def _validate_type(value: Any, expected_type: type) -> type | None:
                 incorrect_types = {_validate_type(item, item_type) for item in value}
                 incorrect_types.discard(None)
                 if incorrect_types:
-                    ored = Union.__getitem__((item_type, *incorrect_types))
+                    ored = cast(Any, Union)[(item_type, *incorrect_types)]
                     return list_type[ored]  # type: ignore[no-any-return,index]
 
     # Protocols and Iterable must enable subclassing to pass

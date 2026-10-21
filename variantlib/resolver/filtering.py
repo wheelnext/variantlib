@@ -6,16 +6,17 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+)
 from variantlib.validators.base import validate_type
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from variantlib.protocols import VariantFeatureValue
-    from variantlib.protocols import VariantNamespace
+    from variantlib.protocols import VariantFeatureValue, VariantNamespace
 
 
 logger = logging.getLogger(__name__)

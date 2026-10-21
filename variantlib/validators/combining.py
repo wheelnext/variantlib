@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from variantlib.errors import ValidationError
 

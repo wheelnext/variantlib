@@ -4,10 +4,10 @@ import itertools
 from typing import TYPE_CHECKING
 
 import pytest
-from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_LABEL
 
 from tests.utils import assert_zips_equal
+from variantlib.commands.main import main
+from variantlib.constants import NULL_VARIANT_LABEL
 
 if TYPE_CHECKING:
     from pathlib import Path

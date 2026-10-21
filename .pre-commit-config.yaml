@@ -23,14 +23,14 @@ repos:
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.8.19
+    rev: 0.13.4
     hooks:
       - id: uv-lock
         args: ["--check"]
 
   # Run the Ruff linter.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.1
+    rev: v0.17.1
     hooks:
       # Linter
       - id: ruff-check
@@ -79,7 +79,7 @@ repos:
   #         - "urwid"
 
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1  # check for the latest version
+    rev: v2.4.0  # check for the latest version
     hooks:
       - id: autoflake
         args: [

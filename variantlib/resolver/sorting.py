@@ -4,15 +4,15 @@ import contextlib
 import logging
 import sys
 from collections import defaultdict
-from itertools import chain
-from itertools import groupby
+from itertools import chain, groupby
 
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
-from variantlib.protocols import VariantFeatureName
-from variantlib.protocols import VariantFeatureValue
-from variantlib.protocols import VariantNamespace
+from variantlib.models.variant import VariantDescription, VariantProperty
+from variantlib.protocols import (
+    VariantFeatureName,
+    VariantFeatureValue,
+    VariantNamespace,
+)
 from variantlib.validators.base import validate_type
 
 logger = logging.getLogger(__name__)

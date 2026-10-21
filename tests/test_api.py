@@ -8,60 +8,60 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
-from hypothesis import HealthCheck
-from hypothesis import assume
-from hypothesis import example
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis import strategies as st
 from trycast import trycast
-from variantlib.api import check_variant_supported
-from variantlib.api import get_variant_environment_dict
-from variantlib.api import get_variant_label
-from variantlib.api import get_variants_by_priority
-from variantlib.api import make_variant_dist_info
-from variantlib.api import validate_variant
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_URL
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
-from variantlib.constants import VariantsJsonDict
-from variantlib.errors import PluginError
-from variantlib.errors import ValidationError
-from variantlib.models import provider as pconfig
-from variantlib.models import variant as vconfig
-from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.models.variant import VariantValidationResult
-from variantlib.models.variant_info import ProviderInfo
-from variantlib.models.variant_info import VariantInfo
-from variantlib.pyproject_toml import VariantPyProjectToml
-from variantlib.variants_json import VariantsJson
 
 from tests.test_pyproject_toml import PYPROJECT_TOML
 from tests.utils import get_combinations
+from variantlib.api import (
+    check_variant_supported,
+    get_variant_environment_dict,
+    get_variant_label,
+    get_variants_by_priority,
+    make_variant_dist_info,
+    validate_variant,
+)
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    PYPROJECT_TOML_TOP_KEY,
+    VALIDATION_FEATURE_NAME_REGEX,
+    VALIDATION_NAMESPACE_REGEX,
+    VALIDATION_VALUE_REGEX,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_BUILTIN_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+    VARIANT_INFO_PROVIDER_OPTIONAL_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+    VARIANT_INFO_SCHEMA_KEY,
+    VARIANT_INFO_SCHEMA_URL,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+    VariantsJsonDict,
+)
+from variantlib.errors import PluginError, ValidationError
+from variantlib.models import provider as pconfig
+from variantlib.models import variant as vconfig
+from variantlib.models.provider import ProviderConfig, VariantFeatureConfig
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+    VariantValidationResult,
+)
+from variantlib.models.variant_info import ProviderInfo, VariantInfo
+from variantlib.pyproject_toml import VariantPyProjectToml
+from variantlib.variants_json import VariantsJson
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     from pytest_mock import MockerFixture
+
     from variantlib.plugins.loader import BasePluginLoader
 
 
@@ -383,7 +383,7 @@ def test_make_variant_dist_info(
             {
                 "ns1": {
                     VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["ns1-provider >= 1.2.3"],
-                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",  # noqa: E501
+                    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "ns1_provider.plugin:NS1Plugin",
                 },
                 "ns2": {
                     VARIANT_INFO_PROVIDER_REQUIRES_KEY: [

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VariantInfoJsonDict
+from variantlib.constants import PYPROJECT_TOML_TOP_KEY, VariantInfoJsonDict
 from variantlib.models.variant_info import VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 

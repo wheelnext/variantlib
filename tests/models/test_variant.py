@@ -6,15 +6,20 @@ import string
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
+
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VALIDATION_FEATURE_NAME_REGEX,
+    VALIDATION_NAMESPACE_REGEX,
+    VALIDATION_VALUE_REGEX,
+    VALIDATION_VARIANT_LABEL_REGEX,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VARIANT_HASH_LENGTH
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
+from variantlib.models.variant import (
+    VARIANT_HASH_LENGTH,
+    VariantDescription,
+    VariantProperty,
+)
 
 # -----------------------------------------------
 # Test for VariantProperty Class

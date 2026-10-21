@@ -8,8 +8,7 @@ import zipfile
 from typing import TYPE_CHECKING
 
 from variantlib import __package_name__
-from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.constants import VARIANT_DIST_INFO_FILENAME
+from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX, VARIANT_DIST_INFO_FILENAME
 from variantlib.variant_dist_info import VariantDistInfo
 
 if TYPE_CHECKING:

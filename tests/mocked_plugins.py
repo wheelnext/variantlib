@@ -4,8 +4,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 
 from variantlib.models.provider import VariantFeatureConfig
-from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
+from variantlib.protocols import PluginType, VariantFeatureConfigType
 
 
 @dataclass

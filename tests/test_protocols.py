@@ -1,19 +1,18 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
-from variantlib.models.provider import VariantFeatureConfig
-from variantlib.protocols import PluginType
-from variantlib.protocols import VariantFeatureConfigType
 
 from tests import mocked_plugin_as_module
-from tests.mocked_plugins import MockedPluginA
-from tests.mocked_plugins import MockedPluginC
-from tests.mocked_plugins import MyVariantFeatureConfig
+from tests.mocked_plugins import MockedPluginA, MockedPluginC, MyVariantFeatureConfig
+from variantlib.models.provider import VariantFeatureConfig
+from variantlib.protocols import PluginType, VariantFeatureConfigType
 
 
 class VariantFeatureConfigTypeSubclass(VariantFeatureConfigType):
     name = "a"
-    values = ["b"]
+    values: ClassVar[list[str]] = ["b"]
     multi_value = False
 
     def __init__(self, **kwargs):

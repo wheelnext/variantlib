@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from variantlib.constants import VALIDATION_NAMESPACE_REGEX
 from variantlib.models.base import BaseModel
-from variantlib.protocols import VariantFeatureName
-from variantlib.protocols import VariantFeatureValue
-from variantlib.protocols import VariantNamespace
-from variantlib.validators.base import validate_list_matches_re
-from variantlib.validators.base import validate_type
+from variantlib.protocols import (
+    VariantFeatureName,
+    VariantFeatureValue,
+    VariantNamespace,
+)
+from variantlib.validators.base import validate_list_matches_re, validate_type
 from variantlib.validators.combining import validate_and
 
 if sys.version_info >= (3, 11):

@@ -5,17 +5,18 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
-from variantlib.constants import VARIANT_DIST_INFO_FILENAME
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
+
+from variantlib.constants import (
+    VARIANT_DIST_INFO_FILENAME,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantProperty
-from variantlib.models.variant_info import ProviderInfo
-from variantlib.models.variant_info import VariantInfo
+from variantlib.models.variant import VariantDescription, VariantProperty
+from variantlib.models.variant_info import ProviderInfo, VariantInfo
 from variantlib.variant_dist_info import VariantDistInfo
 
 if TYPE_CHECKING:

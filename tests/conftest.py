@@ -3,14 +3,15 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
-from hypothesis import Verbosity
-from hypothesis import settings
+from hypothesis import Verbosity, settings
 from pytest_mock import MockerFixture
-from variantlib.plugins.loader import VARIANT_PROVIDER_CACHE_TABLE
-from variantlib.plugins.loader import BasePluginLoader
-from variantlib.plugins.loader import DictPluginLoader
 
 from tests.mocked_plugins import MockedEntryPoint
+from variantlib.plugins.loader import (
+    VARIANT_PROVIDER_CACHE_TABLE,
+    BasePluginLoader,
+    DictPluginLoader,
+)
 
 # Set PYTHONPATH to ensure that tests can find plugins
 os.environ["PYTHONPATH"] = str(Path(__file__).parent.parent)

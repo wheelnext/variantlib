@@ -7,8 +7,7 @@ import pathlib
 import zipfile
 
 from variantlib import __package_name__
-from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX
-from variantlib.constants import VARIANT_DIST_INFO_FILENAME
+from variantlib.constants import VALIDATION_WHEEL_NAME_REGEX, VARIANT_DIST_INFO_FILENAME
 from variantlib.errors import ValidationError
 from variantlib.variant_dist_info import VariantDistInfo
 from variantlib.variants_json import VariantsJson

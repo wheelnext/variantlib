@@ -3,25 +3,25 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_URL
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
-from variantlib.constants import VariantsJsonDict
+from variantlib.constants import (
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_BUILTIN_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+    VARIANT_INFO_PROVIDER_OPTIONAL_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+    VARIANT_INFO_SCHEMA_KEY,
+    VARIANT_INFO_SCHEMA_URL,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+    VariantsJsonDict,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.variant_info import ProviderInfo
-from variantlib.models.variant_info import VariantInfo
+from variantlib.models.variant_info import ProviderInfo, VariantInfo
 from variantlib.validators.keytracking import KeyTrackingValidator
 
 if TYPE_CHECKING:

@@ -1,36 +1,38 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
-from typing import TYPE_CHECKING
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from packaging.requirements import Requirement
 
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VALIDATION_FEATURE_NAME_REGEX
-from variantlib.constants import VALIDATION_NAMESPACE_REGEX
-from variantlib.constants import VALIDATION_PROVIDER_PLUGIN_API_REGEX
-from variantlib.constants import VALIDATION_PROVIDER_REQUIRES_REGEX
-from variantlib.constants import VALIDATION_VALUE_REGEX
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_BUILTIN_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
-from variantlib.constants import VariantInfoJsonDict
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VALIDATION_FEATURE_NAME_REGEX,
+    VALIDATION_NAMESPACE_REGEX,
+    VALIDATION_PROVIDER_PLUGIN_API_REGEX,
+    VALIDATION_PROVIDER_REQUIRES_REGEX,
+    VALIDATION_VALUE_REGEX,
+    VALIDATION_VARIANT_LABEL_REGEX,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_BUILD_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_BUILTIN_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY,
+    VARIANT_INFO_PROVIDER_OPTIONAL_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+    VariantInfoJsonDict,
+)
 from variantlib.errors import ValidationError
 from variantlib.models.variant import VariantDescription
-from variantlib.protocols import VariantFeatureName
-from variantlib.protocols import VariantFeatureValue
-from variantlib.protocols import VariantNamespace
+from variantlib.protocols import (
+    VariantFeatureName,
+    VariantFeatureValue,
+    VariantNamespace,
+)
 
 if TYPE_CHECKING:
     from variantlib.validators.keytracking import KeyTrackingValidator

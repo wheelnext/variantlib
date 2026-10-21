@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any
-from typing import Protocol
-from typing import Union
-from typing import runtime_checkable
+from typing import Any, Protocol, Union, runtime_checkable
 
 import pytest
+
 from variantlib.errors import ValidationError
 from variantlib.validators.base import validate_type
 

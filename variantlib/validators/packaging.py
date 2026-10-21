@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from packaging.requirements import InvalidRequirement
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 
 from variantlib.errors import ValidationError
 

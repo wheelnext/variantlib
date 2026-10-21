@@ -7,15 +7,19 @@ from typing import Any
 import pytest
 from deepdiff import DeepDiff
 from deepdiff.operator import BaseOperator
+
 from variantlib.errors import ValidationError
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.resolver.filtering import filter_variants_by_features
-from variantlib.resolver.filtering import filter_variants_by_namespaces
-from variantlib.resolver.filtering import filter_variants_by_property
-from variantlib.resolver.lib import filter_variants
-from variantlib.resolver.lib import sort_and_filter_supported_variants
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+)
+from variantlib.resolver.filtering import (
+    filter_variants_by_features,
+    filter_variants_by_namespaces,
+    filter_variants_by_property,
+)
+from variantlib.resolver.lib import filter_variants, sort_and_filter_supported_variants
 from variantlib.resolver.sorting import sort_variant_properties
 
 

@@ -4,12 +4,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pytest
+
 from variantlib.constants import VARIANT_ABI_DEPENDENCY_NAMESPACE
 from variantlib.models.variant import VariantProperty
 from variantlib.resolver.lib import inject_abi_dependency
 
 if TYPE_CHECKING:
     import pytest_mock
+
     from variantlib.protocols import VariantNamespace
 
 

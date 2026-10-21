@@ -9,23 +9,27 @@ import warnings
 from typing import TYPE_CHECKING
 
 from variantlib.configuration import VariantConfiguration
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VALIDATION_VARIANT_LABEL_REGEX
-from variantlib.constants import VariantsJsonDict
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VALIDATION_VARIANT_LABEL_REGEX,
+    VariantsJsonDict,
+)
 from variantlib.errors import ValidationError
-from variantlib.models.provider import ProviderConfig
-from variantlib.models.provider import VariantFeatureConfig
-from variantlib.models.variant import VariantDescription
-from variantlib.models.variant import VariantFeature
-from variantlib.models.variant import VariantProperty
-from variantlib.models.variant import VariantValidationResult
+from variantlib.models.provider import ProviderConfig, VariantFeatureConfig
+from variantlib.models.variant import (
+    VariantDescription,
+    VariantFeature,
+    VariantProperty,
+    VariantValidationResult,
+)
 from variantlib.models.variant_info import VariantInfo
 from variantlib.plugins.loader import PluginLoader
-from variantlib.resolver.lib import filter_variants
-from variantlib.resolver.lib import sort_and_filter_supported_variants
-from variantlib.utils import aggregate_feature_priorities
-from variantlib.utils import aggregate_namespace_priorities
-from variantlib.utils import aggregate_property_priorities
+from variantlib.resolver.lib import filter_variants, sort_and_filter_supported_variants
+from variantlib.utils import (
+    aggregate_feature_priorities,
+    aggregate_namespace_priorities,
+    aggregate_property_priorities,
+)
 from variantlib.variant_dist_info import VariantDistInfo
 from variantlib.variants_json import VariantsJson
 

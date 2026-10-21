@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 NULL_VARIANT_LABEL = "null"
 CONFIG_FILENAME = "variants.toml"

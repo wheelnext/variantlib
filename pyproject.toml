@@ -37,7 +37,7 @@ dev = [
     "check-manifest",
     "mypy==1.15.0",      # https://github.com/python/mypy
     # Pre Commit Hooks
-    "pre-commit>=4,<5",  # https://github.com/pre-commit/pre-commit
+    "prek>=0.5,<1.0",    # https://github.com/j178/prek
     # Linting
     "ruff>=0.10,<1.0",
 ]

@@ -7,12 +7,14 @@ from pathlib import Path
 from tomlkit.toml_file import TOMLFile
 
 from variantlib import __package_name__
-from variantlib.constants import PYPROJECT_TOML_TOP_KEY
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_PLUGIN_API_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
+from variantlib.constants import (
+    PYPROJECT_TOML_TOP_KEY,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_PLUGIN_API_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+)
 from variantlib.models.variant_info import plugin_api_from_requires
 from variantlib.plugins.loader import EntryPointPluginLoader
 

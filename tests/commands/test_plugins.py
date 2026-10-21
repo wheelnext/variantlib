@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from inline_snapshot import snapshot
+
 from variantlib.commands.main import main
 
 if TYPE_CHECKING:

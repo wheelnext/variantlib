@@ -6,15 +6,17 @@ from shutil import copy
 from typing import TYPE_CHECKING
 
 from variantlib.commands.main import main
-from variantlib.constants import NULL_VARIANT_LABEL
-from variantlib.constants import VARIANT_INFO_DEFAULT_PRIO_KEY
-from variantlib.constants import VARIANT_INFO_NAMESPACE_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_DATA_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_OPTIONAL_KEY
-from variantlib.constants import VARIANT_INFO_PROVIDER_REQUIRES_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_KEY
-from variantlib.constants import VARIANT_INFO_SCHEMA_URL
-from variantlib.constants import VARIANT_INFO_VARIANT_DATA_KEY
+from variantlib.constants import (
+    NULL_VARIANT_LABEL,
+    VARIANT_INFO_DEFAULT_PRIO_KEY,
+    VARIANT_INFO_NAMESPACE_KEY,
+    VARIANT_INFO_PROVIDER_DATA_KEY,
+    VARIANT_INFO_PROVIDER_OPTIONAL_KEY,
+    VARIANT_INFO_PROVIDER_REQUIRES_KEY,
+    VARIANT_INFO_SCHEMA_KEY,
+    VARIANT_INFO_SCHEMA_URL,
+    VARIANT_INFO_VARIANT_DATA_KEY,
+)
 
 if TYPE_CHECKING:
     import pytest

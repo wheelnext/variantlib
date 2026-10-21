@@ -7,23 +7,25 @@ from typing import TYPE_CHECKING
 import platformdirs
 import pytest
 import tomlkit
-from variantlib.configuration import ConfigEnvironments
-from variantlib.configuration import VariantConfiguration
-from variantlib.configuration import get_configuration_files
-from variantlib.constants import CONFIG_FILENAME
-from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
 
 from variantlib import __package_name__
+from variantlib.configuration import (
+    ConfigEnvironments,
+    VariantConfiguration,
+    get_configuration_files,
+)
+from variantlib.constants import CONFIG_FILENAME
+from variantlib.models.configuration import VariantConfiguration as ConfigurationModel
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
 def test_reset() -> None:
-    VariantConfiguration._config = ConfigurationModel.default()  # noqa: SLF001
-    assert VariantConfiguration._config is not None  # noqa: SLF001
+    VariantConfiguration._config = ConfigurationModel.default()
+    assert VariantConfiguration._config is not None
     VariantConfiguration.reset()
-    assert VariantConfiguration._config is None  # noqa: SLF001
+    assert VariantConfiguration._config is None
 
 
 def test_get_configuration_files() -> None:
@@ -170,16 +172,16 @@ def test_class_properties_with_default(mocker: MockerFixture) -> None:
     ).side_effect = FileNotFoundError
 
     VariantConfiguration.reset()
-    assert VariantConfiguration._config is None  # noqa: SLF001
+    assert VariantConfiguration._config is None
     assert VariantConfiguration.namespace_priorities == []
-    assert VariantConfiguration._config is not None  # noqa: SLF001
+    assert VariantConfiguration._config is not None
 
     VariantConfiguration.reset()
-    assert VariantConfiguration._config is None  # noqa: SLF001
+    assert VariantConfiguration._config is None
     assert VariantConfiguration.feature_priorities == {}
-    assert VariantConfiguration._config is not None  # noqa: SLF001
+    assert VariantConfiguration._config is not None
 
     VariantConfiguration.reset()
-    assert VariantConfiguration._config is None  # noqa: SLF001
+    assert VariantConfiguration._config is None
     assert VariantConfiguration.property_priorities == {}
-    assert VariantConfiguration._config is not None  # noqa: SLF001
+    assert VariantConfiguration._config is not None
