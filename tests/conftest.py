@@ -74,9 +74,7 @@ def test_plugin_package_path(test_artifact_path: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def test_plugin_package_req(test_plugin_package_path: Path) -> str:
-    return (
-        f"test-plugin-package @ file://{test_plugin_package_path.absolute().as_posix()}"
-    )
+    return f"test-plugin-package @ {test_plugin_package_path.absolute().as_uri()}"
 
 
 @pytest.fixture(autouse=True)
