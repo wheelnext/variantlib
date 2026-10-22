@@ -21,7 +21,7 @@ VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: Literal["static-properties"] = (
 VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: Literal["feature-order"] = "feature-order"
 VARIANT_INFO_PROVIDER_BUILTIN_KEY: Literal["builtin"] = "builtin"
 VARIANT_INFO_SCHEMA_KEY: Literal["$schema"] = "$schema"
-VARIANT_INFO_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.0.3.json"
+VARIANT_INFO_SCHEMA_URL = "https://variants-schema.wheelnext.dev/v0.2.0.json"
 VARIANT_INFO_VARIANT_DATA_KEY: Literal["variants"] = "variants"
 
 PYPROJECT_TOML_TOP_KEY = "variant"
