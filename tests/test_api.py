@@ -859,3 +859,68 @@ def test_builtin_provider(provider: str, function: str) -> None:
                 )
                 == variants_json.variants["test"]
             )
+
+
+def test_make_variant_dist_info_expand_aot_plugin_properties_when_not_used() -> None:
+    vdesc = VariantDescription(
+        [
+            VariantProperty("static_provider", "name7", "val7z"),
+        ],
+        label="test",
+    )
+    plugin_api = "tests.mocked_plugins:MockedAoTPlugin"
+    vinfo = VariantInfo(
+        namespace_priorities=["aot_plugin", "static_provider"],
+        providers={
+            "aot_plugin": ProviderInfo(
+                optional=True,
+                plugin_api=plugin_api,
+                build_requires=["variantlib"],
+            ),
+            "static_provider": ProviderInfo(
+                static_properties={
+                    "name7": ["val7z"],
+                }
+            ),
+        },
+    )
+
+    expected: VariantsJsonDict = {
+        VARIANT_INFO_SCHEMA_KEY: VARIANT_INFO_SCHEMA_URL,
+        VARIANT_INFO_DEFAULT_PRIO_KEY: {
+            VARIANT_INFO_NAMESPACE_KEY: ["aot_plugin", "static_provider"],
+        },
+        VARIANT_INFO_PROVIDER_DATA_KEY: {
+            "aot_plugin": {
+                VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
+                VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                    "name1": ["val1a", "val1b"],
+                    "name2": ["val2a", "val2b", "val2c"],
+                },
+                VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["name1", "name2"],
+            },
+            "static_provider": {
+                VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {"name7": ["val7z"]}
+            },
+        },
+        VARIANT_INFO_VARIANT_DATA_KEY: {
+            "test": {
+                "static_provider": {
+                    "name7": ["val7z"],
+                }
+            },
+        },
+    }
+
+    assert (
+        json.loads(
+            make_variant_dist_info(
+                vdesc,
+                variant_info=vinfo,
+                variant_label="test",
+                expand_aot_plugin_properties=True,
+            )
+        )
+        == expected
+    )
