@@ -245,6 +245,7 @@ def make_variant_dist_info(
                     continue
                 assert variant_json.providers[config.namespace].build_requires
                 variant_json.providers[config.namespace].build_requires = []
+                variant_json.providers[config.namespace].plugin_api = None
                 variant_json.providers[config.namespace].static_properties = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:

@@ -664,7 +664,6 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "aot_plugin": {
                 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
-                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
             },
         },
         VARIANT_INFO_VARIANT_DATA_KEY: {
@@ -678,13 +677,22 @@ def test_make_variant_dist_info_expand_aot_plugin_properties(
 
     provider_data = expected[VARIANT_INFO_PROVIDER_DATA_KEY]["aot_plugin"]
     if install_time:
-        provider_data[VARIANT_INFO_PROVIDER_REQUIRES_KEY] = ["variantlib"]
+        provider_data.update(
+            {
+                VARIANT_INFO_PROVIDER_REQUIRES_KEY: ["variantlib"],
+                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: "tests.mocked_plugins:MockedAoTPlugin",
+            }
+        )
     else:
-        provider_data[VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY] = {
-            "name1": ["val1a", "val1b"],
-            "name2": ["val2a", "val2b", "val2c"],
-        }
-        provider_data[VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY] = ["name1", "name2"]
+        provider_data.update(
+            {
+                VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
+                    "name1": ["val1a", "val1b"],
+                    "name2": ["val2a", "val2b", "val2c"],
+                },
+                VARIANT_INFO_PROVIDER_FEATURE_ORDER_KEY: ["name1", "name2"],
+            }
+        )
 
     assert (
         json.loads(
@@ -893,7 +901,6 @@ def test_make_variant_dist_info_expand_aot_plugin_properties_when_not_used() -> 
         VARIANT_INFO_PROVIDER_DATA_KEY: {
             "aot_plugin": {
                 VARIANT_INFO_PROVIDER_OPTIONAL_KEY: True,
-                VARIANT_INFO_PROVIDER_PLUGIN_API_KEY: plugin_api,
                 VARIANT_INFO_PROVIDER_STATIC_PROPERTIES_KEY: {
                     "name1": ["val1a", "val1b"],
                     "name2": ["val2a", "val2b", "val2c"],
