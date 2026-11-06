@@ -217,12 +217,10 @@ def make_variant_dist_info(
     variant_json.variant_label = get_variant_label(vdesc, variant_label)
 
     if expand_aot_plugin_properties:
-        namespaces = {vprop.namespace for vprop in vdesc.properties}
         build_namespaces = {
             ns
-            for ns in namespaces
-            if ns in variant_info.providers
-            and variant_info.providers[ns].build_requires
+            for ns, provider_info in variant_info.providers.items()
+            if provider_info.build_requires
         }
         if build_namespaces:
             venv_python_executable = (
@@ -247,6 +245,7 @@ def make_variant_dist_info(
                     continue
                 assert variant_json.providers[config.namespace].build_requires
                 variant_json.providers[config.namespace].build_requires = []
+                variant_json.providers[config.namespace].plugin_api = None
                 variant_json.providers[config.namespace].static_properties = {}
                 for vfeat in config.configs:
                     if vfeat.multi_value:
